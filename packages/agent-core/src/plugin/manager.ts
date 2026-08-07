@@ -8,6 +8,7 @@ import type {
   PluginContext, Plugin, PluginManager,
   PluginHooks, HookName, HookPayload, HookReturn,
 } from "../plugin.js";
+import { getLogger } from "../logger.js";
 
 export interface PluginManagerConfig {
   agentRegistry: AgentRegistry;
@@ -137,7 +138,7 @@ export class DefaultPluginManager implements PluginManager {
           }
         }
       } catch (err) {
-        console.warn(`[Plugin ${plugin.manifest.id}] ${name} failed:`, err);
+        getLogger().warn(`[Plugin ${plugin.manifest.id}] ${name} failed:`, err);
       }
     }
 
