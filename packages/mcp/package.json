@@ -1,67 +1,73 @@
 {
-  "name": "@vinhnt-sdk/mcp",
-  "version": "0.1.0",
-  "engines": { "node": ">=20" },
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./acp-types": {
-      "types": "./dist/client/acp-types.d.ts",
-      "import": "./dist/client/acp-types.js"
-    },
-    "./acp": {
-      "types": "./dist/client/acp.d.ts",
-      "import": "./dist/client/acp.js"
-    }
-  },
-  "types": "./dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "acp-types": ["./dist/client/acp-types.d.ts"],
-      "acp": ["./dist/client/acp.d.ts"]
-    }
-  },
-  "homepage": "https://github.com/vinhnt-develop/vnt-agent/tree/main/packages/mcp",
-  "bugs": {
-    "url": "https://github.com/vinhnt-develop/vnt-agent/issues"
-  },
-  "files": [
-    "dist",
-    "LICENSE"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vinhnt-develop/vnt-agent.git",
-    "directory": "packages/mcp"
-  },
-  "keywords": [
-    "vnt",
-    "mcp",
-    "model-context-protocol",
-    "acp",
-    "tool-server"
-  ],
-  "description": "MCP client pool and ACP integration for VNT Agent",
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "tsc -b",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
-    "prepublishOnly": "pnpm build"
-  },
-  "sideEffects": false,
-  "dependencies": {
-    "@modelcontextprotocol/client": "2.0.0-beta.4",
-    "@vinhnt-sdk/agent-core": "workspace:*",
-    "@vinhnt-sdk/schema": "workspace:*",
-    "zod": "^4.4.3"
-  }
+    "name":  "@vinhnt-sdk/mcp",
+    "version":  "0.1.0",
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "type": "module", "main": "./dist/index.js",
+    "exports":  {
+                    ".":  {
+                              "types":  "./dist/index.d.ts",
+                              "import":  "./dist/index.js",
+                              "require":  "./dist/index.js"
+                          },
+                    "./acp-types":  {
+                                        "types":  "./dist/client/acp-types.d.ts",
+                                        "import":  "./dist/client/acp-types.js"
+                                    },
+                    "./acp":  {
+                                  "types":  "./dist/client/acp.d.ts",
+                                  "import":  "./dist/client/acp.js"
+                              }
+                },
+    "types":  "./dist/index.d.ts",
+    "typesVersions":  {
+                          "*":  {
+                                    "acp-types":  [
+                                                      "./dist/client/acp-types.d.ts"
+                                                  ],
+                                    "acp":  [
+                                                "./dist/client/acp.d.ts"
+                                            ]
+                                }
+                      },
+    "homepage":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/mcp",
+    "bugs":  {
+                 "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+             },
+    "files":  [
+                  "dist",
+                  "LICENSE"
+              ],
+    "license":  "MIT",
+    "repository":  {
+                       "type":  "git",
+                       "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
+                       "directory":  "packages/mcp"
+                   },
+    "keywords":  [
+                     "vnt",
+                     "mcp",
+                     "model-context-protocol",
+                     "acp",
+                     "tool-server"
+                 ],
+    "description":  "MCP client pool and ACP integration for VNT Agent",
+    "publishConfig":  {
+                          "access":  "public"
+                      },
+    "scripts":  {
+                    "build":  "tsc -b",
+                    "typecheck":  "tsc --noEmit",
+                    "test":  "vitest run",
+                    "clean":  "node -e \"require(\u0027fs\u0027).rmSync(\u0027dist\u0027,{recursive:true,force:true});try{require(\u0027fs\u0027).rmSync(\u0027tsconfig.tsbuildinfo\u0027,{force:true})}catch(e){}\"",
+                    "prepublishOnly":  "pnpm build"
+                },
+    "sideEffects":  false,
+    "dependencies":  {
+                         "@modelcontextprotocol/client":  "2.0.0-beta.4",
+                         "@vinhnt-sdk/agent-core":  "workspace:*",
+                         "@vinhnt-sdk/schema":  "workspace:*",
+                         "zod":  "^4.4.3"
+                     }
 }
