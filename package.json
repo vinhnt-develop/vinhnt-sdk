@@ -11,13 +11,25 @@
     "node": ">=20.0.0"
   },
   "packageManager": "pnpm@9.0.0",
-  "pnpm": {
-    "overrides": {
-      "esbuild": "0.25.12"
-    }
+  "scripts": {
+    "build": "turbo build --filter='./packages/*'",
+    "build:fast": "turbo build --filter='./packages/*' --parallel",
+    "typecheck": "turbo typecheck --filter='./packages/*'",
+    "test": "turbo test --filter='./packages/*'",
+    "test:run": "vitest run",
+    "lint": "turbo lint --filter='./packages/*'",
+    "clean": "turbo clean --filter='./packages/*'",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "publish-packages": "changeset publish",
+    "pub:beta": "pnpm build && pnpm publish -r --tag beta --access public",
+    "pub:release": "pnpm build && pnpm publish -r --access public"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.0",
     "@types/node": "^26.1.2",
-    "typescript": "6.0.3"
+    "turbo": "^2.5.0",
+    "typescript": "6.0.3",
+    "vitest": "^3.2.0"
   }
 }

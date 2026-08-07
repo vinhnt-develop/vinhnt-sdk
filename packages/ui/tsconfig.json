@@ -1,17 +1,27 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx",
-    "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "verbatimModuleSyntax": false,
-    "resolveJsonModule": true,
-    "types": []
-  },
-  "include": ["src", "src/i18n/locales/*.json"]
+    "extends":  "../../tsconfig.base.json",
+    "compilerOptions":  {
+                            "outDir":  "./dist",
+                            "rootDir":  "./src",
+                            "jsx":  "react-jsx",
+                            "lib":  [
+                                        "ES2024",
+                                        "DOM",
+                                        "DOM.Iterable"
+                                    ],
+                            "module":  "ESNext",
+                            "moduleResolution":  "bundler",
+                            "noUnusedLocals":  false,
+                            "noUnusedParameters":  false,
+                            "verbatimModuleSyntax":  false,
+                            "resolveJsonModule":  true,
+                            "types":  [
+
+                                      ],
+                            "composite":  true
+                        },
+    "include":  [
+                    "src",
+                    "src/i18n/locales/*.json"
+                ]
 }
