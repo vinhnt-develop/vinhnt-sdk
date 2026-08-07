@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist/types",
+    "rootDir": "./src",
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "verbatimModuleSyntax": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "resolveJsonModule": true,
+    "types": []
+  },
+  "include": ["src", "src/i18n/locales/*.json"]
+}

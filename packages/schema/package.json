@@ -1,0 +1,75 @@
+{
+  "name": "@vinhnt-sdk/schema",
+  "version": "0.1.0",
+  "engines": { "node": ">=20" },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./contracts/*": {
+      "types": "./dist/contracts/*.d.ts",
+      "import": "./dist/contracts/*.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/types/*.js"
+    },
+    "./tool/*": {
+      "types": "./dist/tool/*.d.ts",
+      "import": "./dist/tool/*.js"
+    },
+    "./wildcard": {
+      "types": "./dist/wildcard.d.ts",
+      "import": "./dist/wildcard.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "contracts/*": ["./dist/contracts/*.d.ts"],
+      "types/*": ["./dist/types/*.d.ts"],
+      "tool/*": ["./dist/tool/*.d.ts"],
+      "wildcard": ["./dist/wildcard.d.ts"]
+    }
+  },
+  "homepage": "https://github.com/vinhnt-develop/vnt-agent/tree/main/packages/schema",
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vnt-agent/issues"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vnt-agent.git",
+    "directory": "packages/schema"
+  },
+  "keywords": [
+    "vnt",
+    "schema",
+    "zod",
+    "validation",
+    "types",
+    "protocol"
+  ],
+  "description": "Shared Zod schemas and types for VNT Agent — tool definitions, event types, and ACP protocol",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

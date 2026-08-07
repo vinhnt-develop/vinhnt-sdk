@@ -1,0 +1,75 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "create": "Tạo",
+    "close": "Đóng",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "done": "Xong",
+    "search": "Tìm kiếm",
+    "noResults": "Không tìm thấy kết quả",
+    "confirm": "Xác nhận",
+    "yes": "Có",
+    "no": "Không"
+  },
+  "chat": {
+    "placeholder": "Nhập tin nhắn...",
+    "send": "Gửi",
+    "stop": "Dừng",
+    "retry": "Thử lại",
+    "thinking": "Đang suy nghĩ...",
+    "assistant": "Trợ lý",
+    "user": "Bạn",
+    "system": "Hệ thống",
+    "toolCall": "Công cụ",
+    "toolResult": "Kết quả",
+    "emptyState": "Bắt đầu cuộc trò chuyện với VNT Agent"
+  },
+  "session": {
+    "new": "Phiên mới",
+    "delete": "Xóa phiên",
+    "rename": "Đổi tên",
+    "noSessions": "Chưa có phiên nào",
+    "fork": "Nhân phiên",
+    "current": "Phiên hiện tại"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "general": "Chung",
+    "providers": "Nhà cung cấp",
+    "model": "Mô hình",
+    "theme": {
+      "label": "Giao diện",
+      "light": "Sáng",
+      "dark": "Tối",
+      "system": "Hệ thống"
+    },
+    "language": {
+      "label": "Ngôn ngữ",
+      "en": "English",
+      "vi": "Tiếng Việt"
+    }
+  },
+  "permission": {
+    "title": "Yêu cầu cấp quyền",
+    "allow": "Cho phép",
+    "deny": "Từ chối",
+    "always": "Luôn cho phép",
+    "never": "Luôn từ chối",
+    "tool": "Công cụ: {{tool}}",
+    "path": "Đường dẫn: {{path}}",
+    "reason": "Lý do: {{reason}}"
+  },
+  "status": {
+    "connected": "Đã kết nối",
+    "disconnected": "Đã ngắt kết nối",
+    "connecting": "Đang kết nối...",
+    "reconnecting": "Đang kết nối lại...",
+    "error": "Lỗi kết nối"
+  }
+}

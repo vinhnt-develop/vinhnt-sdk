@@ -1,0 +1,23 @@
+{
+  "name": "vinhnt-sdk",
+  "private": true,
+  "description": "VinhNT SDK - AI Agent Core Libraries",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.25.12"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "6.0.3"
+  }
+}

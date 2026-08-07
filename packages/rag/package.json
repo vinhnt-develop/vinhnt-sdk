@@ -1,0 +1,55 @@
+{
+  "name": "@vinhnt-sdk/rag",
+  "version": "0.1.0",
+  "engines": { "node": ">=20" },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "homepage": "https://github.com/vinhnt-develop/vnt-agent/tree/main/packages/rag",
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vnt-agent/issues"
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vnt-agent.git",
+    "directory": "packages/rag"
+  },
+  "keywords": [
+    "vnt",
+    "rag",
+    "retrieval-augmented-generation",
+    "vector",
+    "embedding",
+    "search"
+  ],
+  "description": "RAG (Retrieval-Augmented Generation) module for VNT Agent — indexing, embedding, and semantic search",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@vinhnt-sdk/agent-core": "workspace:*",
+    "@vinhnt-sdk/schema": "workspace:*",
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8"
+  }
+}
