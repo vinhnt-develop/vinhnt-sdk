@@ -12,4 +12,5 @@ export default defineWorkspace([
   'packages/observability',
   'packages/plugin-sdk',
   'packages/api-contract',
+  'packages/ui',
 ]);

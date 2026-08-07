@@ -64,23 +64,41 @@
       "import": "./dist/workspace.js"
     }
   },
-  "files": ["dist", "LICENSE", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
     "directory": "packages/agent-core"
   },
   "homepage": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/agent-core",
-  "bugs": { "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues" },
-  "keywords": ["vnt", "agent", "core", "kernel", "tools", "session", "plugin"],
-  "publishConfig": { "access": "public" },
+  "bugs": {
+    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "agent",
+    "core",
+    "kernel",
+    "tools",
+    "session",
+    "plugin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
