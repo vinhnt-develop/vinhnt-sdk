@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
+import { sanitizeForLLM } from "../security/input-sanitizer.js";
 
 const WebFetchSchema = z.object({
   url: z.string().url().or(z.string().min(1)),
@@ -40,10 +41,10 @@ export function createWebFetchTool(config?: WebFetchToolConfig) {
         }
         const text = await response.text();
         const maxSize = config?.maxResponseSize ?? 524_288;
-        if (text.length > maxSize) {
-          return text.slice(0, maxSize) + `\n\n[truncated: response exceeds ${maxSize} bytes]`;
-        }
-        return v.format === "html" ? text : stripHtml(text);
+        const raw = text.length > maxSize
+          ? text.slice(0, maxSize) + `\n\n[truncated: response exceeds ${maxSize} bytes]`
+          : v.format === "html" ? text : stripHtml(text);
+        return sanitizeForLLM(raw, "web_fetch");
       } finally {
         clearTimeout(timeout);
       }

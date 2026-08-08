@@ -37,6 +37,8 @@ export type { QuestionInput, QuestionHandler } from "./question-tool.js";
 export { createTodoWriteTool } from "./todo-tool.js";
 export { createWebSearchTool } from "./web-search-tool.js";
 export type { WebSearchToolConfig } from "./web-search-tool.js";
+export { createToolSearchTool } from "./tool-search.js";
+export type { ToolSearchInput, ToolSearchResult } from "./tool-search.js";
 
 // Provider system
 export { ToolProviderRegistry } from "./provider.js";

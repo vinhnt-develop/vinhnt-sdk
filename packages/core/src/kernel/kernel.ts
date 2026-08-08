@@ -29,6 +29,7 @@ import { KernelError } from "./kernel-error.js";
 import type { KernelErrorCode } from "./kernel-error.js";
 import { runLoop as executeRunLoop } from "./run-loop.js";
 import type { RunLoopDeps } from "./run-loop.js";
+import { LifecycleManager, type LifecycleResource } from "./lifecycle-manager.js";
 import {
   emitEvent as sessionEmit,
   addSessionMessage as sessionAddMessage,
@@ -92,6 +93,7 @@ export class AgentKernel {
   private readonly sessionDeps: KernelSessionDeps;
   private readonly subAgentDeps: SubAgentRunnerDeps;
   private readonly runSessionStates = new Map<RunId, SessionRuntimeState | undefined>();
+  private readonly lifecycleManager: LifecycleManager;
 
   constructor(config: AgentKernelConfig) {
     this.store = config.store;
@@ -122,17 +124,17 @@ export class AgentKernel {
       store: config.store,
       eventBus: config.eventBus,
       pluginManager: config.pluginManager,
-      approvalStore: config.approvalStore,
-      autoApprovalEnabled: config.autoApprovalEnabled,
+      approvalStore: config.permissions?.approvalStore,
+      autoApprovalEnabled: config.permissions?.autoApprovalEnabled,
     });
-    if (config.globalPermissionRules) {
-      this.permissionGate.setGlobalRules(config.globalPermissionRules);
+    if (config.permissions?.globalPermissionRules) {
+      this.permissionGate.setGlobalRules(config.permissions.globalPermissionRules);
     }
-    if (config.permissionRiskDefaults) {
-      this.permissionGate.setRiskOverrides(config.permissionRiskDefaults as Partial<Record<string, string>>);
+    if (config.permissions?.permissionRiskDefaults) {
+      this.permissionGate.setRiskOverrides(config.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
     }
-    if (config.topLevelPermissionRules) {
-      this.permissionGate.setTopLevelRules(config.topLevelPermissionRules);
+    if (config.permissions?.topLevelPermissionRules) {
+      this.permissionGate.setTopLevelRules(config.permissions.topLevelPermissionRules);
     }
     this.maxTokens = config.maxTokens ?? 4096;
     const maxTokens = this.maxTokens;
@@ -161,7 +163,7 @@ this.stepExecutor = new StepExecutor({
       maxSelfCorrectAttempts: this.maxSelfCorrectAttempts,
       selfCorrectOnFailure: this.selfCorrectOnFailure,
       doomLoopThreshold: this.doomLoopThreshold,
-      ...(config.externalDirectoryAccess !== undefined ? { externalDirectoryAccess: config.externalDirectoryAccess } : {}),
+      ...(config.permissions?.externalDirectoryAccess !== undefined ? { externalDirectoryAccess: config.permissions.externalDirectoryAccess } : {}),
       ...(config.workspaceRoot !== undefined ? { workspaceRoot: config.workspaceRoot } : {}),
       currentAgent: this.currentAgent,
       saga: this.saga,
@@ -198,6 +200,8 @@ this.stepExecutor = new StepExecutor({
       },
       runFn: (prompt, ctx, sessionId, _agentOverride) => this.run(prompt, ctx, sessionId, undefined, _agentOverride),
     };
+
+    this.lifecycleManager = new LifecycleManager();
   }
 
   /** Register a tool definition for the agent to call. Invalidates tool cache. */
@@ -493,7 +497,7 @@ this.stepExecutor = new StepExecutor({
    */
   reconfigure(partial: Partial<Pick<AgentKernelConfig,
     "model" | "maxTokens" | "maxSteps" | "stepTimeout" | "thinkingBudget" | "thinkingPrompt" |
-    "compactionThreshold" | "globalPermissionRules" | "permissionRiskDefaults" | "topLevelPermissionRules"
+    "compactionThreshold" | "permissions"
   >>): void {
     if (partial.model) {
       this.modelCaller.setDefaultModel(partial.model);
@@ -518,14 +522,14 @@ this.stepExecutor = new StepExecutor({
     if (partial.compactionThreshold !== undefined) {
       this.compactionThreshold = partial.compactionThreshold;
     }
-    if (partial.globalPermissionRules) {
-      this.permissionGate.setGlobalRules(partial.globalPermissionRules);
+    if (partial.permissions?.globalPermissionRules) {
+      this.permissionGate.setGlobalRules(partial.permissions.globalPermissionRules);
     }
-    if (partial.permissionRiskDefaults) {
-      this.permissionGate.setRiskOverrides(partial.permissionRiskDefaults as Partial<Record<string, string>>);
+    if (partial.permissions?.permissionRiskDefaults) {
+      this.permissionGate.setRiskOverrides(partial.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
     }
-    if (partial.topLevelPermissionRules) {
-      this.permissionGate.setTopLevelRules(partial.topLevelPermissionRules);
+    if (partial.permissions?.topLevelPermissionRules) {
+      this.permissionGate.setTopLevelRules(partial.permissions.topLevelPermissionRules);
     }
     this.cachedTools = null;
   }
@@ -553,6 +557,22 @@ this.stepExecutor = new StepExecutor({
   /** Abort all currently running sessions. */
   cancelCurrentRun(): void {
     this.stateMachine.cancelAll();
+  }
+
+  /** Register a lifecycle resource for graceful shutdown. */
+  registerLifecycleResource(resource: LifecycleResource): void {
+    this.lifecycleManager.register(resource);
+  }
+
+  /** Unregister a lifecycle resource. */
+  unregisterLifecycleResource(id: string): void {
+    this.lifecycleManager.unregister(id);
+  }
+
+  /** Gracefully shut down all registered lifecycle resources. */
+  async shutdown(): Promise<{ success: string[]; failed: { id: string; error: unknown }[] }> {
+    this.cancelCurrentRun();
+    return this.lifecycleManager.shutdown();
   }
 
   private async runLoop(

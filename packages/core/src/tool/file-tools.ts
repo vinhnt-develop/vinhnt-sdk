@@ -5,6 +5,7 @@ import { FileReadTracker } from "./read-tracker.js";
 import { generateDiff } from "./diff.js";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
+import { sanitizeForLLM } from "../security/input-sanitizer.js";
 
 const filePathField = z.string().min(1);
 
@@ -152,7 +153,8 @@ export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileRead
       }
       tracker?.trackRead(target, st.mtimeMs);
       const content = await readFile(target, "utf-8");
-      return v.stripTrailingNewline ? content.replace(/\n$/, "") : content;
+      const result = v.stripTrailingNewline ? content.replace(/\n$/, "") : content;
+      return sanitizeForLLM(result, "read_file");
     },
   }).toDefinition();
 }

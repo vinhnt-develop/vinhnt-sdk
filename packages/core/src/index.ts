@@ -53,8 +53,8 @@ export type { ToolPermissionRule, ToolMaterialization } from "./tool/registry.js
 export { ToolProviderRegistry } from "./tool/provider.js";
 export type { ToolProvider } from "./tool/provider.js";
 export { validateInput, ToolInputError } from "./tool/validate.js";
-export { ToolSandbox, signalToToolContext } from "./tool/sandbox.js";
-export type { SandboxConfig } from "./tool/sandbox.js";
+export { ToolSandbox, signalToToolContext, createSandbox } from "./tool/sandbox.js";
+export type { SandboxConfig, SandboxScope, ProcessSandbox, SandboxResult } from "./tool/sandbox.js";
 export { ToolRuntime } from "./tool/runtime.js";
 export type { ToolExecutionResult, ToolRuntimeConfig, ToolHook } from "./tool/runtime.js";
 export { createKernelTools, createPluginToolHook } from "./tool/bridge.js";
@@ -141,14 +141,15 @@ export type { MemoryItem, MemoryStore, MemoryTier, Skill, CompressorOptions, Rev
 
 // === Kernel (core runtime) ===
 export { AgentKernel, KernelError, CircuitBreaker, CircuitBreakerOpenError } from "./kernel/kernel.js";
-export type { AgentKernelConfig, RunState, KernelErrorCode, CircuitState, CircuitBreakerOptions } from "./kernel/kernel.js";
-export type { RunHandle } from "./kernel/kernel-types.js";
+export type { RunState, KernelErrorCode, CircuitState, CircuitBreakerOptions } from "./kernel/kernel.js";
+export type { AgentKernelConfig, RunHandle, KernelSandboxConfig, PermissionConfig, ModelRoutingConfig, HookConfig } from "./kernel/kernel-types.js";
 export { RunStateMachine } from "./kernel/run-state.js";
 export { PermissionGate } from "./kernel/permission-gate.js";
 export type { PermissionCheckResult, ApprovalDecision, DynamicRule } from "./kernel/permission-gate.js";
 export { ModelCaller } from "./kernel/model-caller.js";
 export { evaluateStopConditions, toToolCallOutcome } from "./kernel/termination.js";
 export type { StopCondition, TerminationPolicy, ToolCallOutcome, StepVerificationContext } from "./kernel/termination.js";
+export { LifecycleManager, type LifecycleResource, type LifecycleManagerConfig } from "./kernel/lifecycle-manager.js";
 export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
 export { ToolSaga } from "./kernel/tool-saga.js";
 export { DefaultPluginManager } from "./plugin/manager.js";
@@ -170,3 +171,7 @@ export type { Traceable } from "./tracer.js";
 // === Logger ===
 export { setLogger, setLogLevel, getLogger } from "./logger.js";
 export type { Logger, LogLevel } from "./logger.js";
+
+// === Security ===
+export { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "./security/input-sanitizer.js";
+export { redactSecrets, detectSecrets, createRedactingLogger } from "./security/secret-redactor.js";

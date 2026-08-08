@@ -3,6 +3,9 @@ import type { ToolContext } from "./definitions.js";
 import { commandPattern } from "./arity.js";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
+import { detectInjectionPatterns } from "../security/input-sanitizer.js";
+import { createSandbox, type SandboxScope } from "./sandbox.js";
+import { parseCommand } from "./shell-parser.js";
 
 const ExecuteCommandSchema = z.object({
   command: z.string().min(1),
@@ -16,6 +19,8 @@ export interface ShellToolConfig {
   maxTimeoutMs?: number;
   /** If true, prompts for permission before executing shell commands (default: true) */
   askPermission?: boolean;
+  /** Sandbox scope for command execution (default: "host") */
+  sandboxScope?: SandboxScope;
 }
 
 interface ExecResult {
@@ -70,42 +75,12 @@ function execAsync(
   });
 }
 
-function parseCommand(cmd: string): { file: string; args: string[] } {
-  const trimmed = cmd.trim();
-  if (!trimmed) return { file: "", args: [] };
-
-  const tokens: string[] = [];
-  let i = 0;
-  let current = "";
-  let inSingle = false;
-  let inDouble = false;
-
-  while (i < trimmed.length) {
-    const ch = trimmed[i] ?? "";
-    if (inSingle) {
-      if (ch === "'") { inSingle = false; }
-      else { current += ch; }
-      i++;
-    } else if (inDouble) {
-      if (ch === '"') { inDouble = false; }
-      else if (ch === "\\" && i + 1 < trimmed.length) { current += trimmed[i + 1]; i += 2; }
-      else { current += ch; i++; }
-    } else if (ch === "'") { inSingle = true; i++; }
-    else if (ch === '"') { inDouble = true; i++; }
-    else if (ch === "\\" && i + 1 < trimmed.length) { current += trimmed[i + 1]; i += 2; }
-    else if (/\s/.test(ch)) {
-      if (current) { tokens.push(current); current = ""; }
-      i++;
-    }
-    else { current += ch; i++; }
-  }
-  if (current) tokens.push(current);
-
-  if (tokens.length === 0) return { file: "", args: [] };
-  return { file: tokens[0]!, args: tokens.slice(1) };
-}
-
 export function createShellTool(config: ShellToolConfig) {
+  const sandbox = createSandbox({
+    defaultTimeoutMs: config.defaultTimeoutMs,
+    scope: config.sandboxScope ?? "host",
+  });
+
   return defineTool<{ command: string; timeoutMs?: number }, ExecResult>({
     name: "execute_command",
     description: "Execute a shell command in the workspace directory. Returns stdout and stderr.",
@@ -124,6 +99,16 @@ export function createShellTool(config: ShellToolConfig) {
       const root = typeof config.workspaceRoot === "function" ? config.workspaceRoot() : config.workspaceRoot;
       const timeout = Math.min(v.timeoutMs ?? config.defaultTimeoutMs, config.maxTimeoutMs ?? 300_000);
 
+      // Check for prompt injection patterns in command
+      const injections = detectInjectionPatterns(v.command);
+      if (injections.length > 0) {
+        return {
+          stdout: "",
+          stderr: `Blocked: command contains suspected injection patterns: ${injections.join(", ")}`,
+          exitCode: 1,
+        };
+      }
+
       if (config.askPermission !== false) {
         const reply = await ctx.ask({
           permission: "shell",
@@ -136,7 +121,16 @@ export function createShellTool(config: ShellToolConfig) {
         }
       }
 
-      return execAsync(v.command, root, timeout, ctx.signal, ctx.env);
+      // Use sandbox for execution
+      const result = await sandbox.execute({
+        command: v.command,
+        cwd: root,
+        timeoutMs: timeout,
+        env: ctx.env,
+        signal: ctx.signal,
+      });
+
+      return result.result;
     },
   }).toDefinition();
 }

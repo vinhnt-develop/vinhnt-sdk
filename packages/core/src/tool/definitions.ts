@@ -19,5 +19,9 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   readonly inputZodSchema?: z.ZodType<TInput>;
   /** Zod schema for runtime output validation (carried from defineTool). */
   readonly outputZodSchema?: z.ZodType<TOutput>;
+  /** If true, tool is not loaded into context until explicitly requested via search. */
+  readonly deferred?: boolean;
+  /** Tags for tool search (e.g. ["file", "read", "search"]). */
+  readonly tags?: readonly string[];
   execute(input: TInput, ctx: ToolContext): Promise<TOutput>;
 }

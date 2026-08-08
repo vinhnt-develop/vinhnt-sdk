@@ -6,6 +6,8 @@ export { Tracer } from "./tracer.js";
 export { AuditLog } from "./audit.js";
 export { OTelTracerSink } from "./otel-sink.js";
 export { createObservabilityPlugin } from "./plugin.js";
+export { CostTracker } from "./cost-tracker.js";
+export type { CostEntry, CostSummary, CostTrackerConfig } from "./cost-tracker.js";
 export type { LogLevel, LogEntry, LoggerSink, TraceContextProvider } from "./logger.js";
 export type { Span, SpanEvent, TracerSink, TraceContext } from "./tracer.js";
 export type { AuditAction, AuditEntry, AuditSink, AuditQuery, AuditQueryResult } from "./audit.js";

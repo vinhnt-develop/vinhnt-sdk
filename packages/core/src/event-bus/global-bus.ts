@@ -15,6 +15,8 @@ declare global {
   var __vnt_global_event_bus__: GlobalEventBus | undefined;
 }
 
+let defaultInstance: GlobalEventBus | undefined;
+
 export function getGlobalEventBus(): GlobalEventBus {
   if (!globalThis.__vnt_global_event_bus__) {
     globalThis.__vnt_global_event_bus__ = new GlobalEventBus();
@@ -26,9 +28,15 @@ export class GlobalEventBus implements EventBus {
   private emitter = new EventEmitter();
   private durableEvents = new Map<string, TypedEvent<unknown>[]>();
   private redisAdapter: RedisAdapter | null = null;
+  private readonly id: string;
 
-  constructor() {
+  constructor(id?: string) {
+    this.id = id ?? `global-${crypto.randomUUID().slice(0, 8)}`;
     this.emitter.setMaxListeners(Infinity);
+  }
+
+  getId(): string {
+    return this.id;
   }
 
   setRedisAdapter(adapter: RedisAdapter): void {

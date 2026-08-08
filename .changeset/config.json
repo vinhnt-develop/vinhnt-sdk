@@ -2,7 +2,22 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@vinhnt-sdk/schema",
+      "@vinhnt-sdk/config",
+      "@vinhnt-sdk/api",
+      "@vinhnt-sdk/core",
+      "@vinhnt-sdk/plugin",
+      "@vinhnt-sdk/adapters",
+      "@vinhnt-sdk/mcp",
+      "@vinhnt-sdk/lsp",
+      "@vinhnt-sdk/rag",
+      "@vinhnt-sdk/store",
+      "@vinhnt-sdk/otel",
+      "@vinhnt-sdk/ui"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
