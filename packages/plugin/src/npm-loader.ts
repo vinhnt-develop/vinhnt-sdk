@@ -8,6 +8,55 @@ import type { Plugin } from "@vinhnt-sdk/core";
 
 const CACHE_DIR = ".vnt/plugins";
 
+/**
+ * Package manager interface — user tự implement cho npm, pnpm, yarn, bun.
+ */
+export interface PackageManager {
+  /** Install a package */
+  install(spec: string, cwd: string): Promise<void>;
+  /** Uninstall a package */
+  uninstall(spec: string, cwd: string): Promise<void>;
+}
+
+/**
+ * Default npm package manager — convenience only.
+ */
+export class NpmPackageManager implements PackageManager {
+  async install(spec: string, cwd: string): Promise<void> {
+    await execAsync("npm", ["install", spec, "--save", "--no-audit", "--no-fund"], cwd);
+  }
+
+  async uninstall(spec: string, cwd: string): Promise<void> {
+    await execAsync("npm", ["uninstall", spec], cwd);
+  }
+}
+
+/**
+ * pnpm package manager — convenience only.
+ */
+export class PnpmPackageManager implements PackageManager {
+  async install(spec: string, cwd: string): Promise<void> {
+    await execAsync("pnpm", ["add", spec], cwd);
+  }
+
+  async uninstall(spec: string, cwd: string): Promise<void> {
+    await execAsync("pnpm", ["remove", spec], cwd);
+  }
+}
+
+/**
+ * yarn package manager — convenience only.
+ */
+export class YarnPackageManager implements PackageManager {
+  async install(spec: string, cwd: string): Promise<void> {
+    await execAsync("yarn", ["add", spec], cwd);
+  }
+
+  async uninstall(spec: string, cwd: string): Promise<void> {
+    await execAsync("yarn", ["remove", spec], cwd);
+  }
+}
+
 export interface NpmPluginLoaderOptions {
   cacheDir?: string;
   /** List of allowed package names. If provided, only these packages can be loaded. */
@@ -16,6 +65,8 @@ export interface NpmPluginLoaderOptions {
   knownHashes?: Record<string, string>;
   /** If true, log all plugin load attempts to console for audit. */
   auditLog?: boolean;
+  /** Package manager for installing plugins (default: npm) */
+  packageManager?: PackageManager;
 }
 
 /** Plugin audit log entry */
@@ -115,7 +166,11 @@ export async function loadPluginFromNpm(
       console.log(`[plugin-audit] INSTALL: ${installSpec}`);
     }
     console.log(`[plugin] Installing npm plugin: ${installSpec}`);
-    await execAsync("npm", ["install", installSpec, "--save", "--no-audit", "--no-fund"], cacheDir);
+
+    // Use injected package manager or default to npm
+    const pm = options?.packageManager ?? new NpmPackageManager();
+    await pm.install(installSpec, cacheDir);
+
     await writeFile(cacheMarker, Date.now().toString(), "utf-8");
     console.log(`[plugin] Installed: ${installSpec}`);
   }

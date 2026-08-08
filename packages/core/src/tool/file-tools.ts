@@ -546,10 +546,18 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
   }).toDefinition();
 }
 
-export function createListDirectoryTool(workspaceRoot: RootGetter, externalDirAccess?: boolean) {
+/**
+ * Default excluded directories — convenience only.
+ * User tự extend: `config.excludedDirs = [...DEFAULT_EXCLUDED_DIRS, "my-dir"]`
+ */
+export const DEFAULT_EXCLUDED_DIRS = ["node_modules", ".git"];
+
+export function createListDirectoryTool(workspaceRoot: RootGetter, externalDirAccess?: boolean, excludedDirs?: string[]) {
+  const dirsToExlude = excludedDirs ?? DEFAULT_EXCLUDED_DIRS;
+
   return defineTool<{ dirPath: string }, { name: string; type: string; path: string }[]>({
     name: "list_directory",
-    description: "List files and directories in a path (non-recursive). Skips node_modules and .git.",
+    description: `List files and directories in a path (non-recursive). Skips ${dirsToExlude.join(", ")}.`,
     risk: "read",
     input: ListDirectorySchema,
     jsonSchema: LIST_DIRECTORY_SCHEMA,
@@ -560,7 +568,7 @@ export function createListDirectoryTool(workspaceRoot: RootGetter, externalDirAc
       await ensurePathAccess(target, root, v.dirPath, ctx, externalDirAccess);
       const entries = await readdir(target, { withFileTypes: true });
       return entries
-        .filter((e) => e.name !== "node_modules" && e.name !== ".git")
+        .filter((e) => !dirsToExlude.includes(e.name))
         .map((e) => ({
           name: e.name,
           type: e.isDirectory() ? "directory" : "file",

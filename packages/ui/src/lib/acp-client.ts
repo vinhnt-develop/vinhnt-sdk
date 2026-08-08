@@ -1,6 +1,13 @@
 // Self-contained ACP client — JSON-RPC 2.0 over WebSocket
 // No dependency on @vinhnt-sdk/mcp to keep UI package clean
 
+import {
+  DEFAULT_ACP_URL,
+  DEFAULT_ACP_CLIENT_NAME,
+  DEFAULT_ACP_TIMEOUT,
+  DEFAULT_MAX_RECONNECT_ATTEMPTS,
+} from "../constants.js";
+
 type JsonRpcId = string | number | null;
 
 interface PendingRequest {
@@ -75,11 +82,11 @@ export class AcpClient {
 
   constructor(opts: AcpClientOptions = {}) {
     this.options = {
-      url: "ws://localhost:3101/acp",
+      url: DEFAULT_ACP_URL,
       clientId: crypto.randomUUID(),
-      clientName: "vnt-agent-ui",
-      timeout: 30000,
-      maxReconnectAttempts: 10,
+      clientName: DEFAULT_ACP_CLIENT_NAME,
+      timeout: DEFAULT_ACP_TIMEOUT,
+      maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
       onTaskEvent: () => {},
       onStatusChange: () => {},
       onReconnected: () => {},

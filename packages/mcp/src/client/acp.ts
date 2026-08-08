@@ -16,11 +16,30 @@ export type { TaskStreamNotification } from "./acp-types.js";
 
 export type TaskEventHandler = (event: TaskStreamNotification) => void;
 
+/**
+ * Default ACP WebSocket URL — convenience only.
+ * User tự inject URL: `new AcpClient({ url: userConfig.acpUrl })`
+ */
+export const DEFAULT_ACP_URL = "ws://localhost:3101/acp";
+
+/**
+ * Default ACP client name — convenience only.
+ * User tự inject: `new AcpClient({ clientName: "my-app" })`
+ */
+export const DEFAULT_ACP_CLIENT_NAME = "vnt-agent-acp";
+
+/**
+ * Default ACP request timeout — convenience only.
+ */
+export const DEFAULT_ACP_TIMEOUT = 30000;
+
 export interface AcpClientOptions {
-  url?: string;           // WebSocket URL, defaults to ws://localhost:3101/acp
+  /** WebSocket URL — user inject URL */
+  url?: string;
   clientId?: string;
   clientName?: string;
-  timeout?: number;       // Request timeout in ms, default 30000
+  /** Request timeout in ms */
+  timeout?: number;
   onTaskEvent?: TaskEventHandler;
   onDisconnect?: () => void;
 }
@@ -37,10 +56,10 @@ export class AcpClient {
 
   constructor(opts: AcpClientOptions = {}) {
     this.options = {
-      url: "ws://localhost:3101/acp",
+      url: DEFAULT_ACP_URL,
       clientId: crypto.randomUUID(),
-      clientName: "vnt-agent-acp",
-      timeout: 30000,
+      clientName: DEFAULT_ACP_CLIENT_NAME,
+      timeout: DEFAULT_ACP_TIMEOUT,
       onTaskEvent: () => {},
       onDisconnect: () => {},
       ...opts,

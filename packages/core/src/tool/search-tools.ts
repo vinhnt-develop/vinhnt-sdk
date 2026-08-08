@@ -20,24 +20,30 @@ function resolveRoot(r: RootGetter): string {
   return typeof r === "function" ? r() : r;
 }
 
-const IGNORE_DIRS = new Set(["node_modules", ".git", ".next", "dist", ".turbo", "coverage", ".vscode"]);
+/**
+ * Default ignored directories for search — convenience only.
+ * User tự extend: `config.ignoredDirs = [...DEFAULT_IGNORED_DIRS, "my-dir"]`
+ */
+export const DEFAULT_IGNORED_DIRS = ["node_modules", ".git", ".next", "dist", ".turbo", "coverage", ".vscode"];
 
-async function globRecursive(dir: string, pattern: string, base: string, results: string[]): Promise<void> {
+async function globRecursive(dir: string, pattern: string, base: string, results: string[], ignoreDirs: Set<string>): Promise<void> {
   const entries = await readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
-    if (IGNORE_DIRS.has(entry.name)) continue;
+    if (ignoreDirs.has(entry.name)) continue;
     const fullPath = join(dir, entry.name);
     const relPath = relative(base, fullPath);
     if (entry.name.includes(pattern) || relPath.includes(pattern)) {
       results.push(relPath);
     }
     if (entry.isDirectory()) {
-      await globRecursive(fullPath, pattern, base, results);
+      await globRecursive(fullPath, pattern, base, results, ignoreDirs);
     }
   }
 }
 
-export function createGlobFilesTool(workspaceRoot: RootGetter): ToolDefinition {
+export function createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs?: string[]): ToolDefinition {
+  const ignoreSet = new Set(ignoredDirs ?? DEFAULT_IGNORED_DIRS);
+
   return defineTool<{ pattern: string; maxResults?: number }, string[]>({
     name: "glob_files",
     description: "Recursively find files matching a pattern in the workspace.",
@@ -54,13 +60,15 @@ export function createGlobFilesTool(workspaceRoot: RootGetter): ToolDefinition {
     async execute(v, _ctx) {
       const root = resolveRoot(workspaceRoot);
       const results: string[] = [];
-      await globRecursive(root, v.pattern, root, results);
+      await globRecursive(root, v.pattern, root, results, ignoreSet);
       return results.slice(0, v.maxResults ?? 50);
     },
   }).toDefinition();
 }
 
-export function createGrepFilesTool(workspaceRoot: RootGetter): ToolDefinition {
+export function createGrepFilesTool(workspaceRoot: RootGetter, ignoredDirs?: string[]): ToolDefinition {
+  const ignoreSet = new Set(ignoredDirs ?? DEFAULT_IGNORED_DIRS);
+
   return defineTool<{ pattern: string; include?: string; maxResults?: number }, { file: string; line: number; content: string }[]>({
     name: "grep_files",
     description: "Search file contents for a regex pattern. Returns matches with line numbers.",
@@ -86,7 +94,7 @@ export function createGrepFilesTool(workspaceRoot: RootGetter): ToolDefinition {
         const entries = await readdir(dir, { withFileTypes: true });
         for (const entry of entries) {
           if (matches.length >= maxResults) return;
-          if (IGNORE_DIRS.has(entry.name)) continue;
+          if (ignoreSet.has(entry.name)) continue;
           const fullPath = join(dir, entry.name);
           if (entry.isDirectory()) {
             await searchDir(fullPath);
