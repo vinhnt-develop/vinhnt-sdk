@@ -143,6 +143,7 @@ export type { MemoryItem, MemoryStore, MemoryTier, Skill, CompressorOptions, Rev
 export { AgentKernel, KernelError, CircuitBreaker, CircuitBreakerOpenError } from "./kernel/kernel.js";
 export type { RunState, KernelErrorCode, CircuitState, CircuitBreakerOptions } from "./kernel/kernel.js";
 export type { AgentKernelConfig, RunHandle, KernelSandboxConfig, PermissionConfig, ModelRoutingConfig, HookConfig } from "./kernel/kernel-types.js";
+export { normalizeConfig } from "./kernel/kernel-types.js";
 export { RunStateMachine } from "./kernel/run-state.js";
 export { PermissionGate } from "./kernel/permission-gate.js";
 export type { PermissionCheckResult, ApprovalDecision, DynamicRule } from "./kernel/permission-gate.js";

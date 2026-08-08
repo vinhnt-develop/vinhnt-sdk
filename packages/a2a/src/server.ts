@@ -12,7 +12,7 @@ export class A2AServer {
     this.config = {
       agentCard: config.agentCard,
       port: config.port ?? 3000,
-      host: config.host ?? "127.0.0.1",
+      host: config.host ?? "0.0.0.0",
       taskHandler: config.taskHandler,
     };
   }

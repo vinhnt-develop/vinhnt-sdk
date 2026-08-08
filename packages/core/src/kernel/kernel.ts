@@ -45,6 +45,7 @@ import {
   type SubAgentRunnerDeps,
 } from "./sub-agent-runner.js";
 import type { AgentKernelConfig, RunHandle } from "./kernel-types.js";
+import { normalizeConfig } from "./kernel-types.js";
 export type { AgentKernelConfig, RunState, KernelErrorCode };
 export { CircuitBreaker, CircuitBreakerOpenError, type CircuitState, type CircuitBreakerOptions } from "./circuit-breaker.js";
 export { KernelError } from "./kernel-error.js";
@@ -96,56 +97,57 @@ export class AgentKernel {
   private readonly lifecycleManager: LifecycleManager;
 
   constructor(config: AgentKernelConfig) {
-    this.store = config.store;
-    this.maxSteps = config.maxSteps ?? DEFAULT_MAX_STEPS;
-    this.maxToolCallsPerStep = config.maxToolCallsPerStep ?? DEFAULT_MAX_TOOL_CALLS_PER_STEP;
-    this.compactor = config.compactor ?? undefined;
-    this.systemContext = config.systemContext;
-    this.thinkingBudget = config.thinkingBudget ?? 0;
-    this.selfCorrectOnFailure = config.selfCorrectOnFailure ?? false;
-    this.maxSelfCorrectAttempts = config.maxSelfCorrectAttempts ?? 3;
-    this.maxSubAgentDepth = config.maxSubAgentDepth ?? 3;
-    this.sessionStore = config.sessionStore;
-    this.agentRegistry = config.agentRegistry;
-    this.pluginManager = config.pluginManager;
-    this.eventBus = config.eventBus;
-    this.sessionState = config.sessionState;
-    this.toolRegistry = config.toolRegistry;
-    this.toolProviderRegistry = config.toolProviderRegistry;
-    this.sessionTitleGenerator = config.sessionTitleGenerator;
-    this.stepTimeout = config.stepTimeout ?? 120_000;
-    this.doomLoopThreshold = config.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
-    this.compactionThreshold = config.compactionThreshold;
-    this.termination = config.termination;
-    this.circuitBreaker = config.circuitBreaker ?? (config.circuitBreakerOptions ? new CircuitBreaker(config.circuitBreakerOptions) : new CircuitBreaker());
+    const normalized = normalizeConfig(config as unknown as Record<string, unknown>);
+    this.store = normalized.store;
+    this.maxSteps = normalized.maxSteps ?? DEFAULT_MAX_STEPS;
+    this.maxToolCallsPerStep = normalized.maxToolCallsPerStep ?? DEFAULT_MAX_TOOL_CALLS_PER_STEP;
+    this.compactor = normalized.compactor ?? undefined;
+    this.systemContext = normalized.systemContext;
+    this.thinkingBudget = normalized.thinkingBudget ?? 0;
+    this.selfCorrectOnFailure = normalized.selfCorrectOnFailure ?? false;
+    this.maxSelfCorrectAttempts = normalized.maxSelfCorrectAttempts ?? 3;
+    this.maxSubAgentDepth = normalized.maxSubAgentDepth ?? 3;
+    this.sessionStore = normalized.sessionStore;
+    this.agentRegistry = normalized.agentRegistry;
+    this.pluginManager = normalized.pluginManager;
+    this.eventBus = normalized.eventBus;
+    this.sessionState = normalized.sessionState;
+    this.toolRegistry = normalized.toolRegistry;
+    this.toolProviderRegistry = normalized.toolProviderRegistry;
+    this.sessionTitleGenerator = normalized.sessionTitleGenerator;
+    this.stepTimeout = normalized.stepTimeout ?? 120_000;
+    this.doomLoopThreshold = normalized.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
+    this.compactionThreshold = normalized.compactionThreshold;
+    this.termination = normalized.termination;
+    this.circuitBreaker = normalized.circuitBreaker ?? (normalized.circuitBreakerOptions ? new CircuitBreaker(normalized.circuitBreakerOptions) : new CircuitBreaker());
     this.saga = new ToolSaga();
     this.stateMachine = new RunStateMachine();
     this.permissionGate = new PermissionGate({
-      store: config.store,
-      eventBus: config.eventBus,
-      pluginManager: config.pluginManager,
-      approvalStore: config.permissions?.approvalStore,
-      autoApprovalEnabled: config.permissions?.autoApprovalEnabled,
+      store: normalized.store,
+      eventBus: normalized.eventBus,
+      pluginManager: normalized.pluginManager,
+      approvalStore: normalized.permissions?.approvalStore,
+      autoApprovalEnabled: normalized.permissions?.autoApprovalEnabled,
     });
-    if (config.permissions?.globalPermissionRules) {
-      this.permissionGate.setGlobalRules(config.permissions.globalPermissionRules);
+    if (normalized.permissions?.globalPermissionRules) {
+      this.permissionGate.setGlobalRules(normalized.permissions.globalPermissionRules);
     }
-    if (config.permissions?.permissionRiskDefaults) {
-      this.permissionGate.setRiskOverrides(config.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
+    if (normalized.permissions?.permissionRiskDefaults) {
+      this.permissionGate.setRiskOverrides(normalized.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
     }
-    if (config.permissions?.topLevelPermissionRules) {
-      this.permissionGate.setTopLevelRules(config.permissions.topLevelPermissionRules);
+    if (normalized.permissions?.topLevelPermissionRules) {
+      this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);
     }
-    this.maxTokens = config.maxTokens ?? 4096;
+    this.maxTokens = normalized.maxTokens ?? 4096;
     const maxTokens = this.maxTokens;
-    const thinkingPrompt = config.thinkingPrompt ?? "Analyze the user's request and the conversation context. Think step by step about what needs to be done. Output your reasoning.";
+    const thinkingPrompt = normalized.thinkingPrompt ?? "Analyze the user's request and the conversation context. Think step by step about what needs to be done. Output your reasoning.";
     this.modelCaller = new ModelCaller({
-      defaultModel: config.model,
-      modelRegistry: config.modelRegistry,
+      defaultModel: normalized.model,
+      modelRegistry: normalized.modelRegistry,
       maxTokens,
       thinkingBudget: this.thinkingBudget,
       thinkingPrompt,
-      pluginManager: config.pluginManager,
+      pluginManager: normalized.pluginManager,
       emitEvent: (event, persist) => this.emitEvent(event, persist),
       modelForRun: (runId) => this.stateMachine.getModelForRun(runId),
       setModelForRun: (runId, model) => this.stateMachine.setModelForRun(runId, model),
@@ -155,23 +157,23 @@ export class AgentKernel {
 this.stepExecutor = new StepExecutor({
       store: { emitEvent: (event, persist) => this.emitEvent(event, persist) },
       addSessionMessage: (sid, role, content, extra) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
-      pluginManager: config.pluginManager,
+      pluginManager: normalized.pluginManager,
       permissionGate: this.permissionGate,
       modelCaller: this.modelCaller,
       maxToolCallsPerStep: this.maxToolCallsPerStep,
-      ...(config.maxConcurrentToolCalls !== undefined ? { maxConcurrentToolCalls: config.maxConcurrentToolCalls } : {}),
+      ...(normalized.maxConcurrentToolCalls !== undefined ? { maxConcurrentToolCalls: normalized.maxConcurrentToolCalls } : {}),
       maxSelfCorrectAttempts: this.maxSelfCorrectAttempts,
       selfCorrectOnFailure: this.selfCorrectOnFailure,
       doomLoopThreshold: this.doomLoopThreshold,
-      ...(config.permissions?.externalDirectoryAccess !== undefined ? { externalDirectoryAccess: config.permissions.externalDirectoryAccess } : {}),
-      ...(config.workspaceRoot !== undefined ? { workspaceRoot: config.workspaceRoot } : {}),
+      ...(normalized.permissions?.externalDirectoryAccess !== undefined ? { externalDirectoryAccess: normalized.permissions.externalDirectoryAccess } : {}),
+      ...(normalized.workspaceRoot !== undefined ? { workspaceRoot: normalized.workspaceRoot } : {}),
       currentAgent: this.currentAgent,
       saga: this.saga,
       findTool: (name) => self.findTool(name),
       hasTool: (name) => self.hasTool(name),
     });
-    if (config.tools) {
-      this.tools = [...config.tools];
+    if (normalized.tools) {
+      this.tools = [...normalized.tools];
     }
 
     this.sessionDeps = {
@@ -181,7 +183,7 @@ this.stepExecutor = new StepExecutor({
       sessionStore: this.sessionStore,
       modelCaller: this.modelCaller,
       saga: this.saga,
-      ...(config.noStore ? { noStore: true } : {}),
+      ...(normalized.noStore ? { noStore: true } : {}),
     };
 
     this.subAgentDeps = {
@@ -494,42 +496,46 @@ this.stepExecutor = new StepExecutor({
    * Hot-reload runtime-tunable settings without rebuilding the kernel.
    * Updates the default model, generation limits, permission rules and
    * risk overrides. New runs pick up the values immediately.
+   *
+   * Supports both nested format (`permissions: { ... }`) and legacy flat format
+   * (`globalPermissionRules: ...`, `permissionRiskDefaults: ...`).
    */
   reconfigure(partial: Partial<Pick<AgentKernelConfig,
     "model" | "maxTokens" | "maxSteps" | "stepTimeout" | "thinkingBudget" | "thinkingPrompt" |
     "compactionThreshold" | "permissions"
-  >>): void {
-    if (partial.model) {
-      this.modelCaller.setDefaultModel(partial.model);
+  >> & Record<string, unknown>): void {
+    const normalized = normalizeConfig(partial as Record<string, unknown>);
+    if (normalized.model) {
+      this.modelCaller.setDefaultModel(normalized.model);
     }
-    if (partial.maxTokens !== undefined) {
-      this.maxTokens = partial.maxTokens;
-      this.modelCaller.setRuntimeOptions({ maxTokens: partial.maxTokens });
+    if (normalized.maxTokens !== undefined) {
+      this.maxTokens = normalized.maxTokens;
+      this.modelCaller.setRuntimeOptions({ maxTokens: normalized.maxTokens });
     }
-    if (partial.maxSteps !== undefined) {
-      this.maxSteps = partial.maxSteps;
+    if (normalized.maxSteps !== undefined) {
+      this.maxSteps = normalized.maxSteps;
     }
-    if (partial.stepTimeout !== undefined) {
-      this.stepTimeout = partial.stepTimeout;
+    if (normalized.stepTimeout !== undefined) {
+      this.stepTimeout = normalized.stepTimeout;
     }
-    if (partial.thinkingBudget !== undefined) {
-      this.thinkingBudget = partial.thinkingBudget;
-      this.modelCaller.setRuntimeOptions({ thinkingBudget: partial.thinkingBudget });
+    if (normalized.thinkingBudget !== undefined) {
+      this.thinkingBudget = normalized.thinkingBudget;
+      this.modelCaller.setRuntimeOptions({ thinkingBudget: normalized.thinkingBudget });
     }
-    if (partial.thinkingPrompt !== undefined) {
-      this.modelCaller.setRuntimeOptions({ thinkingPrompt: partial.thinkingPrompt });
+    if (normalized.thinkingPrompt !== undefined) {
+      this.modelCaller.setRuntimeOptions({ thinkingPrompt: normalized.thinkingPrompt });
     }
-    if (partial.compactionThreshold !== undefined) {
-      this.compactionThreshold = partial.compactionThreshold;
+    if (normalized.compactionThreshold !== undefined) {
+      this.compactionThreshold = normalized.compactionThreshold;
     }
-    if (partial.permissions?.globalPermissionRules) {
-      this.permissionGate.setGlobalRules(partial.permissions.globalPermissionRules);
+    if (normalized.permissions?.globalPermissionRules) {
+      this.permissionGate.setGlobalRules(normalized.permissions.globalPermissionRules);
     }
-    if (partial.permissions?.permissionRiskDefaults) {
-      this.permissionGate.setRiskOverrides(partial.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
+    if (normalized.permissions?.permissionRiskDefaults) {
+      this.permissionGate.setRiskOverrides(normalized.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
     }
-    if (partial.permissions?.topLevelPermissionRules) {
-      this.permissionGate.setTopLevelRules(partial.permissions.topLevelPermissionRules);
+    if (normalized.permissions?.topLevelPermissionRules) {
+      this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);
     }
     this.cachedTools = null;
   }
