@@ -98,6 +98,27 @@ export class AgentKernel {
 
   constructor(config: AgentKernelConfig) {
     const normalized = normalizeConfig(config as unknown as Record<string, unknown>);
+
+    // Validate config values
+    if (normalized.maxSteps !== undefined && normalized.maxSteps < 1) {
+      throw new Error("maxSteps must be >= 1");
+    }
+    if (normalized.maxTokens !== undefined && normalized.maxTokens < 1) {
+      throw new Error("maxTokens must be >= 1");
+    }
+    if (normalized.stepTimeout !== undefined && normalized.stepTimeout < 1000) {
+      throw new Error("stepTimeout must be >= 1000ms");
+    }
+    if (normalized.maxToolCallsPerStep !== undefined && normalized.maxToolCallsPerStep < 1) {
+      throw new Error("maxToolCallsPerStep must be >= 1");
+    }
+    if (normalized.doomLoopThreshold !== undefined && normalized.doomLoopThreshold < 1) {
+      throw new Error("doomLoopThreshold must be >= 1");
+    }
+    if (normalized.compactionThreshold !== undefined && (normalized.compactionThreshold < 0 || normalized.compactionThreshold > 1)) {
+      throw new Error("compactionThreshold must be between 0 and 1");
+    }
+
     this.store = normalized.store;
     this.maxSteps = normalized.maxSteps ?? DEFAULT_MAX_STEPS;
     this.maxToolCallsPerStep = normalized.maxToolCallsPerStep ?? DEFAULT_MAX_TOOL_CALLS_PER_STEP;
