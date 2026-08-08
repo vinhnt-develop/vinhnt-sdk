@@ -1,8 +1,8 @@
 import type { ModelProvider } from "@vinhnt-sdk/core";
 import { AiSdkModelProvider, type AiProvider } from "./ai-sdk-adapter.js";
 import { getCapabilities, listFeatures, type ProviderCapabilities, type ProviderFeature } from "./capabilities.js";
-import { matchProvider } from "./model-patterns.js";
-import { PROVIDER_CATALOG, listCatalogProviders, type ProviderCatalogEntry } from "./provider-catalog.js";
+import { ModelPatternRegistry, DEFAULT_MODEL_PATTERNS, type ModelPattern } from "./model-patterns.js";
+import { DEFAULT_PROVIDER_CATALOG, listCatalogProviders, type ProviderCatalogEntry } from "./provider-catalog.js";
 import { searchExternalModels, fetchExternalModelCatalog, type ExternalModelInfo, type ExternalModelCost } from "./model-catalog.js";
 
 /** models.dev catalog provider id → curated provider name merge (dedupe). */
@@ -82,13 +82,17 @@ function catalogToProviderConfig(entry: ProviderCatalogEntry): ProviderConfig {
 /** Built-in providers derived from the curated provider catalog. */
 const BUILTIN_PROVIDERS: Record<string, ProviderConfig> = (() => {
   const map: Record<string, ProviderConfig> = {};
-  for (const entry of Object.values(PROVIDER_CATALOG)) {
+  for (const entry of Object.values(DEFAULT_PROVIDER_CATALOG)) {
     map[entry.id] = catalogToProviderConfig(entry);
   }
   return map;
 })();
 
-const API_KEY_PATTERNS: Array<{ pattern: RegExp; type: AiProvider; label: string }> = [
+/**
+ * Default API key patterns — convenience only.
+ * User tự extend: `registry.registerApiKeyPattern({ pattern: /^my-key/i, type: "openai-compatible", label: "My Provider" })`
+ */
+export const DEFAULT_API_KEY_PATTERNS: Array<{ pattern: RegExp; type: AiProvider; label: string }> = [
   { pattern: /^sk-proj-/i,    type: "openai",            label: "OpenAI" },
   { pattern: /^sk-ant-/i,     type: "anthropic",         label: "Anthropic" },
   { pattern: /^gsk_/i,        type: "openai-compatible", label: "Groq" },
@@ -96,7 +100,11 @@ const API_KEY_PATTERNS: Array<{ pattern: RegExp; type: AiProvider; label: string
   { pattern: /^8x[A-Za-z0-9]{30,}$/, type: "openai-compatible", label: "Mistral AI" },
 ];
 
-const BASE_URL_PROVIDER_MAP: Array<{ urlPattern: RegExp; name: string }> = [
+/**
+ * Default base URL provider map — convenience only.
+ * User tự extend: `registry.registerBaseUrlPattern({ urlPattern: /my-provider\.com/i, name: "my-provider" })`
+ */
+export const DEFAULT_BASE_URL_PROVIDER_MAP: Array<{ urlPattern: RegExp; name: string }> = [
   { urlPattern: /openai\.com/i,       name: "openai" },
   { urlPattern: /anthropic\.com/i,     name: "anthropic" },
   { urlPattern: /googleapis\.com/i,    name: "gemini" },
@@ -213,13 +221,36 @@ async function fetchGeminiModels(apiKey: string): Promise<{ models: ModelEntry[]
 
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
 
+export interface MultiProviderRegistryConfig {
+  cacheTtlMs?: number;
+  /** Custom model pattern registry (default: DEFAULT_MODEL_PATTERNS) */
+  modelPatterns?: ModelPatternRegistry;
+  /** Custom API key patterns (default: DEFAULT_API_KEY_PATTERNS) */
+  apiKeyPatterns?: Array<{ pattern: RegExp; type: AiProvider; label: string }>;
+  /** Custom base URL provider map (default: DEFAULT_BASE_URL_PROVIDER_MAP) */
+  baseUrlProviderMap?: Array<{ urlPattern: RegExp; name: string }>;
+}
+
 export class MultiProviderRegistry {
   private cacheTtlMs: number;
   private providers = new Map<string, ProviderConfig>(Object.entries(BUILTIN_PROVIDERS));
   private modelListCaches = new Map<string, ModelListCache>();
+  private modelPatterns: ModelPatternRegistry;
+  private apiKeyPatterns: Array<{ pattern: RegExp; type: AiProvider; label: string }>;
+  private baseUrlProviderMap: Array<{ urlPattern: RegExp; name: string }>;
 
-  constructor(cacheTtlMs?: number) {
-    this.cacheTtlMs = cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
+  constructor(config?: MultiProviderRegistryConfig | number) {
+    if (typeof config === "number") {
+      this.cacheTtlMs = config;
+      this.modelPatterns = new ModelPatternRegistry(DEFAULT_MODEL_PATTERNS);
+      this.apiKeyPatterns = DEFAULT_API_KEY_PATTERNS;
+      this.baseUrlProviderMap = DEFAULT_BASE_URL_PROVIDER_MAP;
+    } else {
+      this.cacheTtlMs = config?.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
+      this.modelPatterns = config?.modelPatterns ?? new ModelPatternRegistry(DEFAULT_MODEL_PATTERNS);
+      this.apiKeyPatterns = config?.apiKeyPatterns ?? DEFAULT_API_KEY_PATTERNS;
+      this.baseUrlProviderMap = config?.baseUrlProviderMap ?? DEFAULT_BASE_URL_PROVIDER_MAP;
+    }
   }
 
   /** Update cache TTL at runtime */
@@ -241,7 +272,7 @@ export class MultiProviderRegistry {
 
   listProvidersWithCapabilities(): ProviderWithCapabilities[] {
     return Array.from(this.providers.entries()).map(([name, cfg]) => {
-      const cat = PROVIDER_CATALOG[name];
+      const cat = DEFAULT_PROVIDER_CATALOG[name];
       return {
         name,
         type: cfg.type,
@@ -313,7 +344,7 @@ export class MultiProviderRegistry {
 
   private detectProviderType(_name: string, baseUrl?: string, apiKey?: string): AiProvider {
     if (baseUrl) {
-      const match = BASE_URL_PROVIDER_MAP.find((e) => e.urlPattern.test(baseUrl));
+      const match = this.baseUrlProviderMap.find((e) => e.urlPattern.test(baseUrl));
       if (match) {
         const existing = BUILTIN_PROVIDERS[match.name];
         if (existing) return existing.type;
@@ -321,7 +352,7 @@ export class MultiProviderRegistry {
     }
 
     if (apiKey) {
-      const match = API_KEY_PATTERNS.find((e) => e.pattern.test(apiKey));
+      const match = this.apiKeyPatterns.find((e) => e.pattern.test(apiKey));
       if (match) return match.type;
     }
 
@@ -502,8 +533,8 @@ export class MultiProviderRegistry {
       if (providerType && modelId.startsWith(providerType + "/")) return name;
     }
 
-    // Try smart pattern matching from model-patterns.ts
-    const matchedProvider = matchProvider(modelId);
+    // Try smart pattern matching from model-patterns registry
+    const matchedProvider = this.modelPatterns.matchProvider(modelId);
     if (matchedProvider && this.providers.has(matchedProvider)) return matchedProvider;
 
     return null;

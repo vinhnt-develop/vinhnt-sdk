@@ -21,41 +21,58 @@ function extractHeadingPath(lines: string[], startIdx: number): string {
   return headings.join(" > ");
 }
 
-/**
- * Detect the programming language from a filename.
- */
-function detectLanguage(filename: string): string | null {
-  const ext = filename.split(".").pop()?.toLowerCase();
-  const langMap: Record<string, string> = {
-    ts: "typescript",
-    tsx: "typescript",
-    js: "javascript",
-    jsx: "javascript",
-    py: "python",
-    rs: "rust",
-    go: "go",
-    java: "java",
-    cpp: "cpp",
-    c: "c",
-    cs: "csharp",
-    rb: "ruby",
-    php: "php",
-    swift: "swift",
-    kt: "kotlin",
-    zig: "zig",
-    elixir: "elixir",
-    ex: "elixir",
-    hs: "haskell",
-    scala: "scala",
-  };
-  return ext ? (langMap[ext] ?? null) : null;
+export interface LanguageMap {
+  [extension: string]: string;
+}
+
+export interface CodeBoundaryPattern {
+  pattern: RegExp;
+  language: string[];
+}
+
+export interface ChunkerConfig {
+  /** Custom language map for file extension → language detection */
+  languageMap?: LanguageMap;
+  /** Custom code boundary patterns for chunking */
+  codeBoundaryPatterns?: CodeBoundaryPattern[];
+  /** Default max lines per chunk */
+  defaultMaxLines?: number;
+  /** Default overlap lines */
+  defaultOverlapLines?: number;
 }
 
 /**
- * Patterns for detecting code boundaries (function/class/method declarations).
- * These are language-agnostic regex patterns that work across multiple languages.
+ * Default language map — convenience only.
+ * User tự extend: `config.languageMap = { ...DEFAULT_LANGUAGE_MAP, mylang: "my-language" }`
  */
-const CODE_BOUNDARY_PATTERNS: Array<{ pattern: RegExp; language: string[] }> = [
+export const DEFAULT_LANGUAGE_MAP: LanguageMap = {
+  ts: "typescript",
+  tsx: "typescript",
+  js: "javascript",
+  jsx: "javascript",
+  py: "python",
+  rs: "rust",
+  go: "go",
+  java: "java",
+  cpp: "cpp",
+  c: "c",
+  cs: "csharp",
+  rb: "ruby",
+  php: "php",
+  swift: "swift",
+  kt: "kotlin",
+  zig: "zig",
+  elixir: "elixir",
+  ex: "elixir",
+  hs: "haskell",
+  scala: "scala",
+};
+
+/**
+ * Default code boundary patterns — convenience only.
+ * User tự extend: `config.codeBoundaryPatterns = [...DEFAULT_CODE_BOUNDARY_PATTERNS, { pattern: /my-pattern/, language: ["my-lang"] }]`
+ */
+export const DEFAULT_CODE_BOUNDARY_PATTERNS: CodeBoundaryPattern[] = [
   // TypeScript/JavaScript function declarations
   { pattern: /^(?:export\s+)?(?:async\s+)?function\s+\w+/, language: ["typescript", "javascript"] },
   // TypeScript/JavaScript arrow functions (top-level)
@@ -77,13 +94,21 @@ const CODE_BOUNDARY_PATTERNS: Array<{ pattern: RegExp; language: string[] }> = [
 ];
 
 /**
+ * Detect the programming language from a filename.
+ */
+function detectLanguage(filename: string, languageMap: LanguageMap): string | null {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  return ext ? (languageMap[ext] ?? null) : null;
+}
+
+/**
  * Check if a line is a code boundary based on language patterns.
  */
-function isCodeBoundary(line: string, language: string | null): boolean {
+function isCodeBoundary(line: string, language: string | null, patterns: CodeBoundaryPattern[]): boolean {
   const trimmed = line.trim();
   if (!trimmed) return false;
 
-  for (const { pattern, language: langs } of CODE_BOUNDARY_PATTERNS) {
+  for (const { pattern, language: langs } of patterns) {
     // If pattern has specific languages, check if current language matches
     if (langs.length > 0 && language && !langs.includes(language)) {
       continue;
@@ -107,12 +132,12 @@ function isCommentOrEmpty(line: string): boolean {
  * Split content at code boundaries (function/class declarations).
  * Returns arrays of line indices where chunks should be split.
  */
-function findCodeBoundaries(lines: string[], language: string | null): number[] {
+function findCodeBoundaries(lines: string[], language: string | null, patterns: CodeBoundaryPattern[]): number[] {
   const boundaries: number[] = [0]; // Always start at line 0
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
-    if (line && isCodeBoundary(line, language)) {
+    if (line && isCodeBoundary(line, language, patterns)) {
       // Don't split in the middle of comments
       if (!isCommentOrEmpty(line)) {
         boundaries.push(i);
@@ -127,19 +152,22 @@ export function chunkDocument(
   doc: Document,
   content: string,
   options: ChunkOptions = {},
+  config?: ChunkerConfig,
 ): Chunk[] {
-  const maxLines = options.maxLines ?? DEFAULT_MAX_LINES;
-  const overlapLines = options.overlapLines ?? DEFAULT_OVERLAP_LINES;
+  const maxLines = options.maxLines ?? config?.defaultMaxLines ?? DEFAULT_MAX_LINES;
+  const overlapLines = options.overlapLines ?? config?.defaultOverlapLines ?? DEFAULT_OVERLAP_LINES;
+  const languageMap = config?.languageMap ?? DEFAULT_LANGUAGE_MAP;
+  const codeBoundaryPatterns = config?.codeBoundaryPatterns ?? DEFAULT_CODE_BOUNDARY_PATTERNS;
   const lines = content.split("\n");
   const chunks: Chunk[] = [];
   let ordinal = 0;
 
   // Detect language from document source URI
-  const language = detectLanguage(doc.sourceUri);
+  const language = detectLanguage(doc.sourceUri, languageMap);
 
   // Use code-aware chunking for code files
   if (language) {
-    return chunkCodeDocument(doc, content, lines, language, options);
+    return chunkCodeDocument(doc, content, lines, language, options, codeBoundaryPatterns);
   }
 
   // Default: line-based chunking for non-code files
@@ -183,9 +211,10 @@ function chunkCodeDocument(
   lines: string[],
   language: string,
   options: ChunkOptions,
+  codeBoundaryPatterns: CodeBoundaryPattern[],
 ): Chunk[] {
   const maxTokensPerChunk = options.chunkSize ?? 150; // 150 tokens for code
-  const boundaries = findCodeBoundaries(lines, language);
+  const boundaries = findCodeBoundaries(lines, language, codeBoundaryPatterns);
   const chunks: Chunk[] = [];
   let ordinal = 0;
 

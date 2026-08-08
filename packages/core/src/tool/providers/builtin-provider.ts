@@ -4,7 +4,7 @@ import { createReadFileTool, createWriteFileTool, createEditFileTool, createAppl
 import { createShellTool } from "../shell-tool.js";
 import { createGlobFilesTool, createGrepFilesTool } from "../search-tools.js";
 import { createWebFetchTool } from "../web-tools.js";
-import { createWebSearchTool } from "../web-search-tool.js";
+import { createWebSearchTool, type WebSearchProvider } from "../web-search-tool.js";
 import { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool } from "../git-tools.js";
 import { createTodoWriteTool } from "../todo-tool.js";
 import { createQuestionTool } from "../question-tool.js";
@@ -15,6 +15,12 @@ import type { ToolRegistry } from "../registry.js";
 export interface BuiltinToolConfig {
   workspaceRoot: string | (() => string);
   shell: ShellToolConfig;
+  /** Web search provider — injectable dependency */
+  webSearchProvider?: WebSearchProvider;
+  /**
+   * @deprecated Use webSearchProvider instead. Will be removed in next major version.
+   * Kept for backward compatibility — creates a TavilySearchProvider automatically.
+   */
   webSearchApiKey?: string | (() => string);
 }
 
@@ -44,7 +50,7 @@ export class BuiltinToolProvider implements ToolProvider {
   }
 
   private createTools(): ToolDefinition[] {
-    const { workspaceRoot, shell, webSearchApiKey } = this.config;
+    const { workspaceRoot, shell } = this.config;
 
     const tools: ToolDefinition[] = [
       // File tools
@@ -63,7 +69,7 @@ export class BuiltinToolProvider implements ToolProvider {
 
       // Web tools
       createWebFetchTool(),
-      ...(webSearchApiKey ? [createWebSearchTool({ apiKey: webSearchApiKey })] : []),
+      ...this.createWebSearchTool(),
 
       // Git tools
       createGitStatusTool(workspaceRoot),
@@ -78,6 +84,29 @@ export class BuiltinToolProvider implements ToolProvider {
     ];
 
     return tools;
+  }
+
+  private createWebSearchTool(): ToolDefinition[] {
+    const { webSearchProvider, webSearchApiKey } = this.config;
+
+    if (webSearchProvider) {
+      return [createWebSearchTool({ provider: webSearchProvider })];
+    }
+
+    if (webSearchApiKey) {
+      // Backward compatibility: create TavilySearchProvider from API key
+      // Note: This imports TavilySearchProvider lazily to avoid circular deps
+      // and to keep it optional
+      const { TavilySearchProvider } = require("../web-search-tool.js");
+      const apiKey = typeof webSearchApiKey === "function" ? webSearchApiKey() : webSearchApiKey;
+      if (apiKey) {
+        return [createWebSearchTool({
+          provider: new TavilySearchProvider({ apiKey }),
+        })];
+      }
+    }
+
+    return [];
   }
 
   register(_registry: ToolRegistry): void {

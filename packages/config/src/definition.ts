@@ -37,6 +37,26 @@ export interface ConfigGroup {
   advanced?: boolean;
 }
 
+/**
+ * Default shell options — convenience only.
+ * User tự extend: `config.shellOptions = [...DEFAULT_SHELL_OPTIONS, { value: "nushell", label: "Nushell" }]`
+ */
+export const DEFAULT_SHELL_OPTIONS: { value: string; label: string }[] = [
+  { value: "bash", label: "Bash" },
+  { value: "zsh", label: "Zsh" },
+  { value: "pwsh", label: "PowerShell Core" },
+  { value: "powershell", label: "Windows PowerShell" },
+];
+
+/**
+ * Default agent modes — convenience only.
+ * User tự extend: `config.agentModes = [...DEFAULT_AGENT_MODES, { value: "custom", label: "Custom Mode" }]`
+ */
+export const DEFAULT_AGENT_MODES: { value: string; label: string }[] = [
+  { value: "build", label: "Build (full access)" },
+  { value: "plan", label: "Plan (read-only)" },
+];
+
 export const CONFIG_GROUPS: ConfigGroup[] = [
   {
     id: "general",

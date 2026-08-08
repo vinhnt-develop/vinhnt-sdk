@@ -1,7 +1,7 @@
 import type { EventBus } from "@vinhnt-sdk/core";
 
 // ---------------------------------------------------------------------------
-// Model Pricing Table (2026 rates)
+// Model Pricing
 // ---------------------------------------------------------------------------
 
 /** Pricing per 1M tokens (USD) */
@@ -11,7 +11,13 @@ export interface ModelPricing {
   reasoning?: number;
 }
 
-/** Default pricing table for popular models (2026) */
+/**
+ * Default pricing table — convenience only.
+ * Export để user tự merge: `{ ...DEFAULT_PRICING_TABLE, "my-model": { input: 0, output: 0 } }`
+ *
+ * KHÔNG dùng trong calculateCost() — chỉ là reference.
+ * User PHẢI cung cấp pricingResolver hoặc pricingTable riêng.
+ */
 export const DEFAULT_PRICING_TABLE: Record<string, ModelPricing> = {
   // OpenAI models
   "gpt-4o": { input: 2.50, output: 10.00 },
@@ -105,8 +111,28 @@ export interface CostSummary {
 export interface CostTrackerConfig {
   readonly eventBus: EventBus;
   readonly maxEntries?: number;
-  /** Custom pricing table (overrides defaults) */
+
+  /**
+   * Pricing table. Nếu cung cấp, HOÀN TOÀN thay thế default table.
+   * Nếu không, dùng DEFAULT_PRICING_TABLE.
+   * Merge manually: `{ ...DEFAULT_PRICING_TABLE, ...myTable }`
+   */
   readonly pricingTable?: Record<string, ModelPricing>;
+
+  /**
+   * Dynamic pricing resolver. Called khi model không tìm thấy trong pricingTable.
+   * Return ModelPricing để dùng pricing đó, hoặc null nếu không biết.
+   * Đây là extension point cho custom/future models.
+   */
+  readonly pricingResolver?: (model: string) => ModelPricing | null;
+
+  /**
+   * Fallback pricing cho unknown models.
+   * Default: null — KHÔNG track cost cho unknown models.
+   * Set thành { input: X, output: Y } nếu muốn fallback.
+   */
+  readonly fallbackPricing?: ModelPricing | null;
+
   /** Budget limits */
   readonly budgets?: BudgetConfig[];
   /** Emit warnings when soft limit exceeded */
@@ -117,13 +143,21 @@ export class CostTracker {
   private readonly entries: CostEntry[] = [];
   private readonly maxEntries: number;
   private readonly pricingTable: Record<string, ModelPricing>;
+  private readonly pricingResolver: ((model: string) => ModelPricing | null) | null;
+  private readonly fallbackPricing: ModelPricing | null;
   private readonly budgets: BudgetConfig[];
   private readonly emitWarnings: boolean;
   private readonly unsubscribe: () => void;
 
   constructor(config: CostTrackerConfig) {
     this.maxEntries = config.maxEntries ?? 10_000;
-    this.pricingTable = { ...DEFAULT_PRICING_TABLE, ...config.pricingTable };
+
+    // Nếu user cung cấp pricingTable, dùng nó thay vì merge với defaults
+    // User tự merge: `{ ...DEFAULT_PRICING_TABLE, ...myTable }`
+    this.pricingTable = config.pricingTable ?? {};
+
+    this.pricingResolver = config.pricingResolver ?? null;
+    this.fallbackPricing = config.fallbackPricing ?? null;
     this.budgets = config.budgets ?? [];
     this.emitWarnings = config.emitWarnings ?? true;
 
@@ -161,6 +195,11 @@ export class CostTracker {
 
   /**
    * Calculate cost from token counts using pricing table.
+   *
+   * Lookup order:
+   * 1. Exact match in pricingTable
+   * 2. Dynamic pricingResolver callback
+   * 3. fallbackPricing (null = no cost tracking for unknown models)
    */
   calculateCost(
     model: string,
@@ -168,10 +207,20 @@ export class CostTracker {
     outputTokens: number,
     reasoningTokens?: number,
   ): number {
-    const pricing = this.pricingTable[model];
+    // 1. Exact match in pricing table
+    let pricing: ModelPricing | null = this.pricingTable[model] ?? null;
+
+    // 2. Dynamic resolver
+    if (!pricing && this.pricingResolver) {
+      pricing = this.pricingResolver(model);
+    }
+
+    // 3. Fallback
     if (!pricing) {
-      // Default fallback: assume $3/1M input, $15/1M output
-      return (inputTokens * 3 + outputTokens * 15) / 1_000_000;
+      if (this.fallbackPricing === null) {
+        return 0; // Unknown model, không track cost
+      }
+      pricing = this.fallbackPricing;
     }
 
     let cost = (inputTokens * pricing.input) / 1_000_000;

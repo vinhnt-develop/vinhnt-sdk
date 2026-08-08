@@ -1,6 +1,10 @@
 import type { LspServerDefinition } from "./types.js";
 
-export const BUILTIN_SERVERS: LspServerDefinition[] = [
+/**
+ * Default LSP servers — convenience only.
+ * User tự extend: `registry.register({ id: "my-server", ... })`
+ */
+export const DEFAULT_LSP_SERVERS: LspServerDefinition[] = [
   // ── TypeScript / JavaScript ──
   {
     id: "typescript",
@@ -269,14 +273,89 @@ export const BUILTIN_SERVERS: LspServerDefinition[] = [
   },
 ];
 
+/**
+ * Registry for LSP servers.
+ * User tự register server mới thay vì fix cứng trong code.
+ */
+export class LspServerRegistry {
+  private servers: LspServerDefinition[];
+
+  constructor(defaultServers?: LspServerDefinition[]) {
+    this.servers = defaultServers ? [...defaultServers] : [...DEFAULT_LSP_SERVERS];
+  }
+
+  /**
+   * Register a new LSP server definition.
+   */
+  register(definition: LspServerDefinition): void {
+    this.servers.push(definition);
+  }
+
+  /**
+   * Register multiple LSP server definitions.
+   */
+  registerAll(definitions: LspServerDefinition[]): void {
+    this.servers.push(...definitions);
+  }
+
+  /**
+   * Find a server by file extension.
+   */
+  findByExtension(ext: string): LspServerDefinition | undefined {
+    return this.servers.find((s) => s.extensions.includes(ext));
+  }
+
+  /**
+   * Find a server by ID.
+   */
+  findById(id: string): LspServerDefinition | undefined {
+    return this.servers.find((s) => s.id === id);
+  }
+
+  /**
+   * Get language ID for a file extension.
+   */
+  getLanguageId(ext: string): string {
+    return this.findByExtension(ext)?.languageId ?? "plaintext";
+  }
+
+  /**
+   * List all registered servers.
+   */
+  list(): LspServerDefinition[] {
+    return [...this.servers];
+  }
+}
+
+/**
+ * @deprecated Use LspServerRegistry with DEFAULT_LSP_SERVERS instead.
+ * Kept for backward compatibility.
+ */
+export const BUILTIN_SERVERS = DEFAULT_LSP_SERVERS;
+
+/**
+ * @deprecated Use LspServerRegistry instead.
+ * Kept for backward compatibility.
+ */
 export function findServerByExtension(ext: string): LspServerDefinition | undefined {
-  return BUILTIN_SERVERS.find((s) => s.extensions.includes(ext));
+  const registry = new LspServerRegistry(DEFAULT_LSP_SERVERS);
+  return registry.findByExtension(ext);
 }
 
+/**
+ * @deprecated Use LspServerRegistry instead.
+ * Kept for backward compatibility.
+ */
 export function findServerById(id: string): LspServerDefinition | undefined {
-  return BUILTIN_SERVERS.find((s) => s.id === id);
+  const registry = new LspServerRegistry(DEFAULT_LSP_SERVERS);
+  return registry.findById(id);
 }
 
+/**
+ * @deprecated Use LspServerRegistry instead.
+ * Kept for backward compatibility.
+ */
 export function getLanguageId(ext: string): string {
-  return findServerByExtension(ext)?.languageId ?? "plaintext";
+  const registry = new LspServerRegistry(DEFAULT_LSP_SERVERS);
+  return registry.getLanguageId(ext);
 }

@@ -4,7 +4,49 @@ export interface ModelPattern {
   priority: number;
 }
 
-export const MODEL_PATTERNS: ModelPattern[] = [
+/**
+ * Registry-based model pattern matching.
+ * User tự extend patterns thay vì fix cứng trong code.
+ */
+export class ModelPatternRegistry {
+  private patterns: ModelPattern[] = [];
+
+  constructor(defaultPatterns?: ModelPattern[]) {
+    if (defaultPatterns) {
+      this.patterns = [...defaultPatterns];
+    }
+  }
+
+  /**
+   * Register a custom pattern for provider inference.
+   */
+  register(pattern: ModelPattern): void {
+    this.patterns.push(pattern);
+  }
+
+  /**
+   * Register multiple patterns.
+   */
+  registerAll(patterns: ModelPattern[]): void {
+    this.patterns.push(...patterns);
+  }
+
+  /**
+   * Infer provider from model ID.
+   */
+  matchProvider(modelId: string): string | null {
+    const matches = this.patterns
+      .filter((mp) => mp.pattern.test(modelId))
+      .sort((a, b) => b.priority - a.priority);
+    return matches[0]?.provider ?? null;
+  }
+}
+
+/**
+ * Default patterns — convenience only.
+ * User tự merge: `registry.registerAll(DEFAULT_MODEL_PATTERNS)`
+ */
+export const DEFAULT_MODEL_PATTERNS: ModelPattern[] = [
   // OpenAI
   { pattern: /^gpt-/i,                          provider: "openai",    priority: 10 },
   { pattern: /^o[0-9]/i,                         provider: "openai",    priority: 10 },
@@ -49,9 +91,17 @@ export const MODEL_PATTERNS: ModelPattern[] = [
   { pattern: /^(replicate|meta\/llama)/i,          provider: "replicate", priority: 3 },
 ];
 
+/**
+ * @deprecated Use ModelPatternRegistry.matchProvider() with DEFAULT_MODEL_PATTERNS instead.
+ * Kept for backward compatibility.
+ */
+export const MODEL_PATTERNS = DEFAULT_MODEL_PATTERNS;
+
+/**
+ * @deprecated Use ModelPatternRegistry instead.
+ * Kept for backward compatibility.
+ */
 export function matchProvider(modelId: string): string | null {
-  const matches = MODEL_PATTERNS
-    .filter((mp) => mp.pattern.test(modelId))
-    .sort((a, b) => b.priority - a.priority);
-  return matches[0]?.provider ?? null;
+  const registry = new ModelPatternRegistry(DEFAULT_MODEL_PATTERNS);
+  return registry.matchProvider(modelId);
 }

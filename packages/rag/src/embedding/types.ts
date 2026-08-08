@@ -5,8 +5,8 @@
 
 /** Configuration for embedding providers. */
 export interface EmbeddingConfig {
-  /** Provider name */
-  provider: "openai" | "voyage" | "local";
+  /** Provider name — string type for extensibility */
+  provider: string;
   /** API key for cloud providers */
   apiKey?: string;
   /** Model name (provider-specific) */
@@ -54,6 +54,43 @@ export interface EmbeddingProvider {
 
   /** Get the embedding dimensions for this provider */
   getDimensions(): number;
+}
+
+/**
+ * Registry for embedding providers.
+ * User tự register provider mới thay vì fix cứng trong code.
+ */
+export class EmbeddingProviderRegistry {
+  private providers = new Map<string, () => EmbeddingProvider>();
+
+  /**
+   * Register an embedding provider factory.
+   */
+  register(name: string, factory: () => EmbeddingProvider): void {
+    this.providers.set(name, factory);
+  }
+
+  /**
+   * Create an embedding provider by name.
+   */
+  create(name: string): EmbeddingProvider | null {
+    const factory = this.providers.get(name);
+    return factory ? factory() : null;
+  }
+
+  /**
+   * Check if a provider is registered.
+   */
+  has(name: string): boolean {
+    return this.providers.has(name);
+  }
+
+  /**
+   * List all registered providers.
+   */
+  list(): string[] {
+    return Array.from(this.providers.keys());
+  }
 }
 
 /**

@@ -1,67 +1,119 @@
 import { get_encoding } from "tiktoken";
 import type { TiktokenEncoding } from "tiktoken";
 
-const MODEL_ENCODING: Record<string, TiktokenEncoding> = {
-  "gpt-4o": "o200k_base",
-  "gpt-4o-2024-08-06": "o200k_base",
-  "gpt-4o-mini": "o200k_base",
-  "gpt-4o-mini-2024-07-18": "o200k_base",
-  "gpt-4-turbo": "cl100k_base",
-  "gpt-4-turbo-preview": "cl100k_base",
-  "gpt-4": "cl100k_base",
-  "gpt-3.5-turbo": "cl100k_base",
-  "o1-mini": "o200k_base",
-  "o1-preview": "o200k_base",
-  "claude-sonnet-4-20250514": "cl100k_base",
-  "claude-sonnet-4": "cl100k_base",
-  "claude-3-opus-20240229": "cl100k_base",
-  "claude-3-sonnet-20240229": "cl100k_base",
-  "claude-3-haiku-20240307": "cl100k_base",
-  "claude-sonnet-3.5": "cl100k_base",
-  "claude-haiku-3": "cl100k_base",
-  "deepseek-chat": "cl100k_base",
-  "deepseek-coder": "cl100k_base",
-  "nemotron": "cl100k_base",
-  "llama": "cl100k_base",
-  "mistral": "cl100k_base",
-  "mixtral": "cl100k_base",
-  "qwen": "cl100k_base",
-  "gemma": "cl100k_base",
-};
+export interface EncodingRegistration {
+  /** Model ID or pattern to match */
+  model: string;
+  /** Tiktoken encoding name */
+  encoding: TiktokenEncoding;
+  /** If true, model ID is used as prefix for matching */
+  prefix?: boolean;
+}
+
+/**
+ * Registry-based tokenizer encoding resolution.
+ * User tự register encoding cho model mới.
+ */
+export class TokenizerRegistry {
+  private registrations: EncodingRegistration[] = [];
+
+  constructor(defaultRegistrations?: EncodingRegistration[]) {
+    if (defaultRegistrations) {
+      this.registrations = [...defaultRegistrations];
+    }
+  }
+
+  /**
+   * Register an encoding for a model.
+   */
+  register(registration: EncodingRegistration): void {
+    this.registrations.push(registration);
+  }
+
+  /**
+   * Register multiple encodings.
+   */
+  registerAll(registrations: EncodingRegistration[]): void {
+    this.registrations.push(...registrations);
+  }
+
+  /**
+   * Resolve encoding name from model ID.
+   */
+  resolveEncoding(model?: string): TiktokenEncoding | null {
+    if (!model) return null;
+
+    // Exact match first
+    const exact = this.registrations.find((r) => r.model === model);
+    if (exact) return exact.encoding;
+
+    // Prefix match
+    const modelLower = model.toLowerCase();
+    for (const reg of this.registrations) {
+      if (reg.prefix && modelLower.startsWith(reg.model.toLowerCase())) {
+        return reg.encoding;
+      }
+    }
+
+    // Substring match (fallback)
+    for (const reg of this.registrations) {
+      if (modelLower.includes(reg.model.toLowerCase())) {
+        return reg.encoding;
+      }
+    }
+
+    return null;
+  }
+}
+
+/**
+ * Default encoding registrations — convenience only.
+ * User tự extend: `registry.register({ model: "my-model", encoding: "cl100k_base" })`
+ */
+export const DEFAULT_MODEL_ENCODINGS: EncodingRegistration[] = [
+  // OpenAI
+  { model: "gpt-4o", encoding: "o200k_base", prefix: true },
+  { model: "gpt-4-turbo", encoding: "cl100k_base", prefix: true },
+  { model: "gpt-4", encoding: "cl100k_base", prefix: true },
+  { model: "gpt-3.5-turbo", encoding: "cl100k_base", prefix: true },
+  { model: "o1-mini", encoding: "o200k_base" },
+  { model: "o1-preview", encoding: "o200k_base" },
+
+  // Anthropic
+  { model: "claude", encoding: "cl100k_base", prefix: true },
+
+  // Others
+  { model: "deepseek", encoding: "cl100k_base", prefix: true },
+  { model: "nemotron", encoding: "cl100k_base" },
+  { model: "llama", encoding: "cl100k_base", prefix: true },
+  { model: "mistral", encoding: "cl100k_base", prefix: true },
+  { model: "mixtral", encoding: "cl100k_base", prefix: true },
+  { model: "qwen", encoding: "cl100k_base", prefix: true },
+  { model: "gemma", encoding: "cl100k_base", prefix: true },
+];
 
 let cachedEnc: ReturnType<typeof get_encoding> | null = null;
 let cachedEncName = "";
 
-function resolveEncoding(text: string, model?: string): number {
-  if (model) {
-    let encName: string | undefined;
-    const exact = MODEL_ENCODING[model];
-    if (exact) {
-      encName = exact;
-    } else {
-      const modelLower = model.toLowerCase();
-      for (const [key, enc] of Object.entries(MODEL_ENCODING)) {
-        if (modelLower.includes(key.toLowerCase())) {
-          encName = enc;
-          break;
-        }
-      }
+function resolveEncodingWithFallback(text: string, model?: string): number {
+  const registry = new TokenizerRegistry(DEFAULT_MODEL_ENCODINGS);
+  const encName = registry.resolveEncoding(model);
+
+  if (encName) {
+    if (!cachedEnc || cachedEncName !== encName) {
+      if (cachedEnc) cachedEnc.free();
+      cachedEncName = encName;
+      cachedEnc = get_encoding(encName as TiktokenEncoding);
     }
-    if (encName) {
-      if (!cachedEnc || cachedEncName !== encName) {
-        if (cachedEnc) cachedEnc.free();
-        cachedEncName = encName;
-        cachedEnc = get_encoding(encName as TiktokenEncoding);
-      }
-      return cachedEnc.encode(text).length;
-    }
+    return cachedEnc.encode(text).length;
   }
+
   return Math.ceil(text.length / 4);
 }
 
 export function countTokens(text: string, model?: string): number {
   try {
-    return resolveEncoding(text, model);
+    return resolveEncodingWithFallback(text, model);
   } catch {
     return Math.ceil(text.length / 4);
   }
@@ -74,3 +126,10 @@ export function countTokensSafe(text: string, model?: string): number {
     return Math.ceil(text.length / 4);
   }
 }
+
+/**
+ * @deprecated Use TokenizerRegistry with DEFAULT_MODEL_ENCODINGS instead.
+ */
+export const MODEL_ENCODING: Record<string, TiktokenEncoding> = Object.fromEntries(
+  DEFAULT_MODEL_ENCODINGS.map((r) => [r.model, r.encoding])
+);

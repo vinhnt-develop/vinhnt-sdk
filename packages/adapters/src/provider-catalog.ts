@@ -2,10 +2,14 @@ import type { AiProvider } from "./ai-sdk-adapter.js";
 import type { ProviderCapabilities } from "./capabilities.js";
 
 /**
- * Curated catalog of known LLM providers with verified OpenAI-compatible base
- * URLs and where to get API keys. This is the source of truth for the
- * Settings → Models UI so developers can pick a provider and get correct
- * endpoints instead of guessing (e.g. Ollama /v1 vs /api, Groq /openai/v1).
+ * Default curated catalog of known LLM providers — CONVENIENCE ONLY.
+ *
+ * Export để user tham khảo và merge: `{ ...DEFAULT_PROVIDER_CATALOG, "my-provider": { ... } }`
+ *
+ * KHÔNG bắt buộc dùng catalog này. User có thể:
+ * 1. Register provider mới qua MultiProviderRegistry
+ * 2. Override entries bằng custom catalog
+ * 3. Ignored entirely và tự cung cấp config
  *
  * NO model-specific info lives here: no default models, no pricing, no context
  * windows, no free-tier claims. Every model/pricing/context value is fetched
@@ -37,9 +41,15 @@ export interface ProviderCatalogEntry {
   /** Gateway/aggregator that needs no provider registration. */
   gateway?: boolean;
   capabilities?: Partial<ProviderCapabilities>;
+  /** URL for fetching model list (for model discovery). */
+  modelListUrl?: string;
 }
 
-export const PROVIDER_CATALOG: Record<string, ProviderCatalogEntry> = {
+/**
+ * Default provider catalog — convenience only.
+ * User tự merge: `{ ...DEFAULT_PROVIDER_CATALOG, "my-provider": { ... } }`
+ */
+export const DEFAULT_PROVIDER_CATALOG: Record<string, ProviderCatalogEntry> = {
   openai: {
     id: "openai", label: "OpenAI", type: "openai",
     baseUrl: "https://api.openai.com/v1",
@@ -340,10 +350,15 @@ export const PROVIDER_CATALOG: Record<string, ProviderCatalogEntry> = {
   },
 };
 
+/**
+ * @deprecated Use DEFAULT_PROVIDER_CATALOG instead. Will be removed in next major version.
+ */
+export const PROVIDER_CATALOG = DEFAULT_PROVIDER_CATALOG;
+
 export function getCatalogEntry(id: string): ProviderCatalogEntry | undefined {
-  return PROVIDER_CATALOG[id];
+  return DEFAULT_PROVIDER_CATALOG[id];
 }
 
 export function listCatalogProviders(): ProviderCatalogEntry[] {
-  return Object.values(PROVIDER_CATALOG);
+  return Object.values(DEFAULT_PROVIDER_CATALOG);
 }
