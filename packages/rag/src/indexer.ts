@@ -125,8 +125,8 @@ export class Indexer {
     return searchFts(this.db, query, topK);
   }
 
-  hybridSearch(query: string, topK: number = 10, ftsWeight?: number): RetrievalResult[] {
-    return hybridSearchFts(this.db, query, topK, ftsWeight);
+  hybridSearch(query: string, topK: number = 10, options?: { rrfK?: number; ftsWeight?: number }): RetrievalResult[] {
+    return hybridSearchFts(this.db, query, topK, options);
   }
 
   close(): void {

@@ -50,3 +50,43 @@ export interface RetrievedChunk {
 export interface Retriever {
   search(query: string, scope?: { topK?: number }): Promise<readonly RetrievedChunk[]>;
 }
+
+/** Configuration for RAG with vector search support. */
+export interface RAGConfig {
+  /** Embedding provider configuration */
+  embedding?: {
+    /** Provider name */
+    provider: "openai" | "voyage" | "local";
+    /** API key for cloud providers */
+    apiKey?: string;
+    /** Model name (provider-specific) */
+    model?: string;
+    /** Embedding dimensions */
+    dimensions?: number;
+  };
+  /** Vector store configuration */
+  vector?: {
+    /** Backend type */
+    backend: "sqlite-vec" | "lancedb";
+    /** Database path */
+    dbPath?: string;
+  };
+  /** Search configuration */
+  search?: {
+    /** RRF constant (default 60) */
+    rrfK?: number;
+    /** Alpha weighting for score-based fusion (0-1) */
+    alpha?: number;
+    /** Number of results to return */
+    topK?: number;
+  };
+  /** Chunking configuration */
+  chunking?: {
+    /** Chunk strategy */
+    strategy: "recursive" | "semantic" | "code-aware";
+    /** Maximum chunk size in tokens */
+    chunkSize?: number;
+    /** Chunk overlap in tokens */
+    chunkOverlap?: number;
+  };
+}

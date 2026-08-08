@@ -2,47 +2,124 @@ import Database from "better-sqlite3";
 import type { RetrievalResult } from "./types.js";
 import { search as ftsSearch } from "./retriever.js";
 
-function buildTermFrequency(text: string): Map<string, number> {
-  const terms = text.toLowerCase().split(/\W+/).filter(Boolean);
-  const tf = new Map<string, number>();
-  for (const t of terms) {
-    tf.set(t, (tf.get(t) ?? 0) + 1);
+/**
+ * Reciprocal Rank Fusion (RRF) for combining multiple ranked lists.
+ * Formula: score(d) = Σ 1/(k + rank(d))
+ * Default k=60 is standard per Cormack et al. 2009.
+ *
+ * @param rankedLists - Array of ranked result lists
+ * @param k - RRF constant (default 60)
+ * @returns Merged and reranked results
+ */
+export function reciprocalRankFusion<T extends { chunk: { id: string } }>(
+  rankedLists: T[][],
+  k: number = 60,
+): T[] {
+  const scores = new Map<string, { item: T; score: number }>();
+
+  for (const list of rankedLists) {
+    for (let rank = 0; rank < list.length; rank++) {
+      const item = list[rank];
+      if (!item) continue;
+      const chunkId = item.chunk.id;
+      const existing = scores.get(chunkId);
+      const rrfScore = 1 / (k + rank + 1); // rank is 0-indexed
+
+      if (existing) {
+        existing.score += rrfScore;
+      } else {
+        scores.set(chunkId, { item, score: rrfScore });
+      }
+    }
   }
-  return tf;
+
+  return Array.from(scores.values())
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.item);
 }
 
-function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): number {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (const [term, countA] of a) {
-    normA += countA * countA;
-    const countB = b.get(term) ?? 0;
-    dot += countA * countB;
-  }
-  for (const countB of b.values()) {
-    normB += countB * countB;
-  }
-  const denom = Math.sqrt(normA) * Math.sqrt(normB);
-  return denom === 0 ? 0 : dot / denom;
-}
-
+/**
+ * Hybrid search combining FTS5 with Reciprocal Rank Fusion.
+ * This is the recommended approach for 2026 (replaces score-weighted blending).
+ *
+ * @param db - SQLite database
+ * @param query - Search query
+ * @param topK - Number of results to return
+ * @param options - Configuration options
+ * @returns Ranked results
+ */
 export function hybridSearch(
   db: Database.Database,
   query: string,
   topK: number = 10,
-  ftsWeight: number = 0.5,
+  options: {
+    /** RRF constant (default 60) */
+    rrfK?: number;
+    /** Legacy: FTS weight (ignored when using RRF) */
+    ftsWeight?: number;
+  } = {},
 ): RetrievalResult[] {
-  const ftsResults = ftsSearch(db, query, topK * 2);
+  // Get FTS results (fetch more for better fusion)
+  const ftsResults = ftsSearch(db, query, topK * 3);
 
-  const queryTerms = buildTermFrequency(query);
-  const scored = ftsResults.map((r) => {
-    const chunkTerms = buildTermFrequency(r.chunk.text);
-    const vecScore = cosineSimilarity(queryTerms, chunkTerms);
-    const combined = ftsWeight * r.score + (1 - ftsWeight) * vecScore;
-    return { ...r, score: combined };
-  });
+  // For now, use FTS results directly with RRF
+  // When vector search is available, combine with vector results
+  const rankedLists = [ftsResults];
 
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topK);
+  // If we had vector results, we'd add them here:
+  // if (vectorResults.length > 0) {
+  //   rankedLists.push(vectorResults);
+  // }
+
+  const fused = reciprocalRankFusion(rankedLists, options.rrfK ?? 60);
+  return fused.slice(0, topK);
+}
+
+/**
+ * Hybrid search with vector results (for use when embedding provider is available).
+ *
+ * @param ftsResults - FTS5 search results
+ * @param vectorResults - Vector similarity search results
+ * @param topK - Number of results to return
+ * @param options - Configuration options
+ * @returns Merged and reranked results
+ */
+export function hybridSearchWithVectors(
+  ftsResults: RetrievalResult[],
+  vectorResults: RetrievalResult[],
+  topK: number = 10,
+  options: {
+    /** RRF constant (default 60) */
+    rrfK?: number;
+    /** Alpha weighting for score-based fusion (0-1) */
+    alpha?: number;
+  } = {},
+): RetrievalResult[] {
+  if (options.alpha !== undefined) {
+    // Score-based fusion (alternative to RRF)
+    const alpha = Math.max(0, Math.min(1, options.alpha));
+    const allChunks = new Map<string, RetrievalResult>();
+
+    for (const r of ftsResults) {
+      allChunks.set(r.chunk.id, { ...r, score: r.score * alpha });
+    }
+
+    for (const r of vectorResults) {
+      const existing = allChunks.get(r.chunk.id);
+      if (existing) {
+        existing.score += r.score * (1 - alpha);
+      } else {
+        allChunks.set(r.chunk.id, { ...r, score: r.score * (1 - alpha) });
+      }
+    }
+
+    return Array.from(allChunks.values())
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+  }
+
+  // Default: Reciprocal Rank Fusion
+  const rankedLists = [ftsResults, vectorResults];
+  const fused = reciprocalRankFusion(rankedLists, options.rrfK ?? 60);
+  return fused.slice(0, topK);
 }
