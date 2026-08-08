@@ -1,10 +1,10 @@
 # @vinhnt-sdk/schema
 
-## 1.0.0
+## 0.1.1-beta.0
 
 ### Minor Changes
 
-- b4cb258: Refactor to minimal library architecture (9 packages)
+- Refactor to minimal library architecture (9 packages)
 
   - Extracted `@vinhnt-sdk/security` from core (prompt injection protection, secret redaction)
   - Extracted `@vinhnt-sdk/knowledge` from core (memory, context compression, learning engine)

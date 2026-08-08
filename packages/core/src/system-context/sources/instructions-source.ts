@@ -15,7 +15,7 @@ export function createInstructionsSource(cwd?: string | (() => string)): Context
     priority: 10,
     async load() {
       const base = typeof cwd === "function" ? cwd() : (cwd ?? process.cwd());
-      const globalPath = resolve(process.env.HOME ?? process.env.USERPROFILE ?? "/root", ".opencode", "AGENTS.md");
+      const globalPath = resolve(process.env.HOME ?? process.env.USERPROFILE ?? "/root", ".vnt", "AGENTS.md");
       const projectPath = resolve(base, "AGENTS.md");
 
       const [global, project] = await Promise.all([

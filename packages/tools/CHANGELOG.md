@@ -1,10 +1,10 @@
 # @vinhnt-sdk/tools
 
-## 1.0.0
+## 0.1.1-beta.0
 
 ### Minor Changes
 
-- b4cb258: Refactor to minimal library architecture (9 packages)
+- Refactor to minimal library architecture (9 packages)
 
   - Extracted `@vinhnt-sdk/security` from core (prompt injection protection, secret redaction)
   - Extracted `@vinhnt-sdk/knowledge` from core (memory, context compression, learning engine)
@@ -22,8 +22,7 @@
 ### Patch Changes
 
 - Major refactor: split core into tools/knowledge/security packages, remove non-library packages, fix all hardcoded data violations.
-- Updated dependencies [b4cb258]
 - Updated dependencies
-  - @vinhnt-sdk/schema@1.0.0
-  - @vinhnt-sdk/core@1.0.0
-  - @vinhnt-sdk/security@1.0.0
+  - @vinhnt-sdk/schema@0.1.1-beta.0
+  - @vinhnt-sdk/core@0.1.1-beta.0
+  - @vinhnt-sdk/security@0.1.1-beta.0
