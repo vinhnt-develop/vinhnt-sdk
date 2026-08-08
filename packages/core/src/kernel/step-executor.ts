@@ -73,7 +73,6 @@ export interface ToolExecutionPlan {
  */
 export class StepExecutor {
   private readonly deps: StepExecutorDeps;
-  private selfCorrectTokens = { input: 0, output: 0 };
 
   constructor(deps: StepExecutorDeps) {
     this.deps = deps;
@@ -141,7 +140,7 @@ export class StepExecutor {
     sessionId: string | undefined,
     runModel: ModelProvider,
   ): Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number }; toolResults: ToolCallOutcome[] }> {
-    this.selfCorrectTokens = { input: 0, output: 0 };
+    const selfCorrectTokens = { input: 0, output: 0 };
     let toolCallCount = 0;
     const recentCalls: RecentCall[] = [];
     const toolResults: ToolCallOutcome[] = [];
@@ -309,7 +308,8 @@ export class StepExecutor {
             workspaceRoot: this.deps.workspaceRoot,
             findTool: this.deps.findTool,
             currentAgent: this.deps.currentAgent,
-            runSelfCorrection: this.runSelfCorrection.bind(this),
+            runSelfCorrection: (tc, messages, recentCalls, step, runId, ctx, runAbort, toolCtx, errorMsg, runModel) =>
+              this.runSelfCorrection(tc, messages, recentCalls, step, runId, ctx, runAbort, toolCtx, errorMsg, runModel, selfCorrectTokens),
           });
           await this.deps.saga.rollbackStep(step);
           return { tc, result: "failed" as const };
@@ -339,7 +339,7 @@ export class StepExecutor {
       if (processed.breakBatch) break;
     }
 
-    return { toolCallCount, recentCalls, selfCorrectTokens: this.selfCorrectTokens, toolResults };
+    return { toolCallCount, recentCalls, selfCorrectTokens, toolResults };
   }
 
   private async buildToolContext(
@@ -372,6 +372,7 @@ export class StepExecutor {
     step: number, runId: RunId, ctx: RequestContext,
     runAbort: AbortController, toolCtx: ToolContext, errorMsg: string,
     runModel: ModelProvider,
+    selfCorrectTokens: { input: number; output: number },
   ): Promise<void> {
     return runSelfCorrectionFn(tc, messages, recentCalls, step, runId, ctx, runAbort, toolCtx, errorMsg, runModel, {
       store: this.deps.store,
@@ -382,6 +383,6 @@ export class StepExecutor {
       permissionGate: this.deps.permissionGate,
       pluginManager: this.deps.pluginManager,
       currentAgent: this.deps.currentAgent,
-    }, this.selfCorrectTokens);
+    }, selfCorrectTokens);
   }
 }

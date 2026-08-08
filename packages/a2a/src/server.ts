@@ -4,7 +4,7 @@ const MAX_BODY_SIZE = 1 * 1024 * 1024; // 1MB
 
 /** A2A server for handling incoming tasks from remote agents. */
 export class A2AServer {
-  private readonly config: Required<Omit<A2AServerConfig, "host"> & { host: string }>;
+  private readonly config: { agentCard: import("./types.js").AgentCard; port: number; host: string; apiKey?: string; taskHandler: (request: A2ATaskRequest) => Promise<A2ATaskResponse> };
   private running = false;
   private server: ReturnType<typeof import("node:http").createServer> | null = null;
 
@@ -13,6 +13,7 @@ export class A2AServer {
       agentCard: config.agentCard,
       port: config.port ?? 3000,
       host: config.host ?? "0.0.0.0",
+      ...(config.apiKey !== undefined ? { apiKey: config.apiKey } : {}),
       taskHandler: config.taskHandler,
     };
   }
@@ -20,6 +21,13 @@ export class A2AServer {
   /** Get this agent's card. */
   getAgentCard() {
     return this.config.agentCard;
+  }
+
+  /** Check if request has valid API key (if configured). */
+  private authenticate(req: import("node:http").IncomingMessage): boolean {
+    if (!this.config.apiKey) return true;
+    const provided = req.headers["x-api-key"];
+    return provided === this.config.apiKey;
   }
 
   /** Start the A2A server. */
@@ -30,15 +38,21 @@ export class A2AServer {
     this.server = createServer(async (req, res) => {
       const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
 
-      // Agent Card endpoint
+      // Agent Card endpoint (no auth required)
       if (url.pathname === "/agent-card" && req.method === "GET") {
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(this.config.agentCard));
         return;
       }
 
-      // Task submission endpoint
+      // Task submission endpoint (auth required)
       if (url.pathname === "/tasks" && req.method === "POST") {
+        if (!this.authenticate(req)) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unauthorized" }));
+          return;
+        }
+
         let body = "";
         let totalSize = 0;
 

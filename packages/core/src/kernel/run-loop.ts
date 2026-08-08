@@ -325,7 +325,11 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       totalOutputTokens: input.totalOutputTokens,
       finalOutput: input.finalOutput,
       sessionId,
-    }).catch(() => {});
+    }).catch((err) => {
+      if (typeof console !== "undefined") {
+        console.warn("[run-loop] Failed to save snapshot:", err instanceof Error ? err.message : String(err));
+      }
+    });
 
     return {
       messages,
@@ -583,7 +587,11 @@ export async function runLoop(
           if (session && (!session.title || session.title === "New Session")) {
             const title = await deps.sessionTitleGenerator(prompt).catch(() => "");
             if (title) {
-              await deps.sessionStore.updateSession(sessionId, { title }).catch(() => {});
+              await deps.sessionStore.updateSession(sessionId, { title }).catch((err) => {
+                if (typeof console !== "undefined") {
+                  console.warn("[run-loop] Failed to update session title:", err instanceof Error ? err.message : String(err));
+                }
+              });
             }
           }
         }
@@ -612,7 +620,11 @@ export async function runLoop(
         if (session && (!session.title || session.title === "New Session")) {
           const title = await deps.sessionTitleGenerator(prompt).catch(() => "");
           if (title) {
-            await deps.sessionStore.updateSession(sessionId, { title }).catch(() => {});
+            await deps.sessionStore.updateSession(sessionId, { title }).catch((err) => {
+              if (typeof console !== "undefined") {
+                console.warn("[run-loop] Failed to update session title:", err instanceof Error ? err.message : String(err));
+              }
+            });
           }
         }
       }

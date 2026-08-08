@@ -86,6 +86,8 @@ export interface A2AClientConfig {
   readonly agentCard: AgentCard;
   /** Request timeout in ms. Default: 30000. */
   readonly timeoutMs?: number;
+  /** API key for authentication. Sent as X-API-Key header. */
+  readonly apiKey?: string;
   /** Custom headers for HTTP requests. */
   readonly headers?: Record<string, string>;
 }
@@ -98,6 +100,8 @@ export interface A2AServerConfig {
   readonly port?: number;
   /** Host to bind to. Default: "0.0.0.0". */
   readonly host?: string;
+  /** API key for authentication. If provided, clients must send X-API-Key header. */
+  readonly apiKey?: string;
   /** Handler for incoming task requests. */
   readonly taskHandler: (request: A2ATaskRequest) => Promise<A2ATaskResponse>;
 }

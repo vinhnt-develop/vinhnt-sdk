@@ -2,12 +2,13 @@ import type { A2AClientConfig, A2ATaskRequest, A2ATaskResponse, A2ATaskUpdate } 
 
 /** A2A client for sending tasks to remote agents. */
 export class A2AClient {
-  private readonly config: Required<A2AClientConfig>;
+  private readonly config: { agentCard: import("./types.js").AgentCard; timeoutMs: number; apiKey?: string; headers: Record<string, string> };
 
   constructor(config: A2AClientConfig) {
     this.config = {
       agentCard: config.agentCard,
       timeoutMs: config.timeoutMs ?? 30_000,
+      ...(config.apiKey !== undefined ? { apiKey: config.apiKey } : {}),
       headers: config.headers ?? {},
     };
   }
@@ -15,6 +16,18 @@ export class A2AClient {
   /** Get the remote agent's card. */
   getAgentCard() {
     return this.config.agentCard;
+  }
+
+  /** Get headers including API key if configured. */
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.config.headers,
+    };
+    if (this.config.apiKey) {
+      headers["X-API-Key"] = this.config.apiKey;
+    }
+    return headers;
   }
 
   /** Send a task to the remote agent. */
@@ -26,10 +39,7 @@ export class A2AClient {
     try {
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...this.config.headers,
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify({
           taskId: request.taskId,
           message: request.message,
@@ -57,7 +67,7 @@ export class A2AClient {
     try {
       const response = await fetch(url, {
         method: "GET",
-        headers: this.config.headers,
+        headers: this.getHeaders(),
         signal: controller.signal,
       });
 

@@ -18,9 +18,17 @@ function callHandler(handler: EventHandler, event: TypedEvent<unknown>): void {
       void Promise.race([
         result,
         new Promise((_, reject) => setTimeout(() => reject(new Error("Subscriber timed out")), SUBSCRIBER_TIMEOUT_MS)),
-      ]).catch(() => {});
+      ]).catch((err) => {
+        if (typeof console !== "undefined") {
+          console.warn("[EventBus] Subscriber error:", err instanceof Error ? err.message : String(err));
+        }
+      });
     }
-  } catch { /* subscriber isolated */ }
+  } catch (err) {
+    if (typeof console !== "undefined") {
+      console.warn("[EventBus] Subscriber threw:", err instanceof Error ? err.message : String(err));
+    }
+  }
 }
 
 export class InMemoryEventBus implements EventBus {
