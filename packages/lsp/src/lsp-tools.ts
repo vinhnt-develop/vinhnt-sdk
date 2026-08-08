@@ -1,12 +1,12 @@
-import type { ToolDefinition } from "@vinhnt-sdk/agent-core";
-import type { ToolContext } from "@vinhnt-sdk/agent-core";
+import type { ToolDefinition } from "@vinhnt-sdk/core";
+import type { ToolContext } from "@vinhnt-sdk/core";
 import type { LspPool } from "./pool.js";
 import type { LspDocumentSymbol, LspRange } from "./types.js";
 import { formatDiagnostics, countErrors } from "./diagnostics.js";
 import { pathToUri } from "./file-sync.js";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/agent-core";
+import { defineTool } from "@vinhnt-sdk/core";
 
 const LspDiagnosticsSchema = z.object({
   filePath: z.string().min(1),

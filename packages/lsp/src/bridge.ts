@@ -1,4 +1,4 @@
-import type { ToolHook } from "@vinhnt-sdk/agent-core";
+import type { ToolHook } from "@vinhnt-sdk/core";
 import type { LspPool } from "./pool.js";
 import { formatDiagnostics } from "./diagnostics.js";
 import { uriFromPath } from "./file-sync.js";

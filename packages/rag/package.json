@@ -49,7 +49,7 @@
                     "prepublishOnly":  "pnpm build"
                 },
     "dependencies":  {
-                         "@vinhnt-sdk/agent-core":  "workspace:*",
+                         "@vinhnt-sdk/core":  "workspace:*",
                          "@vinhnt-sdk/schema":  "workspace:*"
                      },
     "peerDependencies":  {

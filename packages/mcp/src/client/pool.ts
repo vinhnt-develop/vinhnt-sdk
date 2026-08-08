@@ -1,4 +1,4 @@
-import type { ToolDefinition, ToolRisk, JsonSchema7Object, ToolContext, DomainManifest, ToolPermissionRule } from "@vinhnt-sdk/agent-core";
+import type { ToolDefinition, ToolRisk, JsonSchema7Object, ToolContext, DomainManifest, ToolPermissionRule } from "@vinhnt-sdk/core";
 import { McpClient } from "./wrapper.js";
 import type { McpReconnectOptions } from "./wrapper.js";
 import type { McpServerConfigItem } from "./config.js";

@@ -1,4 +1,4 @@
-import type { ToolDefinition } from "@vinhnt-sdk/agent-core";
+import type { ToolDefinition } from "@vinhnt-sdk/core";
 import type { Indexer } from "./indexer.js";
 
 export function createRagSearchTool(getIndexer: () => Indexer | undefined): ToolDefinition {

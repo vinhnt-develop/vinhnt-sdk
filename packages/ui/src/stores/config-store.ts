@@ -281,7 +281,7 @@ const DEFAULTS: VntUiConfig = {
     toggleSidebar: "Ctrl+B",
   },
   sdk: {
-    sdkPath: "./node_modules/@vinhnt-sdk/plugin-sdk",
+    sdkPath: "./node_modules/@vinhnt-sdk/plugin",
   },
   provider: {
     apiKey: "",

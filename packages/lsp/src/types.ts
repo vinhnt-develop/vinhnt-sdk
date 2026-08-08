@@ -1,4 +1,4 @@
-import type { ToolDefinition } from "@vinhnt-sdk/agent-core";
+import type { ToolDefinition } from "@vinhnt-sdk/core";
 
 /* ── JSON-RPC 2.0 ── */
 

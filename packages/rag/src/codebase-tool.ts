@@ -1,4 +1,4 @@
-import type { ToolDefinition } from "@vinhnt-sdk/agent-core";
+import type { ToolDefinition } from "@vinhnt-sdk/core";
 import { CodebaseMapper } from "./codebase-mapper.js";
 
 export function createCodebaseSearchTool(getMapper: () => CodebaseMapper | undefined): ToolDefinition {

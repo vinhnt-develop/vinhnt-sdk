@@ -1,4 +1,4 @@
-import type { EventBus, Unsubscribe } from "@vinhnt-sdk/agent-core";
+import type { EventBus, Unsubscribe } from "@vinhnt-sdk/core";
 import { type McpClientPool } from "./pool.js";
 
 const NOTIFICATION_METHOD = "vnt/event";

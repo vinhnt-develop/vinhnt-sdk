@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { InMemoryEventBus } from "@vinhnt-sdk/agent-core";
+import { InMemoryEventBus } from "@vinhnt-sdk/core";
 import { McpClientPool, McpEventBridge } from "../src/client/index.js";
 import { defineEvent } from "@vinhnt-sdk/schema";
 

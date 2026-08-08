@@ -1,4 +1,4 @@
-import type { ToolProvider, ToolDefinition, ToolRegistry } from "@vinhnt-sdk/agent-core";
+import type { ToolProvider, ToolDefinition, ToolRegistry } from "@vinhnt-sdk/core";
 
 /**
  * McpToolProvider — Provides tools from MCP servers.

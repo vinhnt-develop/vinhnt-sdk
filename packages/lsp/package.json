@@ -48,7 +48,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@vinhnt-sdk/agent-core": "workspace:*",
+    "@vinhnt-sdk/core": "workspace:*",
     "@vinhnt-sdk/schema": "workspace:*",
     "zod": "^4.4.3"
   }

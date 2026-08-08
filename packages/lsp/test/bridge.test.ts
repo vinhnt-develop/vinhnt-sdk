@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createLspToolHook, notifyChange } from "../src/bridge.js";
 import type { LspPool } from "../src/pool.js";
-import type { ToolHookParams, ToolHookResult } from "@vinhnt-sdk/agent-core";
+import type { ToolHookParams, ToolHookResult } from "@vinhnt-sdk/core";
 
 const mockClient = {
   changeFile: vi.fn(),

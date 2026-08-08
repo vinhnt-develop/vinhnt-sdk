@@ -1,0 +1,80 @@
+{
+    "name":  "@vinhnt-sdk/store",
+    "version":  "0.1.0",
+    "description":  "Persistence layer for VNT Agent — SQLite and PostgreSQL stores via Drizzle ORM",
+    "license":  "MIT",
+    "type":  "module",
+    "main":  "./dist/index.js",
+    "types":  "./dist/index.d.ts",
+    "exports":  {
+                    ".":  {
+                              "types":  "./dist/index.d.ts",
+                              "import":  "./dist/index.js"
+                          }
+                },
+    "files":  [
+                  "dist",
+                  "LICENSE",
+                  "README.md"
+              ],
+    "sideEffects":  false,
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "repository":  {
+                       "type":  "git",
+                       "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
+                       "directory":  "packages/store"
+                   },
+    "homepage":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/store",
+    "bugs":  {
+                 "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+             },
+    "keywords":  [
+                     "vnt",
+                     "persistence",
+                     "database",
+                     "sqlite",
+                     "postgres",
+                     "drizzle",
+                     "orm"
+                 ],
+    "publishConfig":  {
+                          "access":  "public"
+                      },
+    "scripts":  {
+                    "build":  "tsc -b",
+                    "typecheck":  "tsc --noEmit",
+                    "test":  "vitest run",
+                    "clean":  "node -e \"try{require(\u0027fs\u0027).rmSync(\u0027dist\u0027,{recursive:true,force:true})}catch(e){}\" \u0026\u0026 node -e \"try{require(\u0027fs\u0027).rmSync(\u0027tsconfig.tsbuildinfo\u0027,{force:true})}catch(e){}\"",
+                    "db:generate":  "drizzle-kit generate",
+                    "db:migrate":  "drizzle-kit migrate",
+                    "db:push":  "drizzle-kit push",
+                    "db:studio":  "drizzle-kit studio",
+                    "prepublishOnly":  "pnpm build"
+                },
+    "dependencies":  {
+                         "@vinhnt-sdk/core":  "workspace:*",
+                         "@vinhnt-sdk/schema":  "workspace:*",
+                         "drizzle-orm":  "^0.45.2"
+                     },
+    "peerDependencies":  {
+                             "better-sqlite3":  "\u003e=9.0.0",
+                             "pg":  "\u003e=8.0.0"
+                         },
+    "peerDependenciesMeta":  {
+                                 "better-sqlite3":  {
+                                                        "optional":  true
+                                                    },
+                                 "pg":  {
+                                            "optional":  true
+                                        }
+                             },
+    "devDependencies":  {
+                            "@types/better-sqlite3":  "^7.6.13",
+                            "@types/pg":  "^8.20.0",
+                            "better-sqlite3":  "^12.11.1",
+                            "drizzle-kit":  "^0.31.10",
+                            "pg":  "^8.22.0"
+                        }
+}

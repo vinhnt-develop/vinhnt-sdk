@@ -10,7 +10,7 @@
  *
  * How to add a new endpoint:
  *   1. Uncomment the stub below, write body using `apiFetch<T>()` (auto-attaches Bearer).
- *   2. Add response type if missing (below or import from @vinhnt-sdk/api-contract).
+ *   2. Add response type if missing (below or import from @vinhnt-sdk/api).
  *   3. Export helper + type from `packages/ui/src/index.ts`.
  *   4. Component in `apps/dev/src` imports from `@vinhnt-sdk/ui`.
  *   5. Verify: `pnpm --filter @vinhnt-sdk/ui build` → `pnpm --filter @vinhnt-sdk/dev typecheck`

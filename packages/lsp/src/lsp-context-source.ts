@@ -1,4 +1,4 @@
-import type { ContextSourceValue, ContextSourceKey } from "@vinhnt-sdk/agent-core";
+import type { ContextSourceValue, ContextSourceKey } from "@vinhnt-sdk/core";
 import type { LspPool } from "./pool.js";
 import { formatDiagnostics } from "./diagnostics.js";
 
