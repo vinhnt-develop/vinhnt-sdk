@@ -1,9 +1,5 @@
-import type { CompressionSummary } from "@vinhnt-sdk/schema";
-import type { ChatMessage } from "../model.js";
-
-export interface ConversationCompactor {
-  compact(
-    messages: readonly ChatMessage[],
-    signal?: AbortSignal,
-  ): Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary }>;
-}
+/**
+ * @module session/compaction
+ * Re-exports from @vinhnt-sdk/schema for backward compatibility.
+ */
+export type { ConversationCompactor } from "@vinhnt-sdk/schema";

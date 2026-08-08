@@ -1,6 +1,6 @@
 import type { AgentKernel } from "../kernel/kernel.js";
 import { z } from "zod";
-import { defineTool } from "../tool/define-tool.js";
+import { defineTool } from "@vinhnt-sdk/tools";
 
 /** Tool for listing all registered agents (useful for discovering sub-agents) */
 export function createListAgentsTool(kernel: AgentKernel) {

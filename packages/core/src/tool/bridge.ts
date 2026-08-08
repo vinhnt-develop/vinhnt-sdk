@@ -1,5 +1,5 @@
 import type { PluginManager } from "../plugin.js";
-import type { ToolDefinition, ToolContext } from "./definitions.js";
+import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
 import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
 import { ToolRuntime, type ToolHook } from "./runtime.js";
 

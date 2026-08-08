@@ -273,7 +273,8 @@ export class LspPool {
     for (const def of BUILTIN_SERVERS) {
       if (!def.autoInstall) continue;
       try {
-        execSync(`where ${def.command}`, { stdio: "ignore" });
+        const whichCmd = process.platform === "win32" ? "where" : "which";
+        execSync(`${whichCmd} ${def.command}`, { stdio: "ignore" });
       } catch {
         missing.push(def);
       }

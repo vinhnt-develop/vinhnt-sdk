@@ -4,6 +4,7 @@ export { DiagnosticStore, formatDiagnostics, formatDiagnostic, countErrors, coun
 export { uriFromPath, pathFromUri, pathToUri, notifyOpen, notifyChange, notifyClose } from "./file-sync.js";
 export { BUILTIN_SERVERS, findServerByExtension, findServerById, getLanguageId } from "./server-registry.js";
 export { createLspTools, createLspDiagnosticsTool, createLspSymbolsTool, createLspHoverTool, createLspDefinitionTool, createLspReferencesTool } from "./lsp-tools.js";
+export { LspToolProvider } from "./lsp-tool-provider.js";
 export { createLspToolHook } from "./bridge.js";
 export { createLspContextSource } from "./lsp-context-source.js";
 export type { LspContext } from "./lsp-context-source.js";

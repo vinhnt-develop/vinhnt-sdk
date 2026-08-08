@@ -1,5 +1,5 @@
 // ───────────────────────────────────────────────
-// Core contracts — branded ids, run events, errors.
+// Core contracts — branded ids, run events, errors, API transport schemas.
 // These are the identity + event-sourcing primitives
 // the whole system depends on.
 // ───────────────────────────────────────────────
@@ -29,3 +29,19 @@ export {
   ToolNotFoundError, ToolExecutionError, ToolPermissionDenied,
   RunNotFoundError, RunAbortedError, RunTimeoutError,
 } from "./errors/index.js";
+
+// ── API transport schemas (WS, Webview, HTTP contracts) ──
+export {
+  WsConnectSchema, WsHeartbeatSchema, WsRunEventSchema, WsMessageSchema,
+  parseWsMessage, runEventToWs,
+  WebviewAppendSchema, WebviewDoneSchema, WebviewErrorSchema,
+  WebviewSetMessagesSchema, WebviewEventSchema, WebviewResponseSchema,
+  WebviewChatSchema, WebviewReadySchema, WebviewMessageSchema,
+  PaginationSchema, RunResultSchema, ErrorResponseSchema,
+  CreateShareSchema, ShareResponseSchema, SharedSessionSchema,
+} from "./api/index.js";
+export type {
+  WsMessage, WsRunEvent, RunEventLike,
+  WebviewResponse, WebviewMessage,
+  RunResult, ErrorResponse, CreateShare, ShareResponse, SharedSession,
+} from "./api/index.js";

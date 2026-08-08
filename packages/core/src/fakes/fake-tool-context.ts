@@ -1,4 +1,4 @@
-import type { ToolContext, PermissionReply } from "../tool/context.js";
+import type { ToolContext, PermissionReply } from "@vinhnt-sdk/tools";
 
 export class FakeToolContext implements ToolContext {
   readonly sessionId: string;

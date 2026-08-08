@@ -34,42 +34,42 @@ export {
 } from "@vinhnt-sdk/schema";
 
 // === Core types ===
-export type { ToolRisk, ToolDefinition } from "./tool/definitions.js";
-export type { JsonSchema7Object, JsonSchemaProperty } from "./tool/json-schema.js";
-export type { ChatMessage, MessageContentPart, ModelRequest, ModelResponse, ModelStreamEvent, ModelProvider, ModelPricing, ModelRegistry } from "./model.js";
-export type { Tool, ToolConfig } from "./tool/define-tool.js";
-export type { ToolFilter } from "./tool/registry.js";
-export type { ToolContext, PermissionReply } from "./tool/context.js";
+export type { ToolRisk, ToolDefinition, ToolDefinitionLike } from "@vinhnt-sdk/tools";
+export type { JsonSchema7Object, JsonSchemaProperty } from "@vinhnt-sdk/tools";
+export type { ChatMessage, MessageContentPart, ModelRequest, ModelResponse, ModelStreamEvent, ModelProvider, ModelPricing, ModelRegistry, ModelCapabilities } from "./model.js";
+export type { Tool, ToolConfig } from "@vinhnt-sdk/tools";
+export type { ToolFilter } from "@vinhnt-sdk/tools";
+export type { ToolContext, PermissionReply } from "@vinhnt-sdk/tools";
 export type { ApprovalStore, PermissionStore } from "./permission/saved.js";
 export type { PermissionEffect, PermissionRule, PermissionRuleset, PermissionRequest } from "./permission/permission.js";
 export type { PluginManifest, PluginContext, Plugin, PluginManager, PluginHooks, HookResult, HookName, HookPayload, HookReturn } from "./plugin.js";
 
 // === Tool system ===
-export { defineTool, toolToDefinition, zodSchemaToNestedJsonSchema } from "./tool/define-tool.js";
-export { lintToolDescription, lintToolDefinitions } from "./tool/description-lint.js";
-export type { ToolDescriptionReport, ToolDescriptionIssue, DescriptionIssueCode } from "./tool/description-lint.js";
-export { ToolRegistry } from "./tool/registry.js";
-export type { ToolPermissionRule, ToolMaterialization } from "./tool/registry.js";
-export { ToolProviderRegistry } from "./tool/provider.js";
-export type { ToolProvider } from "./tool/provider.js";
-export { validateInput, ToolInputError } from "./tool/validate.js";
-export { ToolSandbox, signalToToolContext, createSandbox } from "./tool/sandbox.js";
-export type { SandboxConfig, SandboxScope, ProcessSandbox, SandboxResult } from "./tool/sandbox.js";
+export { defineTool, toolToDefinition, zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
+export { lintToolDescription, lintToolDefinitions } from "@vinhnt-sdk/tools";
+export type { ToolDescriptionReport, ToolDescriptionIssue, DescriptionIssueCode } from "@vinhnt-sdk/tools";
+export { ToolRegistry } from "@vinhnt-sdk/tools";
+export type { ToolPermissionRule, ToolMaterialization } from "@vinhnt-sdk/tools";
+export { ToolProviderRegistry } from "@vinhnt-sdk/tools";
+export type { ToolProvider } from "@vinhnt-sdk/tools";
+export { validateInput, ToolInputError } from "@vinhnt-sdk/tools";
+export { ToolSandbox, signalToToolContext, createSandbox } from "@vinhnt-sdk/tools";
+export type { SandboxConfig, SandboxScope, ProcessSandbox, SandboxResult } from "@vinhnt-sdk/tools";
 export { ToolRuntime } from "./tool/runtime.js";
 export type { ToolExecutionResult, ToolRuntimeConfig, ToolHook } from "./tool/runtime.js";
 export { createKernelTools, createPluginToolHook } from "./tool/bridge.js";
-export { FileReadTracker } from "./tool/read-tracker.js";
-export { InMemoryFileHistory } from "./tool/file-history.js";
-export type { FileHistory, FileVersion, UndoEntry } from "./tool/file-history.js";
-export { createFileHistoryHook } from "./tool/history-hook.js";
-export { generateDiff } from "./tool/diff.js";
-export type { UnifiedDiff } from "./tool/diff.js";
-export { readImageToContentParts, createReadImageTool } from "./tool/image-tools.js";
-export { createReadFileTool, createWriteFileTool, createEditFileTool, createApplyPatchTool, createListDirectoryTool, createShellTool, createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool, createGlobFilesTool, createGrepFilesTool, createWebFetchTool, createQuestionTool, createWebSearchTool, createTodoWriteTool } from "./tool/index.js";
-export { createCodingDomain } from "./tool/domain.js";
-export type { DomainManifest } from "./tool/domain.js";
-export type { QuestionInput, QuestionHandler } from "./tool/question-tool.js";
-export type { ShellToolConfig } from "./tool/shell-tool.js";
+export { FileReadTracker } from "@vinhnt-sdk/tools";
+export { InMemoryFileHistory } from "@vinhnt-sdk/tools";
+export type { FileHistory, FileVersion, UndoEntry } from "@vinhnt-sdk/tools";
+export { createFileHistoryHook } from "@vinhnt-sdk/tools";
+export { generateDiff } from "@vinhnt-sdk/tools";
+export type { UnifiedDiff } from "@vinhnt-sdk/tools";
+export { readImageToContentParts, createReadImageTool } from "@vinhnt-sdk/tools";
+export { createReadFileTool, createWriteFileTool, createEditFileTool, createApplyPatchTool, createListDirectoryTool, createShellTool, createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool, createGlobFilesTool, createGrepFilesTool, createWebFetchTool, createQuestionTool, createWebSearchTool, createTodoWriteTool } from "@vinhnt-sdk/tools";
+export { createCodingDomain } from "@vinhnt-sdk/tools";
+export type { DomainManifest } from "@vinhnt-sdk/tools";
+export type { QuestionInput, QuestionHandler } from "@vinhnt-sdk/tools";
+export type { ShellToolConfig } from "@vinhnt-sdk/tools";
 
 // === Event bus ===
 export { InMemoryEventBus } from "./event-bus/in-memory-bus.js";
@@ -136,8 +136,8 @@ export { createSkillGuidanceSource } from "./system-context/sources/skill-guidan
 export type { SkillGuidanceInfo } from "./system-context/sources/skill-guidance-source.js";
 
 // === Knowledge system ===
-export { InMemoryMemoryStore, SessionMemory, BoundedMemory, ContextCompressor, LlmCompactor, WriteApprovalQueue, BackgroundReview, LearningEngine, createMemorySearchTool, buildPrompt } from "./knowledge/index.js";
-export type { MemoryItem, MemoryStore, MemoryTier, Skill, CompressorOptions, ReviewOptions, PromptBuilderOptions } from "./knowledge/index.js";
+export { InMemoryMemoryStore, SessionMemory, BoundedMemory, ContextCompressor, LlmCompactor, WriteApprovalQueue, BackgroundReview, LearningEngine, createMemorySearchTool, buildPrompt } from "@vinhnt-sdk/knowledge";
+export type { MemoryItem, MemoryStore, MemoryTier, Skill, CompressorOptions, ReviewOptions, PromptBuilderOptions } from "@vinhnt-sdk/knowledge";
 
 // === Kernel (core runtime) ===
 export { AgentKernel, KernelError, CircuitBreaker, CircuitBreakerOpenError } from "./kernel/kernel.js";
@@ -174,5 +174,5 @@ export { setLogger, setLogLevel, getLogger } from "./logger.js";
 export type { Logger, LogLevel } from "./logger.js";
 
 // === Security ===
-export { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "./security/input-sanitizer.js";
-export { redactSecrets, detectSecrets, createRedactingLogger } from "./security/secret-redactor.js";
+export { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "@vinhnt-sdk/security";
+export { redactSecrets, detectSecrets, createRedactingLogger } from "@vinhnt-sdk/security";

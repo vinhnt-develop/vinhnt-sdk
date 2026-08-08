@@ -1,0 +1,60 @@
+{
+  "name": "@vinhnt-sdk/knowledge",
+  "version": "0.1.0",
+  "description": "Memory and knowledge management for vinhnt-sdk — bounded memory, context compression, learning engine",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
+    "directory": "packages/knowledge"
+  },
+  "homepage": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/knowledge",
+  "bugs": {
+    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "knowledge",
+    "memory",
+    "context-compression",
+    "learning-engine"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@vinhnt-sdk/schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "@vinhnt-sdk/tools": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@vinhnt-sdk/tools": {
+      "optional": true
+    }
+  }
+}

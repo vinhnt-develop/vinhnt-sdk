@@ -20,9 +20,17 @@ import type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, Mode
  * ```
  */
 export class FakeModelProvider implements ModelProvider {
+  readonly provider = "fake";
   readonly model = "fake-model";
   readonly pricing: ModelPricing = { input: 1.0, output: 2.0 };
   readonly contextLimit: number | undefined = undefined;
+  readonly capabilities = {
+    streaming: true,
+    toolCalling: true,
+    imageInput: false,
+    thinking: false,
+    structuredOutput: false,
+  } as const;
   /** Track number of generate() calls (useful for verifying which model was used) */
   generated = 0;
   private index = 0;

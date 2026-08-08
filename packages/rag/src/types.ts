@@ -4,9 +4,12 @@ export interface Document {
   title: string;
   mimeType: string;
   checksum: string;
-  status: "active" | "deleted" | "pending";
+  status: string;
   createdAt: string;
 }
+
+/** Default document statuses — exported for convenience */
+export const KNOWN_DOCUMENT_STATUSES = ["active", "deleted", "pending"] as const;
 
 export interface Chunk {
   id: string;
@@ -55,19 +58,21 @@ export interface Retriever {
 export interface RAGConfig {
   /** Embedding provider configuration */
   embedding?: {
-    /** Provider name */
-    provider: "openai" | "voyage" | "local";
+    /** Provider name — string type, NOT closed union */
+    provider: string;
     /** API key for cloud providers */
     apiKey?: string;
     /** Model name (provider-specific) */
     model?: string;
     /** Embedding dimensions */
     dimensions?: number;
+    /** Base URL for provider API (optional, for self-hosted) */
+    baseUrl?: string;
   };
   /** Vector store configuration */
   vector?: {
-    /** Backend type */
-    backend: "sqlite-vec" | "lancedb";
+    /** Backend type — string type, NOT closed union */
+    backend: string;
     /** Database path */
     dbPath?: string;
   };
@@ -82,11 +87,20 @@ export interface RAGConfig {
   };
   /** Chunking configuration */
   chunking?: {
-    /** Chunk strategy */
-    strategy: "recursive" | "semantic" | "code-aware";
+    /** Chunk strategy — string type, NOT closed union */
+    strategy: string;
     /** Maximum chunk size in tokens */
     chunkSize?: number;
     /** Chunk overlap in tokens */
     chunkOverlap?: number;
   };
 }
+
+/** Default embedding providers — exported for convenience */
+export const KNOWN_EMBEDDING_PROVIDERS = ["openai", "voyage", "local"] as const;
+
+/** Default vector backends — exported for convenience */
+export const KNOWN_VECTOR_BACKENDS = ["sqlite-vec", "lancedb"] as const;
+
+/** Default chunking strategies — exported for convenience */
+export const KNOWN_CHUNKING_STRATEGIES = ["recursive", "semantic", "code-aware"] as const;

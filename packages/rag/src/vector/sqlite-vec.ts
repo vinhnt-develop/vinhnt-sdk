@@ -20,9 +20,8 @@ export class SqliteVecStore implements VectorStore {
 
   constructor(config: VectorStoreConfig) {
     this.dimensions = config.dimensions;
-    // We'll use better-sqlite3 directly for vector storage
-    // sqlite-vec extension would be loaded here if available
-    const Database = require("better-sqlite3");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Database = require("better-sqlite3") as typeof import("better-sqlite3");
     this.db = new Database(config.dbPath ?? ":memory:");
     this.db.pragma("journal_mode = WAL");
     this.initSchema();

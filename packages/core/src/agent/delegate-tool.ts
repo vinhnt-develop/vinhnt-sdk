@@ -1,7 +1,7 @@
 import type { AgentId, RequestId, TraceId, RequestContext } from "@vinhnt-sdk/schema";
 import type { AgentKernel } from "../kernel/kernel.js";
 import { z } from "zod";
-import { defineTool } from "../tool/define-tool.js";
+import { defineTool } from "@vinhnt-sdk/tools";
 
 export interface DelegateInput {
   agentId: string;

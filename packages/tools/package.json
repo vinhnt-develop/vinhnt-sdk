@@ -1,0 +1,59 @@
+{
+  "name": "@vinhnt-sdk/tools",
+  "version": "0.1.0",
+  "description": "Built-in tools for vinhnt-sdk — file, shell, git, web, search, image, and more",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
+    "directory": "packages/tools"
+  },
+  "homepage": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/tools",
+  "bugs": {
+    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "tools",
+    "file",
+    "shell",
+    "git",
+    "web",
+    "search"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@vinhnt-sdk/schema": "workspace:*",
+    "@vinhnt-sdk/security": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "@vinhnt-sdk/core": "workspace:*"
+  }
+}

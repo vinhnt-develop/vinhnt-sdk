@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
-import { defineTool } from "../tool/define-tool.js";
+import { defineTool } from "@vinhnt-sdk/tools";
 
 export interface CreateSkillInput {
   name: string;

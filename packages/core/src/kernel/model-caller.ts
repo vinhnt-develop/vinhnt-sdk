@@ -1,6 +1,6 @@
 import type { RunId, RequestContext, KnownRunEvent } from "@vinhnt-sdk/schema";
 import type { ChatMessage, ModelProvider, ModelRequest, ModelResponse, ModelRegistry } from "../model.js";
-import type { ToolDefinition } from "../tool/definitions.js";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 
 export interface ModelCallerDeps {

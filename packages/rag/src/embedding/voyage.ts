@@ -15,6 +15,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly dimensions: number;
+  private readonly baseUrl: string;
 
   constructor(config: EmbeddingConfig) {
     if (!config.apiKey) {
@@ -23,6 +24,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
     this.apiKey = config.apiKey;
     this.model = config.model ?? VOYAGE_MODELS.code;
     this.dimensions = config.dimensions ?? 1024;
+    this.baseUrl = config.baseUrl ?? "https://api.voyageai.com";
   }
 
   async embed(
@@ -41,7 +43,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
     texts: string[],
     inputType: "document" | "query" = "document",
   ): Promise<EmbeddingResult[]> {
-    const response = await fetch("https://api.voyageai.com/v1/embeddings", {
+    const response = await fetch(`${this.baseUrl}/v1/embeddings`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -4,15 +4,13 @@ import type { ModelProvider } from "../model.js";
 import type { SessionRuntimeState } from "../session/session-state.js";
 import type { RunEventStore, SessionStore } from "../session/store.js";
 import type { AgentRegistry } from "../agent/agent-registry.js";
-import type { ToolDefinition } from "../tool/definitions.js";
-import type { ToolRegistry } from "../tool/registry.js";
-import type { ToolProviderRegistry } from "../tool/provider.js";
+import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "../session/compaction.js";
 import type { ContextRegistry } from "../system-context/types.js";
 
 import type { SubAgentParams } from "../agent/agent-factory.js";
-import type { DomainManifest } from "../tool/domain.js";
+import type { DomainManifest } from "@vinhnt-sdk/tools";
 import type { TerminationPolicy } from "./termination.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { getBehaviourProfile } from "../agent/behaviour-profiles.js";

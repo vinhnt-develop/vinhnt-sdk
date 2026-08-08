@@ -1,6 +1,6 @@
 import type { RunId, RequestContext, AgentConfig } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "../model.js";
-import type { ToolContext } from "../tool/definitions.js";
+import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
 import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort } from "./kernel-utils.js";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
@@ -15,7 +15,7 @@ export interface SelfCorrectionDeps {
   readonly modelCaller: ModelCaller;
   readonly maxSelfCorrectAttempts: number;
   readonly doomLoopThreshold: number;
-  readonly findTool: (name: string) => import("../tool/definitions.js").ToolDefinition | undefined;
+  readonly findTool: (name: string) => import("@vinhnt-sdk/tools").ToolDefinition | undefined;
   readonly permissionGate: PermissionGate;
   readonly pluginManager: PluginManager | undefined;
   currentAgent: AgentConfig | undefined;

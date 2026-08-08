@@ -32,3 +32,27 @@ export type { PromptTier, PromptAssembly, CompressionSummary } from "./prompt.js
 
 export type { AgentStepType } from "./agent-step.js";
 export { AGENT_STEP_LABELS, inferStepType } from "./agent-step.js";
+
+export type {
+  ToolDefinitionLike,
+  ToolCall,
+  MessageContentPart,
+  ChatMessage,
+  ModelRequest,
+  ModelResponse,
+  ModelStreamEvent,
+  ModelPricing,
+  ModelCapabilities,
+  ModelProvider,
+  ModelRegistry,
+} from "./model.js";
+
+export type { ConversationCompactor } from "./compaction.js";
+
+export type {
+  RunEventSnapshot,
+  RunEventListener,
+  SessionUpdates,
+  RunEventStore,
+  SessionStore,
+} from "./session-store.js";

@@ -1,9 +1,9 @@
-import type { ToolDefinition, ToolContext } from "./definitions.js";
+import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
 import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
-import { ToolRegistry } from "./registry.js";
-import { ToolSandbox, signalToToolContext } from "./sandbox.js";
+import { ToolRegistry } from "@vinhnt-sdk/tools";
+import { ToolSandbox, signalToToolContext } from "@vinhnt-sdk/tools";
 import { PermissionGate, type DynamicRule } from "../kernel/permission-gate.js";
-import type { ApprovalHandler } from "./policy.js";
+import type { ApprovalHandler } from "@vinhnt-sdk/tools";
 
 export type ToolExecutionResult =
   | { status: "success"; output: unknown }

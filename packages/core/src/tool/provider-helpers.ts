@@ -1,7 +1,5 @@
-import { ToolProviderRegistry } from "../tool/provider.js";
-import { BuiltinToolProvider } from "../tool/providers/builtin-provider.js";
-import type { ToolProvider } from "../tool/provider.js";
-import type { ToolDefinition } from "../tool/definitions.js";
+import { ToolProviderRegistry, BuiltinToolProvider } from "@vinhnt-sdk/tools";
+import type { ToolProvider, ToolDefinition } from "@vinhnt-sdk/tools";
 import type { AgentKernel } from "../kernel/kernel.js";
 
 /**
@@ -34,7 +32,7 @@ export async function createToolProviderRegistry(config: {
 
   // 2. Load user tools from .vnt/tools/
   try {
-    const { ToolFileLoader } = await import("../tool/providers/file-loader.js");
+    const { ToolFileLoader } = await import("@vinhnt-sdk/tools");
     const loader = new ToolFileLoader();
     const userTools = await loader.discover(config.workspaceRoot);
     if (userTools.tools.length > 0) {

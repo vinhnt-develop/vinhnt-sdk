@@ -1,7 +1,7 @@
 import { normalize } from "node:path";
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "../model.js";
-import type { ToolContext, ToolDefinition } from "../tool/definitions.js";
+import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 
 import type { PluginManager } from "../plugin.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";

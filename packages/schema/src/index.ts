@@ -33,6 +33,12 @@ export type {
   MemoryEntry,
   PromptTier, PromptAssembly, CompressionSummary,
   AgentStepType,
+  ToolDefinitionLike,
+  ToolCall, MessageContentPart, ChatMessage,
+  ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing, ModelCapabilities,
+  ModelProvider, ModelRegistry,
+  ConversationCompactor,
+  RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore, SessionStore,
 } from "./types/index.js";
 export {
   APPROVAL_CATEGORY_LABELS,

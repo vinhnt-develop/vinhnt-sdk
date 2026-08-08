@@ -1,7 +1,7 @@
-import type { ToolDefinition } from "./tool/definitions.js";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { ContextSourceValue } from "./system-context/types.js";
 import type { AgentRegistry } from "./agent/agent-registry.js";
-import type { ToolProviderRegistry } from "./tool/provider.js";
+import type { ToolProviderRegistry } from "@vinhnt-sdk/tools";
 import type { EventBus } from "./event-bus/types.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";
 

@@ -1,6 +1,5 @@
 import type { RunId, RequestId, AgentConfig, PermissionRequest, AgentRule, RunEvent } from "@vinhnt-sdk/schema";
-import type { ToolRisk } from "../tool/definitions.js";
-import type { PermissionReply } from "../tool/context.js";
+import type { ToolRisk, PermissionReply } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { ApprovalStore } from "../permission/saved.js";
 import type { RunEventStore } from "../session/store.js";
@@ -9,7 +8,7 @@ import type { EventBus } from "../event-bus/types.js";
 import { evaluatePermission, checkRiskAllowed } from "../permission/checker.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { buildPermissionRules } from "../permission/evaluator.js";
-import { commandPattern } from "../tool/arity.js";
+import { commandPattern } from "@vinhnt-sdk/tools";
 import { PermissionRequested, PermissionReplied } from "@vinhnt-sdk/schema";
 
 export type ApprovalDecision = "allow" | "deny" | "approval_required";

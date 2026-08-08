@@ -1,6 +1,4 @@
-import type { ToolContext } from "../tool/context.js";
-import type { ToolDefinition, ToolRisk } from "../tool/definitions.js";
-import type { JsonSchema7Object } from "../tool/json-schema.js";
+import type { ToolContext, ToolDefinition, ToolRisk, JsonSchema7Object } from "@vinhnt-sdk/tools";
 
 /**
  * FakeTool — Mock tool for unit tests.

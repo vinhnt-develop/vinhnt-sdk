@@ -1,7 +1,7 @@
 import type { SkillDefinition } from "@vinhnt-sdk/schema";
 import type { SkillDefRegistry } from "./skill-def-registry.js";
 import { z } from "zod";
-import { defineTool } from "../tool/define-tool.js";
+import { defineTool } from "@vinhnt-sdk/tools";
 
 export interface SkillToolInput {
   name: string;

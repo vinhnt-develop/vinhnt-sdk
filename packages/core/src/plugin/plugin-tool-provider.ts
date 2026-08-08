@@ -1,6 +1,4 @@
-import type { ToolDefinition } from "../tool/definitions.js";
-import type { ToolRegistry } from "../tool/registry.js";
-import type { ToolProvider } from "../tool/provider.js";
+import type { ToolDefinition, ToolRegistry, ToolProvider } from "@vinhnt-sdk/tools";
 import type { DefaultPluginManager } from "./manager.js";
 
 /**

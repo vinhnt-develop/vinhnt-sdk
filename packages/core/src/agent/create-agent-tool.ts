@@ -3,7 +3,7 @@ import { createAgent, createSubAgent } from "./agent-factory.js";
 import type { CreateAgentParams, SubAgentParams } from "./agent-factory.js";
 import type { AgentId } from "@vinhnt-sdk/schema";
 import { z } from "zod";
-import { defineTool } from "../tool/define-tool.js";
+import { defineTool } from "@vinhnt-sdk/tools";
 
 export interface CreateAgentInput {
   name: string;
