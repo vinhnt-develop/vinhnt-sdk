@@ -1,21 +1,21 @@
-# @vnt/plugin-sdk
+# @vinhnt-sdk/plugin
 
-Plugin SDK for VNT Agent — define plugins with TypeScript hooks and auto-install support.
+Plugin SDK for vinhnt-sdk — define plugins with TypeScript hooks and auto-install support.
 
 ## Install
 
 ```bash
 # npm
-npm install @vnt/plugin-sdk
+npm install @vinhnt-sdk/plugin
 
 # pnpm (monorepo)
-pnpm add @vnt/plugin-sdk
+pnpm add @vinhnt-sdk/plugin
 ```
 
 ## Quick Start
 
 ```typescript
-import { definePlugin } from '@vnt/plugin-sdk';
+import { definePlugin } from '@vinhnt-sdk/plugin';
 
 export default definePlugin(
   { name: 'my-plugin', version: '1.0.0', description: 'My plugin' },
@@ -43,8 +43,8 @@ export default definePlugin(
 ## Subpath Imports
 
 ```typescript
-import { definePlugin } from '@vnt/plugin-sdk';         // main
-import { loadPlugin } from '@vnt/plugin-sdk/npm-loader'; // deep import
+import { definePlugin } from '@vinhnt-sdk/plugin';         // main
+import { loadPlugin } from '@vinhnt-sdk/plugin/npm-loader'; // deep import
 ```
 
 ## License

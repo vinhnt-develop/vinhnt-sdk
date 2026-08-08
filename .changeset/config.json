@@ -5,17 +5,14 @@
   "fixed": [
     [
       "@vinhnt-sdk/schema",
-      "@vinhnt-sdk/config",
-      "@vinhnt-sdk/api",
       "@vinhnt-sdk/core",
+      "@vinhnt-sdk/tools",
+      "@vinhnt-sdk/knowledge",
+      "@vinhnt-sdk/security",
       "@vinhnt-sdk/plugin",
-      "@vinhnt-sdk/adapters",
       "@vinhnt-sdk/mcp",
       "@vinhnt-sdk/lsp",
-      "@vinhnt-sdk/rag",
-      "@vinhnt-sdk/store",
-      "@vinhnt-sdk/otel",
-      "@vinhnt-sdk/ui"
+      "@vinhnt-sdk/rag"
     ]
   ],
   "linked": [],

@@ -34,9 +34,8 @@ sequenceDiagram
     "start": "tsx agent.ts"
   },
   "dependencies": {
-    "@vinhnt-sdk/core": "^0.1.0",
-    "@vinhnt-sdk/schema": "^0.1.0",
-    "@vinhnt-sdk/adapters": "^0.1.0",
+    "@vinhnt-sdk/core": "^0.1.1",
+    "@vinhnt-sdk/schema": "^0.1.1",
     "ai": "^4.0.0",
     "@ai-sdk/openai": "^1.0.0",
     "zod": "^3.23.0"
@@ -52,7 +51,6 @@ sequenceDiagram
 
 ```typescript
 import { AgentKernel, NullRunEventStore, defineTool } from "@vinhnt-sdk/core";
-import { createModelProvider } from "@vinhnt-sdk/adapters";
 import { z } from "zod";
 
 // 1. Define a tool
@@ -76,10 +74,20 @@ const calculatorTool = defineTool({
   },
 });
 
-// 2. Create model provider
-const model = createModelProvider("openai", "gpt-4o", {
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// 2. Create model provider (implement ModelProvider interface)
+const model = {
+  id: "openai-gpt4o",
+  provider: "openai",
+  model: "gpt-4o",
+  capabilities: { streaming: true, toolCalling: true, vision: false },
+  async *stream(request) {
+    // Implement with your preferred AI SDK
+    // Example using Vercel AI SDK:
+    // const { streamText } = await import("ai");
+    // const result = streamText({ model: openai("gpt-4o"), messages: request.messages });
+    // yield* result.textStream;
+  },
+};
 
 // 3. Create kernel
 const kernel = new AgentKernel({
@@ -114,5 +122,5 @@ main();
 ## Run
 
 ```bash
-OPENAI_API_KEY=sk-... npx tsx agent.ts "What is 42 * 17?"
+npx tsx agent.ts "What is 42 * 17?"
 ```

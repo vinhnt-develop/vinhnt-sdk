@@ -98,7 +98,7 @@ const kernel = new AgentKernel({ model, pluginManager });
 ```typescript
 import { loadPluginFromNpm } from "@vinhnt-sdk/plugin/npm-loader";
 
-const plugin = await loadPluginFromNpm("@vinhnt-sdk/otel");
+const plugin = await loadPluginFromNpm("my-agent-plugin");
 pluginManager.register(plugin);
 ```
 

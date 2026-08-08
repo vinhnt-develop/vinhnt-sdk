@@ -1,6 +1,6 @@
 {
     "name": "@vinhnt-sdk/rag",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "RAG (Retrieval-Augmented Generation) module for VNT Agent — indexing, embedding, and semantic search",
     "license": "MIT",
     "type": "module",

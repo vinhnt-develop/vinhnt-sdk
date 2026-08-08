@@ -71,12 +71,12 @@ const myPlugin = definePlugin(
 import { loadPluginFromNpm, loadNpmPlugins } from "@vinhnt-sdk/plugin/npm-loader";
 
 // Load single plugin
-const plugin = await loadPluginFromNpm("@vinhnt-sdk/otel");
+const plugin = await loadPluginFromNpm("my-custom-plugin");
 
 // Load multiple
 const plugins = await loadNpmPlugins([
-  "@vinhnt-sdk/otel",
   "my-custom-plugin",
+  "another-plugin",
 ]);
 ```
 

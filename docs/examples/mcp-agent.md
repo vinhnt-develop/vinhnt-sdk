@@ -64,7 +64,6 @@ graph TD
 
 ```typescript
 import { AgentKernel, NullRunEventStore } from "@vinhnt-sdk/core";
-import { createModelProvider } from "@vinhnt-sdk/adapters";
 import { McpClientPool, loadMcpConfig } from "@vinhnt-sdk/mcp";
 
 async function main() {
@@ -79,10 +78,16 @@ async function main() {
   const mcpTools = mcpPool.getTools();
   console.log(`Loaded ${mcpTools.length} MCP tools`);
 
-  // 4. Create model provider
-  const model = createModelProvider("openai", "gpt-4o", {
-    apiKey: process.env.OPENAI_API_KEY!,
-  });
+  // 4. Create model provider (implement ModelProvider interface)
+  const model = {
+    id: "openai-gpt4o",
+    provider: "openai",
+    model: "gpt-4o",
+    capabilities: { streaming: true, toolCalling: true, vision: false },
+    async *stream(request) {
+      // Implement with your preferred AI SDK
+    },
+  };
 
   // 5. Create kernel with MCP tools
   const kernel = new AgentKernel({

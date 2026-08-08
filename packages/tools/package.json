@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/tools",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Built-in tools for vinhnt-sdk — file, shell, git, web, search, image, and more",
   "license": "MIT",
   "type": "module",

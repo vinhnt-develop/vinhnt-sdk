@@ -1,5 +1,5 @@
 // Simple logger for agent-core
-// In production, this can be replaced with a proper logger (e.g., @vinhnt-sdk/otel)
+// In production, replace with your preferred logging solution
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 

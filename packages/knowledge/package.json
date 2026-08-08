@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/knowledge",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Memory and knowledge management for vinhnt-sdk — bounded memory, context compression, learning engine",
   "license": "MIT",
   "type": "module",

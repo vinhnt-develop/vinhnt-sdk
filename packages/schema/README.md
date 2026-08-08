@@ -1,46 +1,50 @@
-# @vnt/schema
+# @vinhnt-sdk/schema
 
-Shared Zod schemas and types for VNT Agent — tool definitions, event types, and ACP protocol.
+Shared types and contracts for vinhnt-sdk — model interfaces, event types, and API contracts.
 
 ## Install
 
 ```bash
 # npm
-npm install @vnt/schema
+npm install @vinhnt-sdk/schema
 
 # pnpm (monorepo)
-pnpm add @vnt/schema
+pnpm add @vinhnt-sdk/schema
 ```
 
 ## Quick Start
 
 ```typescript
-import { RunEventSchema, ReadFileSchema, defineEvent } from '@vnt/schema';
+import { ModelProvider, RunEvent, SessionStore } from '@vinhnt-sdk/schema';
 
-// Validate tool input
-const input = ReadFileSchema.parse({ filePath: './src/index.ts' });
-
-// Define a typed event
-const userJoined = defineEvent('user.joined', { userId: string });
+// Implement ModelProvider interface
+const model: ModelProvider = {
+  id: "openai-gpt4o",
+  provider: "openai",
+  model: "gpt-4o",
+  capabilities: { streaming: true, toolCalling: true, vision: false },
+  async *stream(request) {
+    // Implement streaming
+  },
+};
 ```
 
 ## API Reference
 
 | Export | Type | Description |
 |--------|------|-------------|
-| `ReadFileSchema`, `WriteFileSchema`, `EditFileSchema`, ... | Zod schemas | Tool input validation schemas (22 tools) |
-| `EventRegistry`, `defineEvent` | Function | Typed event definition and registry |
-| `RunEvent`, `KnownRunEvent` | Type | Event types for run lifecycle |
-| `AgentId`, `RunId`, `SessionId`, ... | Branded types | Type-safe branded identifiers |
-| `VntError`, `AgentNotFoundError`, ... | Error classes | Typed error hierarchy |
-| `SchemaVersionedBaseSchema`, `upcastEventToCurrent` | Function | Schema versioning with migration chain |
-| `wildcardMatch` | Function | Wildcard pattern matching utility |
+| `ModelProvider` | Interface | AI model provider contract |
+| `ModelRequest`, `ModelResponse` | Interface | Model I/O types |
+| `RunEvent` | Interface | Event types for run lifecycle |
+| `SessionStore`, `RunEventStore` | Interface | Storage contracts |
+| `ChatMessage` | Interface | Message types |
+| `ToolDefinitionLike` | Interface | Tool definition contract |
 
 ## Subpath Imports
 
 ```typescript
-import { ReadFileSchema } from '@vnt/schema';               // main
-import { WsConnectSchema } from '@vnt/schema/contracts/ws'; // deep import
+import { ModelProvider } from '@vinhnt-sdk/schema';           // main
+import type { AcpEvent } from '@vinhnt-sdk/schema/contracts'; // deep import
 ```
 
 ## License

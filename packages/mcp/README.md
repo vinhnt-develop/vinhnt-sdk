@@ -1,23 +1,23 @@
-# @vnt/mcp
+# @vinhnt-sdk/mcp
 
-MCP client pool and ACP integration for VNT Agent — connect, discover, and execute tools.
+MCP client pool and ACP integration for vinhnt-sdk — connect, discover, and execute tools.
 
 ## Install
 
 ```bash
 # npm
-npm install @vnt/mcp
+npm install @vinhnt-sdk/mcp
 
 # pnpm (monorepo)
-pnpm add @vnt/mcp
+pnpm add @vinhnt-sdk/mcp
 ```
 
 ## Quick Start
 
 ```typescript
-import { McpClientPool, loadMcpConfig } from '@vnt/mcp';
+import { McpClientPool, loadMcpConfig } from '@vinhnt-sdk/mcp';
 
-const config = await loadMcpConfig('./vnt.json');
+const config = await loadMcpConfig('./mcp-servers.json');
 const pool = new McpClientPool(config);
 await pool.connectAll();
 
@@ -39,8 +39,8 @@ const tools = pool.getRegisteredTools();
 ## Subpath Imports
 
 ```typescript
-import { McpClientPool } from '@vnt/mcp';           // main
-import type { AcpEvent } from '@vnt/mcp/acp-types'; // deep import
+import { McpClientPool } from '@vinhnt-sdk/mcp';           // main
+import type { AcpEvent } from '@vinhnt-sdk/mcp/acp-types'; // deep import
 ```
 
 ## License

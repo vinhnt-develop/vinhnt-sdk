@@ -14,31 +14,34 @@
 │                        Applications                         │
 │                    (Your AI Agent App)                      │
 ├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/core          @vinhnt-sdk/ui                  │
-│   ┌─────────────────┐      ┌─────────────────┐             │
-│   │ AgentKernel     │      │ React Components│             │
-│   │ Tool System     │      └─────────────────┘             │
-│   │ Session Mgmt    │                                      │
-│   │ Permissions     │      @vinhnt-sdk/a2a                  │
-│   │ Plugin System   │      ┌─────────────────┐             │
-│   │ Workflows       │      │ Agent-to-Agent  │             │
-│   └─────────────────┘      └─────────────────┘             │
+│   @vinhnt-sdk/core                                         │
+│   ┌─────────────────┐                                      │
+│   │ AgentKernel     │                                      │
+│   │ Orchestration   │                                      │
+│   │ Workflows       │                                      │
+│   └─────────────────┘                                      │
+├─────────────────────────────────────────────────────────────┤
+│   @vinhnt-sdk/tools    @vinhnt-sdk/knowledge               │
+│   ┌─────────────────┐  ┌─────────────────┐                 │
+│   │ Built-in Tools  │  │ Memory & RAG    │                 │
+│   │ File/Shell/Git  │  │ Compression     │                 │
+│   └─────────────────┘  └─────────────────┘                 │
+├─────────────────────────────────────────────────────────────┤
+│   @vinhnt-sdk/security  @vinhnt-sdk/plugin                 │
+│   ┌─────────────────┐  ┌─────────────────┐                 │
+│   │ Prompt Protect  │  │ Plugin SDK      │                 │
+│   │ Secret Redact   │  │ TypeScript Hooks│                 │
+│   └─────────────────┘  └─────────────────┘                 │
 ├─────────────────────────────────────────────────────────────┤
 │   @vinhnt-sdk/mcp    @vinhnt-sdk/lsp    @vinhnt-sdk/rag    │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
 │   │ MCP Client  │    │ LSP Client  │    │ RAG Engine  │    │
 │   └─────────────┘    └─────────────┘    └─────────────┘    │
 ├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/plugin    @vinhnt-sdk/adapters                │
-│   ┌─────────────────┐  ┌─────────────────┐                 │
-│   │ Plugin SDK      │  │ OpenAI/Anthropic│                 │
-│   └─────────────────┘  └─────────────────┘                 │
-├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/schema         @vinhnt-sdk/config             │
-│   ┌─────────────────┐       ┌─────────────────┐            │
-│   │ Zod Schemas     │       │ Config Loading  │            │
-│   │ Branded IDs     │       │ YAML/JSON/JSONC │            │
-│   │ Error Classes   │       └─────────────────┘            │
+│   @vinhnt-sdk/schema                                       │
+│   ┌─────────────────┐                                      │
+│   │ Types & Schemas │                                      │
+│   │ Contracts       │                                      │
 │   └─────────────────┘                                      │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -47,18 +50,15 @@
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `@vinhnt-sdk/schema` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/schema.svg)](https://npmjs.com/package/@vinhnt-sdk/schema) | Shared Zod schemas, branded IDs, error classes |
-| `@vinhnt-sdk/core` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/core.svg)](https://npmjs.com/package/@vinhnt-sdk/core) | Agent kernel, tool system, sessions, plugins, permissions |
-| `@vinhnt-sdk/config` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/config.svg)](https://npmjs.com/package/@vinhnt-sdk/config) | Configuration loading (YAML, JSON, JSONC) |
+| `@vinhnt-sdk/schema` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/schema.svg)](https://npmjs.com/package/@vinhnt-sdk/schema) | Types, contracts, model interfaces, session store |
+| `@vinhnt-sdk/core` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/core.svg)](https://npmjs.com/package/@vinhnt-sdk/core) | Agent kernel, orchestration, workflows, re-exports |
+| `@vinhnt-sdk/tools` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/tools.svg)](https://npmjs.com/package/@vinhnt-sdk/tools) | Built-in tools (file, shell, git, web, search) |
+| `@vinhnt-sdk/knowledge` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/knowledge.svg)](https://npmjs.com/package/@vinhnt-sdk/knowledge) | Memory, context compression, learning engine |
+| `@vinhnt-sdk/security` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/security.svg)](https://npmjs.com/package/@vinhnt-sdk/security) | Prompt injection protection, secret redaction |
 | `@vinhnt-sdk/plugin` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/plugin.svg)](https://npmjs.com/package/@vinhnt-sdk/plugin) | Plugin SDK with TypeScript hooks |
 | `@vinhnt-sdk/mcp` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/mcp.svg)](https://npmjs.com/package/@vinhnt-sdk/mcp) | Model Context Protocol client |
 | `@vinhnt-sdk/lsp` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/lsp.svg)](https://npmjs.com/package/@vinhnt-sdk/lsp) | Language Server Protocol integration |
-| `@vinhnt-sdk/rag` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/rag.svg)](https://npmjs.com/package/@vinhnt-sdk/rag) | Retrieval-Augmented Generation |
-| `@vinhnt-sdk/store` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/store.svg)](https://npmjs.com/package/@vinhnt-sdk/store) | Persistent storage (SQLite via Drizzle) |
-| `@vinhnt-sdk/otel` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/otel.svg)](https://npmjs.com/package/@vinhnt-sdk/otel) | Observability (logging, tracing, audit) |
-| `@vinhnt-sdk/adapters` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/adapters.svg)](https://npmjs.com/package/@vinhnt-sdk/adapters) | LLM provider adapters (OpenAI, Anthropic) |
-| `@vinhnt-sdk/a2a` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/a2a.svg)](https://npmjs.com/package/@vinhnt-sdk/a2a) | Agent-to-Agent protocol |
-| `@vinhnt-sdk/ui` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/ui.svg)](https://npmjs.com/package/@vinhnt-sdk/ui) | React UI components |
+| `@vinhnt-sdk/rag` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/rag.svg)](https://npmjs.com/package/@vinhnt-sdk/rag) | Retrieval-Augmented Generation pipeline |
 
 ## Quick Start
 
@@ -79,7 +79,6 @@ const calculatorTool = defineTool({
     expression: z.string(),
   }),
   async execute(input) {
-    // Safe eval for math expressions only
     const result = Function(`"use strict"; return (${input.expression})`)();
     return { result: Number(result) };
   },
@@ -110,8 +109,8 @@ console.log("Agent completed:", result);
 - **Plugin System** — TypeScript hooks for lifecycle events
 - **Permissions** — Fine-grained allow/deny/ask rules with approval workflows
 - **Workflows** — Graph-based sequential and parallel agent orchestration
-- **A2A Protocol** — Agent-to-Agent communication with discovery
-- **Observability** — Cost tracking, tracing, audit logging
+- **Security** — Prompt injection protection, secret redaction
+- **MCP/LSP** — Protocol integrations for tool servers and language servers
 
 ## Security
 
@@ -133,15 +132,14 @@ pnpm build
 pnpm test
 
 # Typecheck all packages
-pnpm -r typecheck
+pnpm typecheck
 ```
 
 ## Documentation
 
-- [Architecture Guide](.agents/instructions/architecture.md)
-- [Coding Standards](.agents/instructions/coding-standards.md)
-- [Security Rules](.agents/rules/security.md)
+- [Architecture Guide](docs/guides/architecture.md)
 - [Examples](docs/examples/)
+- [Package Docs](docs/packages/)
 
 ## License
 

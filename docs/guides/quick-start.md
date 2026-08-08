@@ -6,7 +6,7 @@
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm, pnpm, or yarn
 - An API key from an AI provider (OpenAI, Anthropic, etc.)
 
@@ -33,10 +33,7 @@ sequenceDiagram
 
 ```bash
 # Core packages (minimum)
-npm install @vinhnt-sdk/core @vinhnt-sdk/schema @vinhnt-sdk/adapters
-
-# AI SDK peer dependency
-npm install ai @ai-sdk/openai
+npm install @vinhnt-sdk/core @vinhnt-sdk/schema
 
 # Dev tools
 npm install -D tsx typescript
@@ -47,7 +44,6 @@ npm install -D tsx typescript
 ```typescript
 // agent.ts
 import { AgentKernel, NullRunEventStore, defineTool } from "@vinhnt-sdk/core";
-import { createModelProvider } from "@vinhnt-sdk/adapters";
 import { z } from "zod";
 
 // Step 1: Define a tool
@@ -71,10 +67,21 @@ const calculatorTool = defineTool({
   },
 });
 
-// Step 2: Create model provider
-const model = createModelProvider("openai", "gpt-4o", {
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Step 2: Create model provider (implement ModelProvider interface)
+const model = {
+  id: "openai-gpt4o",
+  provider: "openai",
+  model: "gpt-4o",
+  capabilities: { streaming: true, toolCalling: true, vision: false },
+  async *stream(request) {
+    // Implement with your preferred AI SDK
+    // Example using Vercel AI SDK:
+    // import { streamText } from "ai";
+    // import { openai } from "@ai-sdk/openai";
+    // const result = streamText({ model: openai("gpt-4o"), messages: request.messages });
+    // yield* result.textStream;
+  },
+};
 
 // Step 3: Create kernel
 const kernel = new AgentKernel({
@@ -109,7 +116,7 @@ main();
 ## 3. Run It
 
 ```bash
-OPENAI_API_KEY=sk-... npx tsx agent.ts "What is 42 * 17?"
+npx tsx agent.ts "What is 42 * 17?"
 ```
 
 ## Expected Output
@@ -128,7 +135,5 @@ Answer: 42 * 17 = 714
 ## Next Steps
 
 - [Installation Guide](./installation.md) — Detailed setup options
-- [Configuration](./configuration.md) — Config file format
 - [Creating Tools](./creating-tools.md) — Advanced tool patterns
-- [NestJS Integration](./nestjs-integration.md) — Build a full API backend
 - [Architecture](./architecture.md) — How the system fits together

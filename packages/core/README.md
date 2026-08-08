@@ -1,29 +1,30 @@
-# @vnt/agent-core
+# @vinhnt-sdk/core
 
-Core agent engine for VNT Agent — kernel, tools, sessions, plugins, permissions, and knowledge.
+Core agent engine for vinhnt-sdk — kernel, orchestration, workflows.
 
 ## Install
 
 ```bash
 # npm
-npm install @vnt/agent-core
+npm install @vinhnt-sdk/core
 
 # pnpm (monorepo)
-pnpm add @vnt/agent-core
+pnpm add @vinhnt-sdk/core
 ```
 
 ## Quick Start
 
 ```typescript
-import { AgentKernel, InMemoryToolRegistry, InMemorySessionState } from '@vnt/agent-core';
+import { AgentKernel, NullRunEventStore } from '@vinhnt-sdk/core';
 
 const kernel = new AgentKernel({
-  modelProvider: myProvider,
-  toolRegistry: new InMemoryToolRegistry(),
-  sessionState: new InMemorySessionState(),
+  model: yourModelProvider,
+  store: new NullRunEventStore(),
+  maxSteps: 50,
 });
 
-const handle = await kernel.startRun({ prompt: 'Refactor this function' });
+const handle = kernel.run('Refactor this function');
+const result = await handle.completed;
 ```
 
 ## API Reference
@@ -31,25 +32,17 @@ const handle = await kernel.startRun({ prompt: 'Refactor this function' });
 | Export | Type | Description |
 |--------|------|-------------|
 | `AgentKernel` | Class | Run loop orchestrator with circuit breaker |
-| `ModelCaller` | Class | Model invocation with streaming |
-| `PermissionGate` | Class | 4-phase permission evaluation |
-| `ToolRegistry`, `InMemoryToolRegistry` | Class | Tool registration and lookup |
-| `ToolRuntime` | Class | Tool execution with sandbox and hooks |
-| `ToolSaga` | Class | Transactional tool rollback support |
-| `SessionRunCoordinator` | Class | Session-aware run lifecycle management |
 | `DefaultPluginManager` | Class | Plugin activation and lifecycle |
 | `InMemoryEventBus` | Class | Typed pub/sub event bus |
-| `createReadFileTool`, `createShellTool`, ... | Function | 36 built-in tool factories |
+| `NullRunEventStore` | Class | No-op store for development |
 | `defineTool` | Function | Define custom tools with Zod schemas |
 | `LearningEngine`, `ContextCompressor` | Class | Knowledge and memory management |
-| `WorkspaceManager` | Class | Multi-workspace support |
 
 ## Subpath Imports
 
 ```typescript
-import { AgentKernel } from '@vnt/agent-core';              // main
-import { defineTool } from '@vnt/agent-core/tool/define';   // deep import
-import { EventBus } from '@vnt/agent-core/event-bus';      // deep import
+import { AgentKernel } from '@vinhnt-sdk/core';              // main
+import { defineTool } from '@vinhnt-sdk/core/tool/define';   // deep import
 ```
 
 ## License

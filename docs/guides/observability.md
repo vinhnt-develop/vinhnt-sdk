@@ -6,6 +6,8 @@
 
 ## Overview
 
+vinhnt-sdk provides **observability hooks** through the plugin system. You can implement your own observability layer using your preferred tools.
+
 ```mermaid
 graph TD
     subgraph "Agent Lifecycle"
@@ -19,7 +21,6 @@ graph TD
         LOG["Logger"]
         TRACE["Tracer"]
         AUDIT["Audit Log"]
-        OTEL["OTel Exporter"]
     end
 
     RUN --> LOG
@@ -30,97 +31,132 @@ graph TD
     TOOL --> TRACE
     DONE --> LOG
     DONE --> TRACE
-    TRACE --> OTEL
 
     style LOG fill:#51cf66,color:#fff
     style TRACE fill:#4a9eff,color:#fff
     style AUDIT fill:#ff922b,color:#fff
-    style OTEL fill:#ff6b6b,color:#fff
 ```
 
-## Quick Setup
+## Using Run Events
+
+vinhnt-sdk emits events during agent execution. You can listen to these events for logging and tracing:
 
 ```typescript
-import { createObservabilityPlugin } from "@vinhnt-sdk/otel";
+const handle = kernel.run(prompt);
 
-const plugin = createObservabilityPlugin({
-  logLevel: "info",
-  auditEnabled: true,
-});
-
-pluginManager.register(plugin);
+for await (const event of handle.events) {
+  switch (event.type) {
+    case "run.started":
+      console.log(`Run started: ${event.data.runId}`);
+      break;
+    case "tool.invoked":
+      console.log(`Tool invoked: ${event.data.toolName}`);
+      break;
+    case "tool.completed":
+      console.log(`Tool completed: ${event.data.toolName}`);
+      break;
+    case "token.streamed":
+      console.log(`Tokens: ${event.data.tokenCount}`);
+      break;
+    case "run.completed":
+      console.log(`Run completed in ${event.data.totalDuration}ms`);
+      break;
+  }
+}
 ```
 
-## Logging
+## Custom Logger
 
 ```typescript
-import { Logger, ConsoleSink, FileSink } from "@vinhnt-sdk/otel";
+class Logger {
+  private level: "debug" | "info" | "warn" | "error";
 
-const logger = new Logger({
-  level: "info",
-  sinks: [
-    new ConsoleSink({ colorize: true }),
-    new FileSink({ path: "./logs/agent.log", maxSize: "10MB" }),
-  ],
-});
+  constructor(options: { level: string }) {
+    this.level = options.level as any;
+  }
 
-logger.info("Agent started", { agentId: "coding-assistant" });
-logger.warn("Context approaching limit", { tokens: 120000 });
-logger.error("Tool failed", { tool: "execute_command", error });
+  info(message: string, data?: any) {
+    if (this.level === "info" || this.level === "debug") {
+      console.log(`[INFO] ${message}`, data);
+    }
+  }
+
+  warn(message: string, data?: any) {
+    if (this.level !== "debug") {
+      console.warn(`[WARN] ${message}`, data);
+    }
+  }
+
+  error(message: string, data?: any) {
+    console.error(`[ERROR] ${message}`, data);
+  }
+}
 ```
 
-## Distributed Tracing
+## Custom Tracer
 
 ```typescript
-import { Tracer } from "@vinhnt-sdk/otel";
+class Tracer {
+  private spans: Map<string, { start: number; attributes: any }> = new Map();
 
-const tracer = new Tracer();
-
-const span = tracer.startSpan("agent.run", {
-  attributes: { "agent.id": "coding-assistant" },
-});
-
-try {
-  const result = await agent.run(prompt);
-  span.setStatus({ code: "OK" });
-} catch (error) {
-  span.setStatus({ code: "ERROR", message: error.message });
-} finally {
-  span.end();
+  startSpan(name: string, options?: { attributes?: any }) {
+    const spanId = crypto.randomUUID();
+    this.spans.set(spanId, {
+      start: Date.now(),
+      attributes: options?.attributes,
+    });
+    return {
+      spanId,
+      setStatus: (status: { code: string; message?: string }) => {},
+      end: () => {
+        const span = this.spans.get(spanId);
+        if (span) {
+          const duration = Date.now() - span.start;
+          console.log(`[TRACE] ${name}: ${duration}ms`, span.attributes);
+          this.spans.delete(spanId);
+        }
+      },
+    };
+  }
 }
 ```
 
 ## Audit Logging
 
 ```typescript
-import { AuditLog } from "@vinhnt-sdk/otel";
+class AuditLog {
+  private logs: any[] = [];
 
-const audit = new AuditLog({
-  sink: new FileSink({ path: "./audit.log" }),
-});
-
-await audit.log({
-  action: "tool.execute",
-  actor: "user-123",
-  resource: "execute_command",
-  details: { command: "rm -rf /" },
-  outcome: "denied",
-});
+  async log(entry: {
+    action: string;
+    actor: string;
+    resource: string;
+    details: any;
+    outcome: string;
+  }) {
+    this.logs.push({
+      ...entry,
+      timestamp: new Date().toISOString(),
+    });
+    console.log(`[AUDIT] ${entry.action} by ${entry.actor}: ${entry.outcome}`);
+  }
+}
 ```
 
 ## OpenTelemetry Integration
 
-```typescript
-import { OTelTracerSink } from "@vinhnt-sdk/otel";
+For production observability, integrate with OpenTelemetry:
 
-const tracer = new Tracer({
-  sinks: [
-    new OTelTracerSink({
-      endpoint: "http://localhost:4318",
-      serviceName: "vinhnt-agent",
-    }),
-  ],
+```typescript
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { ConsoleSpanExporter } from "@opentelemetry/sdk-trace-node";
+
+const sdk = new NodeSDK({
+  serviceName: "vinhnt-agent",
+  traceExporter: new ConsoleSpanExporter(),
 });
+
+sdk.start();
 ```
 
 ## What Gets Tracked

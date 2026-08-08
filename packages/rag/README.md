@@ -1,21 +1,21 @@
-# @vnt/rag
+# @vinhnt-sdk/rag
 
-RAG (Retrieval-Augmented Generation) module for VNT Agent — indexing, embedding, and semantic search.
+RAG (Retrieval-Augmented Generation) module for vinhnt-sdk — indexing, embedding, and semantic search.
 
 ## Install
 
 ```bash
 # npm
-npm install @vnt/rag
+npm install @vinhnt-sdk/rag
 
 # pnpm (monorepo)
-pnpm add @vnt/rag
+pnpm add @vinhnt-sdk/rag
 ```
 
 ## Quick Start
 
 ```typescript
-import { Indexer, search, hybridSearch, ingestDirectory } from '@vnt/rag';
+import { Indexer, search, hybridSearch, ingestDirectory } from '@vinhnt-sdk/rag';
 
 await ingestDirectory('./src', { patterns: ['**/*.ts'] });
 const indexer = new Indexer();

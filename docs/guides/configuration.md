@@ -4,124 +4,100 @@
 
 ---
 
-## Config File Locations
+## Overview
 
-vinhnt-sdk looks for configuration in the following locations (in order of priority):
+vinhnt-sdk is a library, not an application. It accepts configuration via constructor parameters, not config files. Your application is responsible for loading configuration from files, environment variables, or other sources.
 
-1. `vnt.config.json` — Project root
-2. `vnt.config.jsonc` — Project root (JSONC with comments)
-3. `vnt.config.yaml` — Project root
-4. `.vnt/config.json` — `.vnt` directory
-5. `.vnt/config.yaml` — `.vnt` directory
-6. `package.json#vnt` — package.json field
+## Configuring the Kernel
 
-## Basic Configuration
+```typescript
+import { AgentKernel, NullRunEventStore } from "@vinhnt-sdk/core";
 
-```jsonc
-{
-  // Model provider configuration
-  "provider": {
-    "type": "openai",
-    "model": "gpt-4o",
-    "apiKey": "${OPENAI_API_KEY}"  // Environment variable interpolation
-  },
-
-  // Agent behavior
-  "agent": {
-    "maxSteps": 50,
-    "maxTokens": 128000,
-    "systemPrompt": "You are a helpful coding assistant."
-  },
-
-  // Tool permissions
-  "permissions": {
-    "rules": [
-      { "pattern": "read_file", "effect": "allow" },
-      { "pattern": "write_file", "effect": "ask" },
-      { "pattern": "execute_*", "effect": "deny" }
-    ]
-  },
-
-  // Learning and memory
-  "learning": {
-    "enabled": true,
-    "maxMemoryEntries": 1000
-  },
-
-  // Context compaction
-  "compaction": {
-    "enabled": true,
-    "threshold": 0.8
-  }
-}
+const kernel = new AgentKernel({
+  model: yourModelProvider,
+  tools: [yourTools],
+  store: new NullRunEventStore(),
+  maxSteps: 50,
+  systemPrompt: "You are a helpful coding assistant.",
+});
 ```
 
 ## Environment Variables
 
-Environment variables are interpolated with `${VAR_NAME}` syntax:
+Your application can load environment variables and pass them to the kernel:
 
-```jsonc
-{
-  "provider": {
-    "apiKey": "${OPENAI_API_KEY}"
-  }
-}
+```typescript
+const apiKey = process.env.OPENAI_API_KEY;
+
+const model = {
+  id: "openai-gpt4o",
+  provider: "openai",
+  model: "gpt-4o",
+  capabilities: { streaming: true, toolCalling: true, vision: false },
+  async *stream(request) {
+    // Use apiKey here
+  },
+};
 ```
 
-You can also use a `.env` file:
+## Custom Configuration
 
-```bash
-# .env
-OPENAI_API_KEY=sk-...
-VNT_API_TOKEN=your-token
-DATABASE_URL=postgresql://...
+You can define your own config schema and load it however you want:
+
+```typescript
+import { readFileSync } from "fs";
+
+// Your own config type
+interface AppConfig {
+  provider: {
+    type: string;
+    model: string;
+    apiKey: string;
+  };
+  agent: {
+    maxSteps: number;
+    systemPrompt: string;
+  };
+}
+
+// Load config from file
+const rawConfig = readFileSync("./config.json", "utf-8");
+const config: AppConfig = JSON.parse(rawConfig);
+
+// Use config to create kernel
+const kernel = new AgentKernel({
+  model: createModel(config.provider),
+  maxSteps: config.agent.maxSteps,
+});
 ```
 
 ## Configuration Precedence
 
-Configuration is merged from multiple sources with the following precedence (highest first):
+Your application decides how to handle configuration precedence. Common patterns:
 
-1. **CLI arguments** — `--model gpt-4o`
-2. **Environment variables** — `VNT_MODEL=gpt-4o`
-3. **Project config** — `vnt.config.json`
-4. **User config** — `~/.config/vnt/config.json`
-5. **Defaults** — Built-in defaults
+1. **CLI arguments** — Override with `--model gpt-4o`
+2. **Environment variables** — `OPENAI_API_KEY=sk-...`
+3. **Config file** — `config.json`
+4. **Defaults** — Built-in defaults
 
-## Loading Configuration Programmatically
+## Type-Safe Configuration
 
-```typescript
-import { loadConfig, resolveConfig } from "@vinhnt-sdk/config";
-
-// Load from file system
-const rawConfig = await loadConfig();
-
-// Resolve with defaults and environment
-const config = resolveConfig(rawConfig);
-
-console.log(config.provider.type);  // "openai"
-console.log(config.agent.maxSteps); // 50
-```
-
-## Watching for Changes
+Use Zod for runtime validation:
 
 ```typescript
-import { createConfigWatcher } from "@vinhnt-sdk/config";
+import { z } from "zod";
 
-const watcher = createConfigWatcher("./vnt.config.json", (newConfig) => {
-  console.log("Config changed:", newConfig);
+const ConfigSchema = z.object({
+  provider: z.object({
+    type: z.enum(["openai", "anthropic"]),
+    model: z.string(),
+    apiKey: z.string(),
+  }),
+  agent: z.object({
+    maxSteps: z.number().default(50),
+    systemPrompt: z.string().optional(),
+  }),
 });
 
-// Stop watching
-watcher.close();
-```
-
-## Schema Generation
-
-Generate JSON Schema from config definition:
-
-```typescript
-import { buildVntJsonSchema } from "@vinhnt-sdk/config";
-
-const schema = buildVntJsonSchema();
-// Use with JSON Schema validators, IDE autocomplete, etc.
+const config = ConfigSchema.parse(rawConfig);
 ```

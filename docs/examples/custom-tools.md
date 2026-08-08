@@ -91,12 +91,18 @@ export const forecastTool = defineTool({
 
 ```typescript
 import { AgentKernel, NullRunEventStore } from "@vinhnt-sdk/core";
-import { createModelProvider } from "@vinhnt-sdk/adapters";
 import { getWeatherTool, forecastTool } from "./weather-tool";
 
-const model = createModelProvider("openai", "gpt-4o", {
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Implement ModelProvider interface with your preferred AI SDK
+const model = {
+  id: "openai-gpt4o",
+  provider: "openai",
+  model: "gpt-4o",
+  capabilities: { streaming: true, toolCalling: true, vision: false },
+  async *stream(request) {
+    // Implement with Vercel AI SDK, OpenAI SDK, etc.
+  },
+};
 
 const kernel = new AgentKernel({
   model,

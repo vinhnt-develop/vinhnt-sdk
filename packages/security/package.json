@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/security",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Security utilities for vinhnt-sdk — prompt injection protection and secret redaction",
   "license": "MIT",
   "type": "module",

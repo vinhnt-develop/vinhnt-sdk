@@ -1,6 +1,6 @@
 # Example: Full Stack
 
-> Complete agent platform with NestJS, persistence, and observability.
+> Complete agent platform with NestJS.
 
 ---
 
@@ -28,9 +28,7 @@ graph TD
 
     subgraph "Infrastructure"
         LLM["OpenAI / Anthropic"]
-        DB["SQLite / PostgreSQL"]
         MCP["MCP Servers"]
-        OTEL["OpenTelemetry"]
     end
 
     BROWSER -->|"HTTP"| REST
@@ -44,8 +42,6 @@ graph TD
     KERNEL --> EVENTS
     KERNEL --> LLM
     TOOLS --> MCP
-    KERNEL --> DB
-    EVENTS --> OTEL
 
     style BROWSER fill:#4a9eff,color:#fff
     style REST fill:#ff6b6b,color:#fff
@@ -58,10 +54,7 @@ graph TD
 
 ```bash
 npm install \
-  @vinhnt-sdk/core @vinhnt-sdk/schema @vinhnt-sdk/config \
-  @vinhnt-sdk/adapters @vinhnt-sdk/store @vinhnt-sdk/otel \
-  @vinhnt-sdk/mcp @vinhnt-sdk/plugin \
-  ai @ai-sdk/openai better-sqlite3 \
+  @vinhnt-sdk/core @vinhnt-sdk/schema @vinhnt-sdk/mcp @vinhnt-sdk/plugin \
   @nestjs/common @nestjs/core @nestjs/platform-express \
   @nestjs/websockets @nestjs/platform-socket.io \
   @nestjs/swagger rxjs reflect-metadata
@@ -72,37 +65,28 @@ npm install \
 ```typescript
 // src/agent/agent.service.ts
 import { Injectable, OnModuleInit } from "@nestjs/common";
-import { AgentKernel, DefaultPluginManager } from "@vinhnt-sdk/core";
-import { createModelProvider } from "@vinhnt-sdk/adapters";
-import { loadConfig, resolveConfig } from "@vinhnt-sdk/config";
-import { createDb, applyMigrations, DrizzleRunEventStore, DrizzleSessionStore } from "@vinhnt-sdk/store";
-import { createObservabilityPlugin } from "@vinhnt-sdk/otel";
+import { AgentKernel, DefaultPluginManager, NullRunEventStore } from "@vinhnt-sdk/core";
 
 @Injectable()
 export class AgentService implements OnModuleInit {
   private kernel!: AgentKernel;
 
   async onModuleInit() {
-    const config = resolveConfig(await loadConfig());
-    const db = createDb("./data/agent.sqlite");
-    applyMigrations(db);
-
-    const obsPlugin = createObservabilityPlugin({ logLevel: "info" });
-    const pluginManager = new DefaultPluginManager();
-    pluginManager.register(obsPlugin);
-
-    const model = createModelProvider(
-      config.provider.type,
-      config.provider.model,
-      { apiKey: config.provider.apiKey }
-    );
+    // Create model provider (implement ModelProvider interface)
+    const model = {
+      id: "openai-gpt4o",
+      provider: "openai",
+      model: "gpt-4o",
+      capabilities: { streaming: true, toolCalling: true, vision: false },
+      async *stream(request: any) {
+        // Implement with your preferred AI SDK
+      },
+    };
 
     this.kernel = new AgentKernel({
       model,
       tools: [],
-      store: new DrizzleRunEventStore(db),
-      sessionStore: new DrizzleSessionStore(db),
-      pluginManager,
+      store: new NullRunEventStore(),
     });
   }
 

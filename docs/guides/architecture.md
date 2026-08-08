@@ -8,16 +8,16 @@
 
 ### 1. Modularity
 
-Each package is independently publishable and can be used in isolation. You can use `@vinhnt-sdk/core` without `@vinhnt-sdk/store`, or `@vinhnt-sdk/schema` without anything else.
+Each package is independently publishable and can be used in isolation. You can use `@vinhnt-sdk/core` without `@vinhnt-sdk/tools`, or `@vinhnt-sdk/schema` without anything else.
 
 ### 2. Separation of Concerns
 
 | Layer | Responsibility |
 |-------|---------------|
-| **Foundation** | Types, schemas, config, contracts |
-| **Core** | Agent runtime, tool system, sessions |
-| **Subsystem** | Persistence, observability, model providers |
-| **Integration** | MCP, LSP, API, UI |
+| **Foundation** | Types, schemas, contracts |
+| **Core** | Agent runtime, orchestration, workflows |
+| **Tools** | Built-in tools, memory, security |
+| **Integrations** | MCP, LSP, RAG |
 
 ### 3. Convention over Configuration
 
@@ -28,7 +28,7 @@ Each package is independently publishable and can be used in isolation. You can 
 
 ### 4. Dependency Injection
 
-The kernel accepts interfaces, not implementations. Swap `NullRunEventStore` for `DrizzleRunEventStore` without changing business logic.
+The kernel accepts interfaces, not implementations. Swap `NullRunEventStore` for your custom implementation without changing business logic.
 
 ---
 
@@ -36,58 +36,49 @@ The kernel accepts interfaces, not implementations. Swap `NullRunEventStore` for
 
 ```mermaid
 graph TD
-    subgraph "L0: Foundation (no internal deps)"
+    subgraph "Foundation (no internal deps)"
         schema["schema"]
-        config["config"]
-        api["api"]
     end
 
-    subgraph "L1: Core"
+    subgraph "Core"
         core["core"]
         plugin["plugin"]
     end
 
-    subgraph "L2: Subsystems"
-        adapters["adapters"]
+    subgraph "Tools"
+        tools["tools"]
+        knowledge["knowledge"]
+        security["security"]
+    end
+
+    subgraph "Integrations"
         mcp["mcp"]
         lsp["lsp"]
         rag["rag"]
-        store["store"]
-        otel["otel"]
-    end
-
-    subgraph "L3: Consumer"
-        ui["ui"]
     end
 
     core --> schema
+    tools --> schema
+    tools --> security
+    knowledge --> schema
+    knowledge --> tools
     plugin --> core
-    adapters --> core
-    adapters --> schema
     mcp --> core
     mcp --> schema
     lsp --> core
     lsp --> schema
     rag --> core
     rag --> schema
-    store --> core
-    store --> schema
-    otel --> core
-    otel --> plugin
-    otel --> schema
 
     style schema fill:#4a9eff,color:#fff
-    style config fill:#4a9eff,color:#fff
-    style api fill:#4a9eff,color:#fff
     style core fill:#ff6b6b,color:#fff
     style plugin fill:#ff6b6b,color:#fff
-    style adapters fill:#51cf66,color:#fff
-    style mcp fill:#51cf66,color:#fff
-    style lsp fill:#51cf66,color:#fff
-    style rag fill:#51cf66,color:#fff
-    style store fill:#51cf66,color:#fff
-    style otel fill:#51cf66,color:#fff
-    style ui fill:#ffd43b,color:#000
+    style tools fill:#51cf66,color:#fff
+    style knowledge fill:#51cf66,color:#fff
+    style security fill:#51cf66,color:#fff
+    style mcp fill:#ffd43b,color:#000
+    style lsp fill:#ffd43b,color:#000
+    style rag fill:#ffd43b,color:#000
 ```
 
 ---
@@ -217,14 +208,14 @@ graph TD
     MODEL --> TOOLS["Tool Registry"]
     TOOLS --> SESSION["Session State"]
     TOOLS --> EVENTS["Event Bus"]
-    SESSION --> STORE["Store<br/>(SQLite/PG)"]
-    EVENTS --> OTEL["OTel<br/>(Logs/Traces)"]
+    SESSION --> STORE["Store"]
+    EVENTS --> OBSERVE["Observability"]
     MODEL --> RESULT["Result"]
 
     style USER fill:#4a9eff,color:#fff
     style KERNEL fill:#ff6b6b,color:#fff
     style STORE fill:#51cf66,color:#fff
-    style OTEL fill:#ff922b,color:#fff
+    style OBSERVE fill:#ff922b,color:#fff
 ```
 
 ---
