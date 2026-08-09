@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/schema",
-  "version": "0.1.1-beta.0",
+  "version": "0.1.2-beta.0",
   "description": "Shared Zod schemas and types for VNT Agent — tool definitions, event types, and ACP protocol",
   "license": "MIT",
   "type": "module",

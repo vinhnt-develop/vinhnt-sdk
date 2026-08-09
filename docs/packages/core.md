@@ -1,10 +1,12 @@
 # @vinhnt-sdk/core
 
-> Agent kernel, tool system, session management, permissions, and plugin system.
+> Version: 0.1.2-beta.0 | Status: BETA
+
+Agent kernel, tool system, session management, permissions, and plugin system.
 
 **npm:** `npm install @vinhnt-sdk/core`  
 **Size:** ~254 KB  
-**Dependencies:** `@vinhnt-sdk/schema`
+**Dependencies:** `@vinhnt-sdk/schema`, `@vinhnt-sdk/security`, `@vinhnt-sdk/knowledge`, `@vinhnt-sdk/tools`
 
 ---
 
@@ -18,6 +20,7 @@
 - **Permission System** — Control tool access
 - **Plugin System** — Extend agent behavior
 - **Event Bus** — Typed event emission
+- **Circuit Breaker** — Resilient execution with retry logic
 
 ## Installation
 

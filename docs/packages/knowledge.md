@@ -1,6 +1,12 @@
 # @vinhnt-sdk/knowledge
 
+> Version: 0.1.2-beta.0 | Status: BETA
+
 Memory and knowledge management for VNT Agent — bounded memory, context compression, learning engine.
+
+**npm:** `npm install @vinhnt-sdk/knowledge`
+
+---
 
 ## Installation
 

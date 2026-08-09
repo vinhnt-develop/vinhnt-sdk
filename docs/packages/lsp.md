@@ -1,6 +1,8 @@
 # @vinhnt-sdk/lsp
 
-> LSP client pool for code intelligence — diagnostics, symbols, hover, definitions.
+> Version: 0.1.2-beta.0 | Status: BETA
+
+LSP client pool for code intelligence — diagnostics, symbols, hover, definitions.
 
 **npm:** `npm install @vinhnt-sdk/lsp`  
 **Size:** ~33 KB  

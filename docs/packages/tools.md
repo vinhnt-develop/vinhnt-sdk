@@ -1,6 +1,12 @@
 # @vinhnt-sdk/tools
 
+> Version: 0.1.2-beta.0 | Status: BETA
+
 Built-in tools for VNT Agent — file, shell, git, web, search, image, and more.
+
+**npm:** `npm install @vinhnt-sdk/tools`
+
+---
 
 ## Installation
 

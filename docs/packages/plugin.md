@@ -1,6 +1,8 @@
 # @vinhnt-sdk/plugin
 
-> Plugin SDK for defining, activating, and loading plugins.
+> Version: 0.1.2-beta.0 | Status: BETA
+
+Plugin SDK for defining, activating, and loading plugins.
 
 **npm:** `npm install @vinhnt-sdk/plugin`  
 **Size:** ~6 KB  

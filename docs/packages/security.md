@@ -1,6 +1,12 @@
 # @vinhnt-sdk/security
 
+> Version: 0.1.2-beta.0 | Status: BETA
+
 Security utilities for VNT Agent — prompt injection protection and secret redaction.
+
+**npm:** `npm install @vinhnt-sdk/security`
+
+---
 
 ## Installation
 

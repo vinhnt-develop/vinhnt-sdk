@@ -1,6 +1,8 @@
 # @vinhnt-sdk/schema
 
-> Foundational Zod schemas, branded IDs, event types, and error classes.
+> Version: 0.1.2-beta.0 | Status: BETA
+
+Foundational Zod schemas, branded IDs, event types, and error classes.
 
 **npm:** `npm install @vinhnt-sdk/schema`  
 **Size:** ~44 KB  
@@ -25,7 +27,29 @@
 npm install @vinhnt-sdk/schema
 ```
 
-## Exports
+## Quick Start
+
+```typescript
+import type {
+  ModelProvider,
+  ModelRequest,
+  ModelResponse,
+  RunEvent,
+  Session,
+  Message,
+  AgentConfig,
+  AgentContext,
+  AgentRunResult,
+} from '@vinhnt-sdk/schema';
+
+// Use types in your code
+const config: AgentConfig = {
+  name: "my-agent",
+  model: "gpt-4",
+};
+```
+
+## API Reference
 
 ### Branded IDs
 
@@ -98,6 +122,77 @@ try {
 | `RunNotFoundError` | Run ID not found |
 | `RunAbortedError` | Run was aborted |
 | `RunTimeoutError` | Run exceeded time limit |
+
+### Model Types
+
+```typescript
+import type {
+  ModelProvider,
+  ModelRequest,
+  ModelResponse,
+  ModelStreamEvent,
+  ModelCapabilities,
+  ModelPricing,
+} from "@vinhnt-sdk/schema";
+
+// Implement ModelProvider interface
+const model: ModelProvider = {
+  provider: "openai",
+  model: "gpt-4o",
+  contextLimit: 128000,
+  capabilities: {
+    chat: true,
+    completion: false,
+    vision: true,
+    audio: false,
+    functionCall: true,
+    streaming: true,
+  },
+  async generate(request: ModelRequest, signal?: AbortSignal): Promise<ModelResponse> {
+    // Implement generation
+  },
+  async *stream(request: ModelRequest, signal?: AbortSignal): AsyncIterable<ModelStreamEvent> {
+    // Implement streaming
+  },
+};
+```
+
+### Agent Types
+
+```typescript
+import type {
+  AgentConfig,
+  AgentContext,
+  AgentRunResult,
+} from "@vinhnt-sdk/schema";
+
+const config: AgentConfig = {
+  name: "my-agent",
+  model: "gpt-4",
+  systemPrompt: "You are a helpful assistant.",
+  maxSteps: 10,
+};
+```
+
+### Session Types
+
+```typescript
+import type {
+  Session,
+  Message,
+  RunEvent,
+  SessionStore,
+  RunEventStore,
+} from "@vinhnt-sdk/schema";
+
+const session: Session = {
+  id: "session-123",
+  title: "My Session",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  isActive: true,
+};
+```
 
 ### Run Events
 
@@ -192,3 +287,15 @@ import { /* ... */ } from "@vinhnt-sdk/schema/types";
 import { /* ... */ } from "@vinhnt-sdk/schema/tool";
 import { /* ... */ } from "@vinhnt-sdk/schema/wildcard";
 ```
+
+## Dependencies
+
+- `zod` ^4.4.3
+
+## Peer Dependencies
+
+None
+
+## License
+
+MIT
