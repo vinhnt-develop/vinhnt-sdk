@@ -1,4 +1,5 @@
 import type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing } from "../model.js";
+import { getTextContent } from "../model.js";
 
 /**
  * FakeModelProvider — Mock LLM provider for unit tests.
@@ -68,7 +69,7 @@ export class FakeModelProvider implements ModelProvider {
     const lastMsg = request.messages.filter((m) => m.role === "user").at(-1);
     const prefix = this.options?.echoPrefix ?? "[FakeModelProvider] ";
     const content = lastMsg
-      ? `${prefix}${lastMsg.content}`
+      ? `${prefix}${getTextContent(lastMsg.content)}`
       : `${prefix}(no user message)`;
 
     return { content };

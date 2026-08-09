@@ -1,4 +1,5 @@
 import type { CompressionSummary, ChatMessage, ConversationCompactor } from "@vinhnt-sdk/schema";
+import { getTextContent } from "@vinhnt-sdk/schema";
 
 export interface CompressorOptions {
   /** Always protect this many messages at start */
@@ -27,8 +28,9 @@ function approximateTokens(text: string, charsPerToken = 4): number {
 
 function truncateToolOutput(msg: ChatMessage, maxLen: number): ChatMessage {
   if (msg.role !== "tool") return msg;
-  if (msg.content.length <= maxLen) return msg;
-  return { ...msg, content: msg.content.slice(0, maxLen) + "... [truncated]" };
+  const text = getTextContent(msg.content);
+  if (text.length <= maxLen) return msg;
+  return { ...msg, content: text.slice(0, maxLen) + "... [truncated]" };
 }
 
 export class ContextCompressor implements ConversationCompactor {
@@ -49,7 +51,7 @@ export class ContextCompressor implements ConversationCompactor {
    * Determine if compression is needed based on token budget.
    */
   needsCompression(messages: readonly ChatMessage[]): boolean {
-    const total = messages.reduce((sum, m) => sum + approximateTokens(m.content, this.opts.charsPerToken), 0);
+    const total = messages.reduce((sum, m) => sum + approximateTokens(getTextContent(m.content), this.opts.charsPerToken), 0);
     return total > this.opts.tokenBudget;
   }
 
@@ -93,7 +95,7 @@ export class ContextCompressor implements ConversationCompactor {
     const middle = pruned.slice(this.opts.headCount, -this.opts.tailCount);
 
     const middleContent = middle
-      .map((m) => `[${m.role}] ${m.content.slice(0, 200)}`)
+      .map((m) => `[${m.role}] ${getTextContent(m.content).slice(0, 200)}`)
       .join("\n");
     const summary = middle.length > 0
       ? `[Compressed ${middle.length} messages] ${middleContent.slice(0, 1000)}`

@@ -26,12 +26,17 @@ export interface TreeCursor {
   readonly prevSiblingId?: SessionId;
 }
 
-export type SessionTreeEventType =
-  | "node.added"
-  | "node.removed"
-  | "node.moved"
-  | "node.activated"
-  | "node.title_changed";
+/** Known session tree event types. Use as reference, not exhaustive. */
+export const KNOWN_SESSION_TREE_EVENT_TYPES = [
+  "node.added",
+  "node.removed",
+  "node.moved",
+  "node.activated",
+  "node.title_changed",
+] as const;
+
+/** Session tree event type — open string for extensibility. */
+export type SessionTreeEventType = string;
 
 export interface SessionTreeEvent {
   readonly type: SessionTreeEventType;

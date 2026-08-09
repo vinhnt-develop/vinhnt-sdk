@@ -1,8 +1,9 @@
-import type { RunId, RequestContext, KnownRunEvent } from "@vinhnt-sdk/schema";
+import type { RunId, RequestContext, KnownRunEvent, ToolChoice, ResponseFormat, StreamOptions } from "@vinhnt-sdk/schema";
 import type { ChatMessage, ModelProvider, ModelRequest, ModelResponse, ModelRegistry } from "../model.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { Logger } from "../logger.js";
+import { getTextContent } from "@vinhnt-sdk/schema";
 
 export interface ModelCallerDeps {
   defaultModel: ModelProvider;
@@ -16,6 +17,32 @@ export interface ModelCallerDeps {
   modelForRun(runId: RunId): ModelProvider | undefined;
   setModelForRun(runId: RunId, model: ModelProvider): void;
   getAvailableTools(): readonly ToolDefinition[];
+  /** OpenAI: tool_choice — controls tool calling behavior. */
+  readonly toolChoice?: ToolChoice;
+  /** OpenAI: parallel_tool_calls — whether to allow parallel tool calls. */
+  readonly parallelToolCalls?: boolean;
+  /** OpenAI: response_format — controls output format. */
+  readonly responseFormat?: ResponseFormat;
+  /** OpenAI: stream_options — options for streaming. */
+  readonly streamOptions?: StreamOptions;
+  /** OpenAI: presence_penalty — penalizes tokens based on presence. */
+  readonly presencePenalty?: number;
+  /** OpenAI: frequency_penalty — penalizes tokens based on frequency. */
+  readonly frequencyPenalty?: number;
+  /** OpenAI: logit_bias — token-level logit biases. */
+  readonly logitBias?: Record<string, number>;
+  /** OpenAI: seed — for reproducible outputs. */
+  readonly seed?: number;
+  /** OpenAI: user — end-user identifier. */
+  readonly user?: string;
+  /** OpenAI: logprobs — return log probabilities. */
+  readonly logprobs?: boolean;
+  /** OpenAI: top_logprobs — number of top logprobs per token. */
+  readonly topLogprobs?: number;
+  /** OpenAI: max_completion_tokens — for o-series models. */
+  readonly maxCompletionTokens?: number;
+  /** OpenAI: reasoning_effort — controls reasoning token budget. */
+  readonly reasoningEffort?: string;
 }
 
 type TypedEvent<Type extends string, Data> = {
@@ -85,6 +112,20 @@ export class ModelCaller {
       messages, tools: availableTools, maxTokens: agentMaxTokens ?? this.deps.maxTokens,
       ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
       ...(this.deps.thinkingPrompt ? { thinkingPrompt: this.deps.thinkingPrompt } : {}),
+      // OpenAI fields passthrough
+      ...(this.deps.toolChoice !== undefined ? { toolChoice: this.deps.toolChoice } : {}),
+      ...(this.deps.parallelToolCalls !== undefined ? { parallelToolCalls: this.deps.parallelToolCalls } : {}),
+      ...(this.deps.responseFormat !== undefined ? { responseFormat: this.deps.responseFormat } : {}),
+      ...(this.deps.streamOptions !== undefined ? { streamOptions: this.deps.streamOptions } : {}),
+      ...(this.deps.presencePenalty !== undefined ? { presencePenalty: this.deps.presencePenalty } : {}),
+      ...(this.deps.frequencyPenalty !== undefined ? { frequencyPenalty: this.deps.frequencyPenalty } : {}),
+      ...(this.deps.logitBias !== undefined ? { logitBias: this.deps.logitBias } : {}),
+      ...(this.deps.seed !== undefined ? { seed: this.deps.seed } : {}),
+      ...(this.deps.user !== undefined ? { user: this.deps.user } : {}),
+      ...(this.deps.logprobs !== undefined ? { logprobs: this.deps.logprobs } : {}),
+      ...(this.deps.topLogprobs !== undefined ? { topLogprobs: this.deps.topLogprobs } : {}),
+      ...(this.deps.maxCompletionTokens !== undefined ? { maxCompletionTokens: this.deps.maxCompletionTokens } : {}),
+      ...(this.deps.reasoningEffort !== undefined ? { reasoningEffort: this.deps.reasoningEffort } : {}),
     };
 
     const chatParamsResult = await this.deps.pluginManager?.fireHook("onChatParams", {
@@ -102,7 +143,7 @@ export class ModelCaller {
 
     const modelHasTokens = !!model.countTokens;
     if (modelHasTokens) {
-      inputTokens = messages.reduce((sum, m) => sum + model.countTokens!(m.content), 0);
+      inputTokens = messages.reduce((sum, m) => sum + model.countTokens!(getTextContent(m.content)), 0);
       await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, step, source: "local" }) as unknown as Omit<KnownRunEvent, "sequence">);
     }
 
@@ -112,14 +153,16 @@ export class ModelCaller {
     if (!model.stream) {
       const res = await model.generate(request, signal);
       let source: "api" | "local" = "api";
-      if (res.usage && res.usage.inputTokens > 0 && res.usage.outputTokens > 0) {
-        inputTokens = res.usage.inputTokens;
-        outputTokens = res.usage.outputTokens;
+      const input = res.usage?.inputTokens ?? res.usage?.promptTokens ?? 0;
+      const output = res.usage?.outputTokens ?? res.usage?.completionTokens ?? 0;
+      if (input > 0 && output > 0) {
+        inputTokens = input;
+        outputTokens = output;
       } else if (modelHasTokens && res.content) {
         const localOut = model.countTokens!(res.content);
-        if (res.usage?.inputTokens) inputTokens = res.usage.inputTokens;
+        if (input > 0) inputTokens = input;
         outputTokens = localOut;
-        source = localOut === (res.usage?.outputTokens ?? -1) ? "api" : "local";
+        source = localOut === (output || -1) ? "api" : "local";
       }
       await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
       const durationMs = Math.round(performance.now() - startTime);

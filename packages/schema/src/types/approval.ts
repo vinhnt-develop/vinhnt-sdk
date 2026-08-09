@@ -1,19 +1,24 @@
 import type { SessionId, AgentId, RunId } from "../contracts/branded.js";
 
-export type ApprovalCategory =
-  | "memory.write"
-  | "skill.write"
-  | "tool.destructive"
-  | "tool.read"
-  | "tool.write"
-  | "file.delete"
-  | "file.overwrite"
-  | "bash.destructive"
-  | "config.change"
-  | "agent.spawn"
-  | "agent.delegate"
-  | "network.fetch"
-  | "unknown";
+/** Known approval categories. Use as reference, not exhaustive. */
+export const KNOWN_APPROVAL_CATEGORIES = [
+  "memory.write",
+  "skill.write",
+  "tool.destructive",
+  "tool.read",
+  "tool.write",
+  "file.delete",
+  "file.overwrite",
+  "bash.destructive",
+  "config.change",
+  "agent.spawn",
+  "agent.delegate",
+  "network.fetch",
+  "unknown",
+] as const;
+
+/** Approval category — open string for extensibility. */
+export type ApprovalCategory = string;
 
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
 
@@ -52,7 +57,7 @@ export interface ApprovalPolicy {
   readonly createdBy?: string;
 }
 
-export const APPROVAL_CATEGORY_LABELS: Record<ApprovalCategory, string> = {
+export const APPROVAL_CATEGORY_LABELS: Record<string, string> = {
   "memory.write":     "Write to memory",
   "skill.write":      "Write skill definition",
   "tool.destructive": "Destructive tool",

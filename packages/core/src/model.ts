@@ -4,6 +4,9 @@
  * InMemoryModelRegistry stays here (class, not interface).
  */
 export type {
+  ContentPart,
+  ModelUsage,
+  ToolCallResult,
   ToolCall,
   MessageContentPart,
   ChatMessage,
@@ -16,6 +19,8 @@ export type {
   ModelRegistry,
   ToolDefinitionLike,
 } from "@vinhnt-sdk/schema";
+
+export { getTextContent } from "@vinhnt-sdk/schema";
 
 import type { ModelProvider, ModelRegistry } from "@vinhnt-sdk/schema";
 

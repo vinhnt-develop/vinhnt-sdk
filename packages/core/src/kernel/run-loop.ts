@@ -1,4 +1,5 @@
-import type { RequestContext, RunId, AgentConfig } from "@vinhnt-sdk/schema";
+import type { RequestContext, RunId, AgentConfig, ContentPart } from "@vinhnt-sdk/schema";
+import { getTextContent } from "@vinhnt-sdk/schema";
 import type { ChatMessage, MessageContentPart, ModelProvider, ModelResponse } from "../model.js";
 import type { ContextRegistry } from "../system-context/types.js";
 import type { ConversationCompactor } from "../session/compaction.js";
@@ -122,7 +123,7 @@ async function maybeCompact(
 
   let shouldCompact = true;
   if (runModel.countTokens) {
-    const estimatedInput = messages.reduce((sum, m) => sum + runModel.countTokens!(m.content), 0);
+    const estimatedInput = messages.reduce((sum, m) => sum + runModel.countTokens!(getTextContent(m.content)), 0);
     const contextWindow = runModel.contextLimit ?? deps.maxTokens * 4;
     const ratio = deps.compactionThreshold ?? 0.75;
     const threshold = Math.floor(contextWindow * ratio);
@@ -229,7 +230,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     }
 
     if (runModel.countTokens) {
-      input.totalInputTokens += messages.reduce((sum, m) => sum + runModel.countTokens!(m.content), 0);
+      input.totalInputTokens += messages.reduce((sum, m) => sum + runModel.countTokens!(getTextContent(m.content)), 0);
     }
 
     let response: ModelResponse;
@@ -400,7 +401,7 @@ export async function runLoop(
 
       messages = [
         userContentParts?.length
-          ? { role: "user" as const, content: prompt, contentParts: userContentParts as unknown as readonly MessageContentPart[] }
+          ? { role: "user" as const, content: userContentParts as unknown as readonly ContentPart[] }
           : { role: "user" as const, content: prompt },
       ];
     }

@@ -4,7 +4,11 @@ import type { ToolContext } from "./context.js";
 export type { ToolContext };
 import type { NestedJsonSchema } from "./json-schema.js";
 
-export type ToolRisk = "read" | "write" | "destructive" | "external";
+/** Known tool risk levels. Use as reference, not exhaustive. */
+export const KNOWN_TOOL_RISKS = ["read", "write", "destructive", "external"] as const;
+
+/** Tool risk level — open string for extensibility. */
+export type ToolRisk = string;
 
 export interface ToolDefinition<TInput = unknown, TOutput = unknown> extends ToolDefinitionLike {
   readonly inputSchema?: NestedJsonSchema | undefined;

@@ -1,4 +1,5 @@
 import type { CompressionSummary, ChatMessage, ModelProvider, ConversationCompactor } from "@vinhnt-sdk/schema";
+import { getTextContent } from "@vinhnt-sdk/schema";
 
 export interface LlmCompactorOptions {
   /** Always protect this many messages at start */
@@ -55,7 +56,7 @@ export class LlmCompactor implements ConversationCompactor {
     }
 
     const totalTokens = messages.reduce(
-      (sum, m) => sum + approximateTokens(m.content, this.opts.charsPerToken), 0,
+      (sum, m) => sum + approximateTokens(getTextContent(m.content), this.opts.charsPerToken), 0,
     );
 
     if (totalTokens <= this.opts.tokenBudget) {

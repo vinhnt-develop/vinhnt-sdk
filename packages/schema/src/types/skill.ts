@@ -1,4 +1,8 @@
-export type SkillMode = "primary" | "subagent" | "all";
+/** Known skill modes. Use as reference, not exhaustive. */
+export const KNOWN_SKILL_MODES = ["primary", "subagent", "all"] as const;
+
+/** Skill mode — open string for extensibility. */
+export type SkillMode = string;
 
 export type SkillPermissionValue = "allow" | "deny" | "ask";
 

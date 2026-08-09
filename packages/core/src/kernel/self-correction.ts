@@ -1,4 +1,5 @@
 import type { RunId, RequestContext, AgentConfig } from "@vinhnt-sdk/schema";
+import { getTextContent } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "../model.js";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
@@ -57,7 +58,7 @@ export async function runSelfCorrection(
 
       if (correction.content && runModel?.countTokens) {
         selfCorrectTokens.input += [...messages, { role: "system", content: SELF_CORRECT_PROMPT }]
-          .reduce((sum, m) => sum + runModel.countTokens!(m.content), 0);
+          .reduce((sum, m) => sum + runModel.countTokens!(getTextContent(m.content)), 0);
         selfCorrectTokens.output += runModel.countTokens(correction.content);
       }
 

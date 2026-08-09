@@ -1,16 +1,21 @@
-export type AgentStepType =
-  | "analyzing_codebase"
-  | "searching_files"
-  | "reading_file"
-  | "generating_patch"
-  | "running_tests"
-  | "executing_bash"
-  | "thinking"
-  | "writing_file"
-  | "compiling"
-  | "idle";
+/** Known agent step types. Use as reference, not exhaustive. */
+export const KNOWN_AGENT_STEP_TYPES = [
+  "analyzing_codebase",
+  "searching_files",
+  "reading_file",
+  "generating_patch",
+  "running_tests",
+  "executing_bash",
+  "thinking",
+  "writing_file",
+  "compiling",
+  "idle",
+] as const;
 
-export const AGENT_STEP_LABELS: Record<AgentStepType, string> = {
+/** Agent step type — open string for extensibility. */
+export type AgentStepType = string;
+
+export const AGENT_STEP_LABELS: Record<string, string> = {
   analyzing_codebase: "Analyzing codebase",
   searching_files:    "Searching files",
   reading_file:       "Reading file",

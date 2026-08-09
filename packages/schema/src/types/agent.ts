@@ -1,6 +1,10 @@
 import type { AgentId } from "../contracts/branded.js";
 
-export type AgentMode = "primary" | "subagent" | "all";
+/** Known agent modes. Use as reference, not exhaustive. */
+export const KNOWN_AGENT_MODES = ["primary", "subagent", "all"] as const;
+
+/** Agent mode — open string for extensibility. */
+export type AgentMode = string;
 
 /** Behaviour mode: determines which tools the agent can use. Build = full access, Plan = read-only. */
 export type AgentBehaviourMode = "build" | "plan" | (string & {});

@@ -17,6 +17,10 @@ import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { getBehaviourProfile } from "../agent/behaviour-profiles.js";
 import type { EventBus } from "../event-bus/types.js";
 import { DEFAULT_MAX_STEPS, DEFAULT_MAX_TOOL_CALLS_PER_STEP, DOOM_LOOP_THRESHOLD } from "./kernel-utils.js";
+
+/** Default thinking prompt for reasoning steps. Exported for user override. */
+export const DEFAULT_THINKING_PROMPT = "Analyze the user's request and the conversation context. Think step by step about what needs to be done. Output your reasoning.";
+
 import { RunStateMachine } from "./run-state.js";
 import type { RunState } from "./run-state.js";
 import { PermissionGate } from "./permission-gate.js";
@@ -165,7 +169,7 @@ export class AgentKernel {
     }
     this.maxTokens = normalized.maxTokens ?? 4096;
     const maxTokens = this.maxTokens;
-    const thinkingPrompt = normalized.thinkingPrompt ?? "Analyze the user's request and the conversation context. Think step by step about what needs to be done. Output your reasoning.";
+    const thinkingPrompt = normalized.thinkingPrompt ?? DEFAULT_THINKING_PROMPT;
     this.modelCaller = new ModelCaller({
       defaultModel: normalized.model,
       modelRegistry: normalized.modelRegistry,

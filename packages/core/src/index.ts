@@ -158,7 +158,8 @@ export { InMemoryModelRegistry } from "./model.js";
 /**
  * Model provider interfaces and types.
  */
-export type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent } from "./model.js";
+export type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ContentPart, ToolCallResult } from "./model.js";
+export { getTextContent } from "./model.js";
 
 // === Permission stores ===
 

@@ -1,6 +1,6 @@
 {
     "name":  "@vinhnt-sdk/knowledge",
-"version": "0.1.2",
+"version": "0.1.3",
     "description":  "Memory and knowledge management for VNT Agent — bounded memory, context compression, learning engine",
     "license":  "MIT",
     "type":  "module",
@@ -59,4 +59,6 @@
                                                        }
                              }
 }
+
+
 

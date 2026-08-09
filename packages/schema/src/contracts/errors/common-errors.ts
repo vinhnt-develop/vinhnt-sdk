@@ -73,10 +73,12 @@ export class NetworkError extends VntError {
 export class RateLimitError extends VntError {
   public readonly code = "RATE_LIMIT";
   public readonly retryable = true;
+  public readonly retryAfterMs?: number;
 
-  constructor(message: string = "Rate limit exceeded") {
+  constructor(message: string = "Rate limit exceeded", retryAfterMs?: number) {
     super(message);
     this.name = "RateLimitError";
+    this.retryAfterMs = retryAfterMs;
   }
 }
 

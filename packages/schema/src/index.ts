@@ -156,7 +156,7 @@ export type {
   MemoryEntry,
   SkillManifest, SkillDefinition,
   SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue,
-  ChatMessage, MessageContentPart,
+  ChatMessage, ContentPart, MessageContentPart,
   CompressionSummary,
   ApprovalRequest,
   ConversationCompactor,
@@ -164,11 +164,53 @@ export type {
   PromptAssembly,
   SessionStore,
   ToolDefinitionLike,
-  ToolCall,
+  ToolCall, ToolCallResult,
   PermissionRequest, PermissionReply, SavedApproval,
-  ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing, ModelCapabilities, ModelRegistry,
+  ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ModelPricing, ModelCapabilities, ModelRegistry,
   RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore,
   SessionNode, SessionTreeSnapshot, SessionTreeEvent,
+  // New types
+  TokenLogprob, TopLogprob, Logprobs,
+  ResponseFormat, ResponseFormatJsonSchema,
+  ToolChoice, StreamOptions,
+} from "./types/index.js";
+
+export { getTextContent, KNOWN_FINISH_REASONS, KNOWN_REASONING_EFFORTS } from "./types/index.js";
+export {
+  KNOWN_AGENT_MODES,
+  KNOWN_SESSION_TREE_EVENT_TYPES,
+  KNOWN_APPROVAL_CATEGORIES,
+  KNOWN_SKILL_MODES,
+  KNOWN_PROMPT_TIERS,
+  KNOWN_AGENT_STEP_TYPES,
+} from "./types/index.js";
+
+// === Adapters ===
+
+/**
+ * Adapter functions for converting between OpenAI/Anthropic formats and vinhnt-sdk types.
+ */
+export type {
+  OpenAIMessage,
+  OpenAIContentPart,
+  OpenAIToolCall,
+  OpenAIResponse,
+  OpenAIChoice,
+  OpenAIUsage,
+  OpenAIStreamChunk,
+  OpenAIStreamChoice,
+  OpenAIStreamToolCallDelta,
+  OpenAIErrorResponse,
+} from "./types/index.js";
+
+export {
+  fromOpenAIMessage,
+  toOpenAIMessage,
+  fromOpenAIResponse,
+  toOpenAIResponse,
+  fromOpenAIStreamChunk,
+  fromOpenAIError,
+  fromAnthropicMessage,
 } from "./types/index.js";
 
 /**
