@@ -117,6 +117,49 @@ export class InMemoryEventBus implements EventBus {
     }
   }
 
+  async *stream<T>(
+    def: EventDefinition<T>,
+    signal?: AbortSignal,
+  ): AsyncIterable<TypedEvent<T>> {
+    const queue: TypedEvent<T>[] = [];
+    let resolve: (() => void) | null = null;
+    let done = false;
+
+    const unsubscribe = this.subscribe(def, (event) => {
+      queue.push(event as TypedEvent<T>);
+      if (resolve) {
+        resolve();
+        resolve = null;
+      }
+    });
+
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        done = true;
+        unsubscribe();
+        if (resolve) {
+          resolve();
+          resolve = null;
+        }
+      });
+    }
+
+    try {
+      while (!done) {
+        if (queue.length === 0) {
+          await new Promise<void>((r) => {
+            resolve = r;
+          });
+        }
+        while (queue.length > 0) {
+          yield queue.shift()!;
+        }
+      }
+    } finally {
+      unsubscribe();
+    }
+  }
+
   clear(): void {
     this.listeners = [];
     this.projectors.clear();

@@ -18,4 +18,11 @@ export interface EventBus {
   durable<T>(def: EventDefinition<T> & { durable: NonNullable<EventDefinition["durable"]> }, aggregateId: string, after?: number): AsyncIterable<TypedEvent<T>>;
 
   project<T>(def: EventDefinition<T>, handler: (event: TypedEvent<T>) => void): Unsubscribe;
+
+  /**
+   * Stream events as an async iterable. Yields events as they are published.
+   * @param def - Event definition to filter by
+   * @param signal - Optional AbortSignal to stop streaming
+   */
+  stream<T>(def: EventDefinition<T>, signal?: AbortSignal): AsyncIterable<TypedEvent<T>>;
 }

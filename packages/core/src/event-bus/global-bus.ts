@@ -119,6 +119,51 @@ export class GlobalEventBus implements EventBus {
     }
   }
 
+  async *stream<T>(
+    def: EventDefinition<T>,
+    signal?: AbortSignal,
+  ): AsyncIterable<TypedEvent<T>> {
+    const queue: TypedEvent<T>[] = [];
+    let resolve: (() => void) | null = null;
+    let done = false;
+
+    const handler: EventHandler<T> = (event) => {
+      queue.push(event as TypedEvent<T>);
+      if (resolve) {
+        resolve();
+        resolve = null;
+      }
+    };
+
+    this.emitter.on(def.type, handler);
+
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        done = true;
+        this.emitter.off(def.type, handler);
+        if (resolve) {
+          resolve();
+          resolve = null;
+        }
+      });
+    }
+
+    try {
+      while (!done) {
+        if (queue.length === 0) {
+          await new Promise<void>((r) => {
+            resolve = r;
+          });
+        }
+        while (queue.length > 0) {
+          yield queue.shift()!;
+        }
+      }
+    } finally {
+      this.emitter.off(def.type, handler);
+    }
+  }
+
   reset(): void {
     this.emitter.removeAllListeners();
     this.durableEvents.clear();

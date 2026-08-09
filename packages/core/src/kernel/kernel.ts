@@ -467,6 +467,27 @@ this.stepExecutor = new StepExecutor({
     }
   }
 
+  /**
+   * Start a new agent run and stream events as an async iterable.
+   * Returns the run ID and an async iterable of run events.
+   */
+  streamRun(
+    prompt: string,
+    ctx: RequestContext,
+    sessionId?: string,
+    userContentParts?: readonly MessageContentPart[],
+    agentOverride?: AgentConfig,
+  ): { runId: RunId; events: AsyncIterable<KnownRunEvent> } {
+    const handle = this.run(prompt, ctx, sessionId, userContentParts, agentOverride);
+    const eventDef = { type: "run.*", durable: { aggregate: "run" } } as never;
+    const events = this.eventBus?.stream(eventDef as never) ?? (async function* () {})();
+    
+    return {
+      runId: handle.runId,
+      events: events as AsyncIterable<KnownRunEvent>,
+    };
+  }
+
   private getRunSession(runId: RunId): SessionRuntimeState | undefined {
     return this.runSessionStates.get(runId) ?? this.sessionState;
   }
