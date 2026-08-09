@@ -6,7 +6,7 @@
 
 ## What is vinhnt-sdk?
 
-**vinhnt-sdk** is a collection of 9 npm packages that provide the **engine** for building AI agent systems. It contains types, schemas, business logic, and utility functions — but **no HTTP server or API layer**.
+**vinhnt-sdk** is a collection of 7 npm packages that provide the **engine** for building AI agent systems. It contains types, schemas, business logic, and utility functions — but **no HTTP server or API layer**.
 
 You use vinhnt-sdk as the foundation, then wrap it in your own backend (e.g., NestJS, Express) to expose REST/WebSocket APIs.
 
@@ -17,7 +17,7 @@ You use vinhnt-sdk as the foundation, then wrap it in your own backend (e.g., Ne
 | Type schemas (Zod) | Authentication middleware |
 | Model provider interfaces | Database migrations |
 | Security (prompt protection, secret redaction) | Business logic layer |
-| Protocol integrations (MCP, LSP) | API documentation (Swagger) |
+| LSP integration | API documentation (Swagger) |
 
 ---
 
@@ -31,9 +31,7 @@ You use vinhnt-sdk as the foundation, then wrap it in your own backend (e.g., Ne
 | `@vinhnt-sdk/knowledge` | Memory, compression, learning engine | [npm](https://npmjs.com/package/@vinhnt-sdk/knowledge) |
 | `@vinhnt-sdk/security` | Prompt injection protection, secret redaction | [npm](https://npmjs.com/package/@vinhnt-sdk/security) |
 | `@vinhnt-sdk/plugin` | Plugin SDK, npm loader | [npm](https://npmjs.com/package/@vinhnt-sdk/plugin) |
-| `@vinhnt-sdk/mcp` | MCP client pool, ACP bridge | [npm](https://npmjs.com/package/@vinhnt-sdk/mcp) |
 | `@vinhnt-sdk/lsp` | LSP client pool, code intelligence | [npm](https://npmjs.com/package/@vinhnt-sdk/lsp) |
-| `@vinhnt-sdk/rag` | RAG indexing, semantic search | [npm](https://npmjs.com/package/@vinhnt-sdk/rag) |
 
 ---
 
@@ -49,9 +47,7 @@ graph TD
     knowledge["knowledge<br/>Memory & Learning"]
     security["security<br/>Prompt Protection"]
     plugin["plugin<br/>Plugin System"]
-    mcp["mcp<br/>MCP Client"]
     lsp["lsp<br/>LSP Client"]
-    rag["rag<br/>RAG Search"]
 
     core --> schema
     tools --> schema
@@ -59,12 +55,8 @@ graph TD
     knowledge --> schema
     knowledge --> tools
     plugin --> core
-    mcp --> core
-    mcp --> schema
     lsp --> core
     lsp --> schema
-    rag --> core
-    rag --> schema
 
     style schema fill:#4a9eff,color:#fff
     style core fill:#ff6b6b,color:#fff
@@ -72,9 +64,7 @@ graph TD
     style knowledge fill:#51cf66,color:#fff
     style security fill:#51cf66,color:#fff
     style plugin fill:#ff6b6b,color:#fff
-    style mcp fill:#ffd43b,color:#000
     style lsp fill:#ffd43b,color:#000
-    style rag fill:#ffd43b,color:#000
 ```
 
 ### Layer Model
@@ -84,7 +74,7 @@ graph TD
 | **Foundation** | `schema` | Types, contracts, model interfaces. Zero internal dependencies. |
 | **Core** | `core`, `plugin` | Agent runtime, orchestration, plugin system. |
 | **Tools** | `tools`, `knowledge`, `security` | Built-in tools, memory, security. |
-| **Integrations** | `mcp`, `lsp`, `rag` | Protocol integrations. |
+| **Integrations** | `lsp` | Protocol integrations. |
 
 ### How It Fits Together
 
@@ -141,20 +131,17 @@ graph LR
 - **[Architecture](./guides/architecture.md)** — System design, dependency graph, layer model
 - **[Creating Tools](./guides/creating-tools.md)** — How to define custom tools
 - **[Plugin Development](./guides/plugins.md)** — Writing and loading plugins
-- **[MCP Integration](./guides/mcp.md)** — Connecting to MCP tool servers
 
 ## Package Reference
 
 - [schema](./packages/schema.md) | [core](./packages/core.md) | [tools](./packages/tools.md)
 - [knowledge](./packages/knowledge.md) | [security](./packages/security.md)
-- [plugin](./packages/plugin.md) | [mcp](./packages/mcp.md) | [lsp](./packages/lsp.md)
-- [rag](./packages/rag.md)
+- [plugin](./packages/plugin.md) | [lsp](./packages/lsp.md)
 
 ## Examples
 
 - [Minimal Agent](./examples/minimal-agent.md) — Simplest possible agent setup
 - [Custom Tools](./examples/custom-tools.md) — Building tools that call external APIs
-- [MCP Agent](./examples/mcp-agent.md) — Agent with MCP tool servers
 
 ---
 

@@ -33,11 +33,6 @@
 │   │ Secret Redact   │  │ TypeScript Hooks│                 │
 │   └─────────────────┘  └─────────────────┘                 │
 ├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/mcp    @vinhnt-sdk/lsp    @vinhnt-sdk/rag    │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
-│   │ MCP Client  │    │ LSP Client  │    │ RAG Engine  │    │
-│   └─────────────┘    └─────────────┘    └─────────────┘    │
-├─────────────────────────────────────────────────────────────┤
 │   @vinhnt-sdk/schema                                       │
 │   ┌─────────────────┐                                      │
 │   │ Types & Schemas │                                      │
@@ -56,9 +51,7 @@
 | `@vinhnt-sdk/knowledge` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/knowledge.svg)](https://npmjs.com/package/@vinhnt-sdk/knowledge) | Memory, context compression, learning engine |
 | `@vinhnt-sdk/security` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/security.svg)](https://npmjs.com/package/@vinhnt-sdk/security) | Prompt injection protection, secret redaction |
 | `@vinhnt-sdk/plugin` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/plugin.svg)](https://npmjs.com/package/@vinhnt-sdk/plugin) | Plugin SDK with TypeScript hooks |
-| `@vinhnt-sdk/mcp` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/mcp.svg)](https://npmjs.com/package/@vinhnt-sdk/mcp) | Model Context Protocol client |
 | `@vinhnt-sdk/lsp` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/lsp.svg)](https://npmjs.com/package/@vinhnt-sdk/lsp) | Language Server Protocol integration |
-| `@vinhnt-sdk/rag` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/rag.svg)](https://npmjs.com/package/@vinhnt-sdk/rag) | Retrieval-Augmented Generation pipeline |
 
 ## Quick Start
 
@@ -110,7 +103,7 @@ console.log("Agent completed:", result);
 - **Permissions** — Fine-grained allow/deny/ask rules with approval workflows
 - **Workflows** — Graph-based sequential and parallel agent orchestration
 - **Security** — Prompt injection protection, secret redaction
-- **MCP/LSP** — Protocol integrations for tool servers and language servers
+- **LSP Integration** — Language Server Protocol for code intelligence
 
 ## Security
 
