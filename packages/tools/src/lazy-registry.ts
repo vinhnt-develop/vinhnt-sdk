@@ -1,5 +1,6 @@
 import type { ToolDefinition } from "./definitions.js";
 import { ToolRegistry } from "./registry.js";
+import { ToolNotFoundError } from "@vinhnt-sdk/schema";
 
 export interface LazyToolEntry {
   id: string;
@@ -59,7 +60,7 @@ export class LazyToolRegistry extends ToolRegistry {
 
   override getOrThrow(id: string): ToolDefinition {
     const entry = this.entries.get(id);
-    if (!entry?.instance) throw new Error(`Tool '${id}' not found or not yet loaded`);
+    if (!entry?.instance) throw new ToolNotFoundError(id);
     return entry.instance;
   }
 

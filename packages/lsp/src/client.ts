@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createInterface, type Interface as ReadlineInterface } from "node:readline";
+import { KernelError } from "@vinhnt-sdk/schema";
 import type {
   JsonRpcRequest, JsonRpcResponse, JsonRpcNotification,
   LspInitializeResult, LspDiagnostic, LspDiagnosticParams,
@@ -357,7 +358,7 @@ export class LspClient {
 
   private sendRaw(msg: unknown): void {
     if (!this.process?.stdin?.writable) {
-      throw new Error("LSP server not connected");
+      throw new KernelError("internal_error", "LSP server not connected");
     }
     const json = JSON.stringify(msg);
     const header = `Content-Length: ${Buffer.byteLength(json, "utf-8")}\r\n\r\n`;

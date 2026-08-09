@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import type { Plugin } from "@vinhnt-sdk/core";
-import { getLogger } from "@vinhnt-sdk/core";
+import { getLogger, PluginError, ValidationError } from "@vinhnt-sdk/core";
 
 const CACHE_DIR = ".vnt/plugins";
 
@@ -146,7 +146,7 @@ export async function loadPluginFromNpm(
       if (options.auditLog) {
         console.warn(`[plugin-audit] BLOCKED: ${pkgName} — not in allowlist`);
       }
-      throw new Error(`Plugin "${pkgName}" is not in the allowed plugins list`);
+      throw new PluginError(pkgName, "is not in the allowed plugins list");
     }
   }
 
@@ -195,10 +195,7 @@ export async function loadPluginFromNpm(
         if (options.auditLog) {
           getLogger().warn(`[plugin-audit] HASH MISMATCH: ${pkgName} — expected ${expectedHash}, got ${actualHash}`);
         }
-        throw new Error(
-          `Plugin "${pkgName}" package.json hash mismatch — expected ${expectedHash}, got ${actualHash}. ` +
-          `This may indicate tampering.`
-        );
+        throw new PluginError(pkgName, `package.json hash mismatch — expected ${expectedHash}, got ${actualHash}. This may indicate tampering.`);
       }
     } catch (err) {
       if (err instanceof Error && err.message.includes("hash mismatch")) throw err;
@@ -216,7 +213,7 @@ export async function loadPluginFromNpm(
       details: "Invalid module export",
     };
     logAudit(entry);
-    throw new Error(`Plugin package "${packageName}" did not export a valid plugin`);
+    throw new PluginError(packageName, "did not export a valid plugin");
   }
   const defaultExport = "default" in mod ? mod.default : mod;
   if (!defaultExport || typeof defaultExport !== "object" || !("manifest" in defaultExport)) {
@@ -227,7 +224,7 @@ export async function loadPluginFromNpm(
       details: "Missing manifest in default export",
     };
     logAudit(entry);
-    throw new Error(`Plugin package "${packageName}" default export is not a valid Plugin object (missing manifest)`);
+    throw new PluginError(packageName, "default export is not a valid Plugin object (missing manifest)");
   }
 
   // --- Audit log success ---

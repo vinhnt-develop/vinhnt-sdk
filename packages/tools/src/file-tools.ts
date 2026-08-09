@@ -6,6 +6,7 @@ import { generateDiff } from "./diff.js";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
 import { sanitizeForLLM } from "@vinhnt-sdk/security";
+import { ValidationError, ToolPermissionDenied } from "@vinhnt-sdk/schema";
 
 const filePathField = z.string().min(1);
 
@@ -108,7 +109,7 @@ async function ensurePathAccess(target: string, root: string, pathLabel: string,
     reason: `Access path outside workspace: ${pathLabel}`,
   });
   if (reply === "reject") {
-    throw new Error(`Path "${pathLabel}" is outside workspace — access rejected`);
+    throw new ToolPermissionDenied(pathLabel, "Path outside workspace — access rejected");
   }
 }
 
@@ -149,7 +150,7 @@ export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileRead
       const st = await stat(target);
       const mfs = maxFileSize ?? DEFAULT_MAX_FILE_SIZE;
       if (st.size > mfs) {
-        throw new Error(`File too large (${st.size} bytes). Max: ${mfs} bytes`);
+        throw new ValidationError(`File too large (${st.size} bytes). Max: ${mfs} bytes`);
       }
       tracker?.trackRead(target, st.mtimeMs);
       const content = await readFile(target, "utf-8");
@@ -402,7 +403,7 @@ function applySingleEdit(
       const matchSnippet = content.slice(fuzzyTry.index, fuzzyTry.index + Math.min(200, oldString.length));
       msg += `Closest match (${Math.round(fuzzyTry.ratio * 100)}% character similarity) at position ${fuzzyTry.index}:\n---\n${matchSnippet}\n---\n`;
     }
-    throw new Error(msg);
+    throw new ValidationError(msg);
   }
 
   if (result.layer === 1) {
@@ -410,7 +411,7 @@ function applySingleEdit(
     const last = content.lastIndexOf(oldString);
     if (first !== last) {
       const count = content.split(oldString).length - 1;
-      throw new Error(`oldString found ${count} times in ${filePath} — replace must match exactly once`);
+      throw new ValidationError(`oldString found ${count} times in ${filePath} — replace must match exactly once`);
     }
   }
 
@@ -483,7 +484,7 @@ function parsePatch(patch: string): { oldString: string; newString: string }[] {
     blocks.push({ oldString: match[1]!, newString: match[2]! });
   }
   if (blocks.length === 0) {
-    throw new Error("No valid search/replace blocks found in patch");
+    throw new ValidationError("No valid search/replace blocks found in patch");
   }
   return blocks;
 }
@@ -512,7 +513,7 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
       for (const block of blocks) {
         if (!content.includes(block.oldString)) {
           const snippet = content.length > 400 ? content.slice(0, 200) + "\n...\n" + content.slice(-200) : content;
-          throw new Error(
+          throw new ValidationError(
             `Search string not found in ${v.filePath} (${content.length} chars). ` +
             `File content:\n---\n${snippet}\n---\n` +
             `Searched for:\n---\n${block.oldString.slice(0, 200)}${block.oldString.length > 200 ? "..." : ""}\n---`
@@ -522,7 +523,7 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
         const lastIdx = content.lastIndexOf(block.oldString);
         if (firstIdx !== lastIdx) {
           const count = content.split(block.oldString).length - 1;
-          throw new Error(`Search string found ${count} times in ${v.filePath} — each block must match exactly once`);
+          throw new ValidationError(`Search string found ${count} times in ${v.filePath} — each block must match exactly once`);
         }
         const newContent = content.replace(block.oldString, block.newString);
         content = newContent;

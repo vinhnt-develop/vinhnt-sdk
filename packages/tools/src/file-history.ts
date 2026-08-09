@@ -1,3 +1,5 @@
+import { ValidationError } from "@vinhnt-sdk/schema";
+
 export interface FileVersion {
   readonly filePath: string;
   readonly sessionId: string;
@@ -62,7 +64,7 @@ export class InMemoryFileHistory implements FileHistory {
   async rollbackTo(filePath: string, versionIndex: number): Promise<string> {
     const matches = this.versions.filter((v) => v.filePath === filePath);
     if (versionIndex < 0 || versionIndex >= matches.length) {
-      throw new Error(`Version index ${versionIndex} out of range (0-${matches.length - 1})`);
+      throw new ValidationError(`Version index ${versionIndex} out of range (0-${matches.length - 1})`);
     }
     return matches[versionIndex]!.originalContent;
   }

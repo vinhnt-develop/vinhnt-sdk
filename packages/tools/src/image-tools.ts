@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import type { MessageContentPart } from "@vinhnt-sdk/schema";
+import { ValidationError } from "@vinhnt-sdk/schema";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
 
@@ -24,7 +25,7 @@ async function readImageToContentPartsInner(filePath: string): Promise<MessageCo
   const ext = extname(filePath).toLowerCase();
   const mimeType = MIME_TYPES[ext];
   if (!mimeType) {
-    throw new Error(`Unsupported image format: ${ext}. Supported: png, jpg, jpeg, gif, webp`);
+    throw new ValidationError(`Unsupported image format: ${ext}. Supported: png, jpg, jpeg, gif, webp`);
   }
 
   const buffer = await readFile(filePath);

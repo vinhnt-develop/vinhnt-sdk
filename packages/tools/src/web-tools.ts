@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
 import { sanitizeForLLM } from "@vinhnt-sdk/security";
+import { NetworkError } from "@vinhnt-sdk/schema";
 
 const WebFetchSchema = z.object({
   url: z.string().url().or(z.string().min(1)),
@@ -37,7 +38,7 @@ export function createWebFetchTool(config?: WebFetchToolConfig) {
           headers: { "User-Agent": "VNT-Agent/0.1" },
         });
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new NetworkError(`HTTP ${response.status}: ${response.statusText}`);
         }
         const text = await response.text();
         const maxSize = config?.maxResponseSize ?? 524_288;

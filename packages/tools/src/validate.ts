@@ -1,13 +1,16 @@
 import { z, ZodError } from "zod";
-import { VntError } from "@vinhnt-sdk/schema";
+import { ToolInputError as SchemaToolInputError } from "@vinhnt-sdk/schema";
 
-export class ToolInputError extends VntError {
+export class ToolInputError extends SchemaToolInputError {
+  public readonly code = "TOOL_INPUT_ERROR";
+  public readonly retryable = false;
+
   constructor(
     public readonly toolId: string,
     issues: z.ZodIssue[],
   ) {
     const details = issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
-    super(`Validation failed for tool "${toolId}": ${details}`);
+    super(toolId, details);
     this.name = "ToolInputError";
   }
 }

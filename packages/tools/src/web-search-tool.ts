@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
+import { NetworkError } from "@vinhnt-sdk/schema";
 
 const WebSearchSchema = z.object({
   query: z.string().min(1),
@@ -86,7 +87,7 @@ export class TavilySearchProvider implements WebSearchProvider {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(`Tavily API error: HTTP ${response.status}${text ? ` — ${text}` : ""}`);
+      throw new NetworkError(`Tavily API error: HTTP ${response.status}${text ? ` — ${text}` : ""}`);
     }
 
     return response.json() as Promise<WebSearchResponse>;
@@ -125,7 +126,7 @@ export class SerperSearchProvider implements WebSearchProvider {
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(`Serper API error: HTTP ${response.status}${text ? ` — ${text}` : ""}`);
+      throw new NetworkError(`Serper API error: HTTP ${response.status}${text ? ` — ${text}` : ""}`);
     }
 
     const data = (await response.json()) as { organic?: Array<{ title: string; link: string; snippet: string }> };

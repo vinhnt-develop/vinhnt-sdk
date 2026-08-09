@@ -57,6 +57,17 @@ export type {
   AgentConfig, AgentProfile,
   Session, Message,
 } from "@vinhnt-sdk/schema";
+export {
+  VntError,
+  AgentNotFoundError, AgentValidationError, AgentPermissionDenied,
+  ToolNotFoundError, ToolExecutionError, ToolPermissionDenied,
+  RunNotFoundError, RunAbortedError, RunTimeoutError,
+  CircuitBreakerOpenError, ToolInputError,
+  PermissionDeniedError, ValidationError, TimeoutError,
+  NetworkError, RateLimitError, AuthenticationError,
+  ConfigurationError, PluginError,
+} from "@vinhnt-sdk/schema";
+export type { VntErrorCtx } from "@vinhnt-sdk/schema";
 
 // === Re-export essential types from tools ===
 export { defineTool, ToolRegistry } from "@vinhnt-sdk/tools";

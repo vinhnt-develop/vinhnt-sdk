@@ -1,5 +1,6 @@
 import type { ToolDefinition } from "./definitions.js";
 import type { ToolRegistry } from "./registry.js";
+import { ValidationError } from "@vinhnt-sdk/schema";
 
 /**
  * ToolProvider — Interface for providing tools to the kernel.
@@ -52,7 +53,7 @@ export class ToolProviderRegistry {
    */
   registerProvider(provider: ToolProvider): void {
     if (this.providers.has(provider.id)) {
-      throw new Error(`ToolProvider "${provider.id}" already registered`);
+      throw new ValidationError(`ToolProvider "${provider.id}" already registered`);
     }
 
     this.providers.set(provider.id, provider);
