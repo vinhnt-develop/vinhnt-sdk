@@ -1,4 +1,5 @@
 import type { RequestContext, RunId, AgentId, AgentConfig, AgentBehaviourMode, KnownRunEvent } from "@vinhnt-sdk/schema";
+import { ValidationError, AgentNotFoundError } from "@vinhnt-sdk/schema";
 import type { MessageContentPart } from "../model.js";
 import type { ModelProvider } from "../model.js";
 import type { SessionRuntimeState } from "../session/session-state.js";
@@ -99,22 +100,22 @@ export class AgentKernel {
 
     // Validate config values
     if (normalized.maxSteps !== undefined && normalized.maxSteps < 1) {
-      throw new Error("maxSteps must be >= 1");
+      throw new ValidationError("maxSteps must be >= 1");
     }
     if (normalized.maxTokens !== undefined && normalized.maxTokens < 1) {
-      throw new Error("maxTokens must be >= 1");
+      throw new ValidationError("maxTokens must be >= 1");
     }
     if (normalized.stepTimeout !== undefined && normalized.stepTimeout < 1000) {
-      throw new Error("stepTimeout must be >= 1000ms");
+      throw new ValidationError("stepTimeout must be >= 1000ms");
     }
     if (normalized.maxToolCallsPerStep !== undefined && normalized.maxToolCallsPerStep < 1) {
-      throw new Error("maxToolCallsPerStep must be >= 1");
+      throw new ValidationError("maxToolCallsPerStep must be >= 1");
     }
     if (normalized.doomLoopThreshold !== undefined && normalized.doomLoopThreshold < 1) {
-      throw new Error("doomLoopThreshold must be >= 1");
+      throw new ValidationError("doomLoopThreshold must be >= 1");
     }
     if (normalized.compactionThreshold !== undefined && (normalized.compactionThreshold < 0 || normalized.compactionThreshold > 1)) {
-      throw new Error("compactionThreshold must be between 0 and 1");
+      throw new ValidationError("compactionThreshold must be between 0 and 1");
     }
 
     this.store = normalized.store;
@@ -347,9 +348,9 @@ this.stepExecutor = new StepExecutor({
 
   /** Switch to a named agent from the registry. Syncs permissions. */
   async useAgent(agentId: AgentId): Promise<void> {
-    if (!this.agentRegistry) throw new Error("No agent registry configured");
+    if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
     const agent = await this.agentRegistry.get(agentId);
-    if (!agent) throw new Error(`Agent '${agentId}' not found`);
+    if (!agent) throw new AgentNotFoundError(agentId);
     this.currentAgent = agent;
   }
 
@@ -361,7 +362,7 @@ this.stepExecutor = new StepExecutor({
 
   /** Create and register a new sub-agent from inline params. */
   async spawnAgent(params: SubAgentParams): Promise<AgentConfig> {
-    if (!this.agentRegistry) throw new Error("No agent registry configured");
+    if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
     const ref: { value: AgentConfig | undefined } = { value: this.currentAgent };
     return createSubAgentAndRegister(
       { agentRegistry: this.agentRegistry, currentAgentRef: ref },
@@ -411,7 +412,7 @@ this.stepExecutor = new StepExecutor({
 
   /** Delegate a prompt to a named sub-agent. Returns the agent's response text. */
   async runAgent(agentId: AgentId, prompt: string, ctx: RequestContext, sessionId?: string): Promise<string> {
-    if (!this.agentRegistry) throw new Error("No agent registry configured");
+    if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
     return runSubAgent(this.subAgentDeps, agentId, prompt, ctx, sessionId);
   }
 
@@ -476,7 +477,7 @@ this.stepExecutor = new StepExecutor({
     ctx: RequestContext,
     sessionId?: string,
   ): Promise<string> {
-    if (!this.agentRegistry) throw new Error("No agent registry configured");
+    if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
     return runSubAgentsParallel(this.subAgentDeps, tasks, ctx, sessionId);
   }
 

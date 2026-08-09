@@ -2,6 +2,9 @@ import { VntError } from "./base.js";
 import type { AgentId } from "../branded.js";
 
 export class AgentNotFoundError extends VntError {
+  public readonly code = "AGENT_NOT_FOUND";
+  public readonly retryable = false;
+
   constructor(public readonly agentId: AgentId) {
     super(`Agent not found: ${agentId}`);
     this.name = "AgentNotFoundError";
@@ -9,6 +12,8 @@ export class AgentNotFoundError extends VntError {
 }
 
 export class AgentValidationError extends VntError {
+  public readonly code = "AGENT_VALIDATION_ERROR";
+  public readonly retryable = false;
   public readonly details: readonly string[];
 
   constructor(message: string, details?: readonly string[]) {
@@ -19,6 +24,9 @@ export class AgentValidationError extends VntError {
 }
 
 export class AgentPermissionDenied extends VntError {
+  public readonly code = "AGENT_PERMISSION_DENIED";
+  public readonly retryable = false;
+
   constructor(
     public readonly agentId: AgentId,
     public readonly resource: string,

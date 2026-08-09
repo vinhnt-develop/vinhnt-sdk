@@ -4,6 +4,9 @@ import type { RequestId, TraceId } from "../branded.js";
 export type VntErrorCtx = {
   requestId?: RequestId | undefined;
   traceId?: TraceId | undefined;
+  code?: string | undefined;
+  retryable?: boolean | undefined;
+  cause?: unknown | undefined;
 };
 
 /**
@@ -13,11 +16,15 @@ export type VntErrorCtx = {
 export class VntError extends Error {
   public readonly requestId: RequestId | undefined;
   public readonly traceId: TraceId | undefined;
+  public readonly code: string | undefined;
+  public readonly retryable: boolean;
 
   constructor(message: string, ctx?: VntErrorCtx) {
-    super(message);
+    super(message, { cause: ctx?.cause });
     this.name = "VntError";
     this.requestId = ctx?.requestId;
     this.traceId = ctx?.traceId;
+    this.code = ctx?.code;
+    this.retryable = ctx?.retryable ?? false;
   }
 }

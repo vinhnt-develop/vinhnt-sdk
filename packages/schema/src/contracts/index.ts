@@ -28,7 +28,12 @@ export {
   AgentNotFoundError, AgentValidationError, AgentPermissionDenied,
   ToolNotFoundError, ToolExecutionError, ToolPermissionDenied,
   RunNotFoundError, RunAbortedError, RunTimeoutError,
+  KernelError, CircuitBreakerOpenError, ToolInputError,
+  PermissionDeniedError, ValidationError, TimeoutError,
+  NetworkError, RateLimitError, AuthenticationError,
+  ConfigurationError, PluginError,
 } from "./errors/index.js";
+export type { VntErrorCtx } from "./errors/index.js";
 
 // ── API transport schemas (WS, Webview, HTTP contracts) ──
 export {

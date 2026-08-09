@@ -28,7 +28,12 @@ export {
   AgentNotFoundError, AgentValidationError, AgentPermissionDenied,
   ToolNotFoundError, ToolExecutionError, ToolPermissionDenied,
   RunNotFoundError, RunAbortedError, RunTimeoutError,
+  KernelError, CircuitBreakerOpenError, ToolInputError,
+  PermissionDeniedError, ValidationError, TimeoutError,
+  NetworkError, RateLimitError, AuthenticationError,
+  ConfigurationError, PluginError,
 } from "./contracts/index.js";
+export type { VntErrorCtx } from "./contracts/index.js";
 
 // === Core types ===
 export type {
