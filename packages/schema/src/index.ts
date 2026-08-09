@@ -61,6 +61,42 @@ export type {
 } from "./contracts/index.js";
 
 /**
+ * Agent event types for all agent lifecycle events.
+ * 
+ * @example
+ * ```typescript
+ * import { AgentEvent } from "@vinhnt-sdk/schema";
+ * 
+ * function handleEvent(event: AgentEvent) {
+ *   switch (event.type) {
+ *     case "agent.started":
+ *       console.log(`Agent started: ${event.prompt}`);
+ *       break;
+ *     case "tool.start":
+ *       console.log(`Tool started: ${event.tool}`);
+ *       break;
+ *     case "agent.completed":
+ *       console.log(`Agent completed: ${event.status}`);
+ *       break;
+ *   }
+ * }
+ * ```
+ */
+export type {
+  AgentEvent,
+  AgentEventBase,
+  AgentStartedEvent,
+  ModelRequestEvent,
+  ModelResponseEvent,
+  ToolStartEvent,
+  ToolEndEvent,
+  AgentThinkingEvent,
+  AgentCompletedEvent,
+  AgentErrorEvent,
+  PermissionEvent,
+} from "./contracts/index.js";
+
+/**
  * Error classes for the SDK.
  * 
  * All errors extend VntError and include error codes and retryable flags.

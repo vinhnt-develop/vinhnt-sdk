@@ -46,7 +46,7 @@ export { AgentKernel, KernelError } from "./kernel/kernel.js";
 /**
  * Configuration for the agent kernel.
  */
-export type { AgentKernelConfig, RunHandle } from "./kernel/kernel-types.js";
+export type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult } from "./kernel/kernel-types.js";
 
 // === Agent system ===
 

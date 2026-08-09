@@ -19,6 +19,149 @@ export interface RunEvent<TData = unknown> {
 }
 
 // ---------------------------------------------------------------------------
+// AgentEvent — general event type for all agent lifecycle events
+// ---------------------------------------------------------------------------
+
+/**
+ * Base agent event interface.
+ * All agent events extend this interface.
+ */
+export interface AgentEventBase {
+  readonly type: string;
+  readonly timestamp: string;
+  readonly traceId?: TraceId;
+  readonly runId?: RunId;
+}
+
+/**
+ * Agent started event.
+ */
+export interface AgentStartedEvent extends AgentEventBase {
+  readonly type: "agent.started";
+  readonly runId: RunId;
+  readonly prompt: string;
+  readonly model?: string;
+}
+
+/**
+ * Model request event.
+ */
+export interface ModelRequestEvent extends AgentEventBase {
+  readonly type: "model.request";
+  readonly runId: RunId;
+  readonly model: string;
+  readonly tokenCount?: number;
+}
+
+/**
+ * Model response event.
+ */
+export interface ModelResponseEvent extends AgentEventBase {
+  readonly type: "model.response";
+  readonly runId: RunId;
+  readonly model: string;
+  readonly tokensUsed?: number;
+  readonly durationMs?: number;
+}
+
+/**
+ * Tool start event.
+ */
+export interface ToolStartEvent extends AgentEventBase {
+  readonly type: "tool.start";
+  readonly runId: RunId;
+  readonly tool: string;
+  readonly input?: unknown;
+}
+
+/**
+ * Tool end event.
+ */
+export interface ToolEndEvent extends AgentEventBase {
+  readonly type: "tool.end";
+  readonly runId: RunId;
+  readonly tool: string;
+  readonly output?: unknown;
+  readonly durationMs?: number;
+}
+
+/**
+ * Agent thinking event.
+ */
+export interface AgentThinkingEvent extends AgentEventBase {
+  readonly type: "agent.thinking";
+  readonly runId: RunId;
+  readonly content: string;
+}
+
+/**
+ * Agent completed event.
+ */
+export interface AgentCompletedEvent extends AgentEventBase {
+  readonly type: "agent.completed";
+  readonly runId: RunId;
+  readonly status: "succeeded" | "failed";
+  readonly output?: string;
+  readonly error?: string;
+  readonly durationMs?: number;
+}
+
+/**
+ * Agent error event.
+ */
+export interface AgentErrorEvent extends AgentEventBase {
+  readonly type: "agent.error";
+  readonly runId: RunId;
+  readonly error: string;
+  readonly code?: string;
+}
+
+/**
+ * Permission requested event.
+ */
+export interface PermissionEvent extends AgentEventBase {
+  readonly type: "permission.requested";
+  readonly runId: RunId;
+  readonly tool: string;
+  readonly resource: string;
+  readonly reason: string;
+}
+
+/**
+ * Agent event — discriminated union of all agent events.
+ * Use this type for type-safe event handling.
+ * 
+ * @example
+ * ```typescript
+ * import { AgentEvent } from "@vinhnt-sdk/schema";
+ * 
+ * function handleEvent(event: AgentEvent) {
+ *   switch (event.type) {
+ *     case "agent.started":
+ *       console.log(`Agent started: ${event.prompt}`);
+ *       break;
+ *     case "tool.start":
+ *       console.log(`Tool started: ${event.tool}`);
+ *       break;
+ *     case "agent.completed":
+ *       console.log(`Agent completed: ${event.status}`);
+ *       break;
+ *   }
+ * }
+ * ```
+ */
+export type AgentEvent =
+  | AgentStartedEvent
+  | ModelRequestEvent
+  | ModelResponseEvent
+  | ToolStartEvent
+  | ToolEndEvent
+  | AgentThinkingEvent
+  | AgentCompletedEvent
+  | AgentErrorEvent
+  | PermissionEvent;
+
+// ---------------------------------------------------------------------------
 // Data payloads (reusable by consumers)
 // ---------------------------------------------------------------------------
 export interface RunStartedData { readonly prompt: string; readonly model?: string; readonly agentName?: string; readonly agentId?: string }

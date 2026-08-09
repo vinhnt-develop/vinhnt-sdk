@@ -72,8 +72,24 @@ const calculatorTool = defineTool({
     expression: z.string(),
   }),
   async execute(input) {
-    const result = Function(`"use strict"; return (${input.expression})`)();
-    return { result: Number(result) };
+    // Safe evaluation - parse and compute without eval
+    const parts = input.expression.match(/^(\d+)\s*([+\-*/])\s*(\d+)$/);
+    if (!parts) {
+      throw new Error("Invalid expression format. Use: number operator number");
+    }
+    const [, a, op, b] = parts;
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    
+    switch (op) {
+      case "+": return { result: numA + numB };
+      case "-": return { result: numA - numB };
+      case "*": return { result: numA * numB };
+      case "/": 
+        if (numB === 0) throw new Error("Division by zero");
+        return { result: numA / numB };
+      default: throw new Error(`Unknown operator: ${op}`);
+    }
   },
 }).toDefinition();
 

@@ -1,4 +1,4 @@
-import type { RunId } from "@vinhnt-sdk/schema";
+import type { RunId, AgentEvent } from "@vinhnt-sdk/schema";
 import type { ModelProvider, ModelRegistry } from "../model.js";
 import type { SessionRuntimeState } from "../session/session-state.js";
 import type { RunEventStore, SessionStore } from "../session/store.js";
@@ -158,6 +158,75 @@ export interface RunHandle {
   readonly completed: Promise<void>;
   /** Abort the running agent. */
   abort(): void;
+}
+
+/**
+ * Enhanced run handle with lifecycle management.
+ * 
+ * Provides methods to control and monitor an agent run.
+ * 
+ * @example
+ * ```typescript
+ * const handle = kernel.run("Write a hello world program");
+ * 
+ * // Wait for completion
+ * await handle.completed;
+ * 
+ * // Or cancel
+ * handle.cancel();
+ * 
+ * // Listen to events
+ * for await (const event of handle.events()) {
+ *   console.log(event.type);
+ * }
+ * ```
+ */
+export interface AgentRunHandle {
+  /** Unique identifier for this run. */
+  readonly runId: RunId;
+  /** Promise that resolves when the run completes (or rejects on failure). */
+  readonly completed: Promise<AgentRunResult>;
+  /** Cancel the running agent. */
+  cancel(): void;
+  /** Check if the run is cancelled. */
+  readonly isCancelled: boolean;
+  /** Check if the run is completed. */
+  readonly isCompleted: boolean;
+  /** Check if the run is running. */
+  readonly isRunning: boolean;
+  /**
+   * Stream events from this run.
+   * @yields Agent events as they occur
+   */
+  events(): AsyncIterable<AgentEvent>;
+  /**
+   * Subscribe to events from this run.
+   * @param handler - Event handler
+   * @returns Unsubscribe function
+   */
+  onEvent(handler: (event: AgentEvent) => void): () => void;
+}
+
+/**
+ * Result of a completed agent run.
+ */
+export interface AgentRunResult {
+  /** Run identifier. */
+  readonly runId: RunId;
+  /** Final status. */
+  readonly status: "succeeded" | "failed" | "cancelled";
+  /** Output text if successful. */
+  readonly output?: string;
+  /** Error message if failed. */
+  readonly error?: string;
+  /** Total number of steps executed. */
+  readonly totalSteps: number;
+  /** Total duration in milliseconds. */
+  readonly durationMs?: number;
+  /** Input tokens used. */
+  readonly inputTokens?: number;
+  /** Output tokens used. */
+  readonly outputTokens?: number;
 }
 
 /**

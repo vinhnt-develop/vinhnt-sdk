@@ -23,6 +23,20 @@ export type {
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
 } from "./events.js";
 
+export type {
+  AgentEvent,
+  AgentEventBase,
+  AgentStartedEvent,
+  ModelRequestEvent,
+  ModelResponseEvent,
+  ToolStartEvent,
+  ToolEndEvent,
+  AgentThinkingEvent,
+  AgentCompletedEvent,
+  AgentErrorEvent,
+  PermissionEvent,
+} from "./events.js";
+
 export {
   VntError,
   AgentNotFoundError, AgentValidationError, AgentPermissionDenied,
