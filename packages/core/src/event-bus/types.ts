@@ -25,4 +25,19 @@ export interface EventBus {
    * @param signal - Optional AbortSignal to stop streaming
    */
   stream<T>(def: EventDefinition<T>, signal?: AbortSignal): AsyncIterable<TypedEvent<T>>;
+
+  /**
+   * Stream events with durable replay + live merge.
+   * First yields historical events from durable storage, then yields live events.
+   * @param def - Event definition with durable config
+   * @param aggregateId - Aggregate ID for durable storage
+   * @param after - Sequence number to start replay from (default: -1)
+   * @param signal - Optional AbortSignal to stop streaming
+   */
+  streamWithReplay<T>(
+    def: EventDefinition<T> & { durable: NonNullable<EventDefinition["durable"]> },
+    aggregateId: string,
+    after?: number,
+    signal?: AbortSignal,
+  ): AsyncIterable<TypedEvent<T>>;
 }

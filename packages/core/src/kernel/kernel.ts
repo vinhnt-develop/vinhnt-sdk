@@ -1,4 +1,4 @@
-import type { RequestContext, RunId, AgentId, AgentConfig, AgentBehaviourMode, KnownRunEvent } from "@vinhnt-sdk/schema";
+import type { RequestContext, RunId, AgentId, AgentConfig, AgentBehaviourMode, KnownRunEvent, AgentEvent } from "@vinhnt-sdk/schema";
 import { ValidationError, AgentNotFoundError } from "@vinhnt-sdk/schema";
 import type { MessageContentPart } from "../model.js";
 import type { ModelProvider } from "../model.js";
@@ -43,7 +43,7 @@ import {
   createSubAgentAndRegister,
   type SubAgentRunnerDeps,
 } from "./sub-agent-runner.js";
-import type { AgentKernelConfig, RunHandle } from "./kernel-types.js";
+import type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult } from "./kernel-types.js";
 import { normalizeConfig } from "./kernel-types.js";
 export type { AgentKernelConfig, RunState, KernelErrorCode };
 export { CircuitBreaker, CircuitBreakerOpenError, type CircuitState, type CircuitBreakerOptions } from "./circuit-breaker.js";
@@ -89,7 +89,7 @@ export class AgentKernel {
   private readonly doomLoopThreshold: number;
   private compactionThreshold: number | undefined;
   private readonly termination: TerminationPolicy | undefined;
-  private readonly circuitBreaker: CircuitBreaker;
+  private circuitBreaker: CircuitBreaker;
   private readonly sessionDeps: KernelSessionDeps;
   private readonly subAgentDeps: SubAgentRunnerDeps;
   private readonly runSessionStates = new Map<RunId, SessionRuntimeState | undefined>();
@@ -139,7 +139,12 @@ export class AgentKernel {
     this.doomLoopThreshold = normalized.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
     this.compactionThreshold = normalized.compactionThreshold;
     this.termination = normalized.termination;
-    this.circuitBreaker = normalized.circuitBreaker ?? (normalized.circuitBreakerOptions ? new CircuitBreaker(normalized.circuitBreakerOptions) : new CircuitBreaker());
+    this.circuitBreaker = normalized.circuitBreaker ?? new CircuitBreaker({
+      ...normalized.circuitBreakerOptions,
+      maxRetries: normalized.maxRetries ?? normalized.circuitBreakerOptions?.maxRetries,
+      backoffMs: normalized.retryBackoffMs ?? normalized.circuitBreakerOptions?.backoffMs,
+      maxBackoffMs: normalized.maxRetryBackoffMs ?? normalized.circuitBreakerOptions?.maxBackoffMs,
+    });
     this.saga = new ToolSaga();
     this.stateMachine = new RunStateMachine();
     this.permissionGate = new PermissionGate({
@@ -468,6 +473,167 @@ this.stepExecutor = new StepExecutor({
   }
 
   /**
+   * Start a new agent run with full lifecycle management.
+   * Returns an AgentRunHandle with cancel, status, and event streaming.
+   * 
+   * @example
+   * ```typescript
+   * const handle = kernel.createRunHandle("Write a hello world program", ctx);
+   * 
+   * // Wait for completion
+   * const result = await handle.completed;
+   * console.log(result.status); // "succeeded"
+   * 
+   * // Or cancel
+   * handle.cancel();
+   * 
+   * // Stream events
+   * for await (const event of handle.events()) {
+   *   console.log(event.type);
+   * }
+   * ```
+   */
+  createRunHandle(
+    prompt: string,
+    ctx: RequestContext,
+    sessionId?: string,
+    userContentParts?: readonly MessageContentPart[],
+    agentOverride?: AgentConfig,
+  ): AgentRunHandle {
+    const runId = crypto.randomUUID() as RunId;
+    this.stateMachine.runIdStack.push(runId);
+    
+    let cancelled = false;
+    let completed = false;
+    let result: AgentRunResult | undefined;
+    const eventHandlers = new Set<(event: AgentEvent) => void>();
+    const abortController = new AbortController();
+    
+    const self = this;
+    
+    // Create the run promise
+    const runPromise = (async () => {
+      try {
+        const parentRunId = this.stateMachine.runIdStack.at(-2);
+        const abort = this.stateMachine.createRun(runId, sessionId, parentRunId);
+        if (!abort) {
+          throw new KernelError("session_busy", `Session "${sessionId}" is busy`);
+        }
+
+        this.runSessionStates.set(runId, this.sessionState);
+
+        const agent = agentOverride ?? this.currentAgent;
+        if (agent) {
+          this.modelCaller.resolveAgentModel(agent, runId);
+        }
+
+        // Build effective prompt with agent identity and system prompt
+        const identity = buildAgentIdentity(agent);
+        const systemPrompt = agent?.systemPrompt;
+        const parts = [identity, systemPrompt, prompt].filter(Boolean);
+        const effectivePrompt = parts.join("\n\n");
+
+        // Per-run saga (no instance-level mutation)
+        const runSaga = new ToolSaga();
+
+        // Emit agent.started event
+        const startEvent: AgentEvent = {
+          type: "agent.started",
+          timestamp: new Date().toISOString(),
+          runId,
+          prompt,
+          model: agent?.profile?.model,
+        };
+        eventHandlers.forEach(h => h(startEvent));
+
+        // Run the loop
+        await this.runLoop(effectivePrompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga);
+        
+        completed = true;
+        result = {
+          runId,
+          status: cancelled ? "cancelled" : "succeeded",
+          totalSteps: 0, // TODO: Get from run loop
+        };
+
+        // Emit agent.completed event
+        const completeEvent: AgentEvent = {
+          type: "agent.completed",
+          timestamp: new Date().toISOString(),
+          runId,
+          status: result.status,
+        };
+        eventHandlers.forEach(h => h(completeEvent));
+
+        return result;
+      } catch (err) {
+        completed = true;
+        result = {
+          runId,
+          status: "failed",
+          error: err instanceof Error ? err.message : String(err),
+          totalSteps: 0,
+        };
+
+        // Emit agent.error event
+        const errorEvent: AgentEvent = {
+          type: "agent.error",
+          timestamp: new Date().toISOString(),
+          runId,
+          error: result.error ?? "Unknown error",
+          code: err instanceof KernelError ? err.kernelCode : undefined,
+        };
+        eventHandlers.forEach(h => h(errorEvent));
+
+        throw err;
+      } finally {
+        this.stateMachine.runIdStack.pop();
+        this.runSessionStates.delete(runId);
+      }
+    })();
+
+    return {
+      runId,
+      completed: runPromise,
+      cancel() {
+        cancelled = true;
+        abortController.abort();
+      },
+      get isCancelled() { return cancelled; },
+      get isCompleted() { return completed; },
+      get isRunning() { return !completed && !cancelled; },
+      events() {
+        return (async function* () {
+          // Yield events as they occur
+          const queue: AgentEvent[] = [];
+          const handler = (event: AgentEvent) => queue.push(event);
+          eventHandlers.add(handler);
+          
+          try {
+            while (!completed) {
+              if (queue.length > 0) {
+                yield queue.shift()!;
+              } else {
+                await new Promise(r => setTimeout(r, 10));
+              }
+            }
+            // Yield remaining events
+            while (queue.length > 0) {
+              yield queue.shift()!;
+            }
+          } finally {
+            eventHandlers.delete(handler);
+          }
+        })();
+      },
+      onEvent(handler: (event: AgentEvent) => void) {
+        eventHandlers.add(handler);
+        return () => { eventHandlers.delete(handler); };
+      },
+    };
+  }
+
+  /**
    * Start a new agent run and stream events as an async iterable.
    * Returns the run ID and an async iterable of run events.
    */
@@ -544,7 +710,7 @@ this.stepExecutor = new StepExecutor({
    */
   reconfigure(partial: Partial<Pick<AgentKernelConfig,
     "model" | "maxTokens" | "maxSteps" | "stepTimeout" | "thinkingBudget" | "thinkingPrompt" |
-    "compactionThreshold" | "permissions"
+    "compactionThreshold" | "permissions" | "maxRetries" | "retryBackoffMs" | "maxRetryBackoffMs"
   >> & Record<string, unknown>): void {
     const normalized = normalizeConfig(partial as Record<string, unknown>);
     if (normalized.model) {
@@ -569,6 +735,13 @@ this.stepExecutor = new StepExecutor({
     }
     if (normalized.compactionThreshold !== undefined) {
       this.compactionThreshold = normalized.compactionThreshold;
+    }
+    if (normalized.maxRetries !== undefined || normalized.retryBackoffMs !== undefined || normalized.maxRetryBackoffMs !== undefined) {
+      this.circuitBreaker = new CircuitBreaker({
+        maxRetries: normalized.maxRetries ?? this.circuitBreaker.getOptions().maxRetries,
+        backoffMs: normalized.retryBackoffMs ?? this.circuitBreaker.getOptions().backoffMs,
+        maxBackoffMs: normalized.maxRetryBackoffMs ?? this.circuitBreaker.getOptions().maxBackoffMs,
+      });
     }
     if (normalized.permissions?.globalPermissionRules) {
       this.permissionGate.setGlobalRules(normalized.permissions.globalPermissionRules);

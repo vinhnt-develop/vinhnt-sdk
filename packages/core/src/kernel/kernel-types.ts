@@ -125,6 +125,12 @@ export interface AgentKernelConfig {
   readonly circuitBreaker?: CircuitBreaker;
   /** Circuit breaker configuration (used if no breaker provided). */
   readonly circuitBreakerOptions?: CircuitBreakerOptions;
+  /** Maximum number of retries for transient model failures. Default: 3 */
+  readonly maxRetries?: number;
+  /** Base delay for exponential backoff in ms. Default: 1000 */
+  readonly retryBackoffMs?: number;
+  /** Maximum delay for retry backoff in ms. Default: 30000 */
+  readonly maxRetryBackoffMs?: number;
   /** Doom loop detection threshold (consecutive identical outputs). Default: 3. */
   readonly doomLoopThreshold?: number;
   /** Workspace root directory for file operations. */

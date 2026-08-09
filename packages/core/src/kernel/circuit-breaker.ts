@@ -5,12 +5,21 @@ export interface CircuitBreakerOptions {
   successThreshold?: number;
   resetTimeoutMs?: number;
   isFailure?: (err: unknown) => boolean;
+  /** Maximum number of retries for transient failures. Default: 3 */
+  maxRetries?: number;
+  /** Base delay for exponential backoff in ms. Default: 1000 */
+  backoffMs?: number;
+  /** Maximum delay for backoff in ms. Default: 30000 */
+  maxBackoffMs?: number;
 }
 
-const DEFAULT_OPTIONS = {
+const DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
   failureThreshold: 5,
   successThreshold: 2,
   resetTimeoutMs: 30_000,
+  maxRetries: 3,
+  backoffMs: 1000,
+  maxBackoffMs: 30_000,
   isFailure: (err: unknown) => {
     const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
     if (msg.includes("auth") || msg.includes("unauthorized") || msg.includes("invalid api key")) return false;
@@ -39,20 +48,66 @@ export class CircuitBreaker {
     return this.state;
   }
 
-  async call<T>(fn: () => Promise<T>): Promise<T> {
+  /**
+   * Execute a function with circuit breaker and retry logic.
+   * Retries on transient failures with exponential backoff.
+   * 
+   * @param fn - The async function to execute
+   * @param signal - Optional AbortSignal for cancellation
+   * @returns The result of the function
+   * @throws CircuitBreakerOpenError if circuit is open
+   * @throws The original error if all retries fail
+   */
+  async call<T>(fn: () => Promise<T>, signal?: AbortSignal): Promise<T> {
     const state = this.getState();
     if (state === "open") {
       throw new CircuitBreakerOpenError(this.options.resetTimeoutMs);
     }
 
-    try {
-      const result = await fn();
-      this.onSuccess();
-      return result;
-    } catch (err) {
-      this.onFailure(err);
-      throw err;
+    let lastError: unknown;
+    let attempt = 0;
+
+    while (attempt <= this.options.maxRetries) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
+      try {
+        const result = await fn();
+        this.onSuccess();
+        return result;
+      } catch (err) {
+        lastError = err;
+        
+        // Check if error is retryable
+        if (!this.options.isFailure(err)) {
+          throw err;
+        }
+
+        this.onFailure(err);
+        
+        // Don't retry if we've hit the circuit breaker
+        if (this.getState() === "open") {
+          throw new CircuitBreakerOpenError(this.options.resetTimeoutMs);
+        }
+
+        // Don't retry on last attempt
+        if (attempt >= this.options.maxRetries) {
+          throw err;
+        }
+
+        // Calculate delay with exponential backoff
+        const delay = Math.min(
+          this.options.backoffMs * Math.pow(2, attempt),
+          this.options.maxBackoffMs
+        );
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        attempt++;
+      }
     }
+
+    throw lastError;
   }
 
   private onSuccess(): void {
@@ -87,6 +142,11 @@ export class CircuitBreaker {
     this.failureCount = 0;
     this.lastFailureTime = 0;
     this.halfOpenSuccesses = 0;
+  }
+
+  /** Get the current configuration options. */
+  getOptions(): Readonly<Required<CircuitBreakerOptions>> {
+    return this.options;
   }
 }
 

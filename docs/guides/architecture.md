@@ -197,6 +197,67 @@ The kernel emits typed events throughout the run lifecycle:
 | `permission.requested` | User approval needed |
 | `context.compressed` | Context window compacted |
 
+### Agent Lifecycle Events
+
+For higher-level lifecycle tracking, use `createRunHandle()`:
+
+| Event | When |
+|-------|------|
+| `agent.started` | Agent run begins |
+| `agent.completed` | Agent run finishes |
+| `agent.error` | Agent run fails |
+
+```typescript
+const handle = kernel.createRunHandle(prompt, ctx);
+
+handle.onEvent((event) => {
+  switch (event.type) {
+    case "agent.started":
+      console.log("Started:", event.prompt);
+      break;
+    case "agent.completed":
+      console.log("Status:", event.status);
+      break;
+    case "agent.error":
+      console.log("Error:", event.error);
+      break;
+  }
+});
+
+const result = await handle.completed;
+```
+
+### Circuit Breaker & Retry
+
+The kernel includes a circuit breaker with exponential backoff for model call resilience:
+
+```typescript
+const kernel = new AgentKernel({
+  model,
+  store,
+  // Retry configuration
+  maxRetries: 3,           // Max retry attempts (default: 3)
+  retryBackoffMs: 1000,    // Base delay for backoff (default: 1000ms)
+  maxRetryBackoffMs: 30000, // Max backoff delay (default: 30000ms)
+});
+```
+
+### Event Bus Stream with Replay
+
+For durable event streaming with historical replay:
+
+```typescript
+const bus = new InMemoryEventBus();
+
+// Publish durable events
+bus.publish(DurableEvent, { data: 1 }, { aggregateId: "run-1" });
+
+// Stream with replay - yields historical events first, then live events
+for await (const event of bus.streamWithReplay(DurableEvent, "run-1")) {
+  console.log(event);
+}
+```
+
 ---
 
 ## Data Flow

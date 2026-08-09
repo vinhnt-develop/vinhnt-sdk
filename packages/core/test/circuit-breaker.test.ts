@@ -10,14 +10,17 @@ describe("CircuitBreaker", () => {
   });
 
   it("opens after failureThreshold failures", async () => {
-    const cb = new CircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 60000 });
+    const cb = new CircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 60000, maxRetries: 0 });
     const fn = vi.fn().mockRejectedValue(new Error("API error"));
 
-    for (let i = 0; i < 3; i++) {
-      await expect(cb.call(fn)).rejects.toThrow("API error");
-    }
-    expect(cb.getState()).toBe("open");
+    // First 2 calls: circuit is closed, fn throws original error
+    await expect(cb.call(fn)).rejects.toThrow("API error");
+    await expect(cb.call(fn)).rejects.toThrow("API error");
+    expect(cb.getState()).toBe("closed");
+
+    // 3rd call: circuit opens after failure, fn throws CircuitBreakerOpenError
     await expect(cb.call(fn)).rejects.toThrow(CircuitBreakerOpenError);
+    expect(cb.getState()).toBe("open");
   });
 
   it("resets to half_open after resetTimeoutMs", async () => {
@@ -66,7 +69,7 @@ describe("CircuitBreaker", () => {
   });
 
   it("does not count context overflow errors", async () => {
-    const cb = new CircuitBreaker({ failureThreshold: 2, resetTimeoutMs: 60000 });
+    const cb = new CircuitBreaker({ failureThreshold: 2, resetTimeoutMs: 60000, maxRetries: 0 });
     await expect(cb.call(() => Promise.reject(new Error("context length exceeded")))).rejects.toThrow("context length exceeded");
     expect(cb.getState()).toBe("closed");
   });
@@ -88,14 +91,24 @@ describe("CircuitBreaker", () => {
 
   it("accepts custom isFailure predicate", async () => {
     const cb = new CircuitBreaker({
-      failureThreshold: 2,
+      failureThreshold: 3,
+      maxRetries: 0,
       isFailure: (err) => (err as Error).message.includes("real_failure"),
     });
+    // Non-failure errors don't count
     await expect(cb.call(() => Promise.reject(new Error("ignore_me")))).rejects.toThrow("ignore_me");
     expect(cb.getState()).toBe("closed");
+
+    // First real_failure
     await expect(cb.call(() => Promise.reject(new Error("real_failure")))).rejects.toThrow("real_failure");
     expect(cb.getState()).toBe("closed");
+    
+    // Second real_failure
     await expect(cb.call(() => Promise.reject(new Error("real_failure")))).rejects.toThrow("real_failure");
+    expect(cb.getState()).toBe("closed");
+    
+    // Third real_failure - circuit opens
+    await expect(cb.call(() => Promise.reject(new Error("real_failure")))).rejects.toThrow(CircuitBreakerOpenError);
     expect(cb.getState()).toBe("open");
   });
 
@@ -104,5 +117,88 @@ describe("CircuitBreaker", () => {
     expect(err.remainingMs).toBe(30000);
     expect(err.message).toContain("30000");
     expect(err.name).toBe("CircuitBreakerOpenError");
+  });
+
+  describe("retry logic with exponential backoff", () => {
+    it("retries on transient failures with default maxRetries", async () => {
+      const cb = new CircuitBreaker({ maxRetries: 2, backoffMs: 10 });
+      let attempt = 0;
+      const fn = vi.fn().mockImplementation(() => {
+        attempt++;
+        if (attempt < 3) {
+          return Promise.reject(new Error("transient error"));
+        }
+        return Promise.resolve("success");
+      });
+
+      const result = await cb.call(fn);
+      expect(result).toBe("success");
+      expect(fn).toHaveBeenCalledTimes(3);
+    });
+
+    it("throws after maxRetries exceeded", async () => {
+      const cb = new CircuitBreaker({ maxRetries: 2, backoffMs: 10 });
+      const fn = vi.fn().mockRejectedValue(new Error("persistent error"));
+
+      await expect(cb.call(fn)).rejects.toThrow("persistent error");
+      expect(fn).toHaveBeenCalledTimes(3); // initial + 2 retries
+    });
+
+    it("respects AbortSignal during retry delay", async () => {
+      const cb = new CircuitBreaker({ maxRetries: 3, backoffMs: 1000 });
+      const fn = vi.fn().mockRejectedValue(new Error("error"));
+      const controller = new AbortController();
+
+      // Abort after first attempt
+      setTimeout(() => controller.abort(), 50);
+
+      await expect(cb.call(fn, controller.signal)).rejects.toThrow("Aborted");
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not retry non-failure errors", async () => {
+      const cb = new CircuitBreaker({ maxRetries: 3, backoffMs: 10 });
+      const fn = vi.fn().mockRejectedValue(new Error("unauthorized"));
+
+      await expect(cb.call(fn)).rejects.toThrow("unauthorized");
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("resets retry count on success", async () => {
+      const cb = new CircuitBreaker({ maxRetries: 2, backoffMs: 10 });
+      let attempt = 0;
+      const fn = vi.fn().mockImplementation(() => {
+        attempt++;
+        if (attempt === 1) {
+          return Promise.reject(new Error("transient"));
+        }
+        return Promise.resolve("ok");
+      });
+
+      await cb.call(fn);
+      expect(fn).toHaveBeenCalledTimes(2);
+
+      // Second call should start fresh
+      attempt = 0;
+      fn.mockClear();
+      fn.mockRejectedValue(new Error("transient"));
+      
+      // Should fail after maxRetries
+      await expect(cb.call(fn)).rejects.toThrow("transient");
+      expect(fn).toHaveBeenCalledTimes(3); // initial + 2 retries
+    });
+
+    it("getOptions returns current configuration", () => {
+      const cb = new CircuitBreaker({
+        maxRetries: 5,
+        backoffMs: 2000,
+        maxBackoffMs: 60000,
+      });
+
+      const options = cb.getOptions();
+      expect(options.maxRetries).toBe(5);
+      expect(options.backoffMs).toBe(2000);
+      expect(options.maxBackoffMs).toBe(60000);
+    });
   });
 });

@@ -64,21 +64,36 @@ const kernel = new AgentKernel({
   permissionStore: permStore,  // Optional: PermissionStore
   pluginManager: pluginMgr,    // Optional: PluginManager
   toolProviders: [provider],   // Optional: ToolProvider[]
+  // Retry configuration
+  maxRetries: 3,               // Optional: Max retry attempts (default: 3)
+  retryBackoffMs: 1000,        // Optional: Base backoff delay (default: 1000ms)
+  maxRetryBackoffMs: 30000,    // Optional: Max backoff delay (default: 30000ms)
 });
 
-// Run the agent
-const handle = kernel.run("Do something", {
-  sessionId: createSessionId("my-session"),
-  agentId: createAgentId("my-agent"),
+// Simple run
+const handle = kernel.run("Do something", ctx);
+const result = await handle.completed;
+
+// Run with lifecycle management
+const runHandle = kernel.createRunHandle("Do something", ctx);
+
+// Listen to events
+runHandle.onEvent((event) => {
+  if (event.type === "agent.completed") {
+    console.log("Status:", event.status);
+  }
 });
 
-// Stream events
-for await (const event of handle.events) {
-  console.log(event.type, event.data);
+// Or iterate over events
+for await (const event of runHandle.events()) {
+  console.log(event.type);
 }
 
+// Cancel if needed
+runHandle.cancel();
+
 // Wait for completion
-const result = await handle.completed;
+const result = await runHandle.completed;
 ```
 
 ### defineTool
@@ -181,12 +196,23 @@ import { InMemoryEventBus } from "@vinhnt-sdk/core";
 const bus = new InMemoryEventBus();
 
 // Subscribe to events
-const unsub = bus.on("tool.invoked", (event) => {
+const unsub = bus.subscribe(toolEvent, (event) => {
   console.log("Tool called:", event.data.toolName);
 });
 
 // Unsubscribe
 unsub();
+
+// Stream events as async iterable
+const controller = new AbortController();
+for await (const event of bus.stream(toolEvent, controller.signal)) {
+  console.log(event);
+}
+
+// Stream with durable replay (historical + live)
+for await (const event of bus.streamWithReplay(durableEvent, "run-123")) {
+  console.log(event);
+}
 ```
 
 ## Built-in Tools

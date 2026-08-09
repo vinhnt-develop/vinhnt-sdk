@@ -100,7 +100,7 @@ export interface AgentThinkingEvent extends AgentEventBase {
 export interface AgentCompletedEvent extends AgentEventBase {
   readonly type: "agent.completed";
   readonly runId: RunId;
-  readonly status: "succeeded" | "failed";
+  readonly status: "succeeded" | "failed" | "cancelled";
   readonly output?: string;
   readonly error?: string;
   readonly durationMs?: number;

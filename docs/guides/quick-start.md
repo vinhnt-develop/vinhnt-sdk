@@ -95,19 +95,35 @@ async function main() {
   const prompt = process.argv[2] || "What is 42 * 17?";
   console.log(`Prompt: ${prompt}\n`);
 
+  // Option A: Simple run (fire and forget)
   const handle = kernel.run(prompt);
+  const result = await handle.completed;
+  console.log(`Answer: ${result}`);
 
-  for await (const event of handle.events) {
-    if (event.type === "tool.invoked") {
-      console.log(`  Tool: ${event.data.toolName}`);
+  // Option B: Run with event streaming (recommended)
+  const runHandle = kernel.createRunHandle(prompt, {
+    requestId: "req-1",
+    traceId: "trace-1",
+    actorId: "user-1",
+    tenantId: "tenant-1",
+  });
+
+  // Listen to events
+  runHandle.onEvent((event) => {
+    if (event.type === "agent.completed") {
+      console.log(`Status: ${event.status}`);
     }
-    if (event.type === "tool.completed") {
-      console.log(`  Result: ${JSON.stringify(event.data.result)}`);
+  });
+
+  // Or iterate over events
+  for await (const event of runHandle.events()) {
+    if (event.type === "agent.completed") {
+      console.log(`Completed with status: ${event.status}`);
     }
   }
 
-  const result = await handle.completed;
-  console.log(`\nAnswer: ${result}`);
+  const runResult = await runHandle.completed;
+  console.log(`\nAnswer: ${runResult.output}`);
 }
 
 main();

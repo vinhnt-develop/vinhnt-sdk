@@ -164,6 +164,23 @@ export class GlobalEventBus implements EventBus {
     }
   }
 
+  /**
+   * Stream events with durable replay + live merge.
+   * First yields historical events from durable storage, then yields live events.
+   */
+  async *streamWithReplay<T>(
+    def: EventDefinition<T> & { durable: NonNullable<EventDefinition["durable"]> },
+    aggregateId: string,
+    after?: number,
+    signal?: AbortSignal,
+  ): AsyncIterable<TypedEvent<T>> {
+    // Phase 1: Yield historical events from durable storage
+    yield* this.durable(def, aggregateId, after);
+
+    // Phase 2: Yield live events from now on
+    yield* this.stream(def, signal);
+  }
+
   reset(): void {
     this.emitter.removeAllListeners();
     this.durableEvents.clear();

@@ -123,4 +123,97 @@ describe("InMemoryEventBus", () => {
 
     expect(projected).toHaveLength(0);
   });
+
+  describe("streamWithReplay", () => {
+    it("replays durable events then streams live events", async () => {
+      // Publish some durable events first
+      bus.publish(DurableEvent, { seq: 1 }, { aggregateId: "agg-replay" });
+      bus.publish(DurableEvent, { seq: 2 }, { aggregateId: "agg-replay" });
+
+      const received: TypedEvent[] = [];
+      const controller = new AbortController();
+
+      // Start streaming
+      const streamPromise = (async () => {
+        for await (const ev of bus.streamWithReplay(DurableEvent, "agg-replay", undefined, controller.signal)) {
+          received.push(ev);
+        }
+      })();
+
+      // Wait for replay to complete
+      await new Promise(r => setTimeout(r, 100));
+
+      // Should have replayed 2 events
+      expect(received).toHaveLength(2);
+      expect(received[0]?.data).toEqual({ seq: 1 });
+      expect(received[1]?.data).toEqual({ seq: 2 });
+
+      // Now publish a live event
+      bus.publish(DurableEvent, { seq: 3 }, { aggregateId: "agg-replay" });
+      await new Promise(r => setTimeout(r, 100));
+
+      // Should now have 3 events
+      expect(received).toHaveLength(3);
+      expect(received[2]?.data).toEqual({ seq: 3 });
+
+      // Clean up
+      controller.abort();
+      await streamPromise;
+    });
+
+    it("respects after sequence parameter", async () => {
+      // Publish durable events
+      bus.publish(DurableEvent, { seq: 1 }, { aggregateId: "agg-after" });
+      bus.publish(DurableEvent, { seq: 2 }, { aggregateId: "agg-after" });
+      bus.publish(DurableEvent, { seq: 3 }, { aggregateId: "agg-after" });
+
+      const received: TypedEvent[] = [];
+      const controller = new AbortController();
+
+      // Start streaming from sequence 1
+      const streamPromise = (async () => {
+        for await (const ev of bus.streamWithReplay(DurableEvent, "agg-after", 1, controller.signal)) {
+          received.push(ev);
+        }
+      })();
+
+      await new Promise(r => setTimeout(r, 100));
+
+      // Should only have events after sequence 1
+      expect(received).toHaveLength(1);
+      expect(received[0]?.data).toEqual({ seq: 3 });
+
+      controller.abort();
+      await streamPromise;
+    });
+
+    it("stops on abort signal", async () => {
+      bus.publish(DurableEvent, { seq: 1 }, { aggregateId: "agg-abort" });
+
+      const received: TypedEvent[] = [];
+      const controller = new AbortController();
+
+      const streamPromise = (async () => {
+        for await (const ev of bus.streamWithReplay(DurableEvent, "agg-abort", undefined, controller.signal)) {
+          received.push(ev);
+        }
+      })();
+
+      await new Promise(r => setTimeout(r, 100));
+      expect(received).toHaveLength(1);
+
+      // Abort
+      controller.abort();
+      await new Promise(r => setTimeout(r, 100));
+
+      // Publish more events after abort
+      bus.publish(DurableEvent, { seq: 2 }, { aggregateId: "agg-abort" });
+      await new Promise(r => setTimeout(r, 100));
+
+      // Should still only have 1 event
+      expect(received).toHaveLength(1);
+
+      await streamPromise;
+    });
+  });
 });
