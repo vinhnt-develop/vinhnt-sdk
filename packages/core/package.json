@@ -107,8 +107,5 @@
                          "@vinhnt-sdk/knowledge":  "workspace:*",
                          "@vinhnt-sdk/tools":  "workspace:*",
                          "zod":  "^4.4.3"
-                     },
-    "devDependencies":  {
-
-                        }
+                     }
 }

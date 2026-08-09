@@ -1,6 +1,6 @@
 # @vinhnt-sdk/rag
 
-## 0.1.3
+## 0.1.1-beta.0
 
 ### Patch Changes
 
@@ -23,3 +23,27 @@
 - Updated dependencies
   - @vinhnt-sdk/schema@0.1.1-beta.0
   - @vinhnt-sdk/core@0.1.1-beta.0
+
+## 0.1.3 (Deprecated)
+
+### Patch Changes
+
+- Published by mistake. Use 0.1.1-beta.0 instead.
+
+## 0.1.2 (Deprecated)
+
+### Patch Changes
+
+- Published by mistake. Use 0.1.1-beta.0 instead.
+
+## 0.1.1 (Deprecated)
+
+### Patch Changes
+
+- Published by mistake. Use 0.1.1-beta.0 instead.
+
+## 0.1.0 (Deprecated)
+
+### Patch Changes
+
+- Initial release (deprecated).

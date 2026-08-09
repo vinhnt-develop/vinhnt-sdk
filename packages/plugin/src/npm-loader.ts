@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import type { Plugin } from "@vinhnt-sdk/core";
+import { getLogger } from "@vinhnt-sdk/core";
 
 const CACHE_DIR = ".vnt/plugins";
 
@@ -163,16 +164,16 @@ export async function loadPluginFromNpm(
       await writeFile(pkgJson, JSON.stringify({ private: true, name: "vnt-plugin-cache" }), "utf-8");
     }
     if (options?.auditLog) {
-      console.log(`[plugin-audit] INSTALL: ${installSpec}`);
+      getLogger().info(`[plugin-audit] INSTALL: ${installSpec}`);
     }
-    console.log(`[plugin] Installing npm plugin: ${installSpec}`);
+    getLogger().info(`[plugin] Installing npm plugin: ${installSpec}`);
 
     // Use injected package manager or default to npm
     const pm = options?.packageManager ?? new NpmPackageManager();
     await pm.install(installSpec, cacheDir);
 
     await writeFile(cacheMarker, Date.now().toString(), "utf-8");
-    console.log(`[plugin] Installed: ${installSpec}`);
+    getLogger().info(`[plugin] Installed: ${installSpec}`);
   }
 
   // --- Hash verification ---
@@ -192,7 +193,7 @@ export async function loadPluginFromNpm(
         };
         logAudit(entry);
         if (options.auditLog) {
-          console.warn(`[plugin-audit] HASH MISMATCH: ${pkgName} — expected ${expectedHash}, got ${actualHash}`);
+          getLogger().warn(`[plugin-audit] HASH MISMATCH: ${pkgName} — expected ${expectedHash}, got ${actualHash}`);
         }
         throw new Error(
           `Plugin "${pkgName}" package.json hash mismatch — expected ${expectedHash}, got ${actualHash}. ` +
@@ -238,7 +239,7 @@ export async function loadPluginFromNpm(
   };
   logAudit(entry);
   if (options?.auditLog) {
-    console.log(`[plugin-audit] LOADED: ${pkgName} (${entry.details})`);
+    getLogger().info(`[plugin-audit] LOADED: ${pkgName} (${entry.details})`);
   }
 
   return defaultExport as unknown as Plugin;
@@ -262,10 +263,10 @@ export async function loadNpmPlugins(
   for (const result of results) {
     if (result.status === "fulfilled") {
       const { name, plugin } = result.value;
-      console.log(`[plugin] Loaded npm plugin: ${name} (${plugin.manifest.id}@${plugin.manifest.version})`);
+      getLogger().info(`[plugin] Loaded npm plugin: ${name} (${plugin.manifest.id}@${plugin.manifest.version})`);
     } else {
       const pkgName = extractFailedPackageName(result.reason);
-      console.warn(`[plugin] Failed to load npm plugin "${pkgName}":`, result.reason instanceof Error ? result.reason.message : String(result.reason));
+      getLogger().warn(`[plugin] Failed to load npm plugin "${pkgName}":`, result.reason instanceof Error ? result.reason.message : String(result.reason));
     }
   }
 }

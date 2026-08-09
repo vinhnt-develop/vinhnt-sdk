@@ -123,10 +123,8 @@ export class ModelCaller {
       const durationMs = Math.round(performance.now() - startTime);
       const cost = this.calculateCost(inputTokens, outputTokens, model) ?? 0;
       await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
-      if (typeof console !== "undefined") {
-        const p = model?.pricing;
-        console.log(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
-      }
+      const p = model?.pricing;
+      this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
       return res;
     }
 
@@ -167,10 +165,8 @@ export class ModelCaller {
     const durationMs = Math.round(performance.now() - startTime);
     const cost = this.calculateCost(inputTokens, outputTokens, model) ?? 0;
     await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
-    if (typeof console !== "undefined") {
-      const p = model?.pricing;
-      console.log(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
-    }
+    const p = model?.pricing;
+    this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
 
     return toolCalls.length > 0 ? { content, toolCalls } : { content };
   }
