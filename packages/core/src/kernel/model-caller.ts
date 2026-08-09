@@ -131,6 +131,7 @@ export class ModelCaller {
     }
 
     for await (const event of model.stream(request, signal)) {
+      if (signal?.aborted) break;
       switch (event.type) {
         case "text":
           content += event.content;
@@ -194,6 +195,7 @@ export class ModelCaller {
         { messages: [...messages, { role: "system" as const, content: this.deps.thinkingPrompt }], tools: [] },
         signal,
       )) {
+        if (signal?.aborted) break;
         if (event.type === "text") {
           thinking += event.content;
           await this.deps.emitEvent({
