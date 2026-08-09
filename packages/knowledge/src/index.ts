@@ -1,15 +1,17 @@
+// @vinhnt-sdk/knowledge
+// Memory and context management for AI coding agents
+//
+// PUBLIC API - Only essential exports for users
+
+// === Memory system ===
 export { InMemoryMemoryStore, SessionMemory } from "./memory.js";
 export { BoundedMemory } from "./memory-bounded.js";
-export type { BoundedMemoryLimits } from "./memory-bounded.js";
+export type { MemoryItem, MemoryStore, MemoryTier } from "./types.js";
+
+// === Context compression ===
 export { ContextCompressor } from "./compressor.js";
 export { LlmCompactor } from "./llm-compactor.js";
-export { WriteApprovalQueue } from "./approval.js";
-export { BackgroundReview } from "./review.js";
-export { LearningEngine } from "./learning-engine.js";
-export { createMemorySearchTool } from "./tool.js";
+
+// === Prompt building ===
 export { buildPrompt } from "./prompt-builder.js";
-export type { MemoryItem, MemoryStore, MemoryTier, Skill } from "./types.js";
-export type { CompressorOptions } from "./compressor.js";
-export type { ReviewOptions } from "./review.js";
 export type { PromptBuilderOptions } from "./prompt-builder.js";
-export type { ApprovalHandler } from "./approval.js";

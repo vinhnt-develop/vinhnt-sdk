@@ -2,6 +2,7 @@ import type { RunId, RequestContext, KnownRunEvent } from "@vinhnt-sdk/schema";
 import type { ChatMessage, ModelProvider, ModelRequest, ModelResponse, ModelRegistry } from "../model.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
+import type { Logger } from "../logger.js";
 
 export interface ModelCallerDeps {
   defaultModel: ModelProvider;
@@ -10,6 +11,7 @@ export interface ModelCallerDeps {
   thinkingBudget: number;
   thinkingPrompt: string;
   readonly pluginManager: PluginManager | undefined;
+  readonly logger: Logger | undefined;
   emitEvent(event: Omit<KnownRunEvent, "sequence">, persist?: boolean): Promise<void>;
   modelForRun(runId: RunId): ModelProvider | undefined;
   setModelForRun(runId: RunId, model: ModelProvider): void;

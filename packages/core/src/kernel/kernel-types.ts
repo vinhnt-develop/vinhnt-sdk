@@ -146,6 +146,8 @@ export interface AgentKernelConfig {
   readonly hooks?: HookConfig;
   /** Enterprise managed configuration. */
   readonly managedConfig?: Record<string, unknown>;
+  /** Logger for kernel events. */
+  readonly logger?: import("../logger.js").Logger;
 }
 
 /** Handle for a running agent run — provides abort control and completion tracking. */

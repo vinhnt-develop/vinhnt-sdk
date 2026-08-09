@@ -1,9 +1,12 @@
+// @vinhnt-sdk/plugin
+// Plugin system for AI coding agents
+//
+// PUBLIC API - Only essential exports for users
+
 import type { PluginManifest, PluginContext, PluginHooks, Plugin } from "@vinhnt-sdk/core";
 
 export type { PluginManifest, PluginContext, PluginHooks, Plugin };
-export type { HookResult, HookName, HookPayload, HookReturn, ToolDefinition, ToolRisk, ContextSourceValue, ContextSourceKey } from "@vinhnt-sdk/core";
-export type { NpmPluginLoaderOptions, PluginAuditEntry } from "./npm-loader.js";
-export { loadPluginFromNpm, loadNpmPlugins, clearPluginCache, getPluginAuditLog, clearPluginAuditLog } from "./npm-loader.js";
+export type { ToolDefinition, ToolRisk, ContextSourceValue, ContextSourceKey } from "@vinhnt-sdk/core";
 
 export interface DefinePluginOptions {
   hooks?: PluginHooks;

@@ -1,6 +1,18 @@
-// ── Contracts: branded ids, events, errors ──
+// @vinhnt-sdk/schema
+// Core types and contracts for vinhnt-sdk
+
+// === Branded IDs ===
 export type {
-  BrandedId, RunId, SessionId, AgentId, ToolCallId, MessageId, TraceId, RequestId, WorkspaceId, EnvironmentId, FilePatchId,
+  BrandedId, RunId, SessionId, AgentId, TraceId, RequestId, ToolCallId, MessageId, WorkspaceId, EnvironmentId, FilePatchId,
+} from "./contracts/index.js";
+export {
+  isAgentId, isRunId, isSessionId, isMessageId, isToolCallId,
+  isTraceId, isRequestId, isRecord,
+  assertAgentId, assertRunId, assertSessionId, assertMessageId,
+} from "./contracts/index.js";
+
+// === Events ===
+export type {
   RunEvent, KnownRunEvent,
   RunStartedData, StepStartedData, TokenStreamedData,
   ThinkingStartedData, ThinkingContentData, ThinkingCompletedData,
@@ -9,63 +21,54 @@ export type {
   StepCompletedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
 } from "./contracts/index.js";
+
+// === Error classes ===
 export {
-  isAgentId, isRunId, isSessionId, isMessageId, isToolCallId,
-  isTraceId, isRequestId, isRecord,
-  assertAgentId, assertRunId, assertSessionId, assertMessageId,
   VntError,
   AgentNotFoundError, AgentValidationError, AgentPermissionDenied,
   ToolNotFoundError, ToolExecutionError, ToolPermissionDenied,
   RunNotFoundError, RunAbortedError, RunTimeoutError,
 } from "./contracts/index.js";
 
-// ── Domain data types ──
+// === Core types ===
 export type {
-  AgentMode, AgentBehaviourMode, AgentProfile, AgentCapabilities, AgentRule, AgentRuleset, AgentPermissions, AgentConfig,
+  RunStatus, RequestContext, Result,
   Session, Message, MessageTokens, SessionStats,
-  SessionNode, SessionTreeSnapshot, TreeCursor, SessionTreeEvent, SessionTreeEventType,
-  ApprovalRequest, ApprovalCategory, ApprovalStatus, ApprovalContext, ApprovalPolicy, PolicyEffect,
-  SkillManifest, SkillDefinition, SkillSource, SkillSourceType, SkillMode, SkillPermission, SkillPermissionValue,
-  PermissionRequest, PermissionReply, SavedApproval,
-  RequestContext,
-  Result,
-  RunStatus,
+  AgentProfile, AgentConfig, AgentPermissions,
+  AgentMode, AgentBehaviourMode, AgentCapabilities, AgentRule, AgentRuleset,
   MemoryEntry,
-  PromptTier, PromptAssembly, CompressionSummary,
-  AgentStepType,
-  ToolDefinitionLike,
-  ToolCall, MessageContentPart, ChatMessage,
-  ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing, ModelCapabilities,
-  ModelProvider, ModelRegistry,
+  SkillManifest, SkillDefinition,
+  SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue,
+  ChatMessage, MessageContentPart,
+  CompressionSummary,
+  ApprovalRequest,
   ConversationCompactor,
-  RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore, SessionStore,
+  ModelProvider,
+  PromptAssembly,
+  SessionStore,
+  ToolDefinitionLike,
+  ToolCall,
+  PermissionRequest, PermissionReply, SavedApproval,
+  ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing, ModelCapabilities, ModelRegistry,
+  RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore,
+  SessionNode, SessionTreeSnapshot, SessionTreeEvent,
 } from "./types/index.js";
 export {
-  APPROVAL_CATEGORY_LABELS,
-  AGENT_STEP_LABELS, inferStepType,
+  APPROVAL_CATEGORY_LABELS, AGENT_STEP_LABELS, inferStepType,
   ok, fail,
 } from "./types/index.js";
 
-// ── Event system (definitions + registry) ──
+// === Event system ===
 export { EventRegistry, defineEvent } from "./event/index.js";
 export type { EventDefinition, TypedEvent } from "./event/index.js";
-export * from "./event/events.js";
+export { PermissionRequested, PermissionReplied } from "./event/events.js";
 
-// ── Zod schemas (data validation) ──
-export * from "./contracts/schema/index.js";
+// === Schema versioning ===
+export { SchemaVersionedBaseSchema, versionedSchema, deprecated } from "./versioned.js";
+export type { SchemaVersionedBase, VersionedSchemaOptions } from "./versioned.js";
 
-// ── Zod schemas (tool input validation) ──
-export { ReadFileSchema, WriteFileSchema, EditFileSchema, EditBlockSchema, ApplyPatchSchema, ListDirectorySchema, ExecuteCommandSchema, GlobFilesSchema, GrepFilesSchema, WebFetchSchema, ReadImageSchema, SkillSchema, SkillSearchSchema, CreateSkillSchema, GitDiffSchema, GitLogSchema, GitCommitSchema, GitStatusSchema, LspDiagnosticsSchema, LspSymbolsSchema, LspPositionSchema, QuestionSchema, WebSearchSchema } from "./tool/schemas.js";
-
-// ── Schema versioning (envelope + upcast chain) ──
-export {
-  SchemaVersionedBaseSchema, versionedSchema, deprecated,
-  DurableEventEnvelopeSchema, upcastEventToCurrent,
-} from "./versioned.js";
-export type {
-  SchemaVersionedBase, SchemaMigration, DeprecationNote,
-  VersionedSchemaOptions, VersionedSchema, DurableEventEnvelope, DurableEventDefinition,
-} from "./versioned.js";
-
-// ── Utilities ──
+// === Utilities ===
 export { wildcardMatch } from "./wildcard.js";
+
+// === Contract schemas ===
+export { AgentConfigSchema, RequestContextSchema } from "./contracts/schema/index.js";

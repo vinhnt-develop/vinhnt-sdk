@@ -1,112 +1,59 @@
 {
-    "name":  "@vinhnt-sdk/core",
-    "version":  "0.1.1-beta.0",
-    "description":  "Core agent engine for VNT Agent — kernel, tools, sessions, plugins, permissions, and knowledge",
-    "license":  "MIT",
-    "type":  "module",
-    "main":  "./dist/index.js",
-    "types":  "./dist/index.d.ts",
-    "exports":  {
-                    ".":  {
-                              "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.js"
-                          },
-                    "./kernel/*":  {
-                                       "types":  "./dist/kernel/*.d.ts",
-                                       "import":  "./dist/kernel/*.js"
-                                   },
-                    "./tool/*":  {
-                                     "types":  "./dist/tool/*.d.ts",
-                                     "import":  "./dist/tool/*.js"
-                                 },
-                    "./session/*":  {
-                                        "types":  "./dist/session/*.d.ts",
-                                        "import":  "./dist/session/*.js"
-                                    },
-                    "./agent/*":  {
-                                      "types":  "./dist/agent/*.d.ts",
-                                      "import":  "./dist/agent/*.js"
-                                  },
-                    "./skill/*":  {
-                                      "types":  "./dist/skill/*.d.ts",
-                                      "import":  "./dist/skill/*.js"
-                                  },
-                    "./permission/*":  {
-                                           "types":  "./dist/permission/*.d.ts",
-                                           "import":  "./dist/permission/*.js"
-                                       },
-                    "./plugin/*":  {
-                                       "types":  "./dist/plugin/*.d.ts",
-                                       "import":  "./dist/plugin/*.js"
-                                   },
-                    "./event-bus/*":  {
-                                          "types":  "./dist/event-bus/*.d.ts",
-                                          "import":  "./dist/event-bus/*.js"
-                                      },
-                    "./system-context/*":  {
-                                               "types":  "./dist/system-context/*.d.ts",
-                                               "import":  "./dist/system-context/*.js"
-                                           },
-                    "./knowledge/*":  {
-                                          "types":  "./dist/knowledge/*.d.ts",
-                                          "import":  "./dist/knowledge/*.js"
-                                      },
-                    "./model":  {
-                                    "types":  "./dist/model.d.ts",
-                                    "import":  "./dist/model.js"
-                                },
-                    "./tracer":  {
-                                     "types":  "./dist/tracer.d.ts",
-                                     "import":  "./dist/tracer.js"
-                                 },
-                    "./workspace":  {
-                                        "types":  "./dist/workspace.d.ts",
-                                        "import":  "./dist/workspace.js"
-                                    }
-                },
-    "files":  [
-                  "dist",
-                  "LICENSE",
-                  "README.md"
-              ],
-    "sideEffects":  false,
-    "engines":  {
-                    "node":  "\u003e=20"
-                },
-    "repository":  {
-                       "type":  "git",
-                       "url":  "https://github.com/vinhnt-develop/vinhnt-sdk.git",
-                       "directory":  "packages/core"
-                   },
-    "homepage":  "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/core",
-    "bugs":  {
-                 "url":  "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
-             },
-    "keywords":  [
-                     "vnt",
-                     "agent",
-                     "core",
-                     "kernel",
-                     "tools",
-                     "session",
-                     "plugin"
-                 ],
-    "publishConfig":  {
-                          "access":  "public"
-                      },
-    "scripts":  {
-                    "build":  "tsc -b",
-                    "typecheck":  "tsc --noEmit",
-                    "test":  "vitest run",
-                    "clean":  "node -e \"try{require(\u0027fs\u0027).rmSync(\u0027dist\u0027,{recursive:true,force:true})}catch(e){}\" \u0026\u0026 node -e \"try{require(\u0027fs\u0027).rmSync(\u0027tsconfig.tsbuildinfo\u0027,{force:true})}catch(e){}\"",
-                    "prepublishOnly":  "pnpm build"
-                },
-    "dependencies":  {
-                         "@vinhnt-sdk/schema":  "workspace:*",
-                         "@vinhnt-sdk/security":  "workspace:*",
-                         "@vinhnt-sdk/knowledge":  "workspace:*",
-                         "@vinhnt-sdk/tools":  "workspace:*",
-                         "zod":  "^4.4.3"
-                     }
+  "name": "@vinhnt-sdk/core",
+  "version": "0.1.1-beta.0",
+  "description": "Core agent engine for VNT Agent — kernel, tools, sessions, plugins, permissions, and knowledge",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/core",
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "agent",
+    "core",
+    "kernel",
+    "tools",
+    "session",
+    "plugin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@vinhnt-sdk/schema": "workspace:*",
+    "@vinhnt-sdk/security": "workspace:*",
+    "@vinhnt-sdk/knowledge": "workspace:*",
+    "@vinhnt-sdk/tools": "workspace:*",
+    "zod": "^4.4.3"
+  }
 }
-

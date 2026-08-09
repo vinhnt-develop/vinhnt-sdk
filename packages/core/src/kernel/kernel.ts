@@ -167,6 +167,7 @@ export class AgentKernel {
       thinkingBudget: this.thinkingBudget,
       thinkingPrompt,
       pluginManager: normalized.pluginManager,
+      logger: normalized.logger,
       emitEvent: (event, persist) => this.emitEvent(event, persist),
       modelForRun: (runId) => this.stateMachine.getModelForRun(runId),
       setModelForRun: (runId, model) => this.stateMachine.setModelForRun(runId, model),

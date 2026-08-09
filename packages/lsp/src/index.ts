@@ -1,12 +1,19 @@
+// @vinhnt-sdk/lsp
+// Language Server Protocol integration for AI coding agents
+//
+// PUBLIC API - Only essential exports for users
+
+// === LSP Client ===
 export { LspClient } from "./client.js";
 export { LspPool } from "./pool.js";
-export { DiagnosticStore, formatDiagnostics, formatDiagnostic, countErrors, countWarnings } from "./diagnostics.js";
-export { uriFromPath, pathFromUri, pathToUri, notifyOpen, notifyChange, notifyClose } from "./file-sync.js";
-export { BUILTIN_SERVERS, findServerByExtension, findServerById, getLanguageId } from "./server-registry.js";
-export { createLspTools, createLspDiagnosticsTool, createLspSymbolsTool, createLspHoverTool, createLspDefinitionTool, createLspReferencesTool } from "./lsp-tools.js";
+export { BUILTIN_SERVERS } from "./server-registry.js";
+
+// === Diagnostics ===
+export { DiagnosticStore, formatDiagnostics } from "./diagnostics.js";
+
+// === Tools ===
+export { createLspTools } from "./lsp-tools.js";
 export { LspToolProvider } from "./lsp-tool-provider.js";
-export { createLspToolHook } from "./bridge.js";
-export { createLspContextSource } from "./lsp-context-source.js";
-export type { LspContext } from "./lsp-context-source.js";
-export type { LspServerDefinition, LspServerStatus, LspPoolConfig, LspDiagnostic, LspPosition, LspRange, LspSymbol, LspHoverResult, LspLocation, LspCompletionItem, LspSignatureHelp, LspDocumentSymbol, LspCodeAction } from "./types.js";
-export { DEFAULT_LSP_POOL_CONFIG } from "./types.js";
+
+// === Types ===
+export type { LspServerDefinition, LspDiagnostic, LspPosition, LspRange } from "./types.js";
