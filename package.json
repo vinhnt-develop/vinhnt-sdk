@@ -4,7 +4,7 @@
   "description": "VinhNT SDK - AI Agent Core Libraries",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git"
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git"
   },
   "license": "MIT",
   "engines": {
@@ -33,3 +33,4 @@
     "vitest": "^3.2.0"
   }
 }
+

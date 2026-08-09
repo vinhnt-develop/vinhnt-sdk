@@ -24,9 +24,9 @@
                                                    ]
                                 }
                       },
-    "homepage":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/plugin",
+    "homepage":  "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/plugin",
     "bugs":  {
-                 "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+                 "url":  "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
              },
     "files":  [
                   "dist",
@@ -36,7 +36,7 @@
     "license":  "MIT",
     "repository":  {
                        "type":  "git",
-                       "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
+                       "url":  "https://github.com/vinhnt-develop/vinhnt-sdk.git",
                        "directory":  "packages/plugin"
                    },
     "keywords":  [
@@ -62,3 +62,4 @@
                          "@vinhnt-sdk/core":  "workspace:*"
                      }
 }
+

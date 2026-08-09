@@ -23,12 +23,12 @@
                 },
     "repository":  {
                        "type":  "git",
-                       "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk.git",
+                       "url":  "https://github.com/vinhnt-develop/vinhnt-sdk.git",
                        "directory":  "packages/security"
                    },
-    "homepage":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/tree/main/packages/security",
+    "homepage":  "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/security",
     "bugs":  {
-                 "url":  "https://github.com/nguyen-thanh-vinh/vinhnt-sdk/issues"
+                 "url":  "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
              },
     "keywords":  [
                      "vnt",
@@ -48,3 +48,4 @@
                     "test":  "vitest run"
                 }
 }
+
