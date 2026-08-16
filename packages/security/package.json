@@ -45,7 +45,8 @@
                     "typecheck":  "tsc --noEmit",
                     "clean":  "node -e \"try{require(\u0027fs\u0027).rmSync(\u0027dist\u0027,{recursive:true,force:true})}catch(e){}\" \u0026\u0026 node -e \"try{require(\u0027fs\u0027).rmSync(\u0027tsconfig.tsbuildinfo\u0027,{force:true})}catch(e){}\"",
                     "prepublishOnly":  "pnpm build",
-                    "test":  "vitest run"
+                    "test":  "vitest run",
+                    "lint":  "eslint ."
                 }
 }
 

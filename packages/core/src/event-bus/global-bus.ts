@@ -11,7 +11,7 @@ export interface RedisAdapter {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __vnt_global_event_bus__: GlobalEventBus | undefined;
 }
 

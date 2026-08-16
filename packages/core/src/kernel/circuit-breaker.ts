@@ -37,7 +37,10 @@ export class CircuitBreaker {
   private readonly options: Required<CircuitBreakerOptions>;
 
   constructor(options?: CircuitBreakerOptions) {
-    this.options = { ...DEFAULT_OPTIONS, ...options };
+    this.options = {
+      ...DEFAULT_OPTIONS,
+      ...Object.fromEntries(Object.entries(options ?? {}).filter(([, v]) => v !== undefined)),
+    };
   }
 
   getState(): CircuitState {

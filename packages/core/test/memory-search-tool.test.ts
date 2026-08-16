@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createMemorySearchTool } from "../src/knowledge/tool.js";
+import { createMemorySearchTool } from "@vinhnt-sdk/knowledge";
 import type { SessionStore } from "../src/session/store.js";
 
 function mockStore(overrides: Partial<SessionStore> = {}): SessionStore {

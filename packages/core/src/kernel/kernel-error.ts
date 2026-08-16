@@ -13,13 +13,12 @@ export type KernelErrorCode =
   | "model_unavailable";
 
 export class KernelError extends VntError {
-  public readonly code = "KERNEL_ERROR";
+  public readonly code: string;
   public readonly retryable = false;
-  public readonly kernelCode: KernelErrorCode;
 
   constructor(kernelCode: KernelErrorCode, message: string, cause?: unknown) {
     super(message, { cause });
-    this.kernelCode = kernelCode;
+    this.code = kernelCode;
     this.name = `KernelError.${kernelCode}`;
   }
 }

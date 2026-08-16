@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { prefix, commandPattern } from "../src/tool/arity.js";
+import { prefix, commandPattern } from "@vinhnt-sdk/tools";
 
 describe("prefix", () => {
   it("returns single token for simple commands", () => {

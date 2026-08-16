@@ -23,7 +23,7 @@ export const DEFAULT_THINKING_PROMPT = "Analyze the user's request and the conve
 
 import { RunStateMachine } from "./run-state.js";
 import type { RunState } from "./run-state.js";
-import { PermissionGate } from "./permission-gate.js";
+import { PermissionGate, type ApprovalDecision } from "./permission-gate.js";
 import { ModelCaller } from "./model-caller.js";
 import { StepExecutor } from "./step-executor.js";
 import { ToolSaga } from "./tool-saga.js";
@@ -162,7 +162,7 @@ export class AgentKernel {
       this.permissionGate.setGlobalRules(normalized.permissions.globalPermissionRules);
     }
     if (normalized.permissions?.permissionRiskDefaults) {
-      this.permissionGate.setRiskOverrides(normalized.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
+      this.permissionGate.setRiskOverrides(normalized.permissions.permissionRiskDefaults as Partial<Record<string, ApprovalDecision>>);
     }
     if (normalized.permissions?.topLevelPermissionRules) {
       this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);
@@ -585,7 +585,7 @@ this.stepExecutor = new StepExecutor({
           timestamp: new Date().toISOString(),
           runId,
           error: result.error ?? "Unknown error",
-          code: err instanceof KernelError ? err.kernelCode : undefined,
+          code: err instanceof KernelError ? err.code : undefined,
         };
         eventHandlers.forEach(h => h(errorEvent));
 
@@ -751,7 +751,7 @@ this.stepExecutor = new StepExecutor({
       this.permissionGate.setGlobalRules(normalized.permissions.globalPermissionRules);
     }
     if (normalized.permissions?.permissionRiskDefaults) {
-      this.permissionGate.setRiskOverrides(normalized.permissions.permissionRiskDefaults as Partial<Record<string, string>>);
+      this.permissionGate.setRiskOverrides(normalized.permissions.permissionRiskDefaults as Partial<Record<string, ApprovalDecision>>);
     }
     if (normalized.permissions?.topLevelPermissionRules) {
       this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);

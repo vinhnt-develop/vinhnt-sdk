@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ToolProviderRegistry } from "../src/tool/provider.js";
-import { BuiltinToolProvider } from "../src/tool/providers/builtin-provider.js";
-import { ToolFileProvider } from "../src/tool/providers/file-loader.js";
-import type { ToolDefinition } from "../src/tool/definitions.js";
-import { defineTool } from "../src/tool/define-tool.js";
+import { ToolProviderRegistry, BuiltinToolProvider, ToolFileProvider } from "@vinhnt-sdk/tools";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
+import { defineTool } from "@vinhnt-sdk/tools";
 import { z } from "zod";
 
 function createMockTool(id: string): ToolDefinition {

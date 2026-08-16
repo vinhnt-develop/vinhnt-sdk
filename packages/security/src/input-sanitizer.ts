@@ -23,7 +23,7 @@ const INJECTION_PATTERNS: RegExp[] = [
   /[\u202A-\u202E\u2066-\u2069]/g,
 
   // Zero-width characters used for stealth injection
-  /[\u200B\u200C\u200D\uFEFF]/g,
+  /[\u200B-\u200D\uFEFF]/g,
 
   // "Ignore previous" / "Forget everything" style overrides
   /(?:ignore|disregard|forget|override|replace)\s+(?:all\s+)?(?:previous|above|earlier|prior|your)\s+(?:instructions?|prompts?|rules?|guidelines?|context)/gi,
@@ -114,7 +114,7 @@ export function detectInjectionPatterns(text: string): string[] {
   if (/[\u202A-\u202E\u2066-\u2069]/.test(text)) {
     findings.push("Unicode bidi override");
   }
-  if (/[\u200B\u200C\u200D\uFEFF]/.test(text)) {
+  if (/[\u200B-\u200D\uFEFF]/.test(text)) {
     findings.push("Zero-width character");
   }
   if (/(?:ignore|disregard|forget|override|replace)\s+(?:all\s+)?(?:previous|above|earlier|prior|your)\s+(?:instructions?|prompts?|rules?|guidelines?|context)/gi.test(text)) {

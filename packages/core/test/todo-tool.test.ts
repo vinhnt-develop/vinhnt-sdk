@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
-import { createTodoWriteTool } from "../src/tool/todo-tool.js";
+import { createTodoWriteTool } from "@vinhnt-sdk/tools";
 
 const tool = createTodoWriteTool();
 

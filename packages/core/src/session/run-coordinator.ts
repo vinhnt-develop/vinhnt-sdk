@@ -2,7 +2,8 @@ import type { RunId, Session, SessionId, RequestContext, Result, AgentConfig } f
 import type { MessageContentPart } from "../model.js";
 import type { SessionStore } from "../session/store.js";
 import type { SessionTree } from "../session/session-tree.js";
-import { AgentKernel, type RunState } from "../kernel/kernel.js";
+import type { AgentKernel} from "../kernel/kernel.js";
+import { type RunState } from "../kernel/kernel.js";
 
 import { KernelError } from "../kernel/kernel.js";
 export type SessionEventType =

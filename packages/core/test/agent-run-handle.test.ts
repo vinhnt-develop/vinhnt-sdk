@@ -21,7 +21,7 @@ describe("AgentRunHandle", () => {
 
   function createMockHandle(overrides?: Partial<AgentRunHandle>): AgentRunHandle {
     let cancelled = false;
-    let completed = false;
+    const completed = false;
     
     return {
       runId,

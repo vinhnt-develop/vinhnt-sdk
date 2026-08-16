@@ -1,86 +1,101 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createWebSearchTool } from "../src/tool/web-search-tool.js";
+import { describe, it, expect, vi } from "vitest";
+import { createWebSearchTool, TavilySearchProvider } from "@vinhnt-sdk/tools";
+import type { WebSearchProvider } from "@vinhnt-sdk/tools";
 
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
-
-function mockTavilyResponse(overrides: Partial<{ results: unknown[]; answer: string }> = {}) {
+function makeProvider(overrides: Partial<WebSearchProvider> = {}): WebSearchProvider {
   return {
-    ok: true,
-    json: async () => ({
-      results: overrides.results ?? [{ title: "R1", url: "https://r1.com", content: "Result 1", score: 0.9 }],
-      answer: overrides.answer,
-    }),
+    name: "mock",
+    search: vi.fn(async (query) => ({
+      results: [{ title: "R1", url: "https://r1.com", content: "Result 1", score: 0.9 }],
+    })),
+    ...overrides,
   };
 }
 
 describe("createWebSearchTool", () => {
-  beforeEach(() => {
-    mockFetch.mockReset();
-  });
-
   it("returns a tool with correct id and risk", () => {
-    const tool = createWebSearchTool({ apiKey: "test-key" });
+    const tool = createWebSearchTool({ provider: makeProvider() });
     expect(tool.id).toBe("web_search");
     expect(tool.risk).toBe("read");
   });
 
   it("searches and returns results", async () => {
-    mockFetch.mockResolvedValue(mockTavilyResponse());
-    const tool = createWebSearchTool({ apiKey: "test-key" });
+    const provider = makeProvider();
+    const tool = createWebSearchTool({ provider });
     const result = await tool.execute({ query: "hello world" }, {} as never);
 
+    expect(provider.search).toHaveBeenCalledOnce();
+    expect(provider.search).toHaveBeenCalledWith("hello world", { numResults: undefined, searchDepth: undefined });
     expect(result.results).toHaveLength(1);
     expect(result.results[0].title).toBe("R1");
-    expect(result.results[0].url).toBe("https://r1.com");
-    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(result.results[0].url).toMatchInlineSnapshot(`"https://r1.com"`);
   });
 
   it("includes answer when present", async () => {
-    mockFetch.mockResolvedValue(mockTavilyResponse({ answer: "Summary answer" }));
-    const tool = createWebSearchTool({ apiKey: "test-key" });
+    const provider = makeProvider({
+      search: vi.fn(async () => ({
+        results: [{ title: "R1", url: "https://r1.com", content: "c", score: 0.9 }],
+        answer: "Summary answer",
+      })),
+    });
+    const tool = createWebSearchTool({ provider });
     const result = await tool.execute({ query: "test" }, {} as never);
 
     expect(result.answer).toBe("Summary answer");
   });
 
-  it("returns error when API key is empty", async () => {
-    const tool = createWebSearchTool({ apiKey: "" });
-    const result = await tool.execute({ query: "test" }, {} as never);
-
-    expect(result.error).toContain("not configured");
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-
-  it("returns error when API key function returns empty", async () => {
-    const tool = createWebSearchTool({ apiKey: () => "" });
-    const result = await tool.execute({ query: "test" }, {} as never);
-
-    expect(result.error).toContain("not configured");
-  });
-
-  it("resolves API key from function", async () => {
-    mockFetch.mockResolvedValue(mockTavilyResponse());
-    const tool = createWebSearchTool({ apiKey: () => "dynamic-key" });
+  it("uses defaultNumResults when numResults not provided", async () => {
+    const provider = makeProvider();
+    const tool = createWebSearchTool({ provider, defaultNumResults: 5 });
     await tool.execute({ query: "test" }, {} as never);
 
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.api_key).toBe("dynamic-key");
+    expect(provider.search).toHaveBeenCalledWith("test", { numResults: 5, searchDepth: undefined });
   });
 
-  it("passes numResults and searchDepth to API", async () => {
-    mockFetch.mockResolvedValue(mockTavilyResponse());
-    const tool = createWebSearchTool({ apiKey: "test-key" });
+  it("passes numResults and searchDepth to provider", async () => {
+    const provider = makeProvider();
+    const tool = createWebSearchTool({ provider });
     await tool.execute({ query: "test", numResults: 10, searchDepth: "advanced" }, {} as never);
 
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body.max_results).toBe(10);
-    expect(body.search_depth).toBe("advanced");
+    expect(provider.search).toHaveBeenCalledWith("test", { numResults: 10, searchDepth: "advanced" });
   });
 
-  it("throws on HTTP error", async () => {
-    mockFetch.mockResolvedValue({ ok: false, status: 429, text: async () => "Rate limited" });
-    const tool = createWebSearchTool({ apiKey: "test-key" });
-    await expect(tool.execute({ query: "test" }, {} as never)).rejects.toThrow("HTTP 429");
+  it("returns error instead of throwing on provider failure", async () => {
+    const provider = makeProvider({ search: vi.fn(async () => {
+      throw new Error("Rate limited");
+    }) });
+    const tool = createWebSearchTool({ provider });
+    const result = await tool.execute({ query: "test" }, {} as never);
+
+    expect(result.error).toContain("Rate limited");
+    expect(result.results).toHaveLength(0);
+  });
+
+  it("TavilySearchProvider sends api_key and query", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new TavilySearchProvider({ apiKey: "test-key" });
+    await provider.search("hello");
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    expect(url).toBe("https://api.tavily.com/search");
+    expect(JSON.parse(init.body)).toMatchObject({ api_key: "test-key", query: "hello" });
+  });
+
+  it("TavilySearchProvider throws on HTTP error", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      text: async () => "Rate limited",
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = new TavilySearchProvider({ apiKey: "test-key" });
+    await expect(provider.search("test")).rejects.toThrow("HTTP 429");
   });
 });

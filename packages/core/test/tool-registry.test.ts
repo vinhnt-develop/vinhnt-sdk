@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ToolRegistry as InMemoryToolRegistry } from "../src/tool/registry.js";
-import type { ToolDefinition } from "../src/tool/definitions.js";
+import { ToolRegistry as InMemoryToolRegistry } from "@vinhnt-sdk/tools";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 
 function makeTool(id: string, risk: "read" | "write" = "read"): ToolDefinition {
   return {

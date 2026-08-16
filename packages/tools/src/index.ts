@@ -149,7 +149,7 @@ export type { QuestionInput, QuestionHandler } from "./question-tool.js";
 /**
  * Web search tool.
  */
-export { createWebSearchTool } from "./web-search-tool.js";
+export { createWebSearchTool, TavilySearchProvider, SerperSearchProvider } from "./web-search-tool.js";
 
 /**
  * Web search tool configuration.
@@ -221,7 +221,7 @@ export { validateInput, ToolInputError } from "./validate.js";
 /**
  * Command pattern utilities.
  */
-export { commandPattern } from "./arity.js";
+export { commandPattern, prefix } from "./arity.js";
 
 /**
  * File history tracking system.

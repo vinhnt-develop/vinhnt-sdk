@@ -1,4 +1,5 @@
-import { z, ZodError } from "zod";
+import type { z} from "zod";
+import { ZodError } from "zod";
 import { ToolInputError as SchemaToolInputError } from "@vinhnt-sdk/schema";
 
 export class ToolInputError extends SchemaToolInputError {

@@ -1,7 +1,7 @@
 import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
 import { join, relative, resolve, sep, dirname } from "node:path";
 import type { ToolContext } from "./definitions.js";
-import { FileReadTracker } from "./read-tracker.js";
+import type { FileReadTracker } from "./read-tracker.js";
 import { generateDiff } from "./diff.js";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";

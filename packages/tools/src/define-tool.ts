@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 import type { ToolDefinition, ToolContext, ToolRisk } from "./definitions.js";
 import type { NestedJsonSchema } from "./json-schema.js";
 import { validateInput } from "./validate.js";

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AgentToolProvider } from "../src/tool/providers/agent-provider.js";
-import { SkillToolProvider } from "../src/tool/providers/skill-provider.js";
-import { ToolProviderRegistry } from "../src/tool/provider.js";
-import { BuiltinToolProvider } from "../src/tool/providers/builtin-provider.js";
+import { AgentToolProvider, SkillToolProvider, ToolProviderRegistry, BuiltinToolProvider } from "@vinhnt-sdk/tools";
 
 describe("AgentToolProvider", () => {
   it("has correct provider metadata", () => {

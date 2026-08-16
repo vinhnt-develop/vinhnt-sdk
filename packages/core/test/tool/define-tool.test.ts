@@ -4,9 +4,9 @@ import {
   defineTool,
   toolToDefinition,
   zodSchemaToNestedJsonSchema,
-} from "../../src/tool/define-tool.js";
-import { ToolRegistry } from "../../src/tool/registry.js";
-import type { ToolDefinition } from "../../src/tool/definitions.js";
+} from "@vinhnt-sdk/tools";
+import { ToolRegistry } from "@vinhnt-sdk/tools";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 
 const noopCtx = {
   sessionId: "",
@@ -132,7 +132,7 @@ describe("defineTool", () => {
     });
     const def = tool.toDefinition();
     await expect(def.execute({ path: "/tmp/a.txt" }, noopCtx)).resolves.toBe("/tmp/a.txt");
-    await expect(def.execute({}, noopCtx)).rejects.toThrow("Validation failed for tool \"read_file\"");
+    await expect(def.execute({}, noopCtx)).rejects.toThrow('Tool read_file input error: path');
   });
 
   it("runs normalize before validation", async () => {
@@ -318,7 +318,7 @@ describe("ToolRegistry.materialize / settle", () => {
     });
     const m = reg.materialize();
     await expect(m.settle({ name: "read_file", args: { path: "/tmp" } })).resolves.toBe("/tmp");
-    await expect(m.settle({ name: "read_file", args: {} })).rejects.toThrow("Validation failed");
+    await expect(m.settle({ name: "read_file", args: {} })).rejects.toThrow("Tool read_file input error");
   });
 
   it("getTool returns allowed tool by ID", () => {

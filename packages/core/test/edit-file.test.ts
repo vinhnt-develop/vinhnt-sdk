@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createEditFileTool } from "../src/tool/file-tools.js";
+import { createEditFileTool } from "@vinhnt-sdk/tools";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 

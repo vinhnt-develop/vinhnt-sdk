@@ -1,6 +1,6 @@
 import type { AgentId, RequestId, RequestContext, RunId, TraceId } from "@vinhnt-sdk/schema";
 import type { AgentRegistry } from "../agent/agent-registry.js";
-import { AgentKernel } from "../kernel/kernel.js";
+import type { AgentKernel } from "../kernel/kernel.js";
 import { getCompletedEventData } from "../kernel/sub-agent-runner.js";
 import { RequestContextSchema } from "@vinhnt-sdk/schema";
 import { type ZodError } from "zod";

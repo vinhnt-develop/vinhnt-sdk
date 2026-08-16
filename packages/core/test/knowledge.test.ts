@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { InMemoryMemoryStore, SessionMemory, BoundedMemory, ContextCompressor, WriteApprovalQueue, BackgroundReview, LearningEngine, buildPrompt } from "../src/knowledge/index.js";
+import { InMemoryMemoryStore, SessionMemory, BoundedMemory, ContextCompressor, WriteApprovalQueue, BackgroundReview, LearningEngine, buildPrompt } from "@vinhnt-sdk/knowledge";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 
 describe("InMemoryMemoryStore", () => {

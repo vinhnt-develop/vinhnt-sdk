@@ -252,9 +252,22 @@ export { EventRegistry, defineEvent } from "./event/index.js";
 export type { EventDefinition, TypedEvent } from "./event/index.js";
 
 /**
- * Built-in permission events.
+ * Built-in event definitions (durable + ephemeral).
  */
-export { PermissionRequested, PermissionReplied } from "./event/events.js";
+export {
+  RunStarted, RunCompleted,
+  StepStarted, StepCompleted,
+  ToolInvoked, ToolCompleted, ToolFailed, ToolSelfCorrecting,
+  StepTypeChanged,
+  TokenStreamed, TokenCounted,
+  ThinkingStarted, ThinkingContent, ThinkingCompleted,
+  PermissionRequested, PermissionReplied,
+  ModelCost, ContextCompressed,
+  FileChanged, LspDiagnostics, McpToolsChanged, ConfigChanged,
+  SessionCreated, QuestionAsked, QuestionReplied, VcsBranchChanged,
+  WebhookMessageReceived, WebhookHeartbeat, WebhookCronTick,
+  WebhookTriggered, WebhookSmsReceived,
+} from "./event/events.js";
 
 /**
  * Schema versioning utilities for backward compatibility.
@@ -292,4 +305,4 @@ export { wildcardMatch } from "./wildcard.js";
 /**
  * Zod schemas for core types.
  */
-export { AgentConfigSchema, RequestContextSchema } from "./contracts/schema/index.js";
+export { AgentConfigSchema, RequestContextSchema, parseRunEvent, safeParseRunEvent, KnownRunEventSchema } from "./contracts/schema/index.js";

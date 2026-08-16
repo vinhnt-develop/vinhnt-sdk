@@ -4,9 +4,8 @@
  * These tests verify that the public API has the correct types.
  * Run with: vitest run test/types.test-d.ts
  */
-import { describe, it, expectTypeOf } from 'vitest';
+import { describe, it, expectTypeOf, expect } from 'vitest';
 import {
-  VntError,
   AgentNotFoundError,
   AgentValidationError,
   AgentPermissionDenied,
@@ -18,11 +17,7 @@ import {
   RunTimeoutError,
   KernelError,
   CircuitBreakerOpenError,
-  ToolInputError,
   PermissionDeniedError,
-  ValidationError,
-  TimeoutError,
-  NetworkError,
   RateLimitError,
   AuthenticationError,
   ConfigurationError,
@@ -63,7 +58,12 @@ import type {
   Message,
   AgentConfig,
   AgentProfile,
-} from '../src/index.js';
+
+  VntError,
+  ToolInputError,
+  ValidationError,
+  TimeoutError,
+  NetworkError} from '../src/index.js';
 
 describe('Schema Package Type Tests', () => {
   describe('Branded IDs', () => {
@@ -124,7 +124,7 @@ describe('Schema Package Type Tests', () => {
 
   describe('Event System', () => {
     it('EventRegistry should be defined', () => {
-      expectTypeOf(EventRegistry).toBeDefined();
+      expect(EventRegistry).toBeDefined();
     });
 
     it('RunEvent should have type property', () => {
@@ -164,49 +164,49 @@ describe('Schema Package Type Tests', () => {
 
   describe('Utility Functions', () => {
     it('wildcardMatch should be defined', () => {
-      expectTypeOf(wildcardMatch).toBeDefined();
+      expect(wildcardMatch).toBeDefined();
     });
 
     it('ok should be defined', () => {
-      expectTypeOf(ok).toBeDefined();
+      expect(ok).toBeDefined();
     });
 
     it('fail should be defined', () => {
-      expectTypeOf(fail).toBeDefined();
+      expect(fail).toBeDefined();
     });
   });
 
   describe('Schema Versioning', () => {
     it('SchemaVersionedBaseSchema should be defined', () => {
-      expectTypeOf(SchemaVersionedBaseSchema).toBeDefined();
+      expect(SchemaVersionedBaseSchema).toBeDefined();
     });
 
     it('versionedSchema should be defined', () => {
-      expectTypeOf(versionedSchema).toBeDefined();
+      expect(versionedSchema).toBeDefined();
     });
 
     it('deprecated should be defined', () => {
-      expectTypeOf(deprecated).toBeDefined();
+      expect(deprecated).toBeDefined();
     });
   });
 
   describe('Zod Schemas', () => {
     it('AgentConfigSchema should be defined', () => {
-      expectTypeOf(AgentConfigSchema).toBeDefined();
+      expect(AgentConfigSchema).toBeDefined();
     });
 
     it('RequestContextSchema should be defined', () => {
-      expectTypeOf(RequestContextSchema).toBeDefined();
+      expect(RequestContextSchema).toBeDefined();
     });
   });
 
   describe('Constants', () => {
     it('APPROVAL_CATEGORY_LABELS should be defined', () => {
-      expectTypeOf(APPROVAL_CATEGORY_LABELS).toBeDefined();
+      expect(APPROVAL_CATEGORY_LABELS).toBeDefined();
     });
 
     it('AGENT_STEP_LABELS should be defined', () => {
-      expectTypeOf(AGENT_STEP_LABELS).toBeDefined();
+      expect(AGENT_STEP_LABELS).toBeDefined();
     });
   });
 });

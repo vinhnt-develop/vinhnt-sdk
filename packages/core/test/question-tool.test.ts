@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createQuestionTool } from "../src/tool/question-tool.js";
+import { createQuestionTool } from "@vinhnt-sdk/tools";
 import { QuestionSchema } from "@vinhnt-sdk/schema";
 
 describe("createQuestionTool", () => {

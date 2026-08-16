@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createApplyPatchTool } from "../src/tool/file-tools.js";
-import type { ToolContext } from "../src/tool/definitions.js";
+import { createApplyPatchTool } from "@vinhnt-sdk/tools";
+import type { ToolContext } from "@vinhnt-sdk/tools";
 import { writeFileSync, mkdtempSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";

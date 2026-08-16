@@ -240,9 +240,11 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           messages, input.step, runId, ctx, stepTimeoutController.signal,
           deps.currentAgent?.permissions?.maxTokens,
           input.disableTools,
-        ),
-      );
+        ), stepTimeoutController.signal);
     } catch (err: unknown) {
+      if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
+        throw new KernelError("timeout", `Model call timed out after ${deps.stepTimeout}ms`, err as Error);
+      }
       const circuitErr = err as { constructor?: typeof CircuitBreakerOpenError };
       if (circuitErr?.constructor?.name === "CircuitBreakerOpenError") {
         throw new KernelError("model_unavailable", (err as Error).message, err as Error);
@@ -257,6 +259,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
             messages, input.step, runId, ctx, stepTimeoutController.signal,
             deps.currentAgent?.permissions?.maxTokens,
           ),
+          stepTimeoutController.signal,
         );
       } else {
         throw err;

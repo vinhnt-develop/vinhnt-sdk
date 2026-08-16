@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineTool } from "../../../src/tool/define-tool.js";
+import { defineTool } from "@vinhnt-sdk/tools";
 
 /**
  * Custom tool that overrides the built-in read_file tool.

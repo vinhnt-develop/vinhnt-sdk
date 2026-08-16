@@ -16,8 +16,9 @@ import type {
   ModelUsage,
 } from "./model.js";
 import { getTextContent } from "./model.js";
+import type {
+  VntError} from "../contracts/errors/index.js";
 import {
-  VntError,
   AuthenticationError,
   RateLimitError,
   ValidationError,

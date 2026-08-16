@@ -42,6 +42,8 @@
  * ```
  */
 export { AgentKernel, KernelError } from "./kernel/kernel.js";
+export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
+export { RunStateMachine } from "./kernel/run-state.js";
 
 /**
  * Configuration for the agent kernel.

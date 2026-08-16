@@ -12,7 +12,7 @@ import { inferStepType } from "@vinhnt-sdk/schema";
 import type { KnownRunEvent } from "@vinhnt-sdk/schema";
 import type { ModelCaller } from "./model-caller.js";
 import type { ModelProvider } from "../model.js";
-import { ToolSaga } from "./tool-saga.js";
+import type { ToolSaga } from "./tool-saga.js";
 import { buildToolContext } from "./tool-context-builder.js";
 import { handleApproval as handleApprovalFn } from "./approval-handler.js";
 import { handleToolError as handleToolErrorFn } from "./tool-error-router.js";

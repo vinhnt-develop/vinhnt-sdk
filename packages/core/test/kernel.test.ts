@@ -6,7 +6,7 @@ import type { ConversationCompactor } from "../src/session/compaction.js";
 import type { ChatMessage } from "../src/model.js";
 import type { SessionStore } from "../src/session/store.js";
 import type { Plugin, PluginHooks } from "../src/plugin.js";
-import type { ToolDefinition } from "../src/tool/definitions.js";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";
@@ -922,7 +922,11 @@ describe("AgentKernel", () => {
     });
 
     it("TC36: onRunCompleted fires on failure", async () => {
-      const model = new FakeModelProvider([{ content: "" }]);
+      const model: ModelProvider = {
+        model: "fail-model",
+        pricing: { input: 0, output: 0 },
+        generate: async () => { throw new Error("Invalid API key"); },
+      };
       const store = new FakeRunEventStore();
       const agentRegistry = new FakeAgentRegistry();
       const pm = new DefaultPluginManager(agentRegistry);
@@ -932,7 +936,7 @@ describe("AgentKernel", () => {
       });
       await pm.register(plugin);
       await pm.activate("spy");
-      const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 0, pluginManager: pm });
+      const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 10, pluginManager: pm });
       const handle = kernel.run("", testCtx);
       await handle.completed;
       expect(runStatus).toBe("failed");
@@ -1579,7 +1583,7 @@ describe("AgentKernel", () => {
         countTokens: () => 0,
       };
       const store = new FakeRunEventStore();
-      const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 10, stepTimeout: 1 });
+      const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 10, stepTimeout: 1100 });
       const handle = kernel.run("test", testCtx);
       await handle.completed;
       const events = await store.list(handle.runId);

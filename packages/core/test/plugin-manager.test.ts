@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AgentId, AgentConfig } from "@vinhnt-sdk/core";
-import type { ToolDefinition } from "../src/tool/definitions.js";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { SystemContext } from "../src/system-context/types.js";
 import type { Plugin, PluginContext, PluginHooks, HookResult } from "../src/plugin.js";
 import { DefaultPluginManager } from "../src/plugin/manager.js";

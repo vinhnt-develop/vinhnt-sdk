@@ -53,7 +53,7 @@ function extractContextPattern(toolName: string, args?: Record<string, unknown>)
 
 /** Split a `Tool(glob)` permission-pattern string into its parts. Returns null if malformed. */
 function parseToolPattern(expr: string): { toolName: string; pattern: string } | null {
-  const m = /^\s*([A-Za-z0-9_.\-]+)\s*\(\s*(.*?)\s*\)\s*$/.exec(expr);
+  const m = /^\s*([A-Za-z0-9_.-]+)\s*\(\s*(.*?)\s*\)\s*$/.exec(expr);
   if (!m) {
     const bare = expr.trim();
     if (!bare) return null;

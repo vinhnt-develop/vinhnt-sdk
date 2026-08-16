@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import type { Plugin } from "@vinhnt-sdk/core";
-import { getLogger, PluginError, ValidationError } from "@vinhnt-sdk/core";
+import { getLogger, PluginError } from "@vinhnt-sdk/core";
 
 const CACHE_DIR = ".vnt/plugins";
 

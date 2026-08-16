@@ -1,5 +1,6 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "../model.js";
+import { normalize } from "node:path";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { PermissionGate } from "./permission-gate.js";
@@ -29,7 +30,6 @@ export interface ToolErrorRouterDeps {
 
 function checkExternalPathsLocal(toolName: string, args: unknown, workspaceRoot: string): string | undefined {
   const PATH_AWARE_TOOLS = new Set(["read_file", "write_file", "edit_file", "apply_patch", "list_directory", "glob_files", "grep_files", "shell"]);
-  const { normalize } = require("node:path") as typeof import("node:path");
   if (!PATH_AWARE_TOOLS.has(toolName)) return undefined;
   const input = args as Record<string, unknown> | undefined;
   if (!input) return undefined;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
 import { ExecutionEngine } from "../src/agent/execution-engine.js";
 import { Tracer } from "../src/tracer.js";
-import { ToolRegistry as InMemoryToolRegistry } from "../src/tool/registry.js";
+import { ToolRegistry as InMemoryToolRegistry } from "@vinhnt-sdk/tools";
 import { InMemorySessionState } from "../src/session/in-memory-session-state.js";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";

@@ -4,7 +4,7 @@ import { createReadFileTool, createWriteFileTool, createEditFileTool, createAppl
 import { createShellTool } from "../shell-tool.js";
 import { createGlobFilesTool, createGrepFilesTool } from "../search-tools.js";
 import { createWebFetchTool } from "../web-tools.js";
-import { createWebSearchTool, type WebSearchProvider } from "../web-search-tool.js";
+import { createWebSearchTool, type WebSearchProvider, TavilySearchProvider } from "../web-search-tool.js";
 import { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool } from "../git-tools.js";
 import { createTodoWriteTool } from "../todo-tool.js";
 import { createQuestionTool } from "../question-tool.js";
@@ -95,9 +95,6 @@ export class BuiltinToolProvider implements ToolProvider {
 
     if (webSearchApiKey) {
       // Backward compatibility: create TavilySearchProvider from API key
-      // Note: This imports TavilySearchProvider lazily to avoid circular deps
-      // and to keep it optional
-      const { TavilySearchProvider } = require("../web-search-tool.js");
       const apiKey = typeof webSearchApiKey === "function" ? webSearchApiKey() : webSearchApiKey;
       if (apiKey) {
         return [createWebSearchTool({

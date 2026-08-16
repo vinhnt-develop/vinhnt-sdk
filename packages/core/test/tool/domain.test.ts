@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AgentKernel } from "../../src/kernel/kernel.js";
-import { createCodingDomain } from "../../src/tool/domain.js";
-import { ToolRegistry } from "../../src/tool/registry.js";
+import { createCodingDomain } from "@vinhnt-sdk/tools";
+import { ToolRegistry } from "@vinhnt-sdk/tools";
 import { FakeModelProvider } from "../../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../../src/fakes/fake-store.js";
 import { FakeTool } from "../../src/fakes/fake-tool.js";

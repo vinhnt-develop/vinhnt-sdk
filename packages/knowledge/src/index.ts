@@ -15,3 +15,16 @@ export { LlmCompactor } from "./llm-compactor.js";
 // === Prompt building ===
 export { buildPrompt } from "./prompt-builder.js";
 export type { PromptBuilderOptions } from "./prompt-builder.js";
+
+// === Memory search tool ===
+export { createMemorySearchTool } from "./tool.js";
+
+// === Review & approval ===
+export { WriteApprovalQueue } from "./approval.js";
+export type { ApprovalHandler } from "./approval.js";
+export { BackgroundReview } from "./review.js";
+export type { ReviewOptions } from "./review.js";
+
+// === Learning engine ===
+export { LearningEngine } from "./learning-engine.js";
+export type { LearningEngineOptions } from "./learning-engine.js";

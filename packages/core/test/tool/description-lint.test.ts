@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { lintToolDescription, lintToolDefinitions } from "../../src/tool/description-lint.js";
+import { lintToolDescription, lintToolDefinitions } from "@vinhnt-sdk/tools";
 
 function codes(desc: string): string[] {
   return lintToolDescription("t", desc).issues.map((i) => i.code);

@@ -36,10 +36,10 @@ export interface SecretRedactorConfig {
  * User merge: `[...DEFAULT_SECRET_PATTERNS, { name: "custom", pattern: /.../g, replacement: "..." }]`
  */
 export const DEFAULT_SECRET_PATTERNS: SecretPattern[] = [
-  // OpenAI
-  { name: "openai-key", pattern: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g, replacement: "[REDACTED:openai-key]" },
   // Anthropic
   { name: "anthropic-key", pattern: /sk-ant-[A-Za-z0-9_-]{20,}/g, replacement: "[REDACTED:anthropic-key]" },
+  // OpenAI
+  { name: "openai-key", pattern: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g, replacement: "[REDACTED:openai-key]" },
   // Google AI / Gemini
   { name: "google-ai-key", pattern: /AIza[A-Za-z0-9_-]{35}/g, replacement: "[REDACTED:google-ai-key]" },
   // AWS Access Key
