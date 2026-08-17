@@ -1,7 +1,7 @@
 import type { RequestContext, RunId, AgentConfig, KnownRunEvent, RunEvent } from "@vinhnt-sdk/schema";
 import { EventRegistry } from "@vinhnt-sdk/event";
 import type { EventDefinition, EventBus } from "@vinhnt-sdk/event";
-import type { RunEventStore, SessionStore } from "../session/store.js";
+import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { PluginManager } from "../plugin.js";
 import type { ModelCaller } from "@vinhnt-sdk/model-caller";
 import type { ToolSaga } from "@vinhnt-sdk/tool-saga";

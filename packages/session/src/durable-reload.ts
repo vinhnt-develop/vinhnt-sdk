@@ -1,5 +1,5 @@
 import type { RunId, Message } from "@vinhnt-sdk/schema";
-import type { ChatMessage } from "../model.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { RunEventStore, SessionStore } from "./store.js";
 import type { SessionRuntimeState } from "./session-state.js";
 import { InMemorySessionState } from "./in-memory-session-state.js";

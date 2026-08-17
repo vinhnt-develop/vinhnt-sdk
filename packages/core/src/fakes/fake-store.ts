@@ -1,5 +1,5 @@
 import type { RunEvent } from "@vinhnt-sdk/schema";
-import type { RunEventListener, RunEventStore, RunEventSnapshot } from "../session/store.js";
+import type { RunEventListener, RunEventStore, RunEventSnapshot } from "@vinhnt-sdk/session";
 
 export class FakeRunEventStore implements RunEventStore {
   private events: RunEvent[] = [];

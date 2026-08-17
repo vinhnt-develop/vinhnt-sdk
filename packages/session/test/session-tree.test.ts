@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { InMemorySessionTree } from "../src/session/session-tree.js";
-import type { SessionId } from "@vinhnt-sdk/core";
+import { InMemorySessionTree } from "../src/session-tree.js";
+import type { SessionId } from "@vinhnt-sdk/schema";
 
 function sid(id: string) { return id as SessionId; }
 

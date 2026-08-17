@@ -2,10 +2,10 @@ import type { RequestContext, RunId, AgentConfig, ContentPart } from "@vinhnt-sd
 import { getTextContent } from "@vinhnt-sdk/schema";
 import type { ChatMessage, MessageContentPart, ModelProvider, ModelResponse } from "../model.js";
 import type { ContextRegistry } from "../system-context/types.js";
-import type { ConversationCompactor } from "../session/compaction.js";
-import type { RunEventStore, SessionStore } from "../session/store.js";
+import type { ConversationCompactor } from "@vinhnt-sdk/session";
+import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { PluginManager } from "../plugin.js";
-import type { SessionRuntimeState } from "../session/session-state.js";
+import type { SessionRuntimeState } from "@vinhnt-sdk/session";
 import { KernelError } from "./kernel-error.js";
 import type { ModelCaller } from "@vinhnt-sdk/model-caller";
 import type { PermissionGate } from "./permission-gate.js";

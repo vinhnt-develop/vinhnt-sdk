@@ -10,6 +10,7 @@ export default defineConfig({
       'packages/schema',
       'packages/tools',
       'packages/tool-saga',
+      'packages/session',
       'packages/sandbox',
       'packages/sandbox-host',
       'packages/sandbox-process',

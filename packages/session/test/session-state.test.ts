@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { InMemorySessionState } from "../src/session/in-memory-session-state.js";
-import type { ChatMessage } from "../src/model.js";
+import { InMemorySessionState } from "../src/in-memory-session-state.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 
 function msg(role: string, content: string): ChatMessage {
   return { role: role as ChatMessage["role"], content };

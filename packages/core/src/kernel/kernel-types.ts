@@ -1,11 +1,11 @@
 import type { RunId, AgentEvent } from "@vinhnt-sdk/schema";
 import type { ModelProvider, ModelRegistry } from "../model.js";
-import type { SessionRuntimeState } from "../session/session-state.js";
-import type { RunEventStore, SessionStore } from "../session/store.js";
+import type { SessionRuntimeState } from "@vinhnt-sdk/session";
+import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { AgentRegistry } from "../agent/agent-registry.js";
 import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
-import type { ConversationCompactor } from "../session/compaction.js";
+import type { ConversationCompactor } from "@vinhnt-sdk/session";
 import type { ContextRegistry } from "../system-context/types.js";
 import type { ApprovalStore } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";

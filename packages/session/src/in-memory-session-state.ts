@@ -1,5 +1,5 @@
-import type { ChatMessage } from "../model.js";
-import type { SessionRuntimeState, SessionRuntimeSnapshot } from "../session/session-state.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
+import type { SessionRuntimeState, SessionRuntimeSnapshot } from "./session-state.js";
 
 export class InMemorySessionState implements SessionRuntimeState {
   private _messages: ChatMessage[] = [];

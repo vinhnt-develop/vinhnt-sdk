@@ -1,4 +1,4 @@
-import type { ModelProvider } from "../model.js";
+import type { ModelProvider } from "@vinhnt-sdk/schema";
 
 export const TITLE_INPUT_TRUNCATION = 200;
 export const TITLE_MAX_TOKENS = 30;

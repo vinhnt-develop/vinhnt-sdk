@@ -2,7 +2,7 @@ import type { RunId, RequestId, AgentConfig, PermissionRequest, AgentRule, RunEv
 import type { ToolRisk, PermissionReply } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { ApprovalStore } from "@vinhnt-sdk/permission";
-import type { RunEventStore } from "../session/store.js";
+import type { RunEventStore } from "@vinhnt-sdk/session";
 import type { PermissionRule } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
 import { evaluatePermission, checkRiskAllowed } from "@vinhnt-sdk/permission";

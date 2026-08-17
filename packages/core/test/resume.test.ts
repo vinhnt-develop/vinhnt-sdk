@@ -9,7 +9,7 @@ import { StepExecutor, type StepExecutorDeps } from "../src/kernel/step-executor
 import { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { CircuitBreaker } from "../src/kernel/circuit-breaker.js";
 import { RunStateMachine } from "../src/kernel/run-state.js";
-import { InMemorySessionState } from "../src/session/in-memory-session-state.js";
+import { InMemorySessionState } from "@vinhnt-sdk/session";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeApprovalStore } from "../src/fakes/fake-approval-store.js";

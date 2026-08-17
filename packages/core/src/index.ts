@@ -104,7 +104,7 @@ export type { EventBus, EventHandler, Unsubscribe } from "@vinhnt-sdk/event";
 /**
  * In-memory session state management.
  */
-export { InMemorySessionState } from "./session/in-memory-session-state.js";
+export { InMemorySessionState } from "@vinhnt-sdk/session";
 
 /**
  * Coordinates multiple runs within a session.
@@ -114,7 +114,7 @@ export { SessionRunCoordinator } from "./session/run-coordinator.js";
 /**
  * Session and run event store interfaces.
  */
-export type { RunEventStore, SessionStore } from "./session/store.js";
+export type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 
 // === Agent registry ===
 

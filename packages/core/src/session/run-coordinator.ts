@@ -1,7 +1,6 @@
 import type { RunId, Session, SessionId, RequestContext, Result, AgentConfig } from "@vinhnt-sdk/schema";
 import type { MessageContentPart } from "../model.js";
-import type { SessionStore } from "../session/store.js";
-import type { SessionTree } from "../session/session-tree.js";
+import type { SessionStore, SessionTree } from "@vinhnt-sdk/session";
 import type { AgentKernel} from "../kernel/kernel.js";
 import { type RunState } from "../kernel/kernel.js";
 

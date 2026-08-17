@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { createDefaultSessionTitleGenerator, TITLE_INPUT_TRUNCATION, TITLE_OUTPUT_TRUNCATION } from "../src/session/title.js";
-import type { ModelProvider } from "../src/model.js";
+import { createDefaultSessionTitleGenerator, TITLE_INPUT_TRUNCATION, TITLE_OUTPUT_TRUNCATION } from "../src/title.js";
+import type { ModelProvider } from "@vinhnt-sdk/schema";
 
 function fakeModel(response: string): ModelProvider {
   return {

@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RunEvent, Message } from "@vinhnt-sdk/schema";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
-import { restoreRunFromStore } from "../src/session/durable-reload.js";
-import { InMemorySessionState } from "../src/session/in-memory-session-state.js";
+import { restoreRunFromStore, InMemorySessionState } from "@vinhnt-sdk/session";
 
 function makeEvent(overrides: Partial<RunEvent> = {}): RunEvent {
   return {

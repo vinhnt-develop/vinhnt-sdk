@@ -1,4 +1,4 @@
-import type { ChatMessage } from "../model.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 
 /** Runtime state of an active agent session */
 export interface SessionRuntimeState {
