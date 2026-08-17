@@ -2024,3 +2024,58 @@ describe("P1-N: scrub env + redact log", () => {
     expect(llmLine).toContain("[REDACTED:openai-key]");
   });
 });
+
+describe("P2-A: ModelProvider.stream is optional", () => {
+  it("TC-P2A-01: provider without stream uses generate (non-streaming branch)", async () => {
+    let generateCalls = 0;
+    const nonStreamingModel: ModelProvider = {
+      provider: "fake-nonstream",
+      model: "fake-nonstream",
+      contextLimit: undefined,
+      capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
+      generate: async () => {
+        generateCalls++;
+        return { content: "done without streaming" };
+      },
+    };
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model: nonStreamingModel, store, tools: [], maxSteps: 1 });
+
+    const handle = kernel.run("hello", testCtx);
+    await handle.completed;
+    const events = await store.list(handle.runId);
+
+    expect(generateCalls).toBe(1);
+    expect(findEvent(events, "run.completed")?.data.status).toBe("succeeded");
+  });
+
+  it("TC-P2A-02: provider with stream uses the streaming branch", async () => {
+    let generateCalls = 0;
+    let streamCalls = 0;
+    const streamingModel: ModelProvider = {
+      provider: "fake-stream",
+      model: "fake-stream",
+      contextLimit: undefined,
+      capabilities: { streaming: true, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
+      async *stream() {
+        streamCalls++;
+        yield { type: "text", content: "streamed reply" };
+        yield { type: "done" };
+      },
+      generate: async () => {
+        generateCalls++;
+        return { content: "generated" };
+      },
+    };
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model: streamingModel, store, tools: [], maxSteps: 1 });
+
+    const handle = kernel.run("hello", testCtx);
+    await handle.completed;
+    const events = await store.list(handle.runId);
+
+    expect(streamCalls).toBe(1);
+    expect(generateCalls).toBe(0);
+    expect(findEvent(events, "run.completed")?.data.status).toBe("succeeded");
+  });
+});

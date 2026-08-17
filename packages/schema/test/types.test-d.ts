@@ -64,6 +64,12 @@ import type {
   ValidationError,
   TimeoutError,
   NetworkError} from '../src/index.js';
+import type {
+  ModelProvider,
+  ModelRequest,
+  ModelResponse,
+  ModelStreamEvent,
+} from '../src/index.js';
 
 describe('Schema Package Type Tests', () => {
   describe('Branded IDs', () => {
@@ -207,6 +213,33 @@ describe('Schema Package Type Tests', () => {
 
     it('AGENT_STEP_LABELS should be defined', () => {
       expect(AGENT_STEP_LABELS).toBeDefined();
+    });
+  });
+
+  describe('ModelProvider contract', () => {
+    it('a provider without stream is a valid ModelProvider (stream is optional)', () => {
+      const nonStreaming = {
+        provider: "fake",
+        model: "fake",
+        contextLimit: undefined,
+        capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
+        generate: async (_request: ModelRequest, _signal?: AbortSignal): Promise<ModelResponse> => ({ content: "ok" }),
+      } satisfies ModelProvider;
+      expectTypeOf(nonStreaming.stream).toBeUndefined();
+    });
+
+    it('a provider with stream still satisfies ModelProvider', () => {
+      const streaming = {
+        provider: "fake",
+        model: "fake",
+        contextLimit: undefined,
+        capabilities: { streaming: true, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
+        async *stream(_request: ModelRequest, _signal?: AbortSignal): AsyncIterable<ModelStreamEvent> {
+          yield { type: "done" };
+        },
+        generate: async (_request: ModelRequest): Promise<ModelResponse> => ({ content: "ok" }),
+      } satisfies ModelProvider;
+      expectTypeOf(streaming.stream).not.toBeUndefined();
     });
   });
 });

@@ -341,7 +341,12 @@ export interface ModelProvider {
   readonly capabilities: ModelCapabilities;
   readonly pricing?: ModelPricing;
   generate(request: ModelRequest, signal?: AbortSignal): Promise<ModelResponse>;
-  stream(request: ModelRequest, signal?: AbortSignal): AsyncIterable<ModelStreamEvent>;
+  /**
+   * Streaming implementation — OPTIONAL. A provider that omits `stream`
+   * is non-streaming: the kernel falls back to `generate`. This keeps the
+   * contract honest — a provider never advertises streaming it can't do.
+   */
+  stream?(request: ModelRequest, signal?: AbortSignal): AsyncIterable<ModelStreamEvent>;
   countTokens?(text: string): number;
 }
 
