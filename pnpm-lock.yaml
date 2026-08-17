@@ -172,6 +172,33 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
+  packages/sandbox:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+
+  packages/sandbox-container:
+    dependencies:
+      '@vinhnt-sdk/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+
+  packages/sandbox-host:
+    dependencies:
+      '@vinhnt-sdk/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@vinhnt-sdk/security':
+        specifier: workspace:*
+        version: link:../security
+
+  packages/sandbox-process:
+    dependencies:
+      '@vinhnt-sdk/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+
   packages/schema:
     dependencies:
       zod:
@@ -185,6 +212,15 @@ importers:
       '@vinhnt-sdk/core':
         specifier: workspace:*
         version: link:../core
+      '@vinhnt-sdk/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@vinhnt-sdk/sandbox-host':
+        specifier: workspace:*
+        version: link:../sandbox-host
+      '@vinhnt-sdk/sandbox-process':
+        specifier: workspace:*
+        version: link:../sandbox-process
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema

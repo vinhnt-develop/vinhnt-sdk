@@ -1,12 +1,11 @@
 import { execFile } from "node:child_process";
 import type { ToolContext } from "./definitions.js";
 import { commandPattern } from "./arity.js";
-import { killProcessTree, treeKillSpawnOptions } from "./kill-tree.js";
+import { killProcessTree, treeKillSpawnOptions, parseCommand, type SandboxScope } from "@vinhnt-sdk/sandbox";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
-import { detectInjectionPatterns } from "@vinhnt-sdk/security";
-import { createSandbox, sanitizeEnv, type SandboxScope } from "./sandbox.js";
-import { parseCommand } from "./shell-parser.js";
+import { detectInjectionPatterns, sanitizeEnv } from "@vinhnt-sdk/security";
+import { createSandbox } from "./tool-sandbox.js";
 
 const ExecuteCommandSchema = z.object({
   command: z.string().min(1),

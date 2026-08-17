@@ -1,0 +1,55 @@
+{
+  "name": "@vinhnt-sdk/sandbox-container",
+  "version": "0.1.3",
+  "description": "Container sandbox backend for @vinhnt-sdk/sandbox — fail-closed until a real container runtime adapter is provided (no silent downgrade)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/sandbox-container"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/sandbox-container",
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "sandbox",
+    "container",
+    "docker",
+    "isolation",
+    "security"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@vinhnt-sdk/sandbox": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run",
+    "lint": "eslint ."
+  }
+}

@@ -51,6 +51,9 @@
                     "lint":  "eslint ."
                 },
     "dependencies":  {
+                         "@vinhnt-sdk/sandbox":  "workspace:*",
+                         "@vinhnt-sdk/sandbox-host":  "workspace:*",
+                         "@vinhnt-sdk/sandbox-process":  "workspace:*",
                          "@vinhnt-sdk/schema":  "workspace:*",
                          "@vinhnt-sdk/security":  "workspace:*",
                          "zod":  "^4.4.3"

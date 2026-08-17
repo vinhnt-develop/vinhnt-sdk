@@ -180,17 +180,18 @@ export type { ToolSearchInput, ToolSearchResult } from "./tool-search.js";
 /**
  * Sandbox for isolated tool execution.
  */
-export { ToolSandbox, signalToToolContext, createSandbox } from "./sandbox.js";
+export { ToolSandbox, signalToToolContext, createSandbox } from "./tool-sandbox.js";
 
 /**
  * Tree-scoped process termination (kills child + grandchildren on abort/timeout).
  */
-export { killProcessTree, isPidAlive, treeKillSpawnOptions } from "./kill-tree.js";
+export { killProcessTree, isPidAlive, treeKillSpawnOptions } from "@vinhnt-sdk/sandbox";
 
 /**
- * Sandbox configuration and types.
+ * Sandbox configuration, types, and fail-closed error.
  */
-export type { SandboxConfig, SandboxScope, ProcessSandbox, SandboxResult } from "./sandbox.js";
+export type { SandboxConfig, SandboxScope, ProcessSandbox, SandboxResult } from "@vinhnt-sdk/sandbox";
+export { SandboxUnavailableError } from "@vinhnt-sdk/sandbox";
 
 /**
  * Utility functions for tools.

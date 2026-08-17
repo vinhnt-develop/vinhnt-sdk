@@ -4,7 +4,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { killProcessTree, isPidAlive, resetKillTreeState, treeKillSpawnOptions } from "../src/kill-tree.js";
-import { createSandbox } from "../src/sandbox.js";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "killtree-"));
@@ -13,11 +12,6 @@ function longRunningScript(): string {
   const file = path.join(tmpDir, `long-${crypto.randomUUID()}.js`);
   fs.writeFileSync(file, "setTimeout(() => {}, 60_000);\n");
   return file;
-}
-
-function makeLongRunningCommand(): string {
-  const script = longRunningScript();
-  return `${JSON.stringify(process.execPath.replace(/\\/g, "/"))} ${JSON.stringify(script.replace(/\\/g, "/"))}`;
 }
 
 afterEach(() => resetKillTreeState());
@@ -71,40 +65,6 @@ describe("killProcessTree", () => {
     const fake = { pid: undefined } as unknown as ReturnType<typeof spawn>;
     expect(killProcessTree(fake)).toBe(false);
   });
-});
-
-describe("sandbox abort kills the process tree", () => {
-  it("kills a long-running command subtree on abort", async () => {
-    const sandbox = createSandbox({ defaultTimeoutMs: 30_000, scope: "host" });
-    const abort = new AbortController();
-
-    const run = sandbox.execute({
-      command: makeLongRunningCommand(),
-      cwd: process.cwd(),
-      timeoutMs: 60_000,
-      signal: abort.signal,
-    });
-
-    // Abort shortly after start.
-    setTimeout(() => abort.abort(new Error("user cancel")), 200);
-    const result = await run;
-
-    expect(result.exitCode).toBe(1);
-    expect(String(result.result.stderr)).toContain("user cancel");
-  }, 15_000);
-
-  it("host sandbox executes a normal command fine", async () => {
-    const sandbox = createSandbox({ defaultTimeoutMs: 30_000, scope: "host" });
-    const script = path.join(tmpDir, `echo-${crypto.randomUUID()}.js`);
-    fs.writeFileSync(script, "console.log('sandbox-ok');\n");
-    const result = await sandbox.execute({
-      command: `${JSON.stringify(process.execPath.replace(/\\/g, "/"))} ${JSON.stringify(script.replace(/\\/g, "/"))}`,
-      cwd: process.cwd(),
-      timeoutMs: 10_000,
-    });
-    expect(result.exitCode).toBe(0);
-    expect(result.result.stdout).toContain("sandbox-ok");
-  }, 15_000);
 });
 
 describe("treeKillSpawnOptions", () => {
