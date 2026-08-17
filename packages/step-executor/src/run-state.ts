@@ -63,10 +63,11 @@ export class RunStateMachine {
 
   cleanupRun(runId: RunId, sessionId?: string): void {
     this.runAborts.delete(runId);
-    this.runStates.delete(runId);
     this.pendingInputs.delete(runId);
     this.modelForRun.delete(runId);
     if (sessionId) this.busySessions.delete(sessionId);
+    // Keep the terminal run state so post-mortem getRunState()/UI can still
+    // report how the run finished; only volatile resources are freed above.
   }
 
   cancelAll(): void {

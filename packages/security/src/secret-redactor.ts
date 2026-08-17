@@ -48,14 +48,15 @@ export const DEFAULT_SECRET_PATTERNS: SecretPattern[] = [
   { name: "aws-secret-key", pattern: /(?:aws_secret_access_key|secret_key)\s*[:=]\s*['"]?([A-Za-z0-9/+=]{40})['"]?/gi, replacement: "aws_secret_access_key=[REDACTED:aws-secret-key]" },
   // Bearer tokens
   { name: "bearer-token", pattern: /Bearer\s+[A-Za-z0-9_-]{20,}/g, replacement: "Bearer [REDACTED:token]" },
-  // Generic API keys (key=..., api_key=..., etc.)
-  { name: "generic-api-key", pattern: /(?:api[_-]?key|apikey|token|secret|password|passwd|pwd)\s*[:=]\s*['"]?([A-Za-z0-9_./-]{16,})['"]?/gi, replacement: "$1=[REDACTED]" },
   // Private keys
   { name: "private-key", pattern: /-----BEGIN(?:\s+RSA)?\s+PRIVATE\s+KEY-----[\s\S]*?-----END(?:\s+RSA)?\s+PRIVATE\s+KEY-----/g, replacement: "[REDACTED:private-key]" },
   // GitHub tokens
   { name: "github-token", pattern: /gh[pousr]_[A-Za-z0-9_]{36,}/g, replacement: "[REDACTED:github-token]" },
   // GitLab tokens
   { name: "gitlab-token", pattern: /glpat-[A-Za-z0-9_-]{20,}/g, replacement: "[REDACTED:gitlab-token]" },
+  // Generic API keys (key=..., api_key=..., etc.) — kept LAST so specific
+  // patterns above win first; the replacement must never echo the secret back.
+  { name: "generic-api-key", pattern: /(?:api[_-]?key|apikey|token|secret|password|passwd|pwd)\s*[:=]\s*['"]?([A-Za-z0-9_./-]{16,})['"]?/gi, replacement: "[REDACTED:generic-api-key]" },
 ];
 
 // ---------------------------------------------------------------------------

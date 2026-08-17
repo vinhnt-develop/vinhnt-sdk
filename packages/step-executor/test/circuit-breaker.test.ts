@@ -200,5 +200,33 @@ describe("CircuitBreaker", () => {
       expect(options.backoffMs).toBe(2000);
       expect(options.maxBackoffMs).toBe(60000);
     });
+
+    it("does not count an aborted call as a failure (no false trip)", async () => {
+      const cb = new CircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 60000, maxRetries: 0 });
+      const abort = new AbortController();
+      abort.abort();
+
+      await expect(cb.call(
+        () => Promise.reject(new DOMException("Aborted", "AbortError")),
+        abort.signal,
+      )).rejects.toMatchObject({ name: "AbortError" });
+
+      // Abort must never trip or count toward the failure threshold.
+      expect(cb.getState()).toBe("closed");
+      await expect(cb.call(() => Promise.resolve("ok"))).resolves.toBe("ok");
+    });
+
+    it("throws AbortError immediately when the signal fires during backoff", async () => {
+      const cb = new CircuitBreaker({ maxRetries: 3, backoffMs: 1000, maxBackoffMs: 1000 });
+      const abort = new AbortController();
+      const fn = vi.fn().mockRejectedValue(new Error("transient"));
+
+      const pending = cb.call(fn, abort.signal).catch((e) => e);
+      abort.abort();
+
+      const result = await pending;
+      expect(result).toBeInstanceOf(DOMException);
+      expect((result as DOMException).name).toBe("AbortError");
+    });
   });
 });

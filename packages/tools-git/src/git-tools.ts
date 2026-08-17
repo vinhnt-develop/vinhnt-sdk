@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import { z } from "zod";
 import { defineTool } from "@vinhnt-sdk/tools";
+import { sanitizeEnv } from "@vinhnt-sdk/security";
 
 const GitStatusSchema = z.object({});
 const GitDiffSchema = z.object({
@@ -23,7 +24,7 @@ function resolveRoot(r: RootGetter): string {
 
 function gitAsync(args: string[], cwd: string, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = execFile("git", args, { cwd, encoding: "utf-8" as const, maxBuffer: 5 * 1024 * 1024 },
+    const child = execFile("git", args, { cwd, encoding: "utf-8" as const, maxBuffer: 5 * 1024 * 1024, env: sanitizeEnv() },
       (err, stdout) => {
         if (err && (err as NodeJS.ErrnoException).code === "ENOENT") {
           reject(new Error("git not found"));

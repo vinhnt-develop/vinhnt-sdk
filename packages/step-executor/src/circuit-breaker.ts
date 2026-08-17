@@ -23,6 +23,8 @@ const DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
   backoffMs: 1000,
   maxBackoffMs: 30_000,
   isFailure: (err: unknown) => {
+    if (err instanceof DOMException && err.name === "AbortError") return false;
+    if (err instanceof Error && err.name === "AbortError") return false;
     const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
     if (msg.includes("auth") || msg.includes("unauthorized") || msg.includes("invalid api key")) return false;
     if (msg.includes("context") && msg.includes("token")) return false;
@@ -84,7 +86,13 @@ export class CircuitBreaker {
         return result;
       } catch (err) {
         lastError = err;
-        
+
+        // Cancellation is never a failure — rethrow without counting it so an
+        // aborted run cannot trip the breaker or get retried.
+        if (signal?.aborted || (err instanceof DOMException && err.name === "AbortError") || (err instanceof Error && err.name === "AbortError")) {
+          throw signal?.aborted ? new DOMException("Aborted", "AbortError") : err;
+        }
+
         // Check if error is retryable
         if (!this.options.isFailure(err)) {
           throw err;
@@ -108,12 +116,34 @@ export class CircuitBreaker {
           this.options.maxBackoffMs
         );
         
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await this.sleepAbortable(delay, signal);
         attempt++;
       }
     }
 
     throw lastError;
+  }
+
+  private async sleepAbortable(ms: number, signal?: AbortSignal): Promise<void> {
+    if (!signal) {
+      await new Promise((resolve) => setTimeout(resolve, ms));
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", onAbort);
+        resolve();
+      }, ms);
+      const onAbort = () => {
+        clearTimeout(timer);
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+      signal.addEventListener("abort", onAbort, { once: true });
+      if (signal.aborted) {
+        clearTimeout(timer);
+        reject(new DOMException("Aborted", "AbortError"));
+      }
+    });
   }
 
   private onSuccess(): void {

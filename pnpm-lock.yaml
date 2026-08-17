@@ -381,6 +381,9 @@ importers:
 
   packages/tools-git:
     dependencies:
+      '@vinhnt-sdk/security':
+        specifier: workspace:*
+        version: link:../security
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools

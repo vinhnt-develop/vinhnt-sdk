@@ -84,10 +84,23 @@ export async function runSelfCorrection(
             messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Tool "${ct.name}" not found` });
             continue;
           }
-          const cpermResult = deps.permissionGate.checkTool(ct.name, ctool.risk, undefined, deps.currentAgent);
+          const cpermResult = deps.permissionGate.checkTool(ct.name, ctool.risk, ct.args as Record<string, unknown> | undefined, deps.currentAgent);
           if (!cpermResult.allowed && !cpermResult.needsApproval) {
             messages.push({ role: "tool", toolCallId: ct.id, content: `Error: ${cpermResult.reason}` });
             continue;
+          }
+          if (cpermResult.needsApproval) {
+            if (!deps.permissionGate.checkSavedApproval(ct.name, deps.currentAgent?.id)) {
+              const reply = await deps.permissionGate.askForTool(
+                ct.name, ct.id, runId, "",
+                cpermResult.reason ?? `Tool "${ct.name}" requires approval for self-correction`,
+                deps.currentAgent?.id ?? "", ctx.traceId, deps.pluginManager,
+              );
+              if (reply === "reject") {
+                messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Tool "${ct.name}" rejected by user` });
+                continue;
+              }
+            }
           }
           try {
             const cExec = ctool.timeoutMs

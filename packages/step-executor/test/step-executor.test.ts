@@ -530,6 +530,68 @@ describe("StepExecutor", () => {
 
       expect(messages.length).toBeGreaterThanOrEqual(2);
     });
+
+    it("asks approval for a self-corrected tool and does not execute it when rejected", async () => {
+      deps.selfCorrectOnFailure = true;
+      const originalExecute = vi.fn().mockRejectedValue(new Error("execution failed"));
+      const correctedExecute = vi.fn().mockResolvedValue("corrected output");
+      (deps.findTool as vi.Mock).mockImplementation((name: string) =>
+        name === "write_file" ? { execute: correctedExecute, risk: "write" as const } : { execute: originalExecute, risk: "read" as const },
+      );
+      (deps.modelCaller as Record<string, unknown>).callModelStream = vi.fn().mockResolvedValue({
+        content: "",
+        toolCalls: [{ id: "call-sc-1", name: "write_file", args: { filePath: "/tmp/x.txt" } }],
+      });
+      (deps.permissionGate.checkTool as vi.Mock).mockImplementation((name: string, risk: string) =>
+        name === "write_file" ? { allowed: false, needsApproval: true, reason: `Tool "${name}" requires approval` }
+          : { allowed: true },
+      );
+      const askSpy = deps.permissionGate.askForTool as vi.Mock;
+      askSpy.mockResolvedValue("reject" as const);
+
+      const messages: unknown[] = [];
+      await executor.executeToolCalls(
+        [makeToolCall()], messages, 1, "run1",
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(askSpy).toHaveBeenCalledWith(
+        "write_file", "call-sc-1", "run1", "",
+        expect.stringContaining("requires approval"), expect.anything(), "trace1", expect.anything(),
+      );
+      expect(correctedExecute).not.toHaveBeenCalled();
+      expect(messages.some((m) => typeof m === "object" && (m as { content?: string }).content?.includes("rejected by user"))).toBe(true);
+    });
+
+    it("executes a self-corrected tool after approval is granted", async () => {
+      deps.selfCorrectOnFailure = true;
+      const originalExecute = vi.fn().mockRejectedValue(new Error("execution failed"));
+      const correctedExecute = vi.fn().mockResolvedValue("corrected output");
+      (deps.findTool as vi.Mock).mockImplementation((name: string) =>
+        name === "write_file" ? { execute: correctedExecute, risk: "write" as const } : { execute: originalExecute, risk: "read" as const },
+      );
+      (deps.modelCaller as Record<string, unknown>).callModelStream = vi.fn().mockResolvedValue({
+        content: "",
+        toolCalls: [{ id: "call-sc-2", name: "write_file", args: { filePath: "/tmp/x.txt" } }],
+      });
+      (deps.permissionGate.checkTool as vi.Mock).mockImplementation((name: string, risk: string) =>
+        name === "write_file" ? { allowed: false, needsApproval: true, reason: `Tool "${name}" requires approval` }
+          : { allowed: true },
+      );
+      const askSpy = deps.permissionGate.askForTool as vi.Mock;
+      askSpy.mockResolvedValue("once" as const);
+
+      const messages: unknown[] = [];
+      await executor.executeToolCalls(
+        [makeToolCall()], messages, 1, "run1",
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(askSpy).toHaveBeenCalled();
+      expect(correctedExecute).toHaveBeenCalledOnce();
+    });
   });
 
   describe("external directory detection", () => {

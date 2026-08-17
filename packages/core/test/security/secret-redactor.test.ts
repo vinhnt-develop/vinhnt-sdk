@@ -56,6 +56,22 @@ describe("SecretRedactor", () => {
       expect(result).toContain("[REDACTED:openai-key]");
       expect(result).toContain("[REDACTED:github-token]");
     });
+
+    it("TC10_generic_api_key_does_not_leak_the_value", () => {
+      const secret = "hunter2hunter2hunter2";
+      const input = `password=${secret}`;
+      const result = redactSecrets(input);
+      expect(result).not.toContain(secret);
+      expect(result).toContain("[REDACTED:generic-api-key]");
+    });
+
+    it("TC11_generic_token_does_not_leak_the_value", () => {
+      const secret = "s3cr3tt0ken12345678";
+      const input = `token: ${secret}`;
+      const result = redactSecrets(input);
+      expect(result).not.toContain(secret);
+      expect(result).toContain("[REDACTED:generic-api-key]");
+    });
   });
 
   describe("detectSecrets", () => {
