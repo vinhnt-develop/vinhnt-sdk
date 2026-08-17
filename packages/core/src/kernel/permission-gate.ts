@@ -1,13 +1,13 @@
 import type { RunId, RequestId, AgentConfig, PermissionRequest, AgentRule, RunEvent } from "@vinhnt-sdk/schema";
 import type { ToolRisk, PermissionReply } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
-import type { ApprovalStore } from "../permission/saved.js";
+import type { ApprovalStore } from "@vinhnt-sdk/permission";
 import type { RunEventStore } from "../session/store.js";
-import type { PermissionRule } from "../permission/permission.js";
+import type { PermissionRule } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
-import { evaluatePermission, checkRiskAllowed } from "../permission/checker.js";
+import { evaluatePermission, checkRiskAllowed } from "@vinhnt-sdk/permission";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
-import { buildPermissionRules } from "../permission/evaluator.js";
+import { buildPermissionRules } from "@vinhnt-sdk/permission";
 import { commandPattern } from "@vinhnt-sdk/tools";
 import { PermissionRequested, PermissionReplied } from "@vinhnt-sdk/event";
 

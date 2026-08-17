@@ -168,12 +168,12 @@ export { getTextContent } from "./model.js";
 /**
  * In-memory approval store for managing permission approvals.
  */
-export { InMemoryApprovalStore } from "./permission/saved.js";
+export { InMemoryApprovalStore } from "@vinhnt-sdk/permission";
 
 /**
  * Approval store interface.
  */
-export type { ApprovalStore } from "./permission/saved.js";
+export type { ApprovalStore } from "@vinhnt-sdk/permission";
 
 // === Workspace ===
 

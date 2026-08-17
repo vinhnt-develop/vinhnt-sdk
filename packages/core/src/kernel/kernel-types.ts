@@ -7,7 +7,7 @@ import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "../session/compaction.js";
 import type { ContextRegistry } from "../system-context/types.js";
-import type { ApprovalStore } from "../permission/saved.js";
+import type { ApprovalStore } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
 import type { CircuitBreaker } from "./circuit-breaker.js";
 import type { CircuitBreakerOptions } from "./circuit-breaker.js";

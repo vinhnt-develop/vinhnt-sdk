@@ -1,5 +1,5 @@
 import type { AgentId, AgentConfig, AgentProfile, AgentCapabilities, AgentPermissions, AgentRuleset } from "@vinhnt-sdk/schema";
-import { mergeRulesets, normalizePermissions } from "../permission/checker.js";
+import { mergeRulesets, normalizePermissions } from "@vinhnt-sdk/permission";
 import { DEFAULT_MAX_STEPS } from "../kernel/kernel-utils.js";
 
 export interface CreateAgentParams {

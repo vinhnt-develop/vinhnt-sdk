@@ -6,6 +6,7 @@ export default defineConfig({
       'packages/core',
       'packages/event',
       'packages/model-caller',
+      'packages/permission',
       'packages/schema',
       'packages/tools',
       'packages/tool-saga',

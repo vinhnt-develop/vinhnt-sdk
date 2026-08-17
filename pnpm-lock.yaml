@@ -93,6 +93,9 @@ importers:
       '@vinhnt-sdk/model-caller':
         specifier: workspace:*
         version: link:../model-caller
+      '@vinhnt-sdk/permission':
+        specifier: workspace:*
+        version: link:../permission
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
@@ -147,6 +150,12 @@ importers:
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
+
+  packages/permission:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/plugin:
     dependencies:

@@ -1,5 +1,5 @@
 import type { PermissionRequest, PermissionReply, SavedApproval } from "@vinhnt-sdk/schema";
-import type { ApprovalStore } from "../permission/saved.js";
+import type { ApprovalStore } from "@vinhnt-sdk/permission";
 
 export class FakeApprovalStore implements ApprovalStore {
   /** Resolve all pending requests with this reply automatically */

@@ -5,8 +5,8 @@ import {
   checkRiskAllowed,
   resolveEffectivePermissions,
   evaluatePermission,
-} from "../src/permission/checker.js";
-import type { AgentConfig, AgentId, AgentPermissions, AgentRuleset } from "@vinhnt-sdk/core";
+} from "../src/index.js";
+import type { AgentConfig, AgentId, AgentPermissions, AgentRuleset } from "@vinhnt-sdk/schema";
 
 describe("normalizePermissions", () => {
   it("returns empty for undefined", () => {

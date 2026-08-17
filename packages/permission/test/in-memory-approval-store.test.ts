@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { InMemoryApprovalStore } from "../src/permission/saved.js";
-import type { PermissionRequest, PermissionReply } from "@vinhnt-sdk/core";
+import { InMemoryApprovalStore } from "../src/index.js";
+import type { PermissionRequest, PermissionReply } from "@vinhnt-sdk/schema";
 
 function makeRequest(overrides: Partial<PermissionRequest> = {}): PermissionRequest {
   return {

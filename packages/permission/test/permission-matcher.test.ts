@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { matchPermission, buildPermissionRules } from "../src/permission/evaluator.js";
-import type { PermissionRule } from "../src/permission/permission.js";
+import { matchPermission, buildPermissionRules } from "../src/index.js";
+import type { PermissionRule } from "../src/index.js";
 
 describe("matchPermission", () => {
   it("returns ask for empty rules", () => {
