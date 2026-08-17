@@ -1,4 +1,4 @@
-import type { EventDefinition, TypedEvent } from "@vinhnt-sdk/schema";
+import type { EventDefinition, TypedEvent } from "./definition.js";
 
 export type EventHandler<T = unknown> = (event: TypedEvent<T>) => void;
 export type Unsubscribe = () => void;

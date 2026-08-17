@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { TypedEvent, EventDefinition } from "@vinhnt-sdk/schema";
+import type { TypedEvent, EventDefinition } from "./definition.js";
 import type { EventBus, EventHandler, Unsubscribe } from "./types.js";
 
 const MAX_DURABLE_EVENTS = 10_000;
@@ -14,8 +14,6 @@ declare global {
    
   var __vnt_global_event_bus__: GlobalEventBus | undefined;
 }
-
-let defaultInstance: GlobalEventBus | undefined;
 
 export function getGlobalEventBus(): GlobalEventBus {
   if (!globalThis.__vnt_global_event_bus__) {

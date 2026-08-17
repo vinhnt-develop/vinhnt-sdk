@@ -22,8 +22,6 @@ import {
   AuthenticationError,
   ConfigurationError,
   PluginError,
-  EventRegistry,
-  defineEvent,
   wildcardMatch,
   SchemaVersionedBaseSchema,
   versionedSchema,
@@ -131,11 +129,7 @@ describe('Schema Package Type Tests', () => {
     });
   });
 
-  describe('Event System', () => {
-    it('EventRegistry should be defined', () => {
-      expect(EventRegistry).toBeDefined();
-    });
-
+  describe('Run Event Types', () => {
     it('RunEvent should have type property', () => {
       expectTypeOf<RunEvent>().toHaveProperty('type');
     });

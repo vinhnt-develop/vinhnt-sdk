@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { EventMigrationRegistry } from "../src/event/migration.js";
+import { EventMigrationRegistry } from "../src/migration.js";
 
 describe("EventMigrationRegistry", () => {
   beforeEach(() => {

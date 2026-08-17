@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { EventBusBridge } from "../src/event-bus/bridge.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
-import { RunStarted, StepStarted, ConfigChanged } from "@vinhnt-sdk/schema";
+import { RunStarted, StepStarted, ConfigChanged } from "@vinhnt-sdk/event";
 
 describe("EventBusBridge", () => {
   it("publishes to internal bus", async () => {

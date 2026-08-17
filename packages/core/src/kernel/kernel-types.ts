@@ -8,7 +8,7 @@ import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "../session/compaction.js";
 import type { ContextRegistry } from "../system-context/types.js";
 import type { ApprovalStore } from "../permission/saved.js";
-import type { EventBus } from "../event-bus/types.js";
+import type { EventBus } from "@vinhnt-sdk/event";
 import type { CircuitBreaker } from "./circuit-breaker.js";
 import type { CircuitBreakerOptions } from "./circuit-breaker.js";
 import type { TerminationPolicy } from "./termination.js";

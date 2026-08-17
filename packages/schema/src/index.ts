@@ -214,55 +214,9 @@ export {
 } from "./types/index.js";
 
 /**
- * Event system for defining and subscribing to typed events.
- * 
- * @example
- * ```typescript
- * import { defineEvent } from "@vinhnt-sdk/schema";
- * 
- * const ToolExecuted = defineEvent<{
- *   toolId: string;
- *   duration: number;
- * }>("tool.executed");
- * 
- * bus.on(ToolExecuted, (event) => {
- *   console.log(`${event.toolId} executed in ${event.duration}ms`);
- * });
- * ```
- */
-
-// === Event system ===
-
-/**
- * Event registry and event definition utilities.
- */
-export { EventRegistry, defineEvent } from "./event/index.js";
-
-/**
- * Event type definitions.
- */
-export type { EventDefinition, TypedEvent } from "./event/index.js";
-
-/**
- * Built-in event definitions (durable + ephemeral).
- */
-export {
-  RunStarted, RunCompleted,
-  StepStarted, StepCompleted, StepFailed,
-  ToolInvoked, ToolCompleted, ToolFailed, ToolSelfCorrecting,
-  StepTypeChanged,
-  TokenStreamed, TokenCounted,
-  ThinkingStarted, ThinkingContent, ThinkingCompleted,
-  PermissionRequested, PermissionReplied,
-  ModelCost, ContextCompressed,
-  FileChanged, LspDiagnostics, McpToolsChanged, ConfigChanged,
-  SessionCreated, QuestionAsked, QuestionReplied, VcsBranchChanged,
-  WebhookMessageReceived, WebhookHeartbeat, WebhookCronTick,
-  WebhookTriggered, WebhookSmsReceived,
-} from "./event/events.js";
-
-/**
- * Schema versioning utilities for backward compatibility.
+ * The event system (event definitions, registry, and event bus) lives in
+ * `@vinhnt-sdk/event`. This package provides the shared data contracts that
+ * event payloads validate against (see the run-event schemas below).
  */
 
 // === Schema versioning ===
@@ -298,3 +252,17 @@ export { wildcardMatch } from "./wildcard.js";
  * Zod schemas for core types.
  */
 export { AgentConfigSchema, RequestContextSchema, parseRunEvent, safeParseRunEvent, KnownRunEventSchema } from "./contracts/schema/index.js";
+
+/**
+ * Run-event payload schemas consumed by `@vinhnt-sdk/event` built-in event
+ * definitions for runtime validation.
+ */
+export {
+  RunStartedDataSchema, RunCompletedDataSchema, StepStartedDataSchema,
+  StepCompletedDataSchema, StepFailedDataSchema, ToolInvokedDataSchema,
+  ToolCompletedDataSchema, ToolFailedDataSchema, ToolSelfCorrectingDataSchema,
+  StepTypeChangedDataSchema, TokenStreamedDataSchema, TokenCountedDataSchema,
+  ThinkingStartedDataSchema, ThinkingContentDataSchema, ThinkingCompletedDataSchema,
+  ModelCostDataSchema, PermissionRequestedDataSchema, PermissionRepliedDataSchema,
+  ContextCompressedDataSchema,
+} from "./contracts/schema/index.js";

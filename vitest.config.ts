@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     projects: [
       'packages/core',
+      'packages/event',
       'packages/schema',
       'packages/tools',
       'packages/knowledge',

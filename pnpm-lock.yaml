@@ -84,6 +84,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@vinhnt-sdk/event':
+        specifier: workspace:*
+        version: link:../event
       '@vinhnt-sdk/knowledge':
         specifier: workspace:*
         version: link:../knowledge
@@ -96,6 +99,15 @@ importers:
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/event:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
       zod:
         specifier: ^4.4.3
         version: 4.4.3

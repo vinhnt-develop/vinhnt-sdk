@@ -7,7 +7,7 @@ import {
   ThinkingContentDataSchema, ThinkingCompletedDataSchema, ModelCostDataSchema,
   PermissionRequestedDataSchema, PermissionRepliedDataSchema,
   ContextCompressedDataSchema,
-} from "../contracts/schema/run-event.js";
+} from "@vinhnt-sdk/schema";
 
 // ── Run events (durable, aggregate=runId) ──
 export const RunStarted = defineEvent({

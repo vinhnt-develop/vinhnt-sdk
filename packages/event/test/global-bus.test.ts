@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { GlobalEventBus, getGlobalEventBus } from "../src/event-bus/global-bus.js";
-import { defineEvent } from "@vinhnt-sdk/schema";
+import { GlobalEventBus, getGlobalEventBus } from "../src/index.js";
+import { defineEvent } from "../src/index.js";
 
 const TestEvent = defineEvent({
   type: "global.test.event",

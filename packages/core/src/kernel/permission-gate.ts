@@ -4,12 +4,12 @@ import type { PluginManager } from "../plugin.js";
 import type { ApprovalStore } from "../permission/saved.js";
 import type { RunEventStore } from "../session/store.js";
 import type { PermissionRule } from "../permission/permission.js";
-import type { EventBus } from "../event-bus/types.js";
+import type { EventBus } from "@vinhnt-sdk/event";
 import { evaluatePermission, checkRiskAllowed } from "../permission/checker.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { buildPermissionRules } from "../permission/evaluator.js";
 import { commandPattern } from "@vinhnt-sdk/tools";
-import { PermissionRequested, PermissionReplied } from "@vinhnt-sdk/schema";
+import { PermissionRequested, PermissionReplied } from "@vinhnt-sdk/event";
 
 export type ApprovalDecision = "allow" | "deny" | "approval_required";
 

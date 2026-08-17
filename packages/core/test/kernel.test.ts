@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
-import { InMemoryEventBus } from "../src/event-bus/in-memory-bus.js";
+import { InMemoryEventBus } from "@vinhnt-sdk/event";
 import { buildAgentIdentity } from "../src/kernel/kernel-session.js";
 import { DefaultPluginManager } from "../src/plugin/manager.js";
 import type { ConversationCompactor } from "../src/session/compaction.js";

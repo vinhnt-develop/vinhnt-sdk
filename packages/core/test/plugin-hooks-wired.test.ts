@@ -5,7 +5,7 @@ import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";
 import { FakeAgentRegistry } from "../src/fakes/fake-agent-registry.js";
-import { InMemoryEventBus } from "../src/event-bus/in-memory-bus.js";
+import { InMemoryEventBus } from "@vinhnt-sdk/event";
 import { ToolRegistry } from "@vinhnt-sdk/tools";
 import type { Plugin } from "../src/plugin.js";
 

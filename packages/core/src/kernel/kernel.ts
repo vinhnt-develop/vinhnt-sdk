@@ -16,7 +16,7 @@ import type { DomainManifest } from "@vinhnt-sdk/tools";
 import type { TerminationPolicy } from "./termination.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { getBehaviourProfile } from "../agent/behaviour-profiles.js";
-import type { EventBus } from "../event-bus/types.js";
+import type { EventBus } from "@vinhnt-sdk/event";
 import { DEFAULT_MAX_STEPS, DEFAULT_MAX_TOOL_CALLS_PER_STEP, DOOM_LOOP_THRESHOLD } from "./kernel-utils.js";
 
 /** Default thinking prompt for reasoning steps. Exported for user override. */

@@ -1,8 +1,7 @@
 import type { RunEvent, RunId, TraceId } from "@vinhnt-sdk/schema";
-import type { EventDefinition, TypedEvent } from "@vinhnt-sdk/schema";
+import type { EventDefinition, TypedEvent, EventBus } from "@vinhnt-sdk/event";
+import { InMemoryEventBus } from "@vinhnt-sdk/event";
 import type { RunEventStore } from "../session/store.js";
-import type { EventBus } from "./types.js";
-import { InMemoryEventBus } from "./in-memory-bus.js";
 
 export class EventBusBridge {
   private bus: EventBus;

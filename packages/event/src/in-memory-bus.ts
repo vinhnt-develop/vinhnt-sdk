@@ -1,4 +1,4 @@
-import type { EventDefinition, TypedEvent } from "@vinhnt-sdk/schema";
+import type { EventDefinition, TypedEvent } from "./definition.js";
 import type { EventBus, EventHandler, Unsubscribe } from "./types.js";
 
 const MAX_DURABLE_EVENTS = 10_000;

@@ -4,12 +4,12 @@ import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { SystemContext } from "../src/system-context/types.js";
 import type { Plugin, PluginContext, PluginHooks, HookResult } from "../src/plugin.js";
 import type { ToolProviderRegistry } from "@vinhnt-sdk/tools";
-import type { EventBus } from "../src/event-bus/types.js";
+import type { EventBus } from "@vinhnt-sdk/event";
 import { DefaultPluginManager } from "../src/plugin/manager.js";
 import { PluginToolProvider } from "../src/plugin/plugin-tool-provider.js";
 import { FakeAgentRegistry } from "../src/fakes/fake-agent-registry.js";
 import { ToolProviderRegistry as RealToolProviderRegistry } from "@vinhnt-sdk/tools";
-import { InMemoryEventBus } from "../src/event-bus/in-memory-bus.js";
+import { InMemoryEventBus } from "@vinhnt-sdk/event";
 
 function makeTool(id: string): ToolDefinition {
   return {

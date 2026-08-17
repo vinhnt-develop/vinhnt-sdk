@@ -92,12 +92,12 @@ export type { CreateAgentParams } from "./agent/agent-factory.js";
  * });
  * ```
  */
-export { InMemoryEventBus } from "./event-bus/in-memory-bus.js";
+export { InMemoryEventBus } from "@vinhnt-sdk/event";
 
 /**
  * Event bus interface and types.
  */
-export type { EventBus, EventHandler, Unsubscribe } from "./event-bus/types.js";
+export type { EventBus, EventHandler, Unsubscribe } from "@vinhnt-sdk/event";
 
 // === Session management ===
 

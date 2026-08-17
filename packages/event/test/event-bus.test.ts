@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryEventBus } from "../src/event-bus/in-memory-bus.js";
-import { defineEvent, type EventDefinition, type TypedEvent } from "@vinhnt-sdk/schema";
+import { InMemoryEventBus } from "../src/index.js";
+import { defineEvent, type EventDefinition, type TypedEvent } from "../src/index.js";
 
 const TestEvent = defineEvent({
   type: "test.event",
