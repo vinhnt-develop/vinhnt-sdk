@@ -45,6 +45,7 @@ export type {
   ToolCall,
   MessageContentPart,
   ChatMessage,
+  ChatMessageRole,
   ModelRequest,
   ModelResponse,
   ModelStreamEvent,

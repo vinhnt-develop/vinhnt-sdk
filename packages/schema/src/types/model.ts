@@ -200,8 +200,17 @@ export type MessageContentPart =
   | { type: "text"; text: string }
   | { type: "image"; image: string; mimeType?: string };
 
+/** Chat message roles — OpenAI-compatible union (incl. `developer` and `function`). */
+export type ChatMessageRole =
+  | "system"
+  | "user"
+  | "assistant"
+  | "tool"
+  | "developer"
+  | "function";
+
 export interface ChatMessage {
-  readonly role: string;
+  readonly role: ChatMessageRole;
   readonly content: string | readonly ContentPart[];
   readonly toolCallId?: string;
   readonly toolCalls?: readonly ToolCall[];

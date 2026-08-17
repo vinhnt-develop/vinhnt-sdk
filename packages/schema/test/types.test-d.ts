@@ -69,6 +69,9 @@ import type {
   ModelRequest,
   ModelResponse,
   ModelStreamEvent,
+  ChatMessage,
+  ChatMessageRole,
+  ResponseFormat,
 } from '../src/index.js';
 
 describe('Schema Package Type Tests', () => {
@@ -240,6 +243,40 @@ describe('Schema Package Type Tests', () => {
         generate: async (_request: ModelRequest): Promise<ModelResponse> => ({ content: "ok" }),
       } satisfies ModelProvider;
       expectTypeOf(streaming.stream).not.toBeUndefined();
+    });
+  });
+
+  describe('ChatMessage role union (P2-C / gap G4)', () => {
+    it('accepts every OpenAI role literal', () => {
+      const roles: readonly ChatMessageRole[] = ["system", "user", "assistant", "tool", "developer", "function"];
+      expect(roles).toHaveLength(6);
+    });
+
+    it('rejects an arbitrary string role', () => {
+      // @ts-expect-error — role must be one of the six OpenAI-compatible literals
+      const bad: ChatMessage = { role: "admin", content: "nope" };
+      expect(bad).toBeDefined();
+    });
+
+    it('accepts a developer-role message', () => {
+      const msg: ChatMessage = { role: "developer", content: "System prompt" };
+      expectTypeOf(msg.role).toEqualTypeOf<"developer">();
+    });
+  });
+
+  describe('ModelRequest OpenAI-aligned fields (P2-C / gap G5)', () => {
+    it('accepts tools, toolChoice, maxCompletionTokens, streamOptions and responseFormat', () => {
+      const req: ModelRequest = {
+        messages: [{ role: "user", content: "hi" }],
+        tools: [{ id: "t1", description: "desc", risk: "medium", type: "function", function: { name: "f", description: "d" } }],
+        toolChoice: { type: "function", name: "f" },
+        maxCompletionTokens: 1024,
+        streamOptions: { includeUsage: true },
+        responseFormat: { type: "json_schema", jsonSchema: { name: "weather", schema: { type: "object" }, strict: true } },
+      };
+      expect(req.maxCompletionTokens).toBe(1024);
+      expectTypeOf(req.streamOptions?.includeUsage).toEqualTypeOf<boolean | undefined>();
+      expectTypeOf(req.responseFormat).toEqualTypeOf<ResponseFormat | undefined>();
     });
   });
 });

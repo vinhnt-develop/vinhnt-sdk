@@ -156,7 +156,7 @@ export type {
   MemoryEntry,
   SkillManifest, SkillDefinition,
   SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue,
-  ChatMessage, ContentPart, MessageContentPart,
+  ChatMessage, ChatMessageRole, ContentPart, MessageContentPart,
   CompressionSummary,
   ApprovalRequest,
   ConversationCompactor,
