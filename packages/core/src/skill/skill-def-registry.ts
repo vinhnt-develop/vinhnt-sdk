@@ -2,11 +2,13 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { SkillDefinition, SkillSource } from "@vinhnt-sdk/schema";
 
+/** Parser that converts raw skill sources into {@link SkillDefinition}s. */
 export interface SkillDefParser {
   parse(raw: string, source: SkillSource): SkillDefinition;
   parseFile(filePath: string, source: SkillSource): Promise<SkillDefinition>;
 }
 
+/** Registry contract for loading, querying and searching skill definitions. */
 export interface SkillDefRegistry {
   load(skills: SkillDefinition[]): Promise<void>;
   get(name: string): SkillDefinition | undefined;
@@ -16,6 +18,10 @@ export interface SkillDefRegistry {
 }
 import type { SourceDir } from "../agent/agent-registry.js";
 
+/**
+ * In-memory {@link SkillDefRegistry} backed by a {@link SkillDefParser},
+ * optionally loading skills from configured source directories.
+ */
 export class InMemorySkillDefRegistry implements SkillDefRegistry {
   private readonly skills = new Map<string, SkillDefinition>();
   private readonly parser: SkillDefParser;

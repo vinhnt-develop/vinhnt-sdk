@@ -7,17 +7,20 @@ const ToolSearchSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+/** Input for the `search_tools` tool. */
 export interface ToolSearchInput {
   query: string;
   tags?: string[];
 }
 
+/** A found tool in `search_tools` results. */
 export interface ToolSearchResult {
   id: string;
   description: string;
   tags: readonly string[];
 }
 
+/** Create the `search_tools` tool that searches registered tools by query or tags. */
 export function createToolSearchTool(registry: ToolRegistry) {
   return defineTool<ToolSearchInput, { results: ToolSearchResult[] }>({
     name: "search_tools",

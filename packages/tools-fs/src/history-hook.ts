@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import type { ToolHook } from "@vinhnt-sdk/tools";
 import type { FileHistory } from "./file-history.js";
 
+/** Create a {@link ToolHook} that records write_file/edit_file changes into a {@link FileHistory}. */
 export function createFileHistoryHook(fileHistory: FileHistory): ToolHook {
   const pending = new Map<string, { filePath: string; originalContent: string }>();
 

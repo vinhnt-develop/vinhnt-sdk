@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineTool } from "@vinhnt-sdk/tools";
 
+/** Input for the `question` tool. */
 export interface QuestionInput {
   header: string;
   question: string;
@@ -8,6 +9,7 @@ export interface QuestionInput {
   multiple?: boolean;
 }
 
+/** Resolver that returns the user's answer for a {@link QuestionInput}. */
 export type QuestionHandler = (question: QuestionInput) => Promise<string>;
 
 const QuestionSchema = z.object({
@@ -20,6 +22,10 @@ const QuestionSchema = z.object({
   multiple: z.boolean().optional(),
 });
 
+/**
+ * Create the `question` tool that asks the user a question (with optional
+ * predefined options). Pass a {@link QuestionHandler} to resolve answers.
+ */
 export function createQuestionTool(handler?: QuestionHandler) {
   return defineTool<QuestionInput, { answer: string; error?: string }>({
     name: "question",

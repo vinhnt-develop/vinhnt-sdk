@@ -6,6 +6,10 @@ interface ReadRecord {
   mtimeMs: number;
 }
 
+/**
+ * Tracks when files were read and enforces read-before-write: writes to a
+ * file that was never read (or changed externally since) are denied.
+ */
 export class FileReadTracker {
   private records = new Map<string, ReadRecord>();
 

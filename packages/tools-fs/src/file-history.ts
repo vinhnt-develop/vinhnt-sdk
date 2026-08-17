@@ -1,5 +1,6 @@
 import { ValidationError } from "@vinhnt-sdk/schema";
 
+/** A recorded file change (before/after content) attributed to a session and tool. */
 export interface FileVersion {
   readonly filePath: string;
   readonly sessionId: string;
@@ -9,6 +10,7 @@ export interface FileVersion {
   readonly toolName: string;
 }
 
+/** A single undo/redo step referencing the file content swap. */
 export interface UndoEntry {
   readonly filePath: string;
   readonly originalContent: string;
@@ -18,6 +20,7 @@ export interface UndoEntry {
   readonly versionId: number;
 }
 
+/** Versioned file history contract with undo/redo and rollback support. */
 export interface FileHistory {
   recordVersion(version: Omit<FileVersion, "timestamp"> & { timestamp?: number }): Promise<void>;
   listVersions(filePath: string): Promise<readonly FileVersion[]>;
@@ -28,6 +31,7 @@ export interface FileHistory {
   redo(): Promise<UndoEntry | null>;
 }
 
+/** In-memory {@link FileHistory} keeping an ordered version log plus undo/redo stacks. */
 export class InMemoryFileHistory implements FileHistory {
   private versions: FileVersion[] = [];
   private undoStack: UndoEntry[] = [];

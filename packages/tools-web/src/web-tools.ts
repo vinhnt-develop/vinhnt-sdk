@@ -9,11 +9,16 @@ const WebFetchSchema = z.object({
   timeout: z.number().positive().optional(),
 });
 
+/** Configuration for the {@link createWebFetchTool} tool. */
 export interface WebFetchToolConfig {
   /** Maximum response size in bytes (default: 524288) */
   maxResponseSize?: number;
 }
 
+/**
+ * Create the `web_fetch` tool that fetches a URL and returns its content as
+ * text (HTML is stripped unless `format: "html"`), truncated to the max size.
+ */
 export function createWebFetchTool(config?: WebFetchToolConfig) {
   return defineTool<{ url: string; format?: "markdown" | "text" | "html"; timeout?: number }, string>({
     name: "web_fetch",

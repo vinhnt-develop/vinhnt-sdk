@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 
-const root = process.cwd();
+const root = process.env.SDK_ROOT || process.cwd();
 const packagesDir = join(root, "packages");
 const baselineFile = join(root, "scripts", ".export-jsdoc-baseline.json");
 
@@ -12,16 +12,10 @@ const dirs = readdirSync(packagesDir, { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name);
 
-const exportRe =
+const declRe =
   /^\s*export\s+(?:declare\s+)?(?:default\s+|abstract\s+)?(?:function|class|interface|type|enum|const|let|var)\s+([A-Za-z_$][\w$]*)/gm;
-
-function walk(p, files) {
-  for (const e of readdirSync(p, { withFileTypes: true })) {
-    const fp = join(p, e.name);
-    if (e.isDirectory()) walk(fp, files);
-    else if (/\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name)) files.push(fp);
-  }
-}
+const namedRe = /^\s*export\s*{\s*([^}]+?)\s*}\s*(?:from\s*["']([^"']+)["'])?/gm;
+const starRe = /^\s*export\s*\*\s*from\s*["']([^"']+)["']/gm;
 
 function hasAdjacentJsDoc(text, exportIndex) {
   const upTo = text.slice(0, exportIndex);
@@ -35,46 +29,111 @@ function hasAdjacentJsDoc(text, exportIndex) {
   return !inside.includes("/**");
 }
 
+function resolveSpec(dir, spec) {
+  if (spec.startsWith("@vinhnt-sdk/")) {
+    const name = spec.split("/").slice(0, 2).join("/").replace("@vinhnt-sdk/", "");
+    const idx = join(packagesDir, name, "src", "index.ts");
+    return existsSync(idx) ? idx : null;
+  }
+  let p = join(dir, spec.replace(/\.js$/, ""));
+  for (const cand of [p + ".ts", p + ".tsx", join(p, "index.ts")]) {
+    if (existsSync(cand)) return cand;
+  }
+  return null;
+}
+
+function collectReachables(file, visited, srcExports) {
+  if (!file || visited.has(file)) return;
+  visited.add(file);
+  const text = readFileSync(file, "utf8");
+  const local = new Map();
+  declRe.lastIndex = 0;
+  let m;
+  while ((m = declRe.exec(text))) local.set(m[1], hasAdjacentJsDoc(text, m.index));
+  srcExports.set(file, local);
+
+  const targets = [];
+  starRe.lastIndex = 0;
+  while ((m = starRe.exec(text))) {
+    if (!m[1].startsWith(".")) continue;
+    targets.push(m[1]);
+  }
+  namedRe.lastIndex = 0;
+  while ((m = namedRe.exec(text))) {
+    const from = m[2];
+    if (!from) continue;
+    if (!from.startsWith(".")) continue;
+    targets.push(from);
+  }
+  for (const t of targets) {
+    const target = resolveSpec(dirname(file), t);
+    if (target) collectReachables(target, visited, srcExports);
+  }
+}
+
+const perPackage = {};
 let total = 0;
 let documented = 0;
 const missing = [];
 
 for (const dir of dirs) {
-  const base = join(packagesDir, dir, "src");
-  if (!existsSync(base)) continue;
-  const files = [];
-  walk(base, files);
-  for (const file of files) {
-    const text = readFileSync(file, "utf8");
-    exportRe.lastIndex = 0;
-    let m;
-    while ((m = exportRe.exec(text))) {
+  const index = join(packagesDir, dir, "src", "index.ts");
+  if (!existsSync(index)) {
+    perPackage[dir] = { files: 0, exports: 0, documented: 0, pct: 100 };
+    continue;
+  }
+  const visited = new Set();
+  const srcExports = new Map();
+  collectReachables(index, visited, srcExports);
+
+  let pkgTotal = 0;
+  let pkgDoc = 0;
+  for (const [file, local] of srcExports) {
+    for (const [name, hasDoc] of local) {
+      pkgTotal += 1;
       total += 1;
-      if (hasAdjacentJsDoc(text, m.index)) {
+      if (hasDoc) {
+        pkgDoc += 1;
         documented += 1;
       } else {
-        missing.push(`${dir}/${file.replaceAll("\\", "/").split("/packages/")[1] || ""}:${m[1]}`);
+        missing.push(`${dir} ${file.replaceAll("\\", "/").replace(/^.*\/packages\//, "")}:${name}`);
       }
     }
   }
+  perPackage[dir] = {
+    files: srcExports.size,
+    exports: pkgTotal,
+    documented: pkgDoc,
+    pct: pkgTotal === 0 ? 100 : Math.round((pkgDoc / pkgTotal) * 1000) / 10,
+  };
 }
 
 const pct = total === 0 ? 100 : Math.round((documented / total) * 1000) / 10;
 
 if (writeBaseline) {
-  writeFileSync(baselineFile, JSON.stringify({ total, documented, pct, missing }, null, 2), "utf8");
-  console.log(`baseline written: ${documented}/${total} exported symbols (${pct}%)`);
+  writeFileSync(
+    baselineFile,
+    JSON.stringify({ total, documented, pct, perPackage, missing }, null, 2),
+    "utf8",
+  );
+  console.log(`baseline written: ${documented}/${total} public exports (${pct}%)`);
   process.exit(0);
 }
 
-console.log(`Exported symbols: ${documented}/${total} documented (${pct}%)`);
+console.log(`Public exported symbols: ${documented}/${total} documented (${pct}%)`);
+console.log("Per package:");
+for (const [name, v] of Object.entries(perPackage)) {
+  const flag = v.exports === 0 ? "  " : v.pct >= 50 ? "ok" : "!!";
+  console.log(`  ${name.padEnd(26)} ${String(v.documented).padStart(4)}/${String(v.exports).padEnd(4)} ${String(v.pct).padStart(5)}%  ${flag}`);
+}
+
 if (missing.length > 0) {
-  console.log(`Missing JSDoc (first 20):`);
-  for (const m of missing.slice(0, 20)) console.log(`  ${m}`);
+  console.log(`\nMissing JSDoc (first 30 of ${missing.length}):`);
+  for (const m of missing.slice(0, 30)) console.log(`  ${m}`);
 }
 
 if (pct < minPct) {
-  console.error(`FAIL: JSDoc coverage ${pct}% < --min=${minPct}%`);
+  console.error(`\nFAIL: JSDoc coverage ${pct}% < --min=${minPct}%`);
   process.exit(1);
 }
-console.log(`OK: JSDoc coverage >= ${minPct}%`);
+console.log(`\nOK: public-API JSDoc coverage >= ${minPct}%`);

@@ -39,6 +39,7 @@ function gitAsync(args: string[], cwd: string, signal?: AbortSignal): Promise<st
   });
 }
 
+/** Create the `git_status` tool (branch + `git status --short`). */
 export function createGitStatusTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{}, { branch: string; status: string }>({
     name: "git_status",
@@ -54,6 +55,7 @@ export function createGitStatusTool(workspaceRoot: RootGetter): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `git_diff` tool (unstaged or `--staged` diff). */
 export function createGitDiffTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{ staged?: boolean }, { diff: string }>({
     name: "git_diff",
@@ -76,6 +78,7 @@ export function createGitDiffTool(workspaceRoot: RootGetter): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `git_log` tool (recent commit history, optionally scoped to a path). */
 export function createGitLogTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{ maxCount?: number; path?: string }, { commits: string[] }>({
     name: "git_log",
@@ -97,6 +100,7 @@ export function createGitLogTool(workspaceRoot: RootGetter): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `git_commit` tool that commits staged changes with a message. */
 export function createGitCommitTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{ message: string }, { result: string }>({
     name: "git_commit",

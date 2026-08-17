@@ -10,6 +10,7 @@ import { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitComm
 import { createTodoWriteTool, createQuestionTool } from "@vinhnt-sdk/tools-agent";
 import { createReadImageTool } from "@vinhnt-sdk/tools-fs";
 
+/** Configuration for {@link BuiltinToolProvider}. */
 export interface BuiltinToolConfig {
   workspaceRoot: string | (() => string);
   shell: ShellToolConfig;

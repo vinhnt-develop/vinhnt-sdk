@@ -42,6 +42,10 @@ export function signalToToolContext(signal?: AbortSignal): ToolContext {
   };
 }
 
+/**
+ * Executes tool definitions with a default timeout applied on top of the
+ * caller's abort signal, aborting the tool when either fires.
+ */
 export class ToolSandbox {
   constructor(private readonly config: SandboxConfig = { defaultTimeoutMs: 30_000 }) {}
 

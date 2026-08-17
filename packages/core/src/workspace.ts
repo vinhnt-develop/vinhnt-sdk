@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { WorkspaceId } from "@vinhnt-sdk/schema";
 
+/** A registered workspace directory. */
 export interface Workspace {
   readonly id: WorkspaceId;
   readonly root: string;
@@ -10,14 +11,20 @@ export interface Workspace {
   isActive: boolean;
 }
 
+/** Lifecycle events emitted by {@link WorkspaceManager}. */
 export type WorkspaceEventType = "workspace.added" | "workspace.removed" | "workspace.activated" | "workspace.deactivated";
 
+/** Event emitted by {@link WorkspaceManager} on workspace lifecycle changes. */
 export interface WorkspaceEvent {
   readonly type: WorkspaceEventType;
   readonly root: string;
   readonly data: Record<string, unknown>;
 }
 
+/**
+ * Tracks registered workspace directories, manages the single active
+ * workspace, and emits lifecycle events to listeners.
+ */
 export class WorkspaceManager {
   private readonly workspaces = new Map<string, Workspace>();
   private activeRoot: string | null = null;

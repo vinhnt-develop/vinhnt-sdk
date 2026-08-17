@@ -1,12 +1,17 @@
 import type { RequestContext, TraceId, RequestId } from "@vinhnt-sdk/schema";
 import { RequestContextSchema } from "@vinhnt-sdk/schema";
 
+/** A value augmented with the {@link RequestContext} it was produced under. */
 export type Traceable<T> = T & {
   readonly ctx: RequestContext;
 };
 
 export { type RequestContext };
 
+/**
+ * Lightweight trace span manager: creates child contexts, tracks span
+ * timing, and wraps async work so results carry the current context.
+ */
 export class Tracer {
   private spanStack: Array<{
     name: string;

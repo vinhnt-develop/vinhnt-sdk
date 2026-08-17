@@ -12,6 +12,7 @@ const ExecuteCommandSchema = z.object({
   timeoutMs: z.number().positive().optional(),
 });
 
+/** Configuration for the {@link createShellTool} command-execution tool. */
 export interface ShellToolConfig {
   workspaceRoot: string | (() => string);
   defaultTimeoutMs: number;
@@ -76,6 +77,10 @@ function execAsync(
   });
 }
 
+/**
+ * Create the `shell` tool that executes a command in the workspace root with
+ * timeout, tree-scoped kill-on-abort, and optional permission prompting.
+ */
 export function createShellTool(config: ShellToolConfig) {
   const sandbox = createSandbox({
     defaultTimeoutMs: config.defaultTimeoutMs,

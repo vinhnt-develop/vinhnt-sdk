@@ -11,6 +11,7 @@ const WebSearchSchema = z.object({
   contextMaxCharacters: z.number().int().positive().optional(),
 });
 
+/** A single web search result. */
 export interface SearchResult {
   title: string;
   url: string;
@@ -18,6 +19,7 @@ export interface SearchResult {
   score: number;
 }
 
+/** Response of a web search: ranked results plus an optional synthesized answer. */
 export interface WebSearchResponse {
   results: SearchResult[];
   answer?: string;
@@ -35,6 +37,7 @@ export interface WebSearchProvider {
   }): Promise<WebSearchResponse>;
 }
 
+/** Configuration for the {@link createWebSearchTool} tool. */
 export interface WebSearchToolConfig {
   /**
    * Web search provider — injectable dependency.
@@ -52,6 +55,7 @@ export interface WebSearchToolConfig {
  * User override được qua baseUrl option.
  */
 export const DEFAULT_TAVILY_URL = "https://api.tavily.com/search";
+/** Default Serper (Google Search) API URL. */
 export const DEFAULT_SERPER_URL = "https://google.serper.dev/search";
 
 /**
@@ -141,6 +145,7 @@ export class SerperSearchProvider implements WebSearchProvider {
   }
 }
 
+/** Create the `web_search` tool backed by a {@link WebSearchProvider}. */
 export function createWebSearchTool(config: WebSearchToolConfig) {
   return defineTool<{ query: string; numResults?: number; searchDepth?: "basic" | "advanced" }, {
     results: SearchResult[];

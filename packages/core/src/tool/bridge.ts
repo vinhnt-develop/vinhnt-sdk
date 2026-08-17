@@ -4,6 +4,11 @@ import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
 import type { ToolRuntime} from "./runtime.js";
 import { type ToolHook } from "./runtime.js";
 
+/**
+ * Adapt a {@link ToolRuntime} into kernel-consumable {@link ToolDefinition}s.
+ * Each runtime tool is wrapped so successful results are returned directly,
+ * `denied` results throw {@link ToolPermissionDenied}, and errors propagate.
+ */
 export function createKernelTools(rt: ToolRuntime): ToolDefinition[] {
   return rt.getTools().map((t) => ({
     id: t.id,

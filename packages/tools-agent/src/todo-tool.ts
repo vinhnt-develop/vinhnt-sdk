@@ -13,6 +13,7 @@ interface TodoItem {
 const store = new Map<string, TodoItem>();
 let nextId = 1;
 
+/** Create the `todowrite` tool managing a structured task list with priorities and status. */
 export function createTodoWriteTool() {
   // The todo tool intentionally keeps loose runtime validation (returns
   // `{ error }` results instead of throwing), so its schema is untyped and

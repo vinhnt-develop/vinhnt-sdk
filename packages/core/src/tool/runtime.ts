@@ -6,11 +6,21 @@ import type { PermissionGate} from "@vinhnt-sdk/step-executor";
 import { type DynamicRule } from "@vinhnt-sdk/step-executor";
 import type { ApprovalHandler } from "@vinhnt-sdk/tools";
 
+/**
+ * Result of executing a tool through {@link ToolRuntime}.
+ * `success` carries the tool output, `denied` a policy/approval reason,
+ * `error` a thrown/validation error message.
+ */
 export type ToolExecutionResult =
   | { status: "success"; output: unknown }
   | { status: "denied"; reason: string }
   | { status: "error"; error: string };
 
+/**
+ * Lifecycle hook around tool execution.
+ * `pre` can rewrite the input or deny execution; `post` can rewrite the result
+ * (hooks run in reverse order on the post phase).
+ */
 export interface ToolHook {
   readonly id: string;
   pre?(params: { toolId: string; tool: ToolDefinition; input: unknown }): 
@@ -19,12 +29,22 @@ export interface ToolHook {
     Promise<ToolExecutionResult | null>;
 }
 
+/**
+ * Configuration for {@link ToolRuntime}.
+ * `permissionGate` enforces tool policy (only when explicitly provided),
+ * `approvalHandler` drives interactive approvals, and `sandbox` executes tools
+ * (defaults to an in-process {@link ToolSandbox}).
+ */
 export interface ToolRuntimeConfig {
   permissionGate?: PermissionGate;
   approvalHandler?: ApprovalHandler;
   sandbox?: ToolSandbox;
 }
 
+/**
+ * Runtime that registers tool definitions and executes them through the
+ * permission gate (deny/approve) and lifecycle hooks, isolated in a sandbox.
+ */
 export class ToolRuntime {
   readonly registry = new ToolRegistry();
   private readonly permissionGate: PermissionGate | undefined;

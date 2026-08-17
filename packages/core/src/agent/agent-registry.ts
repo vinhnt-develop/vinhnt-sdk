@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import type { AgentConfig, AgentId, SkillSourceType } from "@vinhnt-sdk/schema";
 import { AgentConfigSchema } from "@vinhnt-sdk/schema";
 
+/** Registry contract for storing and querying agent configs with parent/child hierarchy. */
 export interface AgentRegistry {
   register(config: AgentConfig, parentId?: AgentId): Promise<void>;
   get(id: AgentId): Promise<AgentConfig | null>;
@@ -15,12 +16,14 @@ export interface AgentRegistry {
   getAncestors(childId: AgentId): Promise<readonly AgentConfig[]>;
 }
 
+/** A skill source directory scanned for agent definitions, with load priority. */
 export interface SourceDir {
   type: SkillSourceType;
   dir: string;
   priority: number;
 }
 
+/** A loadable agent definition — either inline config or a config file on disk. */
 export type AgentSource = {
   type: "inline";
   config: AgentConfig;

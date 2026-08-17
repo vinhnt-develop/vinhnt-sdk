@@ -5,6 +5,7 @@ import type { AgentKernel} from "../kernel/kernel.js";
 import { type RunState } from "../kernel/kernel.js";
 
 import { KernelError } from "../kernel/kernel.js";
+/** Lifecycle event types emitted by {@link SessionRunCoordinator}. */
 export type SessionEventType =
   | "session.created"
   | "session.switched"
@@ -13,6 +14,7 @@ export type SessionEventType =
   | "run.started"
   | "run.state_changed";
 
+/** Event emitted by {@link SessionRunCoordinator} on session/run lifecycle changes. */
 export type SessionEvent = {
   type: SessionEventType;
   sessionId: string;
@@ -30,6 +32,10 @@ export interface RunHandler {
   onRunStateChange(listener: (runId: string, state: string) => void): () => void;
 }
 
+/**
+ * Coordinates the active session and run against a {@link RunHandler},
+ * persisting sessions and emitting lifecycle events to subscribed listeners.
+ */
 export class SessionRunCoordinator {
   private activeSession: Session | null = null;
   private activeRunId: RunId | null = null;

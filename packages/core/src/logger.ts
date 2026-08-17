@@ -1,8 +1,10 @@
 // Simple logger for agent-core
 // In production, replace with your preferred logging solution
 
+/** Severity levels supported by the SDK logger. */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+/** Minimal logger interface with level-scoped methods. */
 export interface Logger {
   debug(message: string, ...args: unknown[]): void;
   info(message: string, ...args: unknown[]): void;
@@ -46,14 +48,17 @@ function createConsoleLogger(): Logger {
 
 let logger: Logger = createConsoleLogger();
 
+/** Replace the active logger (defaults to a console logger). */
 export function setLogger(newLogger: Logger): void {
   logger = newLogger;
 }
 
+/** Set the minimum level the active logger will emit. */
 export function setLogLevel(level: LogLevel): void {
   currentLevel = level;
 }
 
+/** Get the active logger instance. */
 export function getLogger(): Logger {
   return logger;
 }

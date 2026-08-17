@@ -23,7 +23,7 @@
     "check:hygiene": "node scripts/check-hygiene.mjs",
     "check": "pnpm check:deps && pnpm check:hygiene",
     "test:coverage": "vitest run --coverage",
-    "quality": "node scripts/verify-export-jsdoc.mjs && node scripts/check-export-map.mjs",
+    "quality": "node scripts/verify-export-jsdoc.mjs --min=50 && node scripts/check-export-map.mjs",
     "check:coverage": "node scripts/check-coverage.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",

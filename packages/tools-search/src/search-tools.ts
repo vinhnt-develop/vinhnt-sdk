@@ -41,6 +41,7 @@ async function globRecursive(dir: string, pattern: string, base: string, results
   }
 }
 
+/** Create the `glob` tool that finds files matching a glob pattern under the workspace root. */
 export function createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs?: string[]): ToolDefinition {
   const ignoreSet = new Set(ignoredDirs ?? DEFAULT_IGNORED_DIRS);
 
@@ -66,6 +67,7 @@ export function createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs?: str
   }).toDefinition();
 }
 
+/** Create the `grep` tool that searches file contents for a regex pattern. */
 export function createGrepFilesTool(workspaceRoot: RootGetter, ignoredDirs?: string[]): ToolDefinition {
   const ignoreSet = new Set(ignoredDirs ?? DEFAULT_IGNORED_DIRS);
 

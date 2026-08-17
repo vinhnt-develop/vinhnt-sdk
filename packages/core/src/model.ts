@@ -24,6 +24,7 @@ export { getTextContent } from "@vinhnt-sdk/schema";
 
 import type { ModelProvider, ModelRegistry } from "@vinhnt-sdk/schema";
 
+/** In-memory {@link ModelRegistry} keyed by provider id. */
 export class InMemoryModelRegistry implements ModelRegistry {
   private readonly providers = new Map<string, ModelProvider>();
 

@@ -17,6 +17,10 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 };
 
+/**
+ * Read an image file into model message parts (`text` + base64 `image`),
+ * validating the file extension against supported formats.
+ */
 export function readImageToContentParts(filePath: string): Promise<MessageContentPart[]> {
   return readImageToContentPartsInner(filePath);
 }
@@ -37,6 +41,7 @@ async function readImageToContentPartsInner(filePath: string): Promise<MessageCo
   ];
 }
 
+/** Create the `read_image` tool that returns image content for the model to analyze. */
 export function createReadImageTool() {
   return defineTool<{ filePath: string }, {
     filePath: string; mimeType?: string; size: number; message: string;

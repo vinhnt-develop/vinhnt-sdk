@@ -134,6 +134,11 @@ function normalizeInput(input: unknown): Record<string, unknown> {
   return result;
 }
 
+/**
+ * Create the `read_file` tool. Reads a file relative to the workspace root,
+ * enforcing workspace boundaries and optionally tracking reads for the
+ * kernel's file-history features.
+ */
 export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean, maxFileSize?: number) {
   return defineTool<{ filePath: string; stripTrailingNewline?: boolean }, string>({
     name: "read_file",
@@ -159,6 +164,10 @@ export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileRead
   }).toDefinition();
 }
 
+/**
+ * Create the `write_file` tool. Writes content to a file, creating parent
+ * directories as needed and returning a diff of the change.
+ */
 export function createWriteFileTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean) {
   return defineTool<{ filePath: string; content: string }, {
     written: string; bytes: number;
@@ -431,6 +440,10 @@ function applyMultiEdit(
   return { newContent: current, diffs };
 }
 
+/**
+ * Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits
+ * (one hunk or a multi-hunk `edits[]` array) to an existing file.
+ */
 export function createEditFileTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean) {
   return defineTool<{ filePath: string; oldString?: string; newString?: string; edits?: readonly { oldString: string; newString: string }[] }, {
     edited: string; diff: string;
@@ -488,6 +501,10 @@ function parsePatch(patch: string): { oldString: string; newString: string }[] {
   return blocks;
 }
 
+/**
+ * Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where
+ * each search string must match exactly once in the target file.
+ */
 export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean) {
   return defineTool<{ filePath: string; patch: string }, {
     patched: string; blocks: number; diff: string; additions: number; removals: number;
@@ -552,6 +569,10 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
  */
 export const DEFAULT_EXCLUDED_DIRS = ["node_modules", ".git"];
 
+/**
+ * Create the `list_directory` tool. Lists a directory's entries
+ * (non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).
+ */
 export function createListDirectoryTool(workspaceRoot: RootGetter, externalDirAccess?: boolean, excludedDirs?: string[]) {
   const dirsToExlude = excludedDirs ?? DEFAULT_EXCLUDED_DIRS;
 
