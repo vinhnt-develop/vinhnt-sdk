@@ -31,6 +31,7 @@ function callHandler(handler: EventHandler, event: TypedEvent<unknown>): void {
   }
 }
 
+/** In-process {@link EventBus} with durable event retention and sync subscriber dispatch. */
 export class InMemoryEventBus implements EventBus {
   private listeners: ListenerEntry[] = [];
   private projectors: Map<string, Set<EventHandler>> = new Map();

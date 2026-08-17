@@ -11,6 +11,7 @@ import { createDb, pushSchema } from "./migration.js";
  * Message search uses FTS5 when available and falls back to a
  * `LIKE` scan otherwise.
  */
+/** SQLite-backed {@link SessionStore}. */
 export class DrizzleSessionStore implements SessionStore {
   private readonly db: BetterSQLite3Database;
 

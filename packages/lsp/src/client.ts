@@ -15,12 +15,14 @@ function nextId(): number {
   return ++requestIdCounter;
 }
 
+/** Callbacks for diagnostics, errors and process exit. */
 export interface LspClientEvents {
   onDiagnostics: (uri: string, diagnostics: LspDiagnostic[]) => void;
   onError: (error: Error) => void;
   onExit: (code: number | null, signal: string | null) => void;
 }
 
+/** JSON-RPC client wrapping a single language server subprocess. */
 export class LspClient {
   private process: ChildProcess | null = null;
   private rl: ReadlineInterface | null = null;

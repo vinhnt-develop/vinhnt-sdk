@@ -2,6 +2,7 @@ import type { ToolDefinition } from "./definitions.js";
 import { ToolRegistry } from "./registry.js";
 import { ToolNotFoundError } from "@vinhnt-sdk/schema";
 
+/** A tool registered for lazy, on-demand construction. */
 export interface LazyToolEntry {
   id: string;
   risk?: "low" | "medium" | "high";
@@ -9,6 +10,7 @@ export interface LazyToolEntry {
   instance?: ToolDefinition;
 }
 
+/** A {@link ToolRegistry} that constructs tools lazily on first resolve. */
 export class LazyToolRegistry extends ToolRegistry {
   private entries = new Map<string, LazyToolEntry>();
   private loading = new Map<string, Promise<ToolDefinition>>();

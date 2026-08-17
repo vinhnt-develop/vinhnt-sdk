@@ -1,9 +1,11 @@
+/** Line-level unified diff with add/remove counts. */
 export interface UnifiedDiff {
   readonly diff: string;
   readonly additions: number;
   readonly removals: number;
 }
 
+/** Generate a line-level diff between old and new content for a file. */
 export function generateDiff(
   filePath: string,
   oldContent: string,

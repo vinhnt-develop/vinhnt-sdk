@@ -20,8 +20,10 @@ export const KNOWN_APPROVAL_CATEGORIES = [
 /** Approval category — open string for extensibility. */
 export type ApprovalCategory = string;
 
+/** Lifecycle status of an approval request. */
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "expired";
 
+/** Context attached to an approval request. */
 export interface ApprovalContext {
   readonly sessionId?: SessionId;
   readonly agentId?: AgentId;
@@ -30,6 +32,7 @@ export interface ApprovalContext {
   readonly toolName?: string;
 }
 
+/** Human-in-the-loop approval request. */
 export interface ApprovalRequest {
   readonly id: string;
   readonly type: ApprovalCategory;
@@ -44,8 +47,10 @@ export interface ApprovalRequest {
   readonly resolvedBy?: string;
 }
 
+/** Effect an approval policy applies to matching requests. */
 export type PolicyEffect = "auto_approve" | "auto_reject" | "require_approval";
 
+/** Declarative policy that auto-approves/rejects matching approval requests. */
 export interface ApprovalPolicy {
   readonly id: string;
   readonly pattern: string;
@@ -57,6 +62,7 @@ export interface ApprovalPolicy {
   readonly createdBy?: string;
 }
 
+/** Human-readable labels keyed by approval category. */
 export const APPROVAL_CATEGORY_LABELS: Record<string, string> = {
   "memory.write":     "Write to memory",
   "skill.write":      "Write skill definition",

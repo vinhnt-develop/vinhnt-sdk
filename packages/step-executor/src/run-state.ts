@@ -1,7 +1,9 @@
 import type { RunId } from "@vinhnt-sdk/schema";
 
+/** Lifecycle state of a run. */
 export type RunState = "pending" | "running" | "paused" | "completed" | "failed" | "cancelled";
 
+/** Tracks per-run state, abort signals and input queues. */
 export class RunStateMachine {
   private readonly runStates = new Map<RunId, RunState>();
   private readonly runAborts = new Map<RunId, AbortController>();

@@ -1,6 +1,7 @@
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import type { SessionStore } from "@vinhnt-sdk/schema";
 
+/** Create the `memory_search` tool that finds past session messages by keyword. */
 export function createMemorySearchTool(store: SessionStore): ToolDefinition {
   return {
     id: "memory_search",

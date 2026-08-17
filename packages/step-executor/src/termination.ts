@@ -25,6 +25,7 @@ export interface StepVerificationContext {
   readonly lastStepToolOutcomes: readonly ToolCallOutcome[];
 }
 
+/** Declarative condition that can end the loop early. */
 export type StopCondition =
   | { kind: "tool-output"; tool: string; expect: { exitCode?: number } }
   | { kind: "file-unchanged"; path: string }
@@ -32,6 +33,7 @@ export type StopCondition =
   | { kind: "llm-judge"; agent: string; criteria: readonly string[] }
   | { kind: "state"; predicate: (ctx: StepVerificationContext) => boolean };
 
+/** Hard limits and stop conditions that terminate a run. */
 export interface TerminationPolicy {
   /** Per-run hard step cap (overrides the kernel default when set). */
   readonly maxSteps?: number;

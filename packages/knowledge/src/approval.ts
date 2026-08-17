@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ApprovalRequest } from "@vinhnt-sdk/schema";
 
+/** Handler contract for approving/rejecting and listing pending approval requests. */
 export interface ApprovalHandler {
   requestApproval(req: Omit<ApprovalRequest, "id" | "requestedAt" | "status">): Promise<ApprovalRequest>;
   approve(id: string, resolvedBy?: string): Promise<ApprovalRequest | undefined>;
@@ -9,6 +10,7 @@ export interface ApprovalHandler {
   getRequest(id: string): ApprovalRequest | undefined;
 }
 
+/** In-memory {@link ApprovalHandler} queueing requests for explicit approve/reject. */
 export class WriteApprovalQueue implements ApprovalHandler {
   private requests: ApprovalRequest[] = [];
 

@@ -182,6 +182,7 @@ export interface ToolDefinitionLike {
 
 // ── Message types ──
 
+/** A function call requested by the model. */
 export interface ToolCall {
   readonly id: string;
   readonly name: string;
@@ -209,6 +210,7 @@ export type ChatMessageRole =
   | "developer"
   | "function";
 
+/** A chat message with role, content and optional tool calls. */
 export interface ChatMessage {
   readonly role: ChatMessageRole;
   readonly content: string | readonly ContentPart[];
@@ -313,6 +315,7 @@ export interface ModelResponse {
   readonly refusal?: string;
 }
 
+/** Union of streaming events emitted by a provider. */
 export type ModelStreamEvent =
   | { type: "text"; content: string }
   | { type: "tool_call"; id: string; name: string; args: Record<string, unknown> }
@@ -324,6 +327,7 @@ export type ModelStreamEvent =
 
 // ── Pricing ──
 
+/** Per-1M-token pricing for a model. */
 export interface ModelPricing {
   readonly input: number;
   readonly output: number;
@@ -333,6 +337,7 @@ export interface ModelPricing {
 
 // ── Capabilities ──
 
+/** Capability flags of a model provider. */
 export interface ModelCapabilities {
   readonly streaming: boolean;
   readonly toolCalling: boolean;
@@ -343,6 +348,7 @@ export interface ModelCapabilities {
 
 // ── Provider ──
 
+/** Interface for a model provider (generate/stream/token count). */
 export interface ModelProvider {
   readonly provider: string;
   readonly model: string;
@@ -359,6 +365,7 @@ export interface ModelProvider {
   countTokens?(text: string): number;
 }
 
+/** Registry mapping model ids to {@link ModelProvider}s. */
 export interface ModelRegistry {
   register(id: string, provider: ModelProvider): void;
   get(id: string): ModelProvider | undefined;

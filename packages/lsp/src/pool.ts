@@ -18,6 +18,7 @@ interface PoolEntry {
   shuttingDown: boolean;
 }
 
+/** Pool of running {@link LspClient}s keyed by server+root with idle eviction. */
 export class LspPool {
   private entries = new Map<string, PoolEntry>();
   private broken = new Set<string>();

@@ -140,6 +140,7 @@ export class InMemoryPluginRegistry implements PluginRegistry {
   }
 }
 
+/** Options for {@link definePlugin}: hooks and lifecycle callbacks. */
 export interface DefinePluginOptions {
   hooks?: PluginHooks;
   activate?(ctx: PluginContext): Promise<void>;
@@ -154,6 +155,7 @@ function isDefinePluginOptions(value: unknown): value is DefinePluginOptions {
   );
 }
 
+/** Build a {@link Plugin} from a manifest plus hooks/lifecycle callbacks. */
 export function definePlugin(
   manifest: PluginManifest,
   hooksOrOptions?: PluginHooks | DefinePluginOptions,

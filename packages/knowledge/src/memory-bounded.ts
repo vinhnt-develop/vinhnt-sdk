@@ -2,6 +2,7 @@ import type { MemoryEntry } from "@vinhnt-sdk/schema";
 import type { MemoryStore } from "./types.js";
 import { InMemoryMemoryStore } from "./memory.js";
 
+/** Character limits applied to the profile and working memory sections. */
 export interface BoundedMemoryLimits {
   profileLimit: number;
   workingLimit: number;
@@ -17,6 +18,7 @@ function truncate(value: string, limit: number): string {
   return value.slice(0, limit - 3) + "...";
 }
 
+/** In-memory memory store that truncates profile and working sections to configured limits. */
 export class BoundedMemory {
   private profile = "";
   private working = "";

@@ -33,6 +33,7 @@ export interface ToolConfig<TInput = unknown, TOutput = unknown> {
   execute(input: TInput, ctx: ToolContext): Promise<TOutput>;
 }
 
+/** A schema-first tool: owns its validation schema and derives its definition. */
 export interface Tool<TInput = unknown, TOutput = unknown> {
   readonly name: string;
   readonly description: string;
@@ -132,6 +133,7 @@ function convert(schema: ZodLike): MutableSchema | undefined {
   }
 }
 
+/** Build a schema-first {@link Tool} from its config. */
 export function defineTool<TInput = unknown, TOutput = unknown>(
   config: ToolConfig<TInput, TOutput>,
 ): Tool<TInput, TOutput> {

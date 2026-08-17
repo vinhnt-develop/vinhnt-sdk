@@ -4,6 +4,7 @@ import type { EventBus, EventHandler, Unsubscribe } from "./types.js";
 
 const MAX_DURABLE_EVENTS = 10_000;
 
+/** Minimal Redis pub/sub adapter contract used to bridge the global bus across processes. */
 export interface RedisAdapter {
   publish(channel: string, message: string): Promise<void>;
   on(event: string, handler: (channel: string, message: string) => void): void;
@@ -15,6 +16,7 @@ declare global {
   var __vnt_global_event_bus__: GlobalEventBus | undefined;
 }
 
+/** Return the process-wide singleton {@link GlobalEventBus}, creating it on first use. */
 export function getGlobalEventBus(): GlobalEventBus {
   if (!globalThis.__vnt_global_event_bus__) {
     globalThis.__vnt_global_event_bus__ = new GlobalEventBus();
@@ -22,6 +24,10 @@ export function getGlobalEventBus(): GlobalEventBus {
   return globalThis.__vnt_global_event_bus__;
 }
 
+/**
+ * Process-wide {@link EventBus} backed by a Node EventEmitter, optionally
+ * bridged to other processes via a {@link RedisAdapter}.
+ */
 export class GlobalEventBus implements EventBus {
   private emitter = new EventEmitter();
   private durableEvents = new Map<string, TypedEvent<unknown>[]>();

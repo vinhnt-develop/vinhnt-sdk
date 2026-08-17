@@ -1,5 +1,6 @@
 import type { z } from "zod";
 
+/** Static metadata describing an event type: type string, description, durability and data schema. */
 export interface EventDefinition<TData = unknown> {
   readonly type: string;
   readonly description?: string;
@@ -10,6 +11,7 @@ export interface EventDefinition<TData = unknown> {
   readonly schema?: z.ZodSchema<TData>;
 }
 
+/** A fully materialized event instance emitted for an aggregate. */
 export interface TypedEvent<TData = unknown> {
   readonly id: string;
   readonly type: string;
@@ -21,7 +23,7 @@ export interface TypedEvent<TData = unknown> {
 }
 
 
-
+/** Global registry mapping event type strings to their {@link EventDefinition}s. */
 export class EventRegistry {
   private static definitions = new Map<string, EventDefinition>();
 
@@ -46,6 +48,7 @@ export class EventRegistry {
   }
 }
 
+/** Define (and register) an event type; duplicate types throw. */
 export function defineEvent<T>(def: EventDefinition<T>): EventDefinition<T> {
   return EventRegistry.register(def);
 }

@@ -33,6 +33,7 @@ export interface ModelCallerLogger {
   info(message: string, ...args: unknown[]): void;
 }
 
+/** Dependencies required by {@link ModelCaller}. */
 export interface ModelCallerDeps {
   defaultModel: ModelProvider;
   readonly modelRegistry: ModelRegistry | undefined;
@@ -89,6 +90,7 @@ function emitMC(runId: RunId, traceId: string, data: {
   return { id: crypto.randomUUID(), runId, type: "model.cost", occurredAt: new Date().toISOString(), traceId, data };
 }
 
+/** Runs model generation (streaming and non-streaming) with hooks, token counting and cost/token events. */
 export class ModelCaller {
   constructor(private readonly deps: ModelCallerDeps) {}
 

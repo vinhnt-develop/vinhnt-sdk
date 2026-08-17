@@ -2,6 +2,7 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema.js";
 
+/** Drizzle node-postgres database handle bound to the store schema. */
 export type PgDb = NodePgDatabase<typeof schema>;
 
 const CREATE_TABLES_SQL = `

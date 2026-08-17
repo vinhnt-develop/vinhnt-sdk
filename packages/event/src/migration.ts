@@ -14,6 +14,7 @@
  *   const migrated = EventMigrationRegistry.migrate("run.completed", 1, data);
  */
 
+/** A function that transforms event data from version N to N+1. */
 export type MigrationFn = (data: Record<string, unknown>) => Record<string, unknown>;
 
 interface MigrationEntry {
@@ -22,6 +23,7 @@ interface MigrationEntry {
   readonly transform: MigrationFn;
 }
 
+/** Registry of forward migrations keyed by event type and schema version. */
 export class EventMigrationRegistry {
   private static migrations = new Map<string, MigrationEntry[]>();
 

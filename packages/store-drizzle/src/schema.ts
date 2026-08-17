@@ -1,12 +1,14 @@
 import { sqliteTable, text, integer, real, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 import type { RunId, TraceId, SessionId, MessageId } from "@vinhnt-sdk/schema";
 
+/** Per-aggregate event sequence counter. */
 export const EventSequenceTable = sqliteTable("event_sequence", {
   aggregateId: text("aggregate_id").$type<RunId>().notNull().primaryKey(),
   seq: integer().notNull(),
   ownerId: text("owner_id"),
 });
 
+/** Append-only run event table (aggregate log). */
 export const RunEventTable = sqliteTable("run_events", {
   id: text().primaryKey(),
   aggregateId: text("aggregate_id").$type<RunId>().notNull().references(() => EventSequenceTable.aggregateId, { onDelete: "cascade" }),
@@ -20,6 +22,7 @@ export const RunEventTable = sqliteTable("run_events", {
   index("event_aggregate_type_seq_idx").on(table.aggregateId, table.type, table.seq),
 ]);
 
+/** Run state snapshots for fast restore. */
 export const RunSnapshotTable = sqliteTable("run_snapshots", {
   aggregateId: text("aggregate_id").$type<RunId>().notNull(),
   seq: integer().notNull(),
@@ -30,6 +33,7 @@ export const RunSnapshotTable = sqliteTable("run_snapshots", {
   aggregateIdx: index("snapshot_aggregate_idx").on(table.aggregateId),
 }));
 
+/** Session metadata rows. */
 export const SessionTable = sqliteTable("sessions", {
   id: text().$type<SessionId>().primaryKey(),
   title: text().notNull().default("New Session"),
@@ -48,6 +52,7 @@ export const SessionTable = sqliteTable("sessions", {
   index("session_updated_idx").on(table.timeUpdated),
 ]);
 
+/** Conversation message rows. */
 export const MessageTable = sqliteTable("messages", {
   id: text().$type<MessageId>().primaryKey(),
   sessionId: text("session_id").$type<SessionId>().notNull().references(() => SessionTable.id, { onDelete: "cascade" }),
@@ -64,6 +69,7 @@ export const MessageTable = sqliteTable("messages", {
   index("msg_session_created_idx").on(table.sessionId, table.createdAt),
 ]);
 
+/** Applied migration tracking. */
 export const MigrationTable = sqliteTable("migrations", {
   id: text().primaryKey(),
   timeCompleted: integer("time_completed").notNull().$default(() => Date.now()),

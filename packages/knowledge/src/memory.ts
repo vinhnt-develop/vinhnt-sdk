@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { MemoryItem, MemoryStore, MemoryTier } from "./types.js";
 
+/** In-memory {@link MemoryStore} backed by an array. */
 export class InMemoryMemoryStore implements MemoryStore {
   private items: MemoryItem[] = [];
 
@@ -60,6 +61,7 @@ export class InMemoryMemoryStore implements MemoryStore {
   }
 }
 
+/** Scoped memory accessor bound to a single session. */
 export class SessionMemory {
   private store: MemoryStore;
   private sessionId: string;

@@ -15,6 +15,7 @@ export const KNOWN_AGENT_STEP_TYPES = [
 /** Agent step type — open string for extensibility. */
 export type AgentStepType = string;
 
+/** Human-readable labels keyed by agent step type. */
 export const AGENT_STEP_LABELS: Record<string, string> = {
   analyzing_codebase: "Analyzing codebase",
   searching_files:    "Searching files",
@@ -28,6 +29,7 @@ export const AGENT_STEP_LABELS: Record<string, string> = {
   idle:               "Idle",
 };
 
+/** Infer the agent step type from a tool name. */
 export function inferStepType(toolName: string): AgentStepType {
   const map: Record<string, AgentStepType> = {
     list_directory:    "analyzing_codebase",

@@ -4,6 +4,7 @@
  * compensating actions, and roll back steps (or the whole run) in reverse.
  */
 
+/** A recorded tool invocation within a saga step. */
 export interface SagaEntry {
   toolId: string;
   toolName: string;
@@ -13,6 +14,7 @@ export interface SagaEntry {
   step: number;
 }
 
+/** A compensating action registered for a tool to undo its effect on rollback. */
 export interface CompensationAction {
   entry: SagaEntry;
   compensate(): Promise<void>;
@@ -20,6 +22,7 @@ export interface CompensationAction {
 
 const COMPENSATION_TIMEOUT = 5_000;
 
+/** Tracks tool calls per step and rolls back compensating actions in reverse order. */
 export class ToolSaga {
   private readonly steps = new Map<number, SagaEntry[]>();
   private readonly compensations = new Map<string, CompensationAction>();

@@ -43,6 +43,7 @@ function checkExternalPaths(toolName: string, args: unknown, workspaceRoot: stri
   return undefined;
 }
 
+/** Dependencies required by {@link StepExecutor}. */
 export interface StepExecutorDeps {
   readonly store: { emitEvent(event: Omit<KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;
@@ -66,6 +67,7 @@ export interface StepExecutorDeps {
   readonly hasTool: (name: string) => boolean;
 }
 
+/** One planned tool invocation within a step. */
 export interface ToolExecutionPlan {
   toolId: string;
   toolName: string;

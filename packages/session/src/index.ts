@@ -31,8 +31,12 @@ export { InMemorySessionTree } from "./session-tree.js";
 export type { ConversationCompactor } from "./compaction.js";
 
 // Title generation
+/** Max characters of the user message passed to the model for title generation. */
 export const TITLE_INPUT_TRUNCATION = 200;
+/** Max tokens allowed for the generated title. */
 export const TITLE_MAX_TOKENS = 30;
+/** Max characters of the final title after post-processing. */
 export const TITLE_OUTPUT_TRUNCATION = 80;
+/** System prompt instructing the model to produce a concise session title. */
 export const TITLE_SYSTEM_PROMPT = "Generate a concise session title (max 8 words) from this user message. Respond with ONLY the title, no quotes, no punctuation.";
 export { createDefaultSessionTitleGenerator } from "./title.js";

@@ -1,5 +1,6 @@
 import type { SessionId, SessionNode, SessionTreeSnapshot, SessionTreeEvent } from "@vinhnt-sdk/schema";
 
+/** Contract for a hierarchical session tree with navigation and eventing. */
 export interface SessionTree {
   add(sessionId: SessionId, title: string, parentId?: SessionId): void;
   remove(sessionId: SessionId): void;
@@ -23,6 +24,7 @@ interface InternalNode {
   createdAt: number;
 }
 
+/** In-memory {@link SessionTree} implementation. */
 export class InMemorySessionTree implements SessionTree {
   private readonly nodes = new Map<string, InternalNode>();
   private readonly listeners = new Set<(event: SessionTreeEvent) => void>();

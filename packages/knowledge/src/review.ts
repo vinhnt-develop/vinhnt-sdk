@@ -3,6 +3,7 @@ import { SessionMemory } from "./memory.js";
 import type { WriteApprovalQueue } from "./approval.js";
 import type { BoundedMemory } from "./memory-bounded.js";
 
+/** Options controlling whether memory writes require explicit approval. */
 export interface ReviewOptions {
   readonly requireApproval: boolean;
 }
@@ -12,6 +13,7 @@ interface FactExtraction {
   value: string;
 }
 
+/** Asynchronously reviews sessions and extracts/records facts into memory. */
 export class BackgroundReview {
   private sessionMem: SessionMemory;
   private boundedMem: BoundedMemory;

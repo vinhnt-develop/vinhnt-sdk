@@ -6,6 +6,7 @@ import type { PermissionGate } from "./permission-gate.js";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";
 
+/** Dependencies required by {@link buildToolContext}. */
 export interface ToolContextBuilderDeps {
   readonly pluginManager: StepExecutorPluginHooks | undefined;
   readonly permissionGate: PermissionGate;
@@ -14,6 +15,7 @@ export interface ToolContextBuilderDeps {
   readonly toolRisk: ToolRisk;
 }
 
+/** Mutable ref through which tools attach observability metadata. */
 export interface MetadataRef {
   current?: Record<string, unknown>;
 }

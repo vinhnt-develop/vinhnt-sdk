@@ -1,12 +1,14 @@
 import { pgTable, text, integer, doublePrecision, boolean, jsonb, timestamp, uniqueIndex, index, primaryKey } from "drizzle-orm/pg-core";
 import type { RunId, TraceId, SessionId, MessageId } from "@vinhnt-sdk/schema";
 
+/** Per-aggregate event sequence counter. */
 export const PgEventSequenceTable = pgTable("event_sequence", {
   aggregateId: text("aggregate_id").$type<RunId>().notNull().primaryKey(),
   seq: integer().notNull(),
   ownerId: text("owner_id"),
 });
 
+/** Append-only run event table (aggregate log). */
 export const PgRunEventTable = pgTable("run_events", {
   id: text().primaryKey(),
   aggregateId: text("aggregate_id").$type<RunId>().notNull().references(() => PgEventSequenceTable.aggregateId, { onDelete: "cascade" }),
@@ -20,6 +22,7 @@ export const PgRunEventTable = pgTable("run_events", {
   index("event_aggregate_type_seq_idx").on(table.aggregateId, table.type, table.seq),
 ]);
 
+/** Run state snapshots for fast restore. */
 export const PgRunSnapshotTable = pgTable("run_snapshots", {
   aggregateId: text("aggregate_id").$type<RunId>().notNull(),
   seq: integer().notNull(),
@@ -30,6 +33,7 @@ export const PgRunSnapshotTable = pgTable("run_snapshots", {
   aggregateIdx: index("snapshot_aggregate_idx").on(table.aggregateId),
 }));
 
+/** Session metadata rows. */
 export const PgSessionTable = pgTable("sessions", {
   id: text().$type<SessionId>().primaryKey(),
   title: text().notNull().default("New Session"),
@@ -48,6 +52,7 @@ export const PgSessionTable = pgTable("sessions", {
   index("session_updated_idx").on(table.updatedAt),
 ]);
 
+/** Conversation message rows. */
 export const PgMessageTable = pgTable("messages", {
   id: text().$type<MessageId>().primaryKey(),
   sessionId: text("session_id").$type<SessionId>().notNull().references(() => PgSessionTable.id, { onDelete: "cascade" }),
@@ -64,6 +69,7 @@ export const PgMessageTable = pgTable("messages", {
   index("msg_session_created_idx").on(table.sessionId, table.createdAt),
 ]);
 
+/** Applied migration tracking. */
 export const PgMigrationTable = pgTable("migrations", {
   id: text().primaryKey(),
   timeCompleted: timestamp("time_completed", { withTimezone: true }).notNull().defaultNow(),

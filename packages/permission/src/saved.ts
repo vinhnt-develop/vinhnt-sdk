@@ -1,12 +1,14 @@
 import type { PermissionRequest, PermissionReply, SavedApproval } from "@vinhnt-sdk/schema";
 import type { PermissionRule } from "./permission.js";
 
+/** Persistence contract for remembered allow/deny rules scoped per run. */
 export interface PermissionStore {
   addSavedRule(runId: string, action: string, resource: string): Promise<void>;
   removeSavedRule(runId: string, action: string, resource: string): Promise<void>;
   listSavedRules(runId: string): Promise<readonly PermissionRule[]>;
 }
 
+/** Store managing in-flight approval requests and saved allow/reject decisions. */
 export interface ApprovalStore {
   awaitReply(request: PermissionRequest): Promise<PermissionReply>;
   resolveRequest(requestId: string, reply: PermissionReply): void;
@@ -19,6 +21,7 @@ export interface ApprovalStore {
   checkRejection(resource: string, action: string, agentId?: string): boolean;
 }
 
+/** In-memory {@link ApprovalStore} implementation. */
 export class InMemoryApprovalStore implements ApprovalStore {
   private pending = new Map<string, (reply: PermissionReply) => void>();
   readonly requests: PermissionRequest[] = [];

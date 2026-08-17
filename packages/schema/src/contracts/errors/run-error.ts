@@ -1,6 +1,7 @@
 import { VntError } from "./base.js";
 import type { RunId } from "../branded.js";
 
+/** Thrown when a run id cannot be found in the store. */
 export class RunNotFoundError extends VntError {
   public readonly code = "RUN_NOT_FOUND";
   public readonly retryable = false;
@@ -11,6 +12,7 @@ export class RunNotFoundError extends VntError {
   }
 }
 
+/** Thrown when a run is aborted. */
 export class RunAbortedError extends VntError {
   public readonly code = "RUN_ABORTED";
   public readonly retryable = false;
@@ -21,6 +23,7 @@ export class RunAbortedError extends VntError {
   }
 }
 
+/** Thrown when a run exceeds its timeout. */
 export class RunTimeoutError extends VntError {
   public readonly code = "RUN_TIMEOUT";
   public readonly retryable = true;

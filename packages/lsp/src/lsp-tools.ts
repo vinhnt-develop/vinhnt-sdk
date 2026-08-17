@@ -115,6 +115,7 @@ function uriToPath(uri: string): string {
   return uri;
 }
 
+/** Create the `lsp_diagnostics` tool (errors/warnings for a file). */
 export function createLspDiagnosticsTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string }, unknown>({
     name: "lsp_diagnostics",
@@ -151,6 +152,7 @@ export function createLspDiagnosticsTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_symbols` tool (workspace symbol search). */
 export function createLspSymbolsTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string }, unknown>({
     name: "lsp_symbols",
@@ -189,6 +191,7 @@ export function createLspSymbolsTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_hover` tool (type/docs at a position). */
 export function createLspHoverTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_hover",
@@ -221,6 +224,7 @@ export function createLspHoverTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_definition` tool (go-to-definition). */
 export function createLspDefinitionTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_definition",
@@ -251,6 +255,7 @@ export function createLspDefinitionTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_references` tool (find all references). */
 export function createLspReferencesTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_references",
@@ -279,6 +284,7 @@ export function createLspReferencesTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_completion` tool (code completion suggestions). */
 export function createLspCompletionTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_completion",
@@ -303,6 +309,7 @@ export function createLspCompletionTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_type_definition` tool (type-definition lookup). */
 export function createLspTypeDefinitionTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_type_definition",
@@ -323,6 +330,7 @@ export function createLspTypeDefinitionTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_implementation` tool (find implementations). */
 export function createLspImplementationTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_implementation",
@@ -343,6 +351,7 @@ export function createLspImplementationTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_signature_help` tool (call signature info). */
 export function createLspSignatureHelpTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_signature_help",
@@ -371,6 +380,7 @@ export function createLspSignatureHelpTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_document_symbols` tool (symbols within a file). */
 export function createLspDocumentSymbolsTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string }, unknown>({
     name: "lsp_document_symbols",
@@ -388,6 +398,7 @@ export function createLspDocumentSymbolsTool(pool: LspPool): ToolDefinition {
   }).toDefinition();
 }
 
+/** Create the `lsp_code_action` tool (quick fixes/refactorings). */
 export function createLspCodeActionTool(pool: LspPool): ToolDefinition {
   return defineTool<{ filePath: string; line: number; character: number }, unknown>({
     name: "lsp_code_action",
@@ -446,6 +457,7 @@ function flattenDocumentSymbols(symbols: LspDocumentSymbol[]): { name: string; k
   return result;
 }
 
+/** Create all LSP-backed tools for the given pool. */
 export function createLspTools(pool: LspPool): ToolDefinition[] {
   return [
     createLspDiagnosticsTool(pool),

@@ -1,5 +1,7 @@
+/** Current circuit breaker state. */
 export type CircuitState = "closed" | "open" | "half_open";
 
+/** Tuning for {@link CircuitBreaker}: failure/success thresholds and retry policy. */
 export interface CircuitBreakerOptions {
   failureThreshold?: number;
   successThreshold?: number;
@@ -29,6 +31,7 @@ const DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
   },
 };
 
+/** Circuit breaker with failure thresholds, retry/backoff and half-open probing. */
 export class CircuitBreaker {
   private state: CircuitState = "closed";
   private failureCount = 0;
@@ -153,6 +156,7 @@ export class CircuitBreaker {
   }
 }
 
+/** Thrown when a call is rejected because the breaker is open. */
 export class CircuitBreakerOpenError extends Error {
   readonly remainingMs: number;
 

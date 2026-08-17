@@ -10,6 +10,7 @@ export const KNOWN_TOOL_RISKS = ["read", "write", "destructive", "external"] as 
 /** Tool risk level — open string for extensibility. */
 export type ToolRisk = string;
 
+/** Provider-facing tool definition: schema, risk and execute. */
 export interface ToolDefinition<TInput = unknown, TOutput = unknown> extends ToolDefinitionLike {
   readonly inputSchema?: NestedJsonSchema | undefined;
   readonly risk: ToolRisk;

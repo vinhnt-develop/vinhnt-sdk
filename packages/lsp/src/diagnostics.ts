@@ -1,5 +1,6 @@
 import type { LspDiagnostic } from "./types.js";
 
+/** Cached diagnostics for one file with a monotonically increasing version. */
 export interface StoredDiagnostics {
   uri: string;
   diagnostics: LspDiagnostic[];
@@ -7,6 +8,7 @@ export interface StoredDiagnostics {
   version: number;
 }
 
+/** In-memory store of per-uri diagnostics with waitFor support. */
 export class DiagnosticStore {
   private store = new Map<string, StoredDiagnostics>();
   private waiting = new Map<string, Array<() => void>>();
@@ -89,6 +91,7 @@ const SEVERITY_LABELS: Record<number, string> = {
   4: "HINT",
 };
 
+/** Format a single diagnostic as `SEVERITY [line:col] message`. */
 export function formatDiagnostic(d: LspDiagnostic): string {
   const sev = SEVERITY_LABELS[d.severity ?? 4] ?? "UNKN";
   const line = d.range.start.line + 1;
@@ -96,6 +99,7 @@ export function formatDiagnostic(d: LspDiagnostic): string {
   return `${sev} [${line}:${col}] ${d.message}`;
 }
 
+/** Format diagnostics grouped into Errors/Warnings/Other sections. */
 export function formatDiagnostics(diagnostics: LspDiagnostic[]): string {
   if (diagnostics.length === 0) return "";
   const errors = diagnostics.filter((d) => d.severity === 1);
@@ -118,10 +122,12 @@ export function formatDiagnostics(diagnostics: LspDiagnostic[]): string {
   return parts.join("\n");
 }
 
+/** Count diagnostics with severity ERROR (1). */
 export function countErrors(diagnostics: LspDiagnostic[]): number {
   return diagnostics.filter((d) => d.severity === 1).length;
 }
 
+/** Count diagnostics with severity WARN (2). */
 export function countWarnings(diagnostics: LspDiagnostic[]): number {
   return diagnostics.filter((d) => d.severity === 2).length;
 }

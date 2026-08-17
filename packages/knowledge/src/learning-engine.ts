@@ -14,11 +14,16 @@ import { InMemoryMemoryStore } from "./memory.js";
 import type { MemoryEntry } from "@vinhnt-sdk/schema";
 import type { MemoryStore } from "./types.js";
 
+/** Options for {@link LearningEngine}: runtime flags and session scope. */
 export interface LearningEngineOptions {
   readonly config: LearningConfig;
   readonly sessionId: string;
 }
 
+/**
+ * Coordinates memory learning for a session: bounded storage, background
+ * review, approval-gated writes and conversation compression.
+ */
 export class LearningEngine {
   private config: LearningConfig;
   private store: MemoryStore;

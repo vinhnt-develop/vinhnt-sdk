@@ -11,6 +11,7 @@ import type { ModelProvider } from "@vinhnt-sdk/schema";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 
+/** Dependencies required by {@link runSelfCorrection}. */
 export interface SelfCorrectionDeps {
   readonly store: { emitEvent(event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly modelCaller: ModelCaller;
@@ -22,6 +23,7 @@ export interface SelfCorrectionDeps {
   currentAgent: AgentConfig | undefined;
 }
 
+/** Token accumulator for a self-correction pass. */
 export interface SelfCorrectionTokens {
   input: number;
   output: number;

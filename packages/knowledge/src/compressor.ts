@@ -1,6 +1,7 @@
 import type { CompressionSummary, ChatMessage, ConversationCompactor } from "@vinhnt-sdk/schema";
 import { getTextContent } from "@vinhnt-sdk/schema";
 
+/** Tuning for {@link ContextCompressor}: protected message counts and token budget. */
 export interface CompressorOptions {
   /** Always protect this many messages at start */
   readonly headCount: number;
@@ -33,6 +34,7 @@ function truncateToolOutput(msg: ChatMessage, maxLen: number): ChatMessage {
   return { ...msg, content: text.slice(0, maxLen) + "... [truncated]" };
 }
 
+/** Rule-based conversation compressor keeping head/tail messages and truncating tool output. */
 export class ContextCompressor implements ConversationCompactor {
   private opts: CompressorOptions;
 

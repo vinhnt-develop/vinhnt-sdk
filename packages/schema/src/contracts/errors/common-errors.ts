@@ -1,5 +1,6 @@
 import { VntError } from "./base.js";
 
+/** Generic kernel-level failure. */
 export class KernelError extends VntError {
   public readonly code = "KERNEL_ERROR";
   public readonly retryable = false;
@@ -10,6 +11,7 @@ export class KernelError extends VntError {
   }
 }
 
+/** Thrown when a circuit breaker is open (calls rejected until it resets). */
 export class CircuitBreakerOpenError extends VntError {
   public readonly code = "KERNEL_CIRCUIT_OPEN";
   public readonly retryable = true;
@@ -20,6 +22,7 @@ export class CircuitBreakerOpenError extends VntError {
   }
 }
 
+/** Thrown when a tool receives invalid input. */
 export class ToolInputError extends VntError {
   public readonly code = "TOOL_INPUT_ERROR";
   public readonly retryable = false;
@@ -30,6 +33,7 @@ export class ToolInputError extends VntError {
   }
 }
 
+/** Thrown when a resource access is denied. */
 export class PermissionDeniedError extends VntError {
   public readonly code = "PERMISSION_DENIED";
   public readonly retryable = false;
@@ -40,6 +44,7 @@ export class PermissionDeniedError extends VntError {
   }
 }
 
+/** Thrown when a value fails validation. */
 export class ValidationError extends VntError {
   public readonly code = "VALIDATION_ERROR";
   public readonly retryable = false;
@@ -50,6 +55,7 @@ export class ValidationError extends VntError {
   }
 }
 
+/** Thrown when an operation times out. */
 export class TimeoutError extends VntError {
   public readonly code = "TIMEOUT";
   public readonly retryable = true;
@@ -60,6 +66,7 @@ export class TimeoutError extends VntError {
   }
 }
 
+/** Thrown on a network-level failure. */
 export class NetworkError extends VntError {
   public readonly code = "NETWORK_ERROR";
   public readonly retryable = true;
@@ -70,6 +77,7 @@ export class NetworkError extends VntError {
   }
 }
 
+/** Thrown when a rate limit is exceeded; may carry a retry-after delay. */
 export class RateLimitError extends VntError {
   public readonly code = "RATE_LIMIT";
   public readonly retryable = true;
@@ -82,6 +90,7 @@ export class RateLimitError extends VntError {
   }
 }
 
+/** Thrown when authentication fails. */
 export class AuthenticationError extends VntError {
   public readonly code = "AUTHENTICATION_ERROR";
   public readonly retryable = false;
@@ -92,6 +101,7 @@ export class AuthenticationError extends VntError {
   }
 }
 
+/** Thrown on invalid configuration. */
 export class ConfigurationError extends VntError {
   public readonly code = "CONFIGURATION_ERROR";
   public readonly retryable = false;
@@ -102,6 +112,7 @@ export class ConfigurationError extends VntError {
   }
 }
 
+/** Thrown when a plugin operation fails. */
 export class PluginError extends VntError {
   public readonly code = "PLUGIN_ERROR";
   public readonly retryable = false;

@@ -4,6 +4,7 @@ export const KNOWN_PROMPT_TIERS = ["stable", "context", "volatile"] as const;
 /** Prompt tier — open string for extensibility. */
 export type PromptTier = string;
 
+/** Inferred type of {@link PromptAssemblySchema}. */
 export interface PromptAssembly {
   readonly stable: string;
   readonly context: string;
@@ -13,6 +14,7 @@ export interface PromptAssembly {
   readonly metadata: Readonly<Record<string, unknown>>;
 }
 
+/** Inferred type of {@link CompressionSummarySchema}. */
 export interface CompressionSummary {
   readonly originalMessageCount: number;
   readonly compressedMessageCount: number;

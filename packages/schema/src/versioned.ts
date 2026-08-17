@@ -20,6 +20,7 @@ export const SchemaVersionedBaseSchema = z.object({
   /** Payload — kept open so a newer version with added optional fields still parses. */
   data: z.unknown(),
 });
+/** Inferred type of {@link SchemaVersionedBaseSchema}. */
 export type SchemaVersionedBase = z.infer<typeof SchemaVersionedBaseSchema>;
 
 /**
@@ -37,6 +38,7 @@ export interface SchemaMigration<From = unknown, To = unknown> {
   note: string;
 }
 
+/** Metadata describing a deprecated schema field. */
 export interface DeprecationNote {
   since: string;
   removalDate: string;
@@ -58,12 +60,14 @@ export function deprecated<T extends z.ZodTypeAny>(
   return schema;
 }
 
+/** Whether a schema field's deprecation has passed its removal date. */
 export function isExpiredDeprecation(schema: z.ZodTypeAny, today = new Date()): boolean {
   const note = (schema as z.ZodTypeAny & { [DEPRECATION_SYMBOL]?: DeprecationNote })[DEPRECATION_SYMBOL];
   if (!note) return false;
   return today.toISOString().slice(0, 10) >= note.removalDate;
 }
 
+/** Options for building a {@link VersionedSchema}. */
 export interface VersionedSchemaOptions {
   /** Stable kind, e.g. "run-event", "session". */
   kind: string;
@@ -75,6 +79,7 @@ export interface VersionedSchemaOptions {
   current: number;
 }
 
+/** Versioned schema with parse/upcast support. */
 export interface VersionedSchema<T = unknown> {
   readonly kind: string;
   readonly current: number;
@@ -89,6 +94,7 @@ export interface VersionedSchema<T = unknown> {
   upcastFrom(version: number, payload: unknown): unknown;
 }
 
+/** Build a {@link VersionedSchema} from options. */
 export function versionedSchema<T = unknown>(opts: VersionedSchemaOptions): VersionedSchema<T> {
   const byStep = new Map<number, SchemaMigration>();
   for (const m of opts.migrations) {
@@ -161,8 +167,10 @@ export const DurableEventEnvelopeSchema = z.object({
   /** Open payload — tolerant of added optional fields. */
   data: z.unknown(),
 });
+/** Wire/storage identity of a persisted durable event. */
 export type DurableEventEnvelope = z.infer<typeof DurableEventEnvelopeSchema>;
 
+/** Producer definition of one durable event type. */
 export interface DurableEventDefinition<TData = unknown> {
   type: string;
   /** Current data schema version emitted by this producer. */

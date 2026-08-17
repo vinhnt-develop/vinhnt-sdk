@@ -1,6 +1,7 @@
 import { VntError } from "./base.js";
 import type { AgentId } from "../branded.js";
 
+/** Thrown when an agent id cannot be found in the registry. */
 export class AgentNotFoundError extends VntError {
   public readonly code = "AGENT_NOT_FOUND";
   public readonly retryable = false;
@@ -11,6 +12,7 @@ export class AgentNotFoundError extends VntError {
   }
 }
 
+/** Thrown when an agent config fails validation. */
 export class AgentValidationError extends VntError {
   public readonly code = "AGENT_VALIDATION_ERROR";
   public readonly retryable = false;
@@ -23,6 +25,7 @@ export class AgentValidationError extends VntError {
   }
 }
 
+/** Thrown when an agent is denied access to a resource. */
 export class AgentPermissionDenied extends VntError {
   public readonly code = "AGENT_PERMISSION_DENIED";
   public readonly retryable = false;

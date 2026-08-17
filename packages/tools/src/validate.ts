@@ -2,6 +2,7 @@ import type { z} from "zod";
 import { ZodError } from "zod";
 import { ToolInputError as SchemaToolInputError } from "@vinhnt-sdk/schema";
 
+/** Thrown when tool input fails Zod validation. */
 export class ToolInputError extends SchemaToolInputError {
   public readonly code = "TOOL_INPUT_ERROR";
   public readonly retryable = false;
@@ -16,6 +17,7 @@ export class ToolInputError extends SchemaToolInputError {
   }
 }
 
+/** Validate tool input against a Zod schema, throwing {@link ToolInputError} on failure. */
 export function validateInput<T>(toolId: string, schema: z.ZodSchema<T>, input: unknown): T {
   try {
     return schema.parse(input);
@@ -27,6 +29,7 @@ export function validateInput<T>(toolId: string, schema: z.ZodSchema<T>, input: 
   }
 }
 
+/** Create a reusable validator bound to a tool id. */
 export function createValidator<T>(toolId: string, schema: z.ZodSchema<T>): (input: unknown) => T {
   return (input: unknown) => validateInput(toolId, schema, input);
 }

@@ -10,6 +10,7 @@ import type { PgDb } from "./migration.js";
  * transaction; duplicate event ids are ignored (idempotent).
  * Expects the schema to be created via {@link pushPgSchema} beforehand.
  */
+/** Postgres-backed {@link RunEventStore} with sequence + snapshot support. */
 export class DrizzlePgRunEventStore implements RunEventStore {
   private readonly db: PgDb;
   private listeners = new Set<RunEventListener>();

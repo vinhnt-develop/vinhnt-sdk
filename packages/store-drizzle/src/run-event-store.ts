@@ -10,6 +10,7 @@ import { createDb, pushSchema } from "./migration.js";
  * Sequence allocation and event append are performed inside a single
  * transaction; duplicate event ids are ignored (idempotent).
  */
+/** SQLite-backed {@link RunEventStore} with sequence + snapshot support. */
 export class DrizzleRunEventStore implements RunEventStore {
   private readonly db: BetterSQLite3Database;
   private listeners = new Set<RunEventListener>();

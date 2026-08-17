@@ -11,20 +11,24 @@ import { buildPermissionRules } from "@vinhnt-sdk/permission";
 import { commandPattern } from "@vinhnt-sdk/tools";
 import { PermissionRequested, PermissionReplied } from "@vinhnt-sdk/event";
 
+/** Result of an approval check: allow, deny, or needs approval. */
 export type ApprovalDecision = "allow" | "deny" | "approval_required";
 
+/** A user-approved allow/deny rule for a tool call pattern. */
 export interface DynamicRule {
   toolName: string;
   pattern: string;
   decision: "allow" | "deny";
 }
 
+/** Outcome of {@link PermissionGate.checkTool}. */
 export interface PermissionCheckResult {
   allowed: boolean;
   reason?: string;
   needsApproval?: boolean;
 }
 
+/** Dependencies required by {@link PermissionGate}. */
 export interface PermissionGateDeps {
   readonly store: RunEventStore;
   readonly eventBus?: EventBus;
@@ -62,6 +66,7 @@ function parseToolPattern(expr: string): { toolName: string; pattern: string } |
   return { toolName: m[1]!, pattern: m[2] || "*" };
 }
 
+/** Enforces 4-phase permission gating: global rules, agent perms, dynamic rules, risk defaults. */
 export class PermissionGate {
   private globalPermissionRules?: AgentRule[];
   private dynamicRules: DynamicRule[] = [];

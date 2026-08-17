@@ -9,6 +9,7 @@ export type AgentMode = string;
 /** Behaviour mode: determines which tools the agent can use. Build = full access, Plan = read-only. */
 export type AgentBehaviourMode = "build" | "plan" | (string & {});
 
+/** Inferred type of {@link AgentProfileSchema}. */
 export interface AgentProfile {
   readonly name: string;
   readonly description: string;
@@ -18,6 +19,7 @@ export interface AgentProfile {
   readonly hidden?: boolean;
 }
 
+/** Inferred type of {@link AgentCapabilitiesSchema}. */
 export interface AgentCapabilities {
   readonly tools?: readonly string[];
   readonly models?: readonly string[];
@@ -26,6 +28,7 @@ export interface AgentCapabilities {
   readonly thinking?: boolean;
 }
 
+/** Inferred type of {@link AgentRuleSchema}. */
 export interface AgentRule {
   readonly effect: "allow" | "deny" | "ask";
   readonly target: string;
@@ -33,6 +36,7 @@ export interface AgentRule {
   readonly reason?: string;
 }
 
+/** Inferred type of {@link AgentRulesetSchema}. */
 export interface AgentRuleset {
   readonly rules?: readonly AgentRule[];
   readonly allowedRisks?: readonly string[];
@@ -41,6 +45,7 @@ export interface AgentRuleset {
   readonly inheritFromParent?: boolean;
 }
 
+/** Inferred type of {@link AgentPermissionsSchema}. */
 export interface AgentPermissions {
   readonly mode?: AgentMode;
   readonly ruleset?: AgentRuleset;
@@ -51,6 +56,7 @@ export interface AgentPermissions {
   readonly maxTokens?: number;
 }
 
+/** Inferred type of {@link AgentConfigSchema}. */
 export interface AgentConfig {
   readonly id: AgentId;
   readonly profile: AgentProfile;

@@ -8,11 +8,13 @@
 
 export type DescriptionIssueCode = "empty" | "too-short" | "no-verb" | "vague" | "placeholder" | "too-long";
 
+/** A single description-lint problem found. */
 export interface ToolDescriptionIssue {
   readonly code: DescriptionIssueCode;
   readonly message: string;
 }
 
+/** Lint report for one tool description. */
 export interface ToolDescriptionReport {
   readonly tool: string;
   readonly description: string;

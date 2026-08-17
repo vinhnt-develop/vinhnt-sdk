@@ -10,6 +10,7 @@ import type { PgDb } from "./migration.js";
  * Message search uses a case-insensitive `ILIKE` scan over message content.
  * Expects the schema to be created via {@link pushPgSchema} beforehand.
  */
+/** Postgres-backed {@link SessionStore}. */
 export class DrizzlePgSessionStore implements SessionStore {
   private readonly db: PgDb;
 

@@ -11,6 +11,7 @@ import { ToolPermissionDenied, RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { ModelProvider } from "@vinhnt-sdk/schema";
 
+/** Dependencies required by {@link handleToolError}. */
 export interface ToolErrorRouterDeps {
   readonly store: { emitEvent(event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;

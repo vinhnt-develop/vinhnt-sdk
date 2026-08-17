@@ -5,10 +5,12 @@ import type { ToolCallOutcome } from "./termination.js";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 
+/** Dependencies required by {@link processToolResults}. */
 export interface ToolResultProcessorDeps {
   readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;
 }
 
+/** Aggregated outcome of processing a batch of tool results. */
 export interface ToolResultProcessorResult {
   toolCallCount: number;
   recentCalls: RecentCall[];

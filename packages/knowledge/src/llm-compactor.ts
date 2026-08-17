@@ -1,6 +1,7 @@
 import type { CompressionSummary, ChatMessage, ModelProvider, ConversationCompactor } from "@vinhnt-sdk/schema";
 import { getTextContent } from "@vinhnt-sdk/schema";
 
+/** Tuning for {@link LlmCompactor}: protected messages, token budget and summary prompt. */
 export interface LlmCompactorOptions {
   /** Always protect this many messages at start */
   readonly headCount: number;
@@ -29,6 +30,7 @@ function approximateTokens(text: string, charsPerToken: number): number {
   return Math.ceil(text.length / charsPerToken);
 }
 
+/** LLM-powered conversation compressor that summarizes overflow via a {@link ModelProvider}. */
 export class LlmCompactor implements ConversationCompactor {
   private readonly model: ModelProvider;
   private readonly opts: LlmCompactorOptions;

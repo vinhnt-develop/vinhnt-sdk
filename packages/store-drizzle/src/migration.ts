@@ -3,6 +3,7 @@ import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { sql } from "drizzle-orm";
 import Database from "better-sqlite3";
 
+/** A named migration applied once, transactionally. */
 export type Migration = {
   id: string;
   up: (db: BetterSQLite3Database) => void;

@@ -17,10 +17,14 @@ export function raceWithAbort<T>(promise: Promise<T>, signal: AbortSignal, runId
   });
 }
 
+/** Default cap on steps per run. */
 export const DEFAULT_MAX_STEPS = 25;
+/** Default cap on tool calls per step. */
 export const DEFAULT_MAX_TOOL_CALLS_PER_STEP = 20;
+/** Consecutive identical calls that trigger doom-loop detection. */
 export const DOOM_LOOP_THRESHOLD = 3;
 
+/** System prompt guiding the model to correct a failed tool call. */
 export const SELF_CORRECT_PROMPT = `A tool call just failed. Analyze the error and try a corrected approach.
 
 Guidelines:
@@ -29,6 +33,7 @@ Guidelines:
 - If the problem is permanent (e.g., invalid request), explain to the user.
 - Do NOT repeat the same failing call.`;
 
+/** A recorded tool invocation used for doom-loop detection. */
 export interface RecentCall {
   id: string;
   args: unknown;
@@ -65,6 +70,7 @@ function fnv1a(str: string): number {
   return h >>> 0;
 }
 
+/** Detect whether the same tool+args repeated the last `threshold` calls. */
 export function detectDoomLoop(recentCalls: RecentCall[], name: string, args: unknown, threshold = DOOM_LOOP_THRESHOLD): boolean {
   if (recentCalls.length < threshold) return false;
   const last = recentCalls.slice(-threshold);

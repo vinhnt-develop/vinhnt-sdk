@@ -2,11 +2,13 @@ import type { AgentConfig, AgentRule, AgentRuleset, AgentPermissions } from "@vi
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { matchPermission } from "./evaluator.js";
 
+/** Result of evaluating a resource against a ruleset. */
 export type PermissionResult =
   | { decision: "allow" }
   | { decision: "deny"; reason: string }
   | { decision: "ask"; reason: string };
 
+/** Normalize a permissions shorthand into a full {@link AgentRuleset}. */
 export function normalizePermissions(p: AgentPermissions | undefined): AgentRuleset {
   if (!p) return {};
   if (p.ruleset) return { ...p.ruleset };
@@ -25,6 +27,7 @@ export function normalizePermissions(p: AgentPermissions | undefined): AgentRule
   return result as AgentRuleset;
 }
 
+/** Merge a child ruleset over its parent (child deny rules override parent allows). */
 export function mergeRulesets(child: AgentRuleset, parent: AgentRuleset): AgentRuleset {
   const parentRules = parent.rules ?? [];
   const childRules = child.rules ?? [];
@@ -56,6 +59,7 @@ export function mergeRulesets(child: AgentRuleset, parent: AgentRuleset): AgentR
   return result as AgentRuleset;
 }
 
+/** Compute the effective ruleset for an agent, merging ancestor permissions. */
 export function resolveEffectivePermissions(
   agent: AgentConfig,
   ancestors?: AgentConfig[],
@@ -115,6 +119,7 @@ export function evaluatePermission(
 
 
 
+/** Return whether the given risk level is allowed by the ruleset. */
 export function checkRiskAllowed(
   ruleset: AgentRuleset | undefined,
   risk: string,

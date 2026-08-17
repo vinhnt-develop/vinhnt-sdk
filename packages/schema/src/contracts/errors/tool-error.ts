@@ -1,5 +1,6 @@
 import { VntError } from "./base.js";
 
+/** Thrown when a tool name cannot be found in the registry. */
 export class ToolNotFoundError extends VntError {
   public readonly code = "TOOL_NOT_FOUND";
   public readonly retryable = false;
@@ -10,6 +11,7 @@ export class ToolNotFoundError extends VntError {
   }
 }
 
+/** Thrown when a tool execution fails. */
 export class ToolExecutionError extends VntError {
   public readonly code = "TOOL_EXECUTION_ERROR";
   public readonly retryable = false;
@@ -23,6 +25,7 @@ export class ToolExecutionError extends VntError {
   }
 }
 
+/** Thrown when a tool call is denied by permission rules. */
 export class ToolPermissionDenied extends VntError {
   public readonly code = "TOOL_PERMISSION_DENIED";
   public readonly retryable = false;

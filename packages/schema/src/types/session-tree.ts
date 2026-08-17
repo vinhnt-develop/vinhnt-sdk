@@ -1,5 +1,6 @@
 import type { SessionId, AgentId } from "../contracts/branded.js";
 
+/** A node in the hierarchical session tree. */
 export interface SessionNode {
   readonly id: SessionId;
   readonly title: string;
@@ -11,12 +12,14 @@ export interface SessionNode {
   readonly depth: number;
 }
 
+/** Serializable snapshot of the session tree. */
 export interface SessionTreeSnapshot {
   readonly rootId: SessionId | null;
   readonly nodes: SessionNode[];
   readonly activeSessionId: SessionId | null;
 }
 
+/** Navigation pointer describing a node's relatives in the tree. */
 export interface TreeCursor {
   readonly sessionId: SessionId;
   readonly depth: number;
@@ -38,6 +41,7 @@ export const KNOWN_SESSION_TREE_EVENT_TYPES = [
 /** Session tree event type — open string for extensibility. */
 export type SessionTreeEventType = string;
 
+/** Event emitted when the session tree changes. */
 export interface SessionTreeEvent {
   readonly type: SessionTreeEventType;
   readonly sessionId: SessionId;

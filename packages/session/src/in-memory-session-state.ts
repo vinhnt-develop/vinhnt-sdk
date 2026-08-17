@@ -1,6 +1,7 @@
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { SessionRuntimeState, SessionRuntimeSnapshot } from "./session-state.js";
 
+/** In-memory {@link SessionRuntimeState} implementation. */
 export class InMemorySessionState implements SessionRuntimeState {
   private _messages: ChatMessage[] = [];
   private _context = new Map<string, unknown>();

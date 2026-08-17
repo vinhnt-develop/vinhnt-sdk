@@ -23,6 +23,7 @@ export interface RetryOptions {
   readonly retryableStatuses?: readonly number[];
 }
 
+/** Default retry policy (3 retries, exponential backoff capped at 30s). */
 export const DEFAULT_RETRY_OPTIONS: Required<Omit<RetryOptions, "fixedBackoffMs" | "retryableStatuses">> = {
   maxRetries: 3,
   baseBackoffMs: 1000,

@@ -7,6 +7,7 @@ import type { ToolExecutionPlan } from "./step-executor.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";
 import { toolDomain } from "./kernel-utils.js";
 
+/** Dependencies required by {@link handleApproval}. */
 export interface ApprovalHandlerDeps {
   readonly store: { emitEvent(event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly permissionGate: PermissionGate;

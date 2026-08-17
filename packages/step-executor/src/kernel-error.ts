@@ -1,5 +1,6 @@
 import { VntError } from "@vinhnt-sdk/schema";
 
+/** Kernel-level failure codes for {@link KernelError}. */
 export type KernelErrorCode =
   | "session_busy"
   | "cancelled"
@@ -12,6 +13,7 @@ export type KernelErrorCode =
   | "timeout"
   | "model_unavailable";
 
+/** Kernel-level failure with a typed {@link KernelErrorCode}. */
 export class KernelError extends VntError {
   public readonly code: string;
   public readonly retryable = false;

@@ -1,5 +1,6 @@
 import type { PromptAssembly, MemoryEntry } from "@vinhnt-sdk/schema";
 
+/** Inputs assembled into the final prompt: identity, guidance, context and memory entries. */
 export interface PromptBuilderOptions {
   readonly identity: string;
   readonly toolGuidance: string;
@@ -9,6 +10,7 @@ export interface PromptBuilderOptions {
   readonly sessionMetadata: string;
 }
 
+/** Build a stable+contextual {@link PromptAssembly} from the given options. */
 export function buildPrompt(options: PromptBuilderOptions): PromptAssembly {
   const stable = [
     options.identity,

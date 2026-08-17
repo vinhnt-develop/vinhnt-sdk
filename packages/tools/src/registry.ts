@@ -5,6 +5,7 @@ import type { DomainManifest, DomainSummary } from "./domain.js";
 import { summarizeDomains } from "./domain.js";
 import { validateInput } from "./validate.js";
 
+/** Filter options for listing tools. */
 export type ToolFilter = {
   risk?: ToolRisk;
   ids?: string[];
@@ -18,6 +19,7 @@ export interface ToolPermissionRule {
   effect: "allow" | "deny" | "ask";
 }
 
+/** Tool set materialized for the model after filtering by permission rules. */
 export interface ToolMaterialization {
   /** Provider-facing definitions the model is ALLOWED to see/invoke. */
   definitions: readonly ToolDefinition[];
@@ -29,6 +31,7 @@ export interface ToolMaterialization {
   getTool(id: string): ToolDefinition | undefined;
 }
 
+/** Registers tools and domains, filters by permission, and materializes model-visible tool sets. */
 export class ToolRegistry {
   protected readonly tools = new Map<string, ToolDefinition>();
   protected readonly domains = new Map<string, DomainManifest>();

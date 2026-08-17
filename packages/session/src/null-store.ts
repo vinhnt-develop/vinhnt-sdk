@@ -5,6 +5,7 @@ const nullSessionId = "null-session" as SessionId;
 const nullForkSessionId = "null-session-fork" as SessionId;
 const nullMessageId = "null-message" as MessageId;
 
+/** No-op {@link RunEventStore} used for testing. */
 export class NullRunEventStore implements RunEventStore {
   private listeners = new Set<(event: RunEvent) => void>();
   private events: RunEvent[] = [];
@@ -46,6 +47,7 @@ export class NullRunEventStore implements RunEventStore {
   }
 }
 
+/** No-op {@link SessionStore} used for testing. */
 export class NullSessionStore implements SessionStore {
   async createSession(_title?: string, _parentSessionId?: string): Promise<Session> {
     return {
