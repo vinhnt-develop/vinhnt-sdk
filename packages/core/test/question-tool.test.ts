@@ -57,17 +57,17 @@ describe("createQuestionTool", () => {
     expect(result).toEqual({ answer: "Option B" });
   });
 
-  it("validates input via QuestionSchema â€” rejects missing header", async () => {
+  it("validates input via QuestionSchema — rejects missing header", async () => {
     const tool = createQuestionTool(async () => "ok");
     await expect(tool.execute({ question: "No header" })).rejects.toThrow("question");
   });
 
-  it("validates input via QuestionSchema â€” rejects missing question", async () => {
+  it("validates input via QuestionSchema — rejects missing question", async () => {
     const tool = createQuestionTool(async () => "ok");
     await expect(tool.execute({ header: "No question" })).rejects.toThrow("question");
   });
 
-  it("validates input via QuestionSchema â€” rejects empty header", async () => {
+  it("validates input via QuestionSchema — rejects empty header", async () => {
     const tool = createQuestionTool(async () => "ok");
     await expect(tool.execute({ header: "", question: "test" })).rejects.toThrow();
   });

@@ -1,0 +1,842 @@
+{
+  "D:/template/vinhnt-sdk/packages/core/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/logger.ts": {
+    "lines": 60.97,
+    "functions": 37.5,
+    "statements": 60.97,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/model.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/tracer.ts": {
+    "lines": 87.3,
+    "functions": 88.88,
+    "statements": 87.3,
+    "branches": 93.75
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/workspace.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 95.65
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/yaml-frontmatter.ts": {
+    "lines": 93.87,
+    "functions": 100,
+    "statements": 93.87,
+    "branches": 87.09
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/agent-factory.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 96.59
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/agent-file-loader.ts": {
+    "lines": 27.53,
+    "functions": 60,
+    "statements": 27.53,
+    "branches": 60
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/agent-parser.ts": {
+    "lines": 97.05,
+    "functions": 100,
+    "statements": 97.05,
+    "branches": 87.8
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/agent-registry.ts": {
+    "lines": 39.31,
+    "functions": 46.15,
+    "statements": 39.31,
+    "branches": 61.53
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/behaviour-profiles.ts": {
+    "lines": 95.83,
+    "functions": 66.66,
+    "statements": 95.83,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/create-agent-tool.ts": {
+    "lines": 88.57,
+    "functions": 100,
+    "statements": 88.57,
+    "branches": 64.86
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/delegate-batch-tool.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/delegate-tool.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 93.33
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/execution-engine.ts": {
+    "lines": 96.77,
+    "functions": 100,
+    "statements": 96.77,
+    "branches": 68.42
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/list-agents-tool.ts": {
+    "lines": 94.73,
+    "functions": 100,
+    "statements": 94.73,
+    "branches": 94.44
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/agent/spawn-agent-tool.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 74.35
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/event-bus/bridge.ts": {
+    "lines": 83.33,
+    "functions": 75,
+    "statements": 83.33,
+    "branches": 76.92
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/fakes/fake-agent-registry.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 95.65
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/fakes/fake-approval-store.ts": {
+    "lines": 61.29,
+    "functions": 58.33,
+    "statements": 61.29,
+    "branches": 92.85
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/fakes/fake-model.ts": {
+    "lines": 97.87,
+    "functions": 100,
+    "statements": 97.87,
+    "branches": 87.5
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/fakes/fake-store.ts": {
+    "lines": 79.36,
+    "functions": 80,
+    "statements": 79.36,
+    "branches": 83.33
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/fakes/fake-tool.ts": {
+    "lines": 100,
+    "functions": 75,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/kernel-session.ts": {
+    "lines": 98.14,
+    "functions": 100,
+    "statements": 98.14,
+    "branches": 85.5
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/kernel-types.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/kernel.ts": {
+    "lines": 76.72,
+    "functions": 75.29,
+    "statements": 76.72,
+    "branches": 80.6
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/lifecycle-manager.ts": {
+    "lines": 32.65,
+    "functions": 28.57,
+    "statements": 32.65,
+    "branches": 50
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/run-loop.ts": {
+    "lines": 73.55,
+    "functions": 66.66,
+    "statements": 73.55,
+    "branches": 78.57
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/state-machine.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/kernel/sub-agent-runner.ts": {
+    "lines": 40.57,
+    "functions": 80,
+    "statements": 40.57,
+    "branches": 51.42
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/plugin/manager.ts": {
+    "lines": 100,
+    "functions": 56.66,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/plugin/plugin-file-loader.ts": {
+    "lines": 33.73,
+    "functions": 66.66,
+    "statements": 33.73,
+    "branches": 80
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/plugin/plugin-tool-provider.ts": {
+    "lines": 87.5,
+    "functions": 60,
+    "statements": 87.5,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/session/run-coordinator.ts": {
+    "lines": 2.6,
+    "functions": 0,
+    "statements": 2.6,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/skill/create-skill-tool.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 90
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/skill/skill-def-registry.ts": {
+    "lines": 4.28,
+    "functions": 0,
+    "statements": 4.28,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/skill/skill-file-loader.ts": {
+    "lines": 27.14,
+    "functions": 60,
+    "statements": 27.14,
+    "branches": 60
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/skill/skill-parser.ts": {
+    "lines": 15.38,
+    "functions": 0,
+    "statements": 15.38,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/skill/skill-tool.ts": {
+    "lines": 94.17,
+    "functions": 100,
+    "statements": 94.17,
+    "branches": 80
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/tool/bridge.ts": {
+    "lines": 6.97,
+    "functions": 0,
+    "statements": 6.97,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/tool/builtin-provider.ts": {
+    "lines": 12.3,
+    "functions": 0,
+    "statements": 12.3,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/tool/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/tool/provider-helpers.ts": {
+    "lines": 9.3,
+    "functions": 0,
+    "statements": 9.3,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/core/src/tool/runtime.ts": {
+    "lines": 4.3,
+    "functions": 0,
+    "statements": 4.3,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/event/src/definition.ts": {
+    "lines": 63.63,
+    "functions": 50,
+    "statements": 63.63,
+    "branches": 75
+  },
+  "D:/template/vinhnt-sdk/packages/event/src/events.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/event/src/global-bus.ts": {
+    "lines": 58.62,
+    "functions": 71.42,
+    "statements": 58.62,
+    "branches": 85.71
+  },
+  "D:/template/vinhnt-sdk/packages/event/src/in-memory-bus.ts": {
+    "lines": 85.13,
+    "functions": 90,
+    "statements": 85.13,
+    "branches": 82.85
+  },
+  "D:/template/vinhnt-sdk/packages/event/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/event/src/migration.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/bridge.ts": {
+    "lines": 95.31,
+    "functions": 100,
+    "statements": 95.31,
+    "branches": 85.18
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/diagnostics.ts": {
+    "lines": 97,
+    "functions": 100,
+    "statements": 97,
+    "branches": 88.63
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/file-sync.ts": {
+    "lines": 59.37,
+    "functions": 50,
+    "statements": 59.37,
+    "branches": 77.77
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/lsp-context-source.ts": {
+    "lines": 65.78,
+    "functions": 83.33,
+    "statements": 65.78,
+    "branches": 78.57
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/lsp-tools.ts": {
+    "lines": 99.52,
+    "functions": 100,
+    "statements": 99.52,
+    "branches": 63.79
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/pool.ts": {
+    "lines": 61.29,
+    "functions": 77.41,
+    "statements": 61.29,
+    "branches": 67.69
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/server-registry.ts": {
+    "lines": 97.69,
+    "functions": 72.72,
+    "statements": 97.69,
+    "branches": 92.3
+  },
+  "D:/template/vinhnt-sdk/packages/lsp/src/types.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/model-caller/src/index.ts": {
+    "lines": 87.39,
+    "functions": 100,
+    "statements": 87.39,
+    "branches": 53.76
+  },
+  "D:/template/vinhnt-sdk/packages/permission/src/checker.ts": {
+    "lines": 98.86,
+    "functions": 100,
+    "statements": 98.86,
+    "branches": 94.91
+  },
+  "D:/template/vinhnt-sdk/packages/permission/src/evaluator.ts": {
+    "lines": 88.88,
+    "functions": 100,
+    "statements": 88.88,
+    "branches": 87.87
+  },
+  "D:/template/vinhnt-sdk/packages/permission/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/permission/src/saved.ts": {
+    "lines": 80,
+    "functions": 70,
+    "statements": 80,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/plugin/src/index.ts": {
+    "lines": 47.91,
+    "functions": 75,
+    "statements": 47.91,
+    "branches": 78.57
+  },
+  "D:/template/vinhnt-sdk/packages/plugin/src/npm-loader.ts": {
+    "lines": 70.05,
+    "functions": 53.33,
+    "statements": 70.05,
+    "branches": 75.8
+  },
+  "D:/template/vinhnt-sdk/packages/provider-anthropic/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/provider-deepseek/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/provider-ollama/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/provider-openai-compatible/src/build-request.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 88.23
+  },
+  "D:/template/vinhnt-sdk/packages/provider-openai-compatible/src/convert.ts": {
+    "lines": 95.92,
+    "functions": 100,
+    "statements": 95.92,
+    "branches": 76.66
+  },
+  "D:/template/vinhnt-sdk/packages/provider-openai-compatible/src/error.ts": {
+    "lines": 98,
+    "functions": 90.9,
+    "statements": 98,
+    "branches": 86.79
+  },
+  "D:/template/vinhnt-sdk/packages/provider-openai-compatible/src/openai-compatible-provider.ts": {
+    "lines": 90.15,
+    "functions": 100,
+    "statements": 90.15,
+    "branches": 87.87
+  },
+  "D:/template/vinhnt-sdk/packages/provider-openai-compatible/src/sse.ts": {
+    "lines": 93.18,
+    "functions": 100,
+    "statements": 93.18,
+    "branches": 67.39
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox-container/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox-host/src/index.ts": {
+    "lines": 73.97,
+    "functions": 80,
+    "statements": 73.97,
+    "branches": 50
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox-process/src/index.ts": {
+    "lines": 77.5,
+    "functions": 77.77,
+    "statements": 77.5,
+    "branches": 66.66
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox/src/error.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox/src/factory.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox/src/kill-tree.ts": {
+    "lines": 69.04,
+    "functions": 100,
+    "statements": 69.04,
+    "branches": 81.81
+  },
+  "D:/template/vinhnt-sdk/packages/sandbox/src/shell-parser.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 93.1
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/versioned.ts": {
+    "lines": 97.7,
+    "functions": 100,
+    "statements": 97.7,
+    "branches": 86.2
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/wildcard.ts": {
+    "lines": 5.26,
+    "functions": 0,
+    "statements": 5.26,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/branded.ts": {
+    "lines": 30.76,
+    "functions": 0,
+    "statements": 30.76,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/api/api.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/api/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/api/webview.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/api/ws-event.ts": {
+    "lines": 60,
+    "functions": 0,
+    "statements": 60,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/errors/agent-error.ts": {
+    "lines": 12.9,
+    "functions": 0,
+    "statements": 12.9,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/errors/base.ts": {
+    "lines": 7.14,
+    "functions": 0,
+    "statements": 7.14,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/errors/common-errors.ts": {
+    "lines": 13.18,
+    "functions": 0,
+    "statements": 13.18,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/errors/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/errors/run-error.ts": {
+    "lines": 16,
+    "functions": 0,
+    "statements": 16,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/errors/tool-error.ts": {
+    "lines": 12.9,
+    "functions": 0,
+    "statements": 12.9,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/agent-config.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/prompt.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/request-context.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/run-event.ts": {
+    "lines": 97.84,
+    "functions": 33.33,
+    "statements": 97.84,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/run-status.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/contracts/schema/session.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/agent-step.ts": {
+    "lines": 48.07,
+    "functions": 0,
+    "statements": 48.07,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/agent.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/approval.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/model.ts": {
+    "lines": 33.33,
+    "functions": 0,
+    "statements": 33.33,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/prompt.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/result.ts": {
+    "lines": 33.33,
+    "functions": 0,
+    "statements": 33.33,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/session-tree.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/schema/src/types/skill.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/security/src/env-sanitizer.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 90.9
+  },
+  "D:/template/vinhnt-sdk/packages/session/src/in-memory-session-state.ts": {
+    "lines": 84,
+    "functions": 90,
+    "statements": 84,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/session/src/session-tree.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 98.71
+  },
+  "D:/template/vinhnt-sdk/packages/session/src/title.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/approval-handler.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 73.33
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/circuit-breaker.ts": {
+    "lines": 96.42,
+    "functions": 100,
+    "statements": 96.42,
+    "branches": 89.58
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/kernel-utils.ts": {
+    "lines": 88.46,
+    "functions": 85.71,
+    "statements": 88.46,
+    "branches": 88.46
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/self-correction.ts": {
+    "lines": 45.05,
+    "functions": 100,
+    "statements": 45.05,
+    "branches": 14.28
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/step-executor.ts": {
+    "lines": 87.85,
+    "functions": 82.35,
+    "statements": 87.85,
+    "branches": 76.74
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/termination.ts": {
+    "lines": 19.48,
+    "functions": 20,
+    "statements": 19.48,
+    "branches": 72.72
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/tool-context-builder.ts": {
+    "lines": 95.91,
+    "functions": 75,
+    "statements": 95.91,
+    "branches": 52.63
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/tool-error-router.ts": {
+    "lines": 73.43,
+    "functions": 33.33,
+    "statements": 73.43,
+    "branches": 66.66
+  },
+  "D:/template/vinhnt-sdk/packages/step-executor/src/tool-result-processor.ts": {
+    "lines": 85.18,
+    "functions": 100,
+    "statements": 85.18,
+    "branches": 82.35
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle-pg/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle-pg/src/migration.ts": {
+    "lines": 27.27,
+    "functions": 0,
+    "statements": 27.27,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle-pg/src/run-event-store.ts": {
+    "lines": 1.77,
+    "functions": 0,
+    "statements": 1.77,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle-pg/src/schema.ts": {
+    "lines": 85.71,
+    "functions": 0,
+    "statements": 85.71,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle-pg/src/session-store.ts": {
+    "lines": 1.35,
+    "functions": 0,
+    "statements": 1.35,
+    "branches": 0
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle/src/migration.ts": {
+    "lines": 78.72,
+    "functions": 66.66,
+    "statements": 78.72,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle/src/run-event-store.ts": {
+    "lines": 94.73,
+    "functions": 100,
+    "statements": 94.73,
+    "branches": 69.44
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle/src/schema.ts": {
+    "lines": 85.71,
+    "functions": 0,
+    "statements": 85.71,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-drizzle/src/session-store.ts": {
+    "lines": 91.37,
+    "functions": 100,
+    "statements": 91.37,
+    "branches": 65.06
+  },
+  "D:/template/vinhnt-sdk/packages/store-memory/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/store-memory/src/run-event-store.ts": {
+    "lines": 93.4,
+    "functions": 92.3,
+    "statements": 93.4,
+    "branches": 89.47
+  },
+  "D:/template/vinhnt-sdk/packages/store-memory/src/session-store.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 75
+  },
+  "D:/template/vinhnt-sdk/packages/tool-saga/src/index.ts": {
+    "lines": 100,
+    "functions": 100,
+    "statements": 100,
+    "branches": 92
+  },
+  "D:/template/vinhnt-sdk/packages/tools-shell/src/shell-tool.ts": {
+    "lines": 31.19,
+    "functions": 33.33,
+    "statements": 31.19,
+    "branches": 100
+  },
+  "D:/template/vinhnt-sdk/packages/tools-shell/src/tool-sandbox.ts": {
+    "lines": 14.81,
+    "functions": 20,
+    "statements": 14.81,
+    "branches": 50
+  }
+}

@@ -9,21 +9,40 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   },
-  "files": ["dist", "LICENSE", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
     "directory": "packages/store-drizzle-pg"
   },
   "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/store-drizzle-pg",
-  "bugs": { "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues" },
-  "keywords": ["vnt", "store", "drizzle", "postgres", "persistence", "agent"],
-  "publishConfig": { "access": "public" },
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "store",
+    "drizzle",
+    "postgres",
+    "persistence",
+    "agent"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",

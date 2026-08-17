@@ -20,16 +20,20 @@
     "lint": "turbo lint",
     "clean": "turbo clean",
     "check:deps": "node scripts/check-dep-graph.mjs",
+    "check:hygiene": "node scripts/check-hygiene.mjs",
+    "check": "pnpm check:deps && pnpm check:hygiene",
+    "test:coverage": "vitest run --coverage",
+    "quality": "node scripts/verify-export-jsdoc.mjs && node scripts/check-export-map.mjs",
+    "check:coverage": "node scripts/check-coverage.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "publish-packages": "changeset publish",
-    "pub:beta": "pnpm build && pnpm publish -r --tag beta --access public",
-    "pub:release": "pnpm build && pnpm publish -r --access public"
+    "publish-packages": "pnpm build && pnpm test:run && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.0",
     "@eslint/js": "^9.39.5",
     "@types/node": "^26.1.2",
+    "@vitest/coverage-v8": "^3.2.7",
     "eslint": "9",
     "turbo": "^2.5.0",
     "typescript": "6.0.3",
