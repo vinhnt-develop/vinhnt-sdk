@@ -1,9 +1,37 @@
+/**
+ * @module @vinhnt-sdk/model-caller
+ * Model caller kernel primitive: build requests, run non-streaming/streaming
+ * generation, fire model-call hooks, count tokens and emit token/cost events.
+ */
+
 import type { RunId, RequestContext, KnownRunEvent, ToolChoice, ResponseFormat, StreamOptions } from "@vinhnt-sdk/schema";
-import type { ChatMessage, ModelProvider, ModelRequest, ModelResponse, ModelRegistry } from "../model.js";
+import type {
+  ChatMessage,
+  ModelProvider,
+  ModelRequest,
+  ModelResponse,
+  ModelRegistry,
+} from "@vinhnt-sdk/schema";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
-import type { PluginManager } from "../plugin.js";
-import type { Logger } from "../logger.js";
 import { getTextContent } from "@vinhnt-sdk/schema";
+
+/**
+ * Minimal structural hook surface used by the model caller.
+ *
+ * Hosts (e.g. core's `PluginManager`) only need to implement `fireHook` for
+ * the model-call hook names; no direct dependency on the full plugin contract.
+ */
+export interface ModelCallerPluginHooks {
+  fireHook(
+    name: "onChatParams" | "onBeforeModelCall" | "onAfterModelCall" | "onTokenStreamed",
+    data: Record<string, unknown>,
+  ): Promise<{ modified: Record<string, unknown> } | null>;
+}
+
+/** Minimal structural logger used by the model caller (host Logger satisfies it). */
+export interface ModelCallerLogger {
+  info(message: string, ...args: unknown[]): void;
+}
 
 export interface ModelCallerDeps {
   defaultModel: ModelProvider;
@@ -11,8 +39,8 @@ export interface ModelCallerDeps {
   maxTokens: number;
   thinkingBudget: number;
   thinkingPrompt: string;
-  readonly pluginManager: PluginManager | undefined;
-  readonly logger: Logger | undefined;
+  readonly pluginManager: ModelCallerPluginHooks | undefined;
+  readonly logger: ModelCallerLogger | undefined;
   emitEvent(event: Omit<KnownRunEvent, "sequence">, persist?: boolean): Promise<void>;
   modelForRun(runId: RunId): ModelProvider | undefined;
   setModelForRun(runId: RunId, model: ModelProvider): void;

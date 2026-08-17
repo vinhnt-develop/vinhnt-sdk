@@ -6,7 +6,7 @@ import type { RecentCall } from "./kernel-utils.js";
 import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort } from "./kernel-utils.js";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
-import type { ModelCaller } from "./model-caller.js";
+import type { ModelCaller } from "@vinhnt-sdk/model-caller";
 import type { ModelProvider } from "../model.js";
 import type { PluginManager } from "../plugin.js";
 import type { PermissionGate } from "./permission-gate.js";

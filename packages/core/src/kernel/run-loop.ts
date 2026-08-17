@@ -7,7 +7,7 @@ import type { RunEventStore, SessionStore } from "../session/store.js";
 import type { PluginManager } from "../plugin.js";
 import type { SessionRuntimeState } from "../session/session-state.js";
 import { KernelError } from "./kernel-error.js";
-import type { ModelCaller } from "./model-caller.js";
+import type { ModelCaller } from "@vinhnt-sdk/model-caller";
 import type { PermissionGate } from "./permission-gate.js";
 import type { StepExecutor } from "./step-executor.js";
 import type { ToolSaga } from "@vinhnt-sdk/tool-saga";

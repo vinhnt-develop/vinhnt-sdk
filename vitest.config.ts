@@ -5,6 +5,7 @@ export default defineConfig({
     projects: [
       'packages/core',
       'packages/event',
+      'packages/model-caller',
       'packages/schema',
       'packages/tools',
       'packages/tool-saga',

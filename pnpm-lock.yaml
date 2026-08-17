@@ -90,6 +90,9 @@ importers:
       '@vinhnt-sdk/knowledge':
         specifier: workspace:*
         version: link:../knowledge
+      '@vinhnt-sdk/model-caller':
+        specifier: workspace:*
+        version: link:../model-caller
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
@@ -135,6 +138,15 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/model-caller:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
 
   packages/plugin:
     dependencies:

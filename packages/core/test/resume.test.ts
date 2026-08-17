@@ -3,7 +3,7 @@ import type { RequestContext, RunId } from "@vinhnt-sdk/schema";
 import type { ChatMessage, ModelProvider, ModelRequest } from "../src/model.js";
 import { runLoop } from "../src/kernel/run-loop.js";
 import type { RunLoopDeps, RunLoopInput } from "../src/kernel/run-loop.js";
-import { ModelCaller } from "../src/kernel/model-caller.js";
+import { ModelCaller } from "@vinhnt-sdk/model-caller";
 import { PermissionGate } from "../src/kernel/permission-gate.js";
 import { StepExecutor, type StepExecutorDeps } from "../src/kernel/step-executor.js";
 import { ToolSaga } from "@vinhnt-sdk/tool-saga";

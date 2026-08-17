@@ -11,7 +11,7 @@ import { detectDoomLoop, hashArgs, DOOM_LOOP_THRESHOLD, raceWithAbort, toolDomai
 import type { ToolCallOutcome } from "./termination.js";
 import { inferStepType } from "@vinhnt-sdk/schema";
 import type { KnownRunEvent } from "@vinhnt-sdk/schema";
-import type { ModelCaller } from "./model-caller.js";
+import type { ModelCaller } from "@vinhnt-sdk/model-caller";
 import type { ModelProvider } from "../model.js";
 import type { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { buildToolContext, type MetadataRef } from "./tool-context-builder.js";

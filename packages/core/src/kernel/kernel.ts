@@ -25,7 +25,7 @@ export const DEFAULT_THINKING_PROMPT = "Analyze the user's request and the conve
 import { RunStateMachine } from "./run-state.js";
 import type { RunState } from "./run-state.js";
 import { PermissionGate, type ApprovalDecision } from "./permission-gate.js";
-import { ModelCaller } from "./model-caller.js";
+import { ModelCaller } from "@vinhnt-sdk/model-caller";
 import { StepExecutor } from "./step-executor.js";
 import { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { createRunContext, type RunContext } from "./run-context.js";
@@ -192,7 +192,9 @@ export class AgentKernel {
       maxTokens,
       thinkingBudget: this.thinkingBudget,
       thinkingPrompt,
-      pluginManager: normalized.pluginManager,
+      // Core's PluginManager structurally satisfies the model-caller hook
+      // contract (named generic fireHook — castable, matches by design).
+      pluginManager: normalized.pluginManager as import("@vinhnt-sdk/model-caller").ModelCallerPluginHooks | undefined,
       logger: redactingLogger,
       emitEvent: (event, persist) => this.emitEvent(event, persist),
       modelForRun: (runId) => this.stateMachine.getModelForRun(runId),

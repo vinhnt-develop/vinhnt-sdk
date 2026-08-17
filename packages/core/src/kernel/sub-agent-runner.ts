@@ -2,7 +2,7 @@ import type { RequestContext, RequestId, AgentId, AgentConfig, KnownRunEvent, Ru
 import type { SessionRuntimeState } from "../session/session-state.js";
 import type { RunEventStore } from "../session/store.js";
 import type { AgentRegistry } from "../agent/agent-registry.js";
-import type { ModelCaller } from "./model-caller.js";
+import type { ModelCaller } from "@vinhnt-sdk/model-caller";
 import type { RunStateMachine } from "./run-state.js";
 import { createSubAgent } from "../agent/agent-factory.js";
 import type { SubAgentParams } from "../agent/agent-factory.js";
