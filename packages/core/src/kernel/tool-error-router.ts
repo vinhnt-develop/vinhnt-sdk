@@ -1,4 +1,5 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
+import { sanitizeEnv } from "@vinhnt-sdk/security";
 import type { ChatMessage } from "../model.js";
 import { normalize } from "node:path";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
@@ -130,7 +131,7 @@ export async function tryReadFileFallback(
       sessionId: sessionId ?? "", runId,
       agentId: deps.currentAgent?.id ?? "",
       agentName: deps.currentAgent?.profile.name ?? "",
-      signal: runAbort.signal, env: process.env as Record<string, string>,
+      signal: runAbort.signal, env: sanitizeEnv(),
       ask: async (input) => {
         return deps.permissionGate.askForTool(
           "read_file", tc.toolId, runId, sessionId ?? "",

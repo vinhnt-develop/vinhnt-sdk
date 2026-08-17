@@ -25,12 +25,19 @@ const ALL_EVENT_DEFS: Record<string, EventDefinition> = Object.fromEntries(
 
 export async function emitEvent(deps: KernelSessionDeps, event: Omit<KnownRunEvent, "sequence">, persist = true): Promise<void> {
   const effectivePersist = deps.noStore ? false : persist;
-  const seq = effectivePersist ? await deps.store.getNextSequence(event.runId) : 0;
-  await deps.store.append({
-    ...event,
-    sequence: seq,
-    ...(effectivePersist === false ? { persist: false as const } : {}),
-  } as RunEvent);
+  let seq: number;
+  if (effectivePersist && deps.store.appendWithSequence) {
+    // Atomic sequence allocation + append avoids the getNextSequence/append
+    // race that could drop a concurrent event assigned the same sequence.
+    seq = await deps.store.appendWithSequence({ ...event, sequence: 0 } as RunEvent);
+  } else {
+    seq = effectivePersist ? await deps.store.getNextSequence(event.runId) : 0;
+    await deps.store.append({
+      ...event,
+      sequence: seq,
+      ...(effectivePersist === false ? { persist: false as const } : {}),
+    } as RunEvent);
+  }
 
   if (deps.eventBus) {
     const def = ALL_EVENT_DEFS[event.type];

@@ -166,6 +166,8 @@ export interface ToolDefinitionLike {
   readonly name?: string;
   readonly description: string;
   readonly risk: string;
+  /** If true, tool prompts its own permission via `ctx.ask` (single approval path). */
+  readonly selfApproving?: boolean;
   readonly inputSchema?: unknown;
   /** OpenAI tool format — for direct API passthrough (optional). */
   readonly type?: "function";

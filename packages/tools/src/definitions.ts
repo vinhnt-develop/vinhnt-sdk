@@ -17,6 +17,12 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> extends Too
   readonly timeoutMs?: number;
   /** Permission action key for the gate (e.g. "edit", "shell"). Optional; defaults to risk. */
   readonly permissionAction?: string;
+  /**
+   * If true, the tool prompts its own permission dialog via `ctx.ask` during
+   * execute (with `savePatterns`). The kernel gate must NOT double-approve —
+   * it defers to the tool's single ask and only checks allow/deny rules.
+   */
+  readonly selfApproving?: boolean;
   /** Zod schema for runtime input validation (carried from defineTool). */
   readonly inputZodSchema?: z.ZodType<TInput>;
   /** Zod schema for runtime output validation (carried from defineTool). */

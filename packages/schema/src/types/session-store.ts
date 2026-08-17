@@ -17,6 +17,14 @@ export interface RunEventStore {
   exists?(eventId: string): Promise<boolean>;
   list(runId: string, afterSequence?: number): Promise<readonly RunEvent[]>;
   getNextSequence(aggregateId: string): Promise<number>;
+  /**
+   * Atomically allocate the next sequence for the aggregate and append the event
+   * in a single operation, then return the assigned sequence.
+   *
+   * Implementations that cannot do this atomically should fall back to
+   * `getNextSequence() + append()` for the returned value.
+   */
+  appendWithSequence?(event: RunEvent): Promise<number>;
   saveSnapshot(runId: string, state: Record<string, unknown>): Promise<void>;
   getSnapshot(runId: string): Promise<RunEventSnapshot | null>;
   getSnapshotAfterSequence(runId: string, sequence: number): Promise<RunEventSnapshot | null>;

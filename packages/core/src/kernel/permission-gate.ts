@@ -204,6 +204,8 @@ export class PermissionGate {
   /**
    * Ask the user to approve a tool call.
    * Routes through ApprovalStore and plugin hooks.
+   * When reply is "always", `savePatterns` are persisted as allow rules so
+   * future matching calls auto-approve (without opening the whole tool).
    * Returns "once", "always", or "reject".
    */
   async askForTool(
@@ -215,10 +217,19 @@ export class PermissionGate {
     _agentId: string,
     traceId: string,
     pluginManager?: PluginManager,
+    savePatterns?: readonly string[],
   ): Promise<PermissionReply> {
     if (this.autoApproval) return "once";
 
-    return this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager);
+    const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager);
+
+    if (reply === "always" && savePatterns && savePatterns.length > 0) {
+      for (const pattern of savePatterns) {
+        if (!pattern || pattern === "*") continue;
+        this.addDynamicRule({ toolName, pattern, decision: "allow" });
+      }
+    }
+    return reply;
   }
 
   private async askViaApprovalStore(

@@ -13,7 +13,7 @@ import type { KnownRunEvent } from "@vinhnt-sdk/schema";
 import type { ModelCaller } from "./model-caller.js";
 import type { ModelProvider } from "../model.js";
 import type { ToolSaga } from "./tool-saga.js";
-import { buildToolContext } from "./tool-context-builder.js";
+import { buildToolContext, type MetadataRef } from "./tool-context-builder.js";
 import { handleApproval as handleApprovalFn } from "./approval-handler.js";
 import { handleToolError as handleToolErrorFn } from "./tool-error-router.js";
 import { runSelfCorrection as runSelfCorrectionFn } from "./self-correction.js";
@@ -211,6 +211,7 @@ export class StepExecutor {
           return { tc, result: "not-found" as const };
         }
 
+        // P1-F: onBeforeToolExecution fired below — right before tool.execute.
         const permResult = this.deps.permissionGate.checkTool(
           tc.toolName, tool.risk, tc.args as Record<string, unknown>, this.deps.currentAgent,
         );
@@ -224,8 +225,9 @@ export class StepExecutor {
         }
 
         const compensationRef: { current: (() => Promise<void>) | null } = { current: null };
-        const toolCtx = await this.buildToolContext(tc, runId, sessionId, ctx, runAbort, tool, compensationRef);
-        const approved = await this.handleApproval(permResult, tc, toolCtx, runId, ctx, sessionId, messages);
+        const metadataRef: MetadataRef = { };
+        const toolCtx = await this.buildToolContext(tc, runId, sessionId, ctx, runAbort, tool, compensationRef, metadataRef);
+        const approved = await this.handleApproval(permResult, tc, toolCtx, runId, ctx, sessionId, messages, tool.selfApproving);
         if (!approved) return { tc, result: "rejected" as const };
 
         safeEmit(this.deps.store, {
@@ -245,10 +247,16 @@ export class StepExecutor {
         });
         const effectiveInput = invHookResult?.modified?.input ?? tc.args;
 
-        // Re-validate permission after plugin hook may have modified input
-        if (effectiveInput !== tc.args) {
+        // P1-F: onBeforeToolExecution — intercept/modify input right before execution.
+        const beforeExecResult = await this.deps.pluginManager?.fireHook("onBeforeToolExecution", {
+          toolId: tc.toolId, toolName: tc.toolName, input: effectiveInput,
+        });
+        const execInput = beforeExecResult?.modified?.input ?? effectiveInput;
+
+        // Re-validate permission if the execution hook modified the input further.
+        if (execInput !== effectiveInput) {
           const rePerm = this.deps.permissionGate.checkTool(
-            tc.toolName, tool.risk, effectiveInput as Record<string, unknown>, this.deps.currentAgent,
+            tc.toolName, tool.risk, execInput as Record<string, unknown>, this.deps.currentAgent,
           );
           if (!rePerm.allowed && !rePerm.needsApproval) {
             safeEmit(this.deps.store, {
@@ -263,18 +271,24 @@ export class StepExecutor {
         const toolTimeout = tool.timeoutMs;
         const execPromise = toolTimeout
           ? Promise.race([
-              tool.execute(effectiveInput, toolCtx),
+              tool.execute(execInput, toolCtx),
               new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Tool "${tc.toolName}" timed out after ${toolTimeout}ms`)), toolTimeout)),
             ])
-          : tool.execute(effectiveInput, toolCtx);
+          : tool.execute(execInput, toolCtx);
 
         try {
           const output = await raceWithAbort(execPromise, runAbort.signal, runId);
 
-          const compHookResult = await this.deps.pluginManager?.fireHook("onToolCompleted", {
+          // P1-F: onAfterToolExecution — intercept/modify the raw tool output.
+          const afterExecResult = await this.deps.pluginManager?.fireHook("onAfterToolExecution", {
             toolId: tc.toolId, toolName: tc.toolName, output,
           });
-          const effectiveOutput = compHookResult?.modified?.output ?? output;
+          const execOutput = afterExecResult?.modified?.output ?? output;
+
+          const compHookResult = await this.deps.pluginManager?.fireHook("onToolCompleted", {
+            toolId: tc.toolId, toolName: tc.toolName, output: execOutput,
+          });
+          const effectiveOutput = compHookResult?.modified?.output ?? execOutput;
 
           this.deps.saga.record({
             toolId: tc.toolId, toolName: tc.toolName,
@@ -292,7 +306,11 @@ export class StepExecutor {
           safeEmit(this.deps.store, {
             id: crypto.randomUUID(), runId, type: "tool.completed",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-            data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), output: effectiveOutput },
+            data: {
+              toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName),
+              output: effectiveOutput,
+              ...(metadataRef.current ? { metadata: metadataRef.current } : {}),
+            },
           });
 
           return { tc, result: "success" as const, output: effectiveOutput };
@@ -344,27 +362,29 @@ export class StepExecutor {
 
   private async buildToolContext(
     tc: ToolExecutionPlan, runId: RunId, sessionId: string | undefined,
-    ctx: RequestContext, runAbort: AbortController, _tool: ToolDefinition,
+    ctx: RequestContext, runAbort: AbortController, tool: ToolDefinition,
     compensationRef: { current: (() => Promise<void>) | null },
+    metadataRef: MetadataRef,
   ): Promise<ToolContext> {
-    return buildToolContext(tc, runId, sessionId, ctx, runAbort, compensationRef, {
+    return buildToolContext(tc, runId, sessionId, ctx, runAbort, compensationRef, metadataRef, {
       pluginManager: this.deps.pluginManager,
       permissionGate: this.deps.permissionGate,
       currentAgent: this.deps.currentAgent,
+      toolRisk: tool.risk,
     });
   }
 
   private async handleApproval(
     permResult: PermissionCheckResult, tc: ToolExecutionPlan, toolCtx: ToolContext,
     runId: RunId, ctx: RequestContext, _sessionId: string | undefined,
-    messages: ChatMessage[],
+    messages: ChatMessage[], selfApproving?: boolean,
   ): Promise<boolean> {
     return handleApprovalFn(permResult, tc, toolCtx, runId, ctx, _sessionId, messages, {
       store: this.deps.store,
       permissionGate: this.deps.permissionGate,
       pluginManager: this.deps.pluginManager,
       currentAgent: this.deps.currentAgent,
-    });
+    }, selfApproving);
   }
 
   private async runSelfCorrection(

@@ -22,18 +22,24 @@ export class EventBusBridge {
 
     // Persist durable events to RunEventStore with correct sequence
     if (def.durable && meta?.aggregateId) {
-      this.store.getNextSequence(meta.aggregateId).then((seq) => {
+      const persist = async () => {
         const event: RunEvent = {
           id: crypto.randomUUID(),
           runId: meta.aggregateId as RunId,
-          sequence: seq,
+          sequence: 0,
           type: def.type,
           occurredAt: new Date().toISOString(),
           traceId: (meta.traceId ?? crypto.randomUUID()) as TraceId,
           data: data as Record<string, unknown>,
         };
-        this.store.append(event).catch((err) => console.error("[EventBusBridge] Failed to persist event:", err));
-      }).catch((err) => console.error("[EventBusBridge] Failed to get next sequence:", err));
+        if (this.store.appendWithSequence) {
+          await this.store.appendWithSequence(event);
+        } else {
+          const seq = await this.store.getNextSequence(meta.aggregateId as RunId);
+          await this.store.append({ ...event, sequence: seq });
+        }
+      };
+      persist().catch((err) => console.error("[EventBusBridge] Failed to persist event:", err));
     }
   }
 

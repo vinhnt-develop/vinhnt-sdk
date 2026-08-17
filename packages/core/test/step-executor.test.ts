@@ -210,6 +210,108 @@ describe("StepExecutor", () => {
       expect(saveApproval).toHaveBeenCalledOnce();
     });
 
+    it("self-approving tool asks approval exactly once (tool-level, no gate double-approve)", async () => {
+      const askForTool = vi.fn().mockResolvedValue("always" as const);
+      deps.permissionGate = {
+        checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
+        askForTool,
+        checkSavedApproval: vi.fn().mockReturnValue(false),
+        saveApproval: vi.fn(),
+        saveRejection: vi.fn(),
+      } as never;
+
+      // The shell tool asks via ctx.ask inside execute (single approval path).
+      let askedSavePatterns: readonly string[] | undefined;
+      const execute = vi.fn().mockImplementation(async (_input, ctx: { ask(input: { savePatterns?: readonly string[] }): Promise<string> }) => {
+        const reply = await ctx.ask({ permission: "shell", resource: "npm install express", reason: "run", savePatterns: ["npm install *"] });
+        askedSavePatterns = undefined;
+        return { stdout: "ok", stderr: "", exitCode: 0 };
+      }).mockName("execSavePatterns");
+      (deps.findTool as vi.Mock).mockReturnValue({ execute, risk: "write", selfApproving: true });
+
+      const executor2 = new StepExecutor(deps);
+      await executor2.executeToolCalls(
+        [makeToolCall({ toolName: "execute_command", args: { command: "npm install express" } })],
+        [], 1, "run1", { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      // Gate-level handleApproval defers to the tool's own ask → exactly one ask.
+      expect(askForTool).toHaveBeenCalledTimes(1);
+      expect(execute).toHaveBeenCalledOnce();
+    });
+
+    it("self-approving tool defers gate approval but flag is propagated to handleApproval", async () => {
+      const askForTool = vi.fn().mockResolvedValue("always" as const);
+      deps.permissionGate = {
+        checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
+        askForTool,
+        checkSavedApproval: vi.fn().mockReturnValue(false),
+        saveApproval: vi.fn(),
+        saveRejection: vi.fn(),
+      } as never;
+
+      const execute = vi.fn().mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 });
+      (deps.findTool as vi.Mock).mockReturnValue({ execute, risk: "write", selfApproving: true });
+
+      const executor2 = new StepExecutor(deps);
+      await executor2.executeToolCalls(
+        [makeToolCall({ toolName: "execute_command", args: { command: "git status" } })],
+        [], 1, "run1", { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      // A self-approving tool that never calls ctx.ask inside execute must still
+      // run: the gate defers (returns true) and the tool decides its own ask.
+      expect(execute).toHaveBeenCalledOnce();
+      expect(askForTool).toHaveBeenCalledTimes(0);
+    });
+
+    it("emits tool.metadata via ctx.metadata on tool.completed", async () => {
+      const emitEvent = vi.fn().mockResolvedValue(undefined);
+      deps.store = { emitEvent };
+
+      const execute = vi.fn().mockImplementation(async (_input, ctx: { metadata(input: { title?: string; metadata?: Record<string, unknown> }): void }) => {
+        ctx.metadata({ title: "my-title" });
+        ctx.metadata({ metadata: { filesTouched: 2 } });
+        ctx.metadata({ title: "my-title-v2" });
+        return "file content";
+      });
+      (deps.findTool as vi.Mock).mockReturnValue({ execute, risk: "read" });
+
+      const executor2 = new StepExecutor(deps);
+      await executor2.executeToolCalls(
+        [makeToolCall()], [], 1, "run1",
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      const completedEvent = emitEvent.mock.calls.map((c) => c[0]).find((e: Record<string, unknown>) => e.type === "tool.completed");
+      expect(completedEvent).toBeDefined();
+      expect((completedEvent as { data?: { metadata?: Record<string, unknown> } }).data?.metadata).toEqual({
+        title: "my-title-v2",
+        filesTouched: 2,
+      });
+    });
+
+    it("emits tool.completed without metadata when ctx.metadata not called", async () => {
+      const emitEvent = vi.fn().mockResolvedValue(undefined);
+      deps.store = { emitEvent };
+
+      const execute = vi.fn().mockResolvedValue("file content");
+      (deps.findTool as vi.Mock).mockReturnValue({ execute, risk: "read" });
+
+      const executor2 = new StepExecutor(deps);
+      await executor2.executeToolCalls(
+        [makeToolCall()], [], 1, "run1",
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      const completedEvent = emitEvent.mock.calls.map((c) => c[0]).find((e: Record<string, unknown>) => e.type === "tool.completed");
+      expect((completedEvent as { data?: { metadata?: Record<string, unknown> } }).data?.metadata).toBeUndefined();
+    });
+
     it("stops when run is aborted", async () => {
       const abort = new AbortController();
       abort.abort();

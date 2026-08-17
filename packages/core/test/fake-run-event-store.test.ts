@@ -70,4 +70,28 @@ describe("FakeRunEventStore", () => {
     await store.append(ephemeral);
     expect(received).toHaveLength(2); // ephemeral events re-notify
   });
+
+  it("appendWithSequence assigns unique monotonically increasing sequences atomically", async () => {
+    const store = new FakeRunEventStore();
+    const seq1 = await store.appendWithSequence(makeEvent({ id: "evt_001", sequence: 0 }));
+    const seq2 = await store.appendWithSequence(makeEvent({ id: "evt_002", sequence: 0 }));
+    const seq3 = await store.appendWithSequence(makeEvent({ id: "evt_003", sequence: 0 }));
+
+    expect(seq1).toBe(1);
+    expect(seq2).toBe(2);
+    expect(seq3).toBe(3);
+
+    const events = await store.list("run_abc");
+    expect(events.map((e) => e.sequence)).toEqual([1, 2, 3]);
+  });
+
+  it("appendWithSequence under concurrent calls never produces duplicate sequences", async () => {
+    const store = new FakeRunEventStore();
+    const results = await Promise.all(
+      Array.from({ length: 20 }, (_, i) => store.appendWithSequence(makeEvent({ id: `evt_${i}`, sequence: 0 }))),
+    );
+    const unique = new Set(results);
+    expect(unique.size).toBe(20);
+    expect(results.sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+  });
 });

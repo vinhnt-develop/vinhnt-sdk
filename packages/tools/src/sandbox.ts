@@ -7,48 +7,9 @@
 
 import type { ToolDefinition, ToolContext } from "./definitions.js";
 import { parseCommand } from "./shell-parser.js";
+import { sanitizeEnv } from "@vinhnt-sdk/security";
 
-// ---------------------------------------------------------------------------
-// Environment sanitization
-// ---------------------------------------------------------------------------
-
-const SENSITIVE_ENV_PREFIXES = [
-  "AWS_",
-  "GOOGLE_",
-  "AZURE_",
-  "GITHUB_",
-  "GITLAB_",
-  "npm_",
-  "NODE_",
-];
-
-const SENSITIVE_ENV_KEYS = new Set([
-  "HOME",
-  "USER",
-  "USERNAME",
-  "PASSWORD",
-  "SECRET",
-  "TOKEN",
-  "API_KEY",
-  "APIKEY",
-  "PRIVATE_KEY",
-  "DATABASE_URL",
-  "DB_URL",
-  "REDIS_URL",
-]);
-
-function sanitizeEnv(): Record<string, string | undefined> {
-  const safe: Record<string, string | undefined> = {};
-  for (const [key, value] of Object.entries(process.env)) {
-    const upperKey = key.toUpperCase();
-    const isSensitive = SENSITIVE_ENV_PREFIXES.some((p) => upperKey.startsWith(p)) ||
-      SENSITIVE_ENV_KEYS.has(upperKey);
-    if (!isSensitive) {
-      safe[key] = value;
-    }
-  }
-  return safe;
-}
+export { sanitizeEnv };
 
 /**
  * Create an empty environment with only explicitly allowed variables.
@@ -231,7 +192,7 @@ class HostSandbox implements ProcessSandbox {
           windowsHide: true,
           env: options.env && Object.keys(options.env).length > 0
             ? { ...sanitizeEnv(), ...options.env }
-            : undefined,
+            : sanitizeEnv(),
         },
         (err, stdout, stderr) => {
           const durationMs = Date.now() - start;

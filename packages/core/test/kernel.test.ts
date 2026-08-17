@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
+import { InMemoryEventBus } from "../src/event-bus/in-memory-bus.js";
 import { buildAgentIdentity } from "../src/kernel/kernel-session.js";
 import { DefaultPluginManager } from "../src/plugin/manager.js";
 import type { ConversationCompactor } from "../src/session/compaction.js";
@@ -151,6 +152,81 @@ describe("AgentKernel", () => {
     const completed = findEvent(events, "run.completed");
     expect(completed?.data.status).toBe("failed");
     expect(completed?.data.totalSteps).toBe(2);
+  });
+
+  it("TC04c: per-run saga — compensation registered on a tool fires when the run fails (rollbackAll)", async () => {
+    const compensated = vi.fn(async () => {});
+    const loopTool = new FakeTool("loop_tool", async (_input, ctx) => {
+      ctx.setCompensation(async () => { await compensated(); });
+      return "Keep calling me!";
+    });
+    const model = new FakeModelProvider([
+      { content: "", toolCalls: [{ id: "call-1", name: "loop_tool", args: {} }] },
+      { content: "", toolCalls: [{ id: "call-2", name: "loop_tool", args: {} }] },
+      { content: "", toolCalls: [{ id: "call-3", name: "loop_tool", args: {} }] },
+    ]);
+
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model, store, tools: [loopTool], maxSteps: 2 });
+
+    const handle = kernel.run("Start loop", testCtx);
+    await handle.completed;
+
+    // The compensation recoded on the per-run saga must fire when the run fails.
+    await vi.waitFor(() => expect(compensated).toHaveBeenCalled());
+
+    // The instance (default) saga never holds per-run entries, so nothing leaked.
+    expect(kernel.getSaga().getEntries()).toEqual([]);
+  });
+
+  it("TC04d: streamRun yields that run's events and terminates on completion", async () => {
+    const model = new FakeModelProvider([{ content: "Hello streamed world!" }]);
+    const store = new FakeRunEventStore();
+    const bus = new InMemoryEventBus();
+    const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 10, eventBus: bus });
+
+    const handle = kernel.streamRun("Hi", testCtx);
+    const types: string[] = [];
+    for await (const event of handle.events) {
+      types.push(event.type);
+      if (event.type === "run.completed") break;
+    }
+
+    expect(types).toContain("run.started");
+    expect(types).toContain("step.started");
+    expect(types.at(-1)).toBe("run.completed");
+    expect(types.filter((t) => t === "run.completed").length).toBe(1);
+  });
+
+  it("TC04e: streamRun isolates concurrent runs — only events for its own runId", async () => {
+    const modelA = new FakeModelProvider([{ content: "A done" }]);
+    const modelB = new FakeModelProvider([{ content: "B done" }]);
+    const store = new FakeRunEventStore();
+    const bus = new InMemoryEventBus();
+    const kernelA = new AgentKernel({ model: modelA, store, tools: [], maxSteps: 10, eventBus: bus });
+    const kernelB = new AgentKernel({ model: modelB, store, tools: [], maxSteps: 10, eventBus: bus });
+
+    const handleA = kernelA.streamRun("Run A", testCtx);
+    const handleB = kernelB.streamRun("Run B", testCtx);
+
+    const typesA: string[] = [];
+    const typesB: string[] = [];
+    for await (const event of handleA.events) {
+      typesA.push(event.type);
+      if (event.type === "run.completed") break;
+    }
+    for await (const event of handleB.events) {
+      typesB.push(event.type);
+      if (event.type === "run.completed") break;
+    }
+
+    expect(typesA).toContain("run.started");
+    expect(typesA).toContain("run.completed");
+    expect(typesB).toContain("run.started");
+    expect(typesB).toContain("run.completed");
+    // No cross-contamination: each stream sees exactly one run.completed.
+    expect(typesA.filter((t) => t === "run.completed").length).toBe(1);
+    expect(typesB.filter((t) => t === "run.completed").length).toBe(1);
   });
 
   it("TC04b: maxSteps graceful — model produces text summary on last step, status succeeded", async () => {

@@ -15,6 +15,13 @@ export class NullRunEventStore implements RunEventStore {
     for (const listener of this.listeners) listener(event);
   }
 
+  async appendWithSequence(event: RunEvent): Promise<number> {
+    if (event.persist === false) return 0;
+    const seq = await this.getNextSequence(event.runId);
+    await this.append({ ...event, sequence: seq } as RunEvent);
+    return seq;
+  }
+
   async list(_runId: string, _afterSequence?: number): Promise<readonly RunEvent[]> {
     return [];
   }

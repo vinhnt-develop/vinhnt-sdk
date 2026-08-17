@@ -24,6 +24,8 @@ export interface ToolConfig<TInput = unknown, TOutput = unknown> {
   timeoutMs?: number;
   /** Permission action key for the gate (e.g. "edit", "shell"). Optional; defaults to risk. */
   permissionAction?: string;
+  /** If true, tool prompts its own permission via `ctx.ask` (kernel gate defers). */
+  selfApproving?: boolean;
   /** Optional LLM-facing JSON Schema override (e.g. to advertise `path` aliases). */
   jsonSchema?: NestedJsonSchema;
   /** Coerce raw model-agnostic input before validation (e.g. snake_case aliases). */
@@ -37,6 +39,7 @@ export interface Tool<TInput = unknown, TOutput = unknown> {
   readonly risk: ToolRisk;
   readonly timeoutMs?: number;
   readonly permissionAction?: string;
+  readonly selfApproving?: boolean;
   readonly input: z.ZodType<TInput>;
   /** Derive the provider-facing ToolDefinition (registers as `name`). */
   toDefinition(): ToolDefinition<TInput, TOutput>;
@@ -138,6 +141,7 @@ export function defineTool<TInput = unknown, TOutput = unknown>(
     risk: config.risk,
     timeoutMs: config.timeoutMs,
     permissionAction: config.permissionAction,
+    selfApproving: config.selfApproving,
     input: config.input,
     toDefinition(): ToolDefinition<TInput, TOutput> {
       return {
@@ -147,6 +151,7 @@ export function defineTool<TInput = unknown, TOutput = unknown>(
         inputSchema: config.jsonSchema ?? zodSchemaToNestedJsonSchema(config.input),
         timeoutMs: config.timeoutMs,
         permissionAction: config.permissionAction,
+        selfApproving: config.selfApproving,
         inputZodSchema: config.input,
         outputZodSchema: config.output,
         async execute(raw: unknown, ctx: ToolContext): Promise<TOutput> {

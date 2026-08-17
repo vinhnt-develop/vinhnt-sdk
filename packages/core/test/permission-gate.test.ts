@@ -362,6 +362,56 @@ describe("PermissionGate", () => {
       expect(types).toContain("permission.requested");
       expect(types).toContain("permission.replied");
     });
+
+    it("persists savePatterns as allow rules on 'always' without opening the whole tool", async () => {
+      const { gate, approvalStore } = makeGate();
+      approvalStore.queueReply("always");
+      const reply = await gate.askForTool(
+        "execute_command", "tc-1", "run-1", "sess-1", "run npm install",
+        "agent-1", "trace-1", undefined, ["npm install *"],
+      );
+      expect(reply).toBe("always");
+
+      // Pattern cover a matching command...
+      const matching = gate.checkTool("execute_command", "write", { command: "npm install express" }, undefined);
+      expect(matching.allowed).toBe(true);
+      // ...but not a different command.
+      const other = gate.checkTool("execute_command", "write", { command: "git status" }, undefined);
+      expect(other.allowed).toBe(false);
+      expect(other.needsApproval).toBe(true);
+    });
+
+    it("persists multiple savePatterns on 'always'", async () => {
+      const { gate, approvalStore } = makeGate();
+      approvalStore.queueReply("always");
+      await gate.askForTool(
+        "execute_command", "tc-1", "run-1", "sess-1", "install deps",
+        "agent-1", "trace-1", undefined, ["npm install *", "pnpm install *"],
+      );
+      expect(gate.checkTool("execute_command", "write", { command: "npm install lodash" }, undefined).allowed).toBe(true);
+      expect(gate.checkTool("execute_command", "write", { command: "pnpm install lodash" }, undefined).allowed).toBe(true);
+      expect(gate.checkTool("execute_command", "write", { command: "rm -rf node_modules" }, undefined).allowed).toBe(false);
+    });
+
+    it("does NOT persist savePatterns on 'once'", async () => {
+      const { gate, approvalStore } = makeGate();
+      approvalStore.queueReply("once");
+      await gate.askForTool(
+        "execute_command", "tc-1", "run-1", "sess-1", "run once",
+        "agent-1", "trace-1", undefined, ["npm install *"],
+      );
+      expect(gate.checkTool("execute_command", "write", { command: "npm install express" }, undefined).allowed).toBe(false);
+    });
+
+    it("ignores empty or wildcard savePatterns", async () => {
+      const { gate, approvalStore } = makeGate();
+      approvalStore.queueReply("always");
+      await gate.askForTool(
+        "execute_command", "tc-1", "run-1", "sess-1", "install",
+        "agent-1", "trace-1", undefined, ["", "*"],
+      );
+      expect(gate.getDynamicRules()).toHaveLength(0);
+    });
   });
 
   describe("rejection cascade", () => {

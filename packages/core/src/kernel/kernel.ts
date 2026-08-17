@@ -31,7 +31,7 @@ import { CircuitBreaker } from "./circuit-breaker.js";
 import { KernelError } from "./kernel-error.js";
 import type { KernelErrorCode } from "./kernel-error.js";
 import { runLoop as executeRunLoop } from "./run-loop.js";
-import type { RunLoopDeps } from "./run-loop.js";
+import type { RunLoopDeps, RunLoopResult } from "./run-loop.js";
 import { LifecycleManager, type LifecycleResource } from "./lifecycle-manager.js";
 import {
   emitEvent as sessionEmit,
@@ -83,6 +83,7 @@ export class AgentKernel {
   private readonly toolProviderRegistry: ToolProviderRegistry | undefined;
   private readonly sessionTitleGenerator: ((prompt: string) => Promise<string>) | undefined;
   private saga: ToolSaga;
+  private readonly runSagas = new Map<RunId, ToolSaga>();
   private readonly stepExecutor: StepExecutor;
   private currentAgent: AgentConfig | undefined;
   private currentDepth = 0;
@@ -460,10 +461,12 @@ this.stepExecutor = new StepExecutor({
       // Per-run saga (no instance-level mutation)
       const runSaga = new ToolSaga();
 
-      const promise = this.runLoop(effectivePrompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga).finally(() => {
-        this.stateMachine.runIdStack.pop();
-        this.runSessionStates.delete(runId);
-      });
+      const promise = this.runLoop(effectivePrompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga)
+        .then(() => undefined)
+        .finally(() => {
+          this.stateMachine.runIdStack.pop();
+          this.runSessionStates.delete(runId);
+        });
 
       return {
         runId,
@@ -523,6 +526,8 @@ this.stepExecutor = new StepExecutor({
         if (!abort) {
           throw new KernelError("session_busy", `Session "${sessionId}" is busy`);
         }
+        // Wire the handle's cancel() into the controller the run loop listens on.
+        abortController.signal.addEventListener("abort", () => abort.abort(), { once: true });
 
         this.runSessionStates.set(runId, this.sessionState);
 
@@ -550,14 +555,14 @@ this.stepExecutor = new StepExecutor({
         };
         eventHandlers.forEach(h => h(startEvent));
 
-        // Run the loop
-        await this.runLoop(effectivePrompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga);
-        
+        // Run the loop — it reports its terminal status through the return value.
+        const { totalSteps, status: runStatus } = await this.runLoop(effectivePrompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga);
+
         completed = true;
         result = {
           runId,
-          status: cancelled ? "cancelled" : "succeeded",
-          totalSteps: 0, // TODO: Get from run loop
+          status: cancelled ? "cancelled" : runStatus === "failed" ? "failed" : "succeeded",
+          totalSteps, // totalSteps from the run loop
         };
 
         // Emit agent.completed event
@@ -649,12 +654,12 @@ this.stepExecutor = new StepExecutor({
     agentOverride?: AgentConfig,
   ): { runId: RunId; events: AsyncIterable<KnownRunEvent> } {
     const handle = this.run(prompt, ctx, sessionId, userContentParts, agentOverride);
-    const eventDef = { type: "run.*", durable: { aggregate: "run" } } as never;
-    const events = this.eventBus?.stream(eventDef as never) ?? (async function* () {})();
-    
+    const eventBus = this.eventBus;
+    const events = eventBus ? streamRunEvents(eventBus, handle.runId, handle.completed) : (async function* () {})();
+
     return {
       runId: handle.runId,
-      events: events as AsyncIterable<KnownRunEvent>,
+      events,
     };
   }
 
@@ -690,7 +695,11 @@ this.stepExecutor = new StepExecutor({
   }
 
   /** Get the tool saga for inspecting completed tool calls and triggering rollbacks. */
-  getSaga(): ToolSaga {
+  getSaga(runId?: RunId): ToolSaga {
+    if (runId) {
+      const runSaga = this.runSagas.get(runId);
+      if (runSaga) return runSaga;
+    }
     return this.saga;
   }
 
@@ -805,7 +814,7 @@ this.stepExecutor = new StepExecutor({
     sessionId?: string, userContentParts?: readonly { type: string; text?: string; image?: string; mimeType?: string }[],
     agentOverride?: AgentConfig,
     runSaga?: ToolSaga,
-  ): Promise<void> {
+  ): Promise<RunLoopResult> {
     const runModel = this.modelCaller.getActiveModel(runId);
     const runSessionState = this.getRunSession(runId);
     const currentAgent = agentOverride ?? this.currentAgent;
@@ -820,6 +829,10 @@ this.stepExecutor = new StepExecutor({
     const runSagaInstance = runSaga ?? new ToolSaga();
     const prevAgent = this.stepExecutor.getCurrentAgent();
     this.stepExecutor.setCurrentAgent(currentAgent);
+    // Point the StepExecutor's compensation recorder at this run's saga so that
+    // record()/registerCompensation()/rollbackStep() operate on the same instance.
+    this.runSagas.set(runId, runSagaInstance);
+    this.stepExecutor.setSaga(runSagaInstance);
 
     const orchestratorDeps: RunLoopDeps = {
       modelCaller: this.modelCaller,
@@ -846,7 +859,7 @@ this.stepExecutor = new StepExecutor({
     };
 
     try {
-      await executeRunLoop(orchestratorDeps, {
+      const result = await executeRunLoop(orchestratorDeps, {
         prompt, runId, ctx, runAbort,
         ...(sessionId !== undefined ? { sessionId } : {}),
         ...(userContentParts !== undefined ? { userContentParts } : {}),
@@ -860,8 +873,12 @@ this.stepExecutor = new StepExecutor({
         emitFail: (rid, c, reason, steps, sid, totalIn, totalOut, dur) =>
           this.emitFail(rid, c, reason, steps, sid, totalIn, totalOut, dur),
       });
+      return result;
     } finally {
       this.stepExecutor.setCurrentAgent(prevAgent);
+      // Restore the instance saga as the default recorder for the next run.
+      this.stepExecutor.setSaga(this.saga);
+      this.runSagas.delete(runId);
     }
   }
 
@@ -873,4 +890,65 @@ this.stepExecutor = new StepExecutor({
     return sessionEmitFail(this.sessionDeps, rid, c, reason, steps, sid, totalIn, totalOut, dur);
   }
 
+}
+
+/**
+ * Stream the events of a single run from the event bus, filtered by run ID.
+ * Subscribes eagerly so no event published before the first `next()` is missed.
+ * Terminates when the run completes (or fails).
+ */
+function streamRunEvents(
+  eventBus: EventBus,
+  runId: RunId,
+  completed: Promise<unknown>,
+): AsyncIterable<KnownRunEvent> {
+  const queue: KnownRunEvent[] = [];
+  let notify: (() => void) | null = null;
+  let done = false;
+
+  const wake = () => {
+    const r = notify;
+    notify = null;
+    if (r) r();
+  };
+
+  const unsubscribe = eventBus.subscribeAll((event) => {
+    if (event.aggregateId !== runId) return;
+    queue.push(event as unknown as KnownRunEvent);
+    wake();
+  });
+  completed.then(wake, wake);
+
+  return {
+    [Symbol.asyncIterator]() {
+      const self = this;
+      return {
+        async next() {
+          while (!done) {
+            if (queue.length > 0) {
+              return { done: false, value: queue.shift()! };
+            }
+            const stopped = await Promise.race([
+              new Promise<boolean>((resolve) => { notify = () => resolve(false); }),
+              completed.then(() => true, () => true),
+            ]);
+            if (stopped) done = true;
+          }
+          unsubscribe();
+          // Drain any events that arrived after the run completed
+          if (queue.length > 0) {
+            return { done: false, value: queue.shift()! };
+          }
+          return { done: true, value: undefined };
+        },
+        return() {
+          unsubscribe();
+          return Promise.resolve({ done: true, value: undefined });
+        },
+        [Symbol.asyncIterator]() {
+          return self;
+        },
+      };
+    },
+  };
 }

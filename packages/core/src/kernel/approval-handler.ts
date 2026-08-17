@@ -23,8 +23,13 @@ export async function handleApproval(
   _sessionId: string | undefined,
   messages: ChatMessage[],
   deps: ApprovalHandlerDeps,
+  selfApproving?: boolean,
 ): Promise<boolean> {
   if (!permResult.needsApproval || permResult.allowed) return true;
+
+  // Single approval path: self-approving tools ask via their own `ctx.ask`
+  // (which persists savePatterns on "always"). Defer the gate-level ask.
+  if (selfApproving) return true;
 
   const savedOk = deps.permissionGate.checkSavedApproval(tc.toolName, deps.currentAgent?.id);
   if (savedOk) return true;

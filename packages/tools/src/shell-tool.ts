@@ -4,7 +4,7 @@ import { commandPattern } from "./arity.js";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
 import { detectInjectionPatterns } from "@vinhnt-sdk/security";
-import { createSandbox, type SandboxScope } from "./sandbox.js";
+import { createSandbox, sanitizeEnv, type SandboxScope } from "./sandbox.js";
 import { parseCommand } from "./shell-parser.js";
 
 const ExecuteCommandSchema = z.object({
@@ -48,8 +48,8 @@ function execAsync(
         encoding: "utf-8" as const,
         windowsHide: true,
         env: env && Object.keys(env).length > 0
-          ? { ...process.env, ...env }
-          : undefined,
+          ? { ...sanitizeEnv(), ...env }
+          : sanitizeEnv(),
       },
       (err, stdout, stderr) => {
         if (err) {
@@ -85,6 +85,7 @@ export function createShellTool(config: ShellToolConfig) {
     name: "execute_command",
     description: "Execute a shell command in the workspace directory. Returns stdout and stderr.",
     risk: "write",
+    selfApproving: config.askPermission !== false,
     timeoutMs: 120_000,
     input: ExecuteCommandSchema,
     jsonSchema: {

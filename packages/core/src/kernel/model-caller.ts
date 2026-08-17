@@ -134,6 +134,13 @@ export class ModelCaller {
     if (chatParamsResult?.modified?.request) {
       request = chatParamsResult.modified.request as unknown as ModelRequest;
     }
+    // P1-F: onBeforeModelCall — intercept/modify the request right before the model call.
+    const beforeCallResult = await this.deps.pluginManager?.fireHook("onBeforeModelCall", {
+      request: request as unknown as Record<string, unknown>,
+    });
+    if (beforeCallResult?.modified?.request) {
+      request = beforeCallResult.modified.request as unknown as ModelRequest;
+    }
 
     const model = this.getActiveModel(runId);
     const modelName = model.model ?? "unknown";
@@ -152,14 +159,19 @@ export class ModelCaller {
 
     if (!model.stream) {
       const res = await model.generate(request, signal);
+      // P1-F: onAfterModelCall — intercept/modify the response after the model call.
+      const afterCallResult = await this.deps.pluginManager?.fireHook("onAfterModelCall", {
+        response: res as unknown as Record<string, unknown>,
+      });
+      const effectiveRes = (afterCallResult?.modified?.response ?? res) as ModelResponse;
       let source: "api" | "local" = "api";
-      const input = res.usage?.inputTokens ?? res.usage?.promptTokens ?? 0;
-      const output = res.usage?.outputTokens ?? res.usage?.completionTokens ?? 0;
+      const input = effectiveRes.usage?.inputTokens ?? effectiveRes.usage?.promptTokens ?? 0;
+      const output = effectiveRes.usage?.outputTokens ?? effectiveRes.usage?.completionTokens ?? 0;
       if (input > 0 && output > 0) {
         inputTokens = input;
         outputTokens = output;
-      } else if (modelHasTokens && res.content) {
-        const localOut = model.countTokens!(res.content);
+      } else if (modelHasTokens && effectiveRes.content) {
+        const localOut = model.countTokens!(effectiveRes.content);
         if (input > 0) inputTokens = input;
         outputTokens = localOut;
         source = localOut === (output || -1) ? "api" : "local";
@@ -170,7 +182,7 @@ export class ModelCaller {
       await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
       const p = model?.pricing;
       this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
-      return res;
+      return effectiveRes;
     }
 
     for await (const event of model.stream(request, signal)) {
@@ -204,6 +216,14 @@ export class ModelCaller {
       outputTokens = model.countTokens!(content);
       source = "local";
     }
+
+    // P1-F: onAfterModelCall — intercept/modify the response after streaming completes.
+    const streamedResponse: ModelResponse = toolCalls.length > 0 ? { content, toolCalls } : { content };
+    const afterCallResult = await this.deps.pluginManager?.fireHook("onAfterModelCall", {
+      response: streamedResponse as unknown as Record<string, unknown>,
+    });
+    const effectiveRes = (afterCallResult?.modified?.response ?? streamedResponse) as ModelResponse;
+
     if (inputTokens > 0 || outputTokens > 0) {
       await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
     }
@@ -214,7 +234,7 @@ export class ModelCaller {
     const p = model?.pricing;
     this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
 
-    return toolCalls.length > 0 ? { content, toolCalls } : { content };
+    return effectiveRes;
   }
 
   async doThinkingStep(

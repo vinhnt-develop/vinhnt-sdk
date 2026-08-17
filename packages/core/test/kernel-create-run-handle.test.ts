@@ -141,6 +141,64 @@ describe("AgentKernel.createRunHandle", () => {
     expect(result.status).toBe("succeeded");
   });
 
+  it("cancel() aborts a running model call and reports steps taken", async () => {
+    // A slow model that waits until its signal aborts before resolving.
+    let modelCalls = 0;
+    const slowModel: ModelProvider = {
+      provider: "fake",
+      model: "slow-model",
+      pricing: { input: 1.0, output: 2.0 },
+      capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
+      async generate(request, signal) {
+        modelCalls++;
+        await new Promise<void>((resolve, reject) => {
+          const onAbort = () => {
+            signal?.removeEventListener("abort", onAbort);
+            reject(new DOMException("Aborted", "AbortError"));
+          };
+          signal?.addEventListener("abort", onAbort, { once: true });
+          setTimeout(() => {
+            signal?.removeEventListener("abort", onAbort);
+            resolve();
+          }, 50);
+        });
+        return { content: "Slow reply" };
+      },
+      async *stream(request, signal) {
+        const r = await this.generate(request, signal);
+        if (r.content) yield { type: "text", content: r.content };
+        yield { type: "done" };
+      },
+    };
+
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model: slowModel, store, tools: [], maxSteps: 5 });
+
+    const handle = kernel.createRunHandle("Do something slow", testCtx);
+    // Let the model call start, then cancel.
+    await new Promise((r) => setTimeout(r, 5));
+    handle.cancel();
+
+    const result = await handle.completed;
+
+    expect(result.status).toBe("cancelled");
+    expect(result.totalSteps).toBe(1); // step 0 was entered before the abort hit
+    expect(modelCalls).toBe(1); // the in-flight call was aborted, no second call started
+    expect(handle.isCompleted).toBe(true);
+  });
+
+  it("reports real totalSteps on successful runs", async () => {
+    const model = new FakeModelProvider([{ content: "Response" }]);
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 1 });
+
+    const handle = kernel.createRunHandle("Test", testCtx);
+    const result = await handle.completed;
+
+    expect(result.status).toBe("succeeded");
+    expect(result.totalSteps).toBe(1);
+  });
+
   it("rejects when maxSteps exceeded", async () => {
     const model = new FakeModelProvider([{ content: "Response" }]);
     const store = new FakeRunEventStore();

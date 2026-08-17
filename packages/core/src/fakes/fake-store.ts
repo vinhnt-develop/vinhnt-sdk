@@ -28,6 +28,22 @@ export class FakeRunEventStore implements RunEventStore {
     for (const fn of this.listeners) { try { fn(event); } catch { /* ignore */ } }
   }
 
+  /** Atomic: allocate the next sequence and append in a single step (no interleaving). */
+  async appendWithSequence(event: RunEvent): Promise<number> {
+    if (event.persist === false) {
+      for (const fn of this.listeners) { try { fn(event); } catch { /* ignore */ } }
+      return 0;
+    }
+    if (this.events.some((e) => e.id === event.id)) {
+      return this.events.find((e) => e.id === event.id)!.sequence;
+    }
+    const seq = this.events.filter((e) => e.runId === event.runId).reduce((m, e) => Math.max(m, e.sequence), 0) + 1;
+    const runEvent = { ...event, sequence: seq } as RunEvent;
+    this.events.push(runEvent);
+    for (const fn of this.listeners) { try { fn(runEvent); } catch { /* ignore */ } }
+    return seq;
+  }
+
   async list(runId: string, afterSequence?: number): Promise<readonly RunEvent[]> {
     return this.events.filter(
       (e) => e.runId === runId && (afterSequence === undefined || e.sequence > afterSequence),

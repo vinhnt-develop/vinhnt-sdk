@@ -60,6 +60,13 @@ export interface RunLoopInput {
   resume?: boolean;
 }
 
+export type RunLoopStatus = "succeeded" | "failed" | "cancelled";
+
+export interface RunLoopResult {
+  readonly totalSteps: number;
+  readonly status: RunLoopStatus;
+}
+
 // ---------------------------------------------------------------------------
 // System context
 // ---------------------------------------------------------------------------
@@ -359,7 +366,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
 export async function runLoop(
   deps: RunLoopDeps,
   input: RunLoopInput,
-): Promise<void> {
+): Promise<RunLoopResult> {
   const { prompt, runId, ctx, runAbort, sessionId, userContentParts, runModel, runSessionState, addSessionMessage, emitEvent, setState, updateSessionOnComplete, emitFail } = input;
 
   const startTime = Date.now();
@@ -409,23 +416,28 @@ export async function runLoop(
       ];
     }
 
-    // When resuming, messages already contain the full conversation history
-    if (input.resume && runSessionState && runSessionState.messages.length > 0) {
-      messages = [...runSessionState.messages];
-    }
-
-    if (runSessionState && runSessionState.messages.length > 0) {
+    // On resume, rebuild from persisted history (never double-append it) and keep
+    // the current steering prompt as the latest user turn. Without resume, the
+    // fresh prompt is already seeded above; append any session history after it.
+    if (input.resume) {
+      if (runSessionState && runSessionState.messages.length > 0) {
+        messages = [...runSessionState.messages];
+      }
+      if (prompt) messages.push({ role: "user", content: prompt });
+    } else if (runSessionState && runSessionState.messages.length > 0) {
       messages.push(...runSessionState.messages);
     }
 
-    step = runSessionState?.step ?? 0;
+    // Continue from the restored step counter so max-steps accounting and any
+    // step-relative logic stay continuous across a resume.
+    const startedStep = runSessionState?.step ?? 0;
 
-    for (step = 0; step < effectiveMaxSteps; step++) {
+    for (step = startedStep; step < effectiveMaxSteps; step++) {
       if (runAbort.signal.aborted) {
         await emitFail(runId, ctx, "Run cancelled", step, sessionId, totalInputTokens, totalOutputTokens);
         await deps.saga.rollbackAll();
         setState(runId, "cancelled");
-        return;
+        return { totalSteps: step, status: "cancelled" };
       }
 
       const drainedInputs = deps.stateMachine.drainInputs(runId);
@@ -510,7 +522,7 @@ export async function runLoop(
             await emitFail(runId, ctx, reason, step, sessionId, totalInputTokens, totalOutputTokens);
             await deps.saga.rollbackAll();
             setState(runId, "failed");
-            return;
+            return { totalSteps: step + 1, status: "failed" };
           }
         }
 
@@ -571,7 +583,7 @@ export async function runLoop(
             runSessionState.isRunning = false;
           }
           await updateSessionOnComplete(sessionId, runId, totalInputTokens, totalOutputTokens, step + 1, "succeeded");
-          return;
+          return { totalSteps: step + 1, status: "succeeded" };
         }
       }
     }
@@ -603,12 +615,12 @@ export async function runLoop(
           await updateSessionOnComplete(sessionId, runId, totalInputTokens, totalOutputTokens, step + 1, "succeeded");
         }
         setState(runId, "completed");
-        return;
+        return { totalSteps: step + 1, status: "succeeded" };
       }
       await emitFail(runId, ctx, `Exceeded max steps (${effectiveMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
       await deps.saga.rollbackAll();
       setState(runId, "failed");
-      return;
+      return { totalSteps: step, status: "failed" };
     } else {
       await emitEvt("run.completed", {
         status: "succeeded", output: finalOutput, totalSteps: step + 1,
@@ -643,13 +655,16 @@ export async function runLoop(
     }
 
     await updateSessionOnComplete(sessionId, runId, totalInputTokens, totalOutputTokens, step + 1, "succeeded");
+    return { totalSteps: step + 1, status: "succeeded" };
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     const failDurationMs = Date.now() - startTime;
-    // emitFail already emits run.completed(failed) and calls saga.rollbackAll()
+    // emitFail already emits run.completed(failed); roll back the per-run saga explicitly.
+    await deps.saga.rollbackAll();
     await emitFail(runId, ctx, errorMsg, step, sessionId, totalInputTokens, totalOutputTokens, failDurationMs);
     setState(runId, "failed");
     if (runSessionState) runSessionState.isRunning = false;
+    return { totalSteps: step + 1, status: "failed" };
   } finally {
     deps.saga.clear();
     deps.stateMachine.cleanupRun(runId, sessionId);
