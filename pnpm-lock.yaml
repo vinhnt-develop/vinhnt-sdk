@@ -127,6 +127,12 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/provider-openai-compatible:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/schema:
     dependencies:
       zod:

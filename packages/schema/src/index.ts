@@ -185,10 +185,12 @@ export {
   KNOWN_AGENT_STEP_TYPES,
 } from "./types/index.js";
 
-// === Adapters ===
+// === Adapters (interface-only; conversion functions live in provider packages) ===
 
 /**
- * Adapter functions for converting between OpenAI/Anthropic formats and vinhnt-sdk types.
+ * OpenAI Chat Completion wire-format types. Conversion functions
+ * (fromOpenAI, toOpenAI, ...) are provided by
+ * `@vinhnt-sdk/provider-openai-compatible`.
  */
 export type {
   OpenAIMessage,
@@ -201,16 +203,6 @@ export type {
   OpenAIStreamChoice,
   OpenAIStreamToolCallDelta,
   OpenAIErrorResponse,
-} from "./types/index.js";
-
-export {
-  fromOpenAIMessage,
-  toOpenAIMessage,
-  fromOpenAIResponse,
-  toOpenAIResponse,
-  fromOpenAIStreamChunk,
-  fromOpenAIError,
-  fromAnthropicMessage,
 } from "./types/index.js";
 
 /**

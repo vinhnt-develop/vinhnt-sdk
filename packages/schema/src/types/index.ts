@@ -77,16 +77,6 @@ export type {
   OpenAIErrorResponse,
 } from "./adapter.js";
 
-export {
-  fromOpenAIMessage,
-  toOpenAIMessage,
-  fromOpenAIResponse,
-  toOpenAIResponse,
-  fromOpenAIStreamChunk,
-  fromOpenAIError,
-  fromAnthropicMessage,
-} from "./adapter.js";
-
 export type { ConversationCompactor } from "./compaction.js";
 
 export type {

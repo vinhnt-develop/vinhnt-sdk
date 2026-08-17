@@ -1,0 +1,195 @@
+/**
+ * SSE parsing for OpenAI-compatible streaming (`/chat/completions` with
+ * `stream: true`), plus tool-call delta assembly into vinhnt-sdk
+ * `ModelStreamEvent`s.
+ */
+
+import type {
+  OpenAIStreamChunk,
+  OpenAIStreamChoice,
+  ModelStreamEvent,
+} from "@vinhnt-sdk/schema";
+
+type Bytes = ReadableStream<Uint8Array>;
+
+const DONE_MARKER = "[DONE]";
+
+function tryParse(text: string): unknown | undefined {
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Parse an SSE byte stream into OpenAI streaming chunks.
+ *
+ * Handles: `data:` lines, `[DONE]` termination, multi-line JSON events and
+ * providers that omit the blank-line event delimiter.
+ */
+export async function* createSSEStream(
+  body: Bytes,
+  signal?: AbortSignal,
+): AsyncIterable<OpenAIStreamChunk> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let pending: string[] = [];
+
+  for await (const chunk of body) {
+    if (signal?.aborted) return;
+    buffer += decoder.decode(chunk, { stream: true });
+
+    let newlineIndex: number;
+    while ((newlineIndex = buffer.indexOf("\n")) >= 0) {
+      const line = buffer.slice(0, newlineIndex).replace(/\r$/, "");
+      buffer = buffer.slice(newlineIndex + 1);
+
+      if (line.startsWith("data:")) {
+        const payload = line.slice(5).trimStart();
+        if (payload === DONE_MARKER) {
+          const flushed = flushPending();
+          if (flushed !== undefined) yield flushed;
+          return;
+        }
+        if (payload) {
+          pending.push(payload);
+          // Single-line JSON (OpenAI & most compatibles): parse and emit now.
+          const parsed = tryParse(pending.join(""));
+          if (parsed !== undefined) {
+            yield parsed as OpenAIStreamChunk;
+            pending = [];
+          }
+        }
+      } else if (line === "") {
+        const flushed = flushPending();
+        if (flushed !== undefined) yield flushed;
+      }
+    }
+  }
+
+  // Tail without a trailing newline.
+  if (buffer) {
+    const tail = buffer.replace(/\r$/, "");
+    if (tail.startsWith("data:")) {
+      const payload = tail.slice(5).trimStart();
+      if (payload && payload !== DONE_MARKER) pending.push(payload);
+    }
+  }
+  const tail = flushPending();
+  if (tail !== undefined) yield tail;
+
+  function flushPending(): OpenAIStreamChunk | undefined {
+    if (pending.length === 0) return undefined;
+    const parsed = tryParse(pending.join("\n")) ?? tryParse(pending.join(""));
+    pending = [];
+    return parsed as OpenAIStreamChunk | undefined;
+  }
+}
+
+// ── Tool-call delta assembly ──
+
+interface AssembledToolCall {
+  readonly index: number;
+  id: string;
+  name: string;
+  argsBuffer: string;
+}
+
+function safeParseArgs(buffer: string): Record<string, unknown> {
+  if (!buffer.trim()) return {};
+  try {
+    const parsed = JSON.parse(buffer) as unknown;
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Convert an OpenAI streaming chunk into a list of parsed fields for the
+ * streaming assembler. Straightforward per-choice parsing; tool call
+ * arguments are raw deltas that the caller accumulates.
+ */
+function chunkToDeltas(chunk: OpenAIStreamChunk): {
+  texts: string[];
+  toolCalls: OpenAIStreamChoice["delta"]["tool_calls"];
+  finishReason: string | null;
+  usage: { inputTokens: number; outputTokens: number } | undefined;
+} {
+  const texts: string[] = [];
+  let toolCalls: OpenAIStreamChoice["delta"]["tool_calls"] = [];
+  let finishReason: string | null = null;
+  for (const choice of chunk.choices) {
+    if (choice.delta.content !== null && choice.delta.content !== undefined) {
+      texts.push(choice.delta.content);
+    }
+    if (choice.delta.tool_calls) toolCalls = [...toolCalls, ...choice.delta.tool_calls];
+    if (choice.finish_reason !== null) finishReason = choice.finish_reason;
+  }
+  return {
+    texts,
+    toolCalls,
+    finishReason,
+    usage: chunk.usage ? {
+      inputTokens: chunk.usage.prompt_tokens,
+      outputTokens: chunk.usage.completion_tokens,
+    } : undefined,
+  };
+}
+
+/**
+ * Assemble an OpenAI SSE stream into vinhnt-sdk `ModelStreamEvent`s.
+ *
+ * Accumulates fragmented tool-call argument deltas across chunks and emits
+ * one complete `tool_call` event per call, then `done`.
+ */
+export async function* toModelStreamEvents(
+  body: Bytes,
+  signal?: AbortSignal,
+): AsyncIterable<ModelStreamEvent> {
+  const assembled = new Map<number, AssembledToolCall>();
+
+  for await (const chunk of createSSEStream(body, signal)) {
+    const { texts, toolCalls, finishReason, usage } = chunkToDeltas(chunk);
+
+    for (const text of texts) {
+      yield { type: "text", content: text };
+    }
+
+    if (toolCalls) {
+      for (const tc of toolCalls) {
+        const slot = assembled.get(tc.index);
+        if (slot) {
+          if (tc.id) slot.id = tc.id;
+          if (tc.function?.name) slot.name = tc.function.name;
+          if (tc.function?.arguments) slot.argsBuffer += tc.function.arguments;
+        } else {
+          assembled.set(tc.index, {
+            index: tc.index,
+            id: tc.id ?? "",
+            name: tc.function?.name ?? "",
+            argsBuffer: tc.function?.arguments ?? "",
+          });
+        }
+      }
+    }
+
+    if (finishReason) {
+      yield { type: "finish", reason: finishReason };
+    }
+
+    if (usage) {
+      yield { type: "usage", inputTokens: usage.inputTokens, outputTokens: usage.outputTokens };
+    }
+  }
+
+  for (const tc of assembled.values()) {
+    if (tc.id) {
+      yield { type: "tool_call", id: tc.id, name: tc.name, args: safeParseArgs(tc.argsBuffer) };
+    }
+  }
+
+  yield { type: "done" };
+}

@@ -7,12 +7,12 @@ import {
   fromOpenAIStreamChunk,
   fromOpenAIError,
   fromAnthropicMessage,
-} from "../src/types/adapter.js";
+} from "../src/convert.js";
 import type {
   OpenAIMessage,
   OpenAIResponse,
   OpenAIStreamChunk,
-} from "../src/types/adapter.js";
+} from "@vinhnt-sdk/schema";
 
 describe("OpenAI Adapter", () => {
   describe("fromOpenAIMessage", () => {

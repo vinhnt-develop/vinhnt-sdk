@@ -10,6 +10,7 @@ export default defineConfig({
       'packages/security',
       'packages/plugin',
       'packages/lsp',
+      'packages/provider-openai-compatible',
     ],
   },
 });
