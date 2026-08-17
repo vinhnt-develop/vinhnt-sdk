@@ -54,10 +54,14 @@ export interface StepExecutorDeps {
   readonly selfCorrectOnFailure: boolean;
   currentAgent: AgentConfig | undefined;
   saga: ToolSaga;
+  /** Resolve the active agent for a run — used to keep parallel runs isolated. */
+  readonly agentForRun?: (runId: RunId) => AgentConfig | undefined;
+  /** Resolve the active saga for a run — used to keep parallel runs isolated. */
+  readonly sagaForRun?: (runId: RunId) => ToolSaga;
   readonly doomLoopThreshold: number;
   readonly externalDirectoryAccess?: boolean;
   readonly workspaceRoot?: string;
-  readonly findTool: (name: string) => ToolDefinition | undefined;
+  readonly findTool: (name: string, runId?: RunId) => ToolDefinition | undefined;
   readonly hasTool: (name: string) => boolean;
 }
 
@@ -92,6 +96,16 @@ export class StepExecutor {
   /** Get the current agent reference (used by kernel to save prev before swap) */
   getCurrentAgent(): AgentConfig | undefined {
     return this.deps.currentAgent;
+  }
+
+  /** Resolve the agent that owns the given run, falling back to the instance default. */
+  private agentFor(runId: RunId): AgentConfig | undefined {
+    return this.deps.agentForRun ? this.deps.agentForRun(runId) : this.deps.currentAgent;
+  }
+
+  /** Resolve the saga that owns the given run, falling back to the instance default. */
+  private sagaFor(runId: RunId): ToolSaga {
+    return this.deps.sagaForRun ? this.deps.sagaForRun(runId) : this.deps.saga;
   }
 
   private async runConcurrent<T>(tasks: (() => Promise<T>)[], concurrency: number): Promise<PromiseSettledResult<T>[]> {
@@ -194,7 +208,7 @@ export class StepExecutor {
           }
         }
 
-        const tool = this.deps.findTool(tc.toolName);
+        const tool = this.deps.findTool(tc.toolName, runId);
         if (!tool) {
           const registered = this.deps.hasTool(tc.toolName);
           safeEmit(this.deps.store, {
@@ -214,7 +228,7 @@ export class StepExecutor {
 
         // P1-F: onBeforeToolExecution fired below — right before tool.execute.
         const permResult = this.deps.permissionGate.checkTool(
-          tc.toolName, tool.risk, tc.args as Record<string, unknown>, this.deps.currentAgent,
+          tc.toolName, tool.risk, tc.args as Record<string, unknown>, this.agentFor(runId),
         );
         if (!permResult.allowed && !permResult.needsApproval) {
           safeEmit(this.deps.store, {
@@ -257,7 +271,7 @@ export class StepExecutor {
         // Re-validate permission if the execution hook modified the input further.
         if (execInput !== effectiveInput) {
           const rePerm = this.deps.permissionGate.checkTool(
-            tc.toolName, tool.risk, execInput as Record<string, unknown>, this.deps.currentAgent,
+            tc.toolName, tool.risk, execInput as Record<string, unknown>, this.agentFor(runId),
           );
           if (!rePerm.allowed && !rePerm.needsApproval) {
             safeEmit(this.deps.store, {
@@ -291,14 +305,14 @@ export class StepExecutor {
           });
           const effectiveOutput = compHookResult?.modified?.output ?? execOutput;
 
-          this.deps.saga.record({
+          this.sagaFor(runId).record({
             toolId: tc.toolId, toolName: tc.toolName,
             input: effectiveInput, output: effectiveOutput,
             timestamp: Date.now(), step,
           });
 
           if (compensationRef.current) {
-            this.deps.saga.registerCompensation(tc.toolId, {
+            this.sagaFor(runId).registerCompensation(tc.toolId, {
               entry: { toolId: tc.toolId, toolName: tc.toolName, input: effectiveInput, output: effectiveOutput, timestamp: Date.now(), step },
               compensate: compensationRef.current,
             });
@@ -328,11 +342,11 @@ export class StepExecutor {
             externalDirectoryAccess: this.deps.externalDirectoryAccess,
             workspaceRoot: this.deps.workspaceRoot,
             findTool: this.deps.findTool,
-            currentAgent: this.deps.currentAgent,
+            currentAgent: this.agentFor(runId),
             runSelfCorrection: (tc, messages, recentCalls, step, runId, ctx, runAbort, toolCtx, errorMsg, runModel) =>
               this.runSelfCorrection(tc, messages, recentCalls, step, runId, ctx, runAbort, toolCtx, errorMsg, runModel, selfCorrectTokens),
           });
-          await this.deps.saga.rollbackStep(step);
+          await this.sagaFor(runId).rollbackStep(step);
           return { tc, result: "failed" as const };
         }
       });
@@ -372,7 +386,7 @@ export class StepExecutor {
     return buildToolContext(tc, runId, sessionId, ctx, runAbort, compensationRef, metadataRef, {
       pluginManager: this.deps.pluginManager,
       permissionGate: this.deps.permissionGate,
-      currentAgent: this.deps.currentAgent,
+      currentAgent: this.agentFor(runId),
       toolRisk: tool.risk,
     });
   }
@@ -386,7 +400,7 @@ export class StepExecutor {
       store: this.deps.store,
       permissionGate: this.deps.permissionGate,
       pluginManager: this.deps.pluginManager,
-      currentAgent: this.deps.currentAgent,
+      currentAgent: this.agentFor(runId),
     }, selfApproving);
   }
 
@@ -405,7 +419,7 @@ export class StepExecutor {
       findTool: this.deps.findTool,
       permissionGate: this.deps.permissionGate,
       pluginManager: this.deps.pluginManager,
-      currentAgent: this.deps.currentAgent,
+      currentAgent: this.agentFor(runId),
     }, selfCorrectTokens);
   }
 }

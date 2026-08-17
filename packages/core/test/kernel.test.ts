@@ -4,7 +4,8 @@ import { InMemoryEventBus } from "../src/event-bus/in-memory-bus.js";
 import { buildAgentIdentity } from "../src/kernel/kernel-session.js";
 import { DefaultPluginManager } from "../src/plugin/manager.js";
 import type { ConversationCompactor } from "../src/session/compaction.js";
-import type { ChatMessage } from "../src/model.js";
+import type { ChatMessage, ModelRequest } from "../src/model.js";
+import { InMemoryModelRegistry } from "../src/model.js";
 import type { SessionStore } from "../src/session/store.js";
 import type { Plugin, PluginHooks } from "../src/plugin.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
@@ -1802,5 +1803,100 @@ describe("getRunOutput / getCompletedEventData snapshot optimization", () => {
     const data = await getCompletedEventData(store, runId);
     expect(data).toBeTruthy();
     expect((data as Record<string, unknown>).output).toBe("snap-output");
+  });
+});
+
+describe("P1-L: parallel run isolation (per-run context object)", () => {
+  /** Mock model that records which tools each request was offered. */
+  class CapturingModel extends FakeModelProvider {
+    readonly seenTools: string[][] = [];
+    override async generate(request: ModelRequest, signal?: AbortSignal): Promise<ReturnType<FakeModelProvider["generate"]>> {
+      this.seenTools.push((request.tools ?? []).map((t) => t.id));
+      return super.generate(request, signal);
+    }
+  }
+
+  it("TC-P1L-01: two concurrent runs keep their own agent context", async () => {
+    const probe = new FakeTool("probe", async (_input, ctx) => ctx.agentName);
+    const alphaModel = new CapturingModel([
+      { content: "Calling probe", toolCalls: [{ id: "a1", name: "probe", args: {} }] },
+      { content: "alpha done" },
+    ]);
+    const betaModel = new CapturingModel([
+      { content: "Calling probe", toolCalls: [{ id: "b1", name: "probe", args: {} }] },
+      { content: "beta done" },
+    ]);
+    const modelRegistry = new InMemoryModelRegistry();
+    modelRegistry.register("alpha-model", alphaModel);
+    modelRegistry.register("beta-model", betaModel);
+
+    const store = new FakeRunEventStore();
+    const agentRegistry = new FakeAgentRegistry();
+    const alpha: AgentConfig = { id: "alpha" as AgentId, profile: { name: "Alpha", description: "", model: "alpha-model" }, capabilities: {} };
+    const beta: AgentConfig = { id: "beta" as AgentId, profile: { name: "Beta", description: "", model: "beta-model" }, capabilities: {} };
+    await agentRegistry.register(alpha);
+    await agentRegistry.register(beta);
+
+    const kernel = new AgentKernel({ model: alphaModel, modelRegistry, store, tools: [probe], maxSteps: 5, agentRegistry });
+
+    const handleA = kernel.createRunHandle("use probe", { ...testCtx, requestId: "p1l-a", traceId: "p1l-a" }, "sess-a", undefined, alpha);
+    const handleB = kernel.createRunHandle("use probe", { ...testCtx, requestId: "p1l-b", traceId: "p1l-b" }, "sess-b", undefined, beta);
+
+    const [resultA, resultB] = await Promise.all([handleA.completed, handleB.completed]);
+    expect(resultA.status).toBe("succeeded");
+    expect(resultB.status).toBe("succeeded");
+
+    const eventsA = await store.list(handleA.runId);
+    const eventsB = await store.list(handleB.runId);
+
+    // Each run's tool was executed with its own agent's identity (no bleed).
+    expect(findEvent(eventsA, "tool.completed")?.data.output).toBe("Alpha");
+    expect(findEvent(eventsB, "tool.completed")?.data.output).toBe("Beta");
+
+    // Each run announced its own agent at start.
+    expect(findEvent(eventsA, "run.started")?.data.agentId).toBe("alpha");
+    expect(findEvent(eventsB, "run.started")?.data.agentId).toBe("beta");
+
+    // Instance default agent was never clobbered by either run.
+    expect(kernel.getCurrentAgent()).toBeUndefined();
+  });
+
+  it("TC-P1L-02: tools are resolved per run's agent, not the instance default", async () => {
+    const alphaTool = new FakeTool("alpha_only", async () => "A");
+    const betaTool = new FakeTool("beta_only", async () => "B");
+    const alphaModel = new CapturingModel([
+      { content: "use alpha", toolCalls: [{ id: "a1", name: "alpha_only", args: {} }] },
+      { content: "alpha done" },
+    ]);
+    const betaModel = new CapturingModel([
+      { content: "use beta", toolCalls: [{ id: "b1", name: "beta_only", args: {} }] },
+      { content: "beta done" },
+    ]);
+    const modelRegistry = new InMemoryModelRegistry();
+    modelRegistry.register("alpha-model", alphaModel);
+    modelRegistry.register("beta-model", betaModel);
+
+    const store = new FakeRunEventStore();
+    const agentRegistry = new FakeAgentRegistry();
+    const alpha: AgentConfig = { id: "alpha" as AgentId, profile: { name: "Alpha", description: "", model: "alpha-model" }, capabilities: { tools: ["alpha_only"] } };
+    const beta: AgentConfig = { id: "beta" as AgentId, profile: { name: "Beta", description: "", model: "beta-model" }, capabilities: { tools: ["beta_only"] } };
+    await agentRegistry.register(alpha);
+    await agentRegistry.register(beta);
+
+    const kernel = new AgentKernel({ model: alphaModel, modelRegistry, store, tools: [alphaTool, betaTool], maxSteps: 5, agentRegistry });
+
+    const handleA = kernel.run("alpha task", { ...testCtx, requestId: "p1l2-a", traceId: "p1l2-a" }, "sess-a2", undefined, alpha);
+    const handleB = kernel.run("beta task", { ...testCtx, requestId: "p1l2-b", traceId: "p1l2-b" }, "sess-b2", undefined, beta);
+    await Promise.all([handleA.completed, handleB.completed]);
+
+    // Each run's model was only offered its own agent's capabilities.
+    for (const seen of alphaModel.seenTools) {
+      expect(seen).toContain("alpha_only");
+      expect(seen).not.toContain("beta_only");
+    }
+    for (const seen of betaModel.seenTools) {
+      expect(seen).toContain("beta_only");
+      expect(seen).not.toContain("alpha_only");
+    }
   });
 });

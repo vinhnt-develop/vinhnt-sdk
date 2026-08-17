@@ -1,4 +1,4 @@
-import type { RequestContext, RequestId, AgentId, AgentConfig, KnownRunEvent } from "@vinhnt-sdk/schema";
+import type { RequestContext, RequestId, AgentId, AgentConfig, KnownRunEvent, RunId } from "@vinhnt-sdk/schema";
 import type { SessionRuntimeState } from "../session/session-state.js";
 import type { RunEventStore } from "../session/store.js";
 import type { AgentRegistry } from "../agent/agent-registry.js";
@@ -7,6 +7,7 @@ import type { RunStateMachine } from "./run-state.js";
 import { createSubAgent } from "../agent/agent-factory.js";
 import type { SubAgentParams } from "../agent/agent-factory.js";
 import type { RunHandle } from "./kernel-types.js";
+import type { RunContext } from "./run-context.js";
 
 export interface SubAgentRunnerDeps {
   agentRegistry: AgentRegistry;
@@ -20,6 +21,8 @@ export interface SubAgentRunnerDeps {
   agentChainRef: { value: Set<AgentId> };
   sessionStateRef: { value: SessionRuntimeState | undefined };
   runFn: (prompt: string, ctx: RequestContext, sessionId?: string, agentOverride?: AgentConfig) => RunHandle;
+  /** Resolve the per-run context of a parent run (for depth/chain tracking). */
+  readonly runContextFor?: (runId: RunId) => RunContext | undefined;
 }
 
 export async function runAgent(
@@ -28,25 +31,40 @@ export async function runAgent(
   prompt: string,
   ctx: RequestContext,
   sessionId?: string,
+  parentRunId?: RunId,
 ): Promise<string> {
-  if (deps.currentDepthRef.value >= deps.maxSubAgentDepth) {
+  const resolvedParentRunId = parentRunId ?? deps.stateMachine.runIdStack.at(-1);
+  const rc = resolvedParentRunId ? deps.runContextFor?.(resolvedParentRunId) : undefined;
+  const depth = rc?.depth ?? deps.currentDepthRef.value;
+  const chain = rc?.agentChain ?? deps.agentChainRef.value;
+  const currentAgent = rc?.agent ?? deps.currentAgentRef.value;
+
+  if (depth >= deps.maxSubAgentDepth) {
     throw new Error(`Sub-agent depth limit (${deps.maxSubAgentDepth}) reached. Cannot spawn more sub-agents.`);
   }
 
-  if (deps.agentChainRef.value.has(agentId)) {
+  if (chain.has(agentId)) {
     throw new Error(`Cycle detected: agent '${agentId}' is already in the call chain.`);
   }
 
-  const prevAgent = deps.currentAgentRef.value;
-  const prevDepth = deps.currentDepthRef.value;
+  const prevAgent = currentAgent;
+  const prevDepth = depth;
   const prevSnapshot = deps.sessionStateRef.value ? deps.sessionStateRef.value.snapshot() : undefined;
 
   try {
     const agent = await deps.agentRegistry.get(agentId);
     if (!agent) throw new Error(`Agent '${agentId}' not found`);
-    deps.currentAgentRef.value = agent;
-    deps.currentDepthRef.value++;
-    deps.agentChainRef.value.add(agentId);
+    if (rc) {
+      rc.agent = agent;
+      rc.depth++;
+      rc.agentChain.add(agentId);
+      rc.cachedTools = null;
+      rc.cachedToolsAgentId = undefined;
+    } else {
+      deps.currentAgentRef.value = agent;
+      deps.currentDepthRef.value++;
+      deps.agentChainRef.value.add(agentId);
+    }
 
     if (deps.sessionStateRef.value) {
       deps.sessionStateRef.value.resetMessages([]);
@@ -55,20 +73,25 @@ export async function runAgent(
       deps.sessionStateRef.value.isRunning = true;
     }
 
-    const parentRunId = deps.stateMachine.runIdStack.at(-1);
-    const childCtx: RequestContext = parentRunId
-      ? { ...ctx, parentRunId }
+    const childCtx: RequestContext = resolvedParentRunId
+      ? { ...ctx, parentRunId: resolvedParentRunId }
       : ctx;
 
-    const handle = deps.runFn(prompt, childCtx, sessionId, undefined);
+    const handle = deps.runFn(prompt, childCtx, sessionId, agent);
     await handle.completed;
 
     const output = await getRunOutput(deps.store, handle.runId);
     return output;
   } finally {
-    deps.currentAgentRef.value = prevAgent;
-    deps.currentDepthRef.value = prevDepth;
-    deps.agentChainRef.value.delete(agentId);
+    if (rc) {
+      rc.agent = prevAgent;
+      rc.depth = prevDepth;
+      rc.agentChain.delete(agentId);
+    } else {
+      deps.currentAgentRef.value = prevAgent;
+      deps.currentDepthRef.value = prevDepth;
+      deps.agentChainRef.value.delete(agentId);
+    }
 
     if (deps.sessionStateRef.value && prevSnapshot) {
       deps.sessionStateRef.value.restore(prevSnapshot);
@@ -81,8 +104,14 @@ export async function runAgentsParallel(
   tasks: Array<{ agentId: AgentId; prompt: string }>,
   ctx: RequestContext,
   sessionId?: string,
+  parentRunId?: RunId,
 ): Promise<string> {
-  if (deps.currentDepthRef.value >= deps.maxSubAgentDepth) {
+  const resolvedParentRunId = parentRunId ?? deps.stateMachine.runIdStack.at(-1);
+  const rc = resolvedParentRunId ? deps.runContextFor?.(resolvedParentRunId) : undefined;
+  const depth = rc?.depth ?? deps.currentDepthRef.value;
+  const currentAgent = rc?.agent ?? deps.currentAgentRef.value;
+
+  if (depth >= deps.maxSubAgentDepth) {
     throw new Error(`Sub-agent depth limit (${deps.maxSubAgentDepth}) reached.`);
   }
 
@@ -93,11 +122,14 @@ export async function runAgentsParallel(
     if (!agents[i]) throw new Error(`Agent '${tasks[i]!.agentId}' not found`);
   }
 
-  const prevDepth = deps.currentDepthRef.value;
-  deps.currentDepthRef.value++;
-  const parentRunId = deps.stateMachine.runIdStack.at(-1);
-  const childCtx: RequestContext = parentRunId
-    ? { ...ctx, parentRunId }
+  const prevDepth = depth;
+  if (rc) {
+    rc.depth++;
+  } else {
+    deps.currentDepthRef.value++;
+  }
+  const childCtx: RequestContext = resolvedParentRunId
+    ? { ...ctx, parentRunId: resolvedParentRunId }
     : ctx;
 
   try {
@@ -120,9 +152,15 @@ export async function runAgentsParallel(
 
         // Snapshot parent refs for per-task isolation
         const prevSession = deps.sessionStateRef.value;
-        const prevAgent = deps.currentAgentRef.value;
+        const prevAgent = rc?.agent ?? deps.currentAgentRef.value;
         deps.sessionStateRef.value = childSession;
-        deps.currentAgentRef.value = agent;
+        if (rc) {
+          rc.agent = agent;
+          rc.cachedTools = null;
+          rc.cachedToolsAgentId = undefined;
+        } else {
+          deps.currentAgentRef.value = agent;
+        }
         try {
           const handle = deps.runFn(t.prompt, childCtxForAgent, sessionId, agent);
           await handle.completed;
@@ -130,7 +168,11 @@ export async function runAgentsParallel(
           return output;
         } finally {
           deps.sessionStateRef.value = prevSession;
-          deps.currentAgentRef.value = prevAgent;
+          if (rc) {
+            rc.agent = prevAgent;
+          } else {
+            deps.currentAgentRef.value = prevAgent;
+          }
         }
       }),
     );
@@ -142,7 +184,11 @@ export async function runAgentsParallel(
 
     return outputs.join("\n---\n");
   } finally {
-    deps.currentDepthRef.value = prevDepth;
+    if (rc) {
+      rc.depth = prevDepth;
+    } else {
+      deps.currentDepthRef.value = prevDepth;
+    }
   }
 }
 

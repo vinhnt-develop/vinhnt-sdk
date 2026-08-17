@@ -1,4 +1,4 @@
-import type { AgentId, RequestId, TraceId, RequestContext } from "@vinhnt-sdk/schema";
+import type { AgentId, RequestId, TraceId, RequestContext, RunId } from "@vinhnt-sdk/schema";
 import type { AgentKernel } from "../kernel/kernel.js";
 import { z } from "zod";
 import { defineTool } from "@vinhnt-sdk/tools";
@@ -51,7 +51,7 @@ export function createDelegateTool(kernel: AgentKernel) {
             tenantId: "default",
           };
       const output = await kernel.runAgent(
-        input.agentId as AgentId, input.prompt, childCtx, ctx.sessionId || undefined,
+        input.agentId as AgentId, input.prompt, childCtx, ctx.sessionId || undefined, ctx.runId as RunId | undefined,
       );
       return output || "(no output)";
     },

@@ -27,6 +27,7 @@ import { PermissionGate, type ApprovalDecision } from "./permission-gate.js";
 import { ModelCaller } from "./model-caller.js";
 import { StepExecutor } from "./step-executor.js";
 import { ToolSaga } from "./tool-saga.js";
+import { createRunContext, type RunContext } from "./run-context.js";
 import { CircuitBreaker } from "./circuit-breaker.js";
 import { KernelError } from "./kernel-error.js";
 import type { KernelErrorCode } from "./kernel-error.js";
@@ -98,6 +99,8 @@ export class AgentKernel {
   private readonly sessionDeps: KernelSessionDeps;
   private readonly subAgentDeps: SubAgentRunnerDeps;
   private readonly runSessionStates = new Map<RunId, SessionRuntimeState | undefined>();
+  /** Per-run execution context — keeps parallel runs' agent/depth/chain/tools isolated. */
+  private readonly runContexts = new Map<RunId, RunContext>();
   private readonly lifecycleManager: LifecycleManager;
 
   constructor(config: AgentKernelConfig) {
@@ -182,7 +185,7 @@ export class AgentKernel {
       emitEvent: (event, persist) => this.emitEvent(event, persist),
       modelForRun: (runId) => this.stateMachine.getModelForRun(runId),
       setModelForRun: (runId, model) => this.stateMachine.setModelForRun(runId, model),
-      getAvailableTools: () => this.getAvailableTools(),
+      getAvailableTools: (runId) => this.getAvailableTools(runId),
     });
     const self = this;
 this.stepExecutor = new StepExecutor({
@@ -200,7 +203,9 @@ this.stepExecutor = new StepExecutor({
       ...(normalized.workspaceRoot !== undefined ? { workspaceRoot: normalized.workspaceRoot } : {}),
       currentAgent: this.currentAgent,
       saga: this.saga,
-      findTool: (name) => self.findTool(name),
+      agentForRun: (runId) => this.runContexts.get(runId)?.agent,
+      sagaForRun: (runId) => this.runContexts.get(runId)?.saga ?? this.saga,
+      findTool: (name, runId) => self.findTool(name, runId),
       hasTool: (name) => self.hasTool(name),
     });
     if (normalized.tools) {
@@ -224,14 +229,36 @@ this.stepExecutor = new StepExecutor({
       store: this.store,
       modelCaller: this.modelCaller,
       maxSubAgentDepth: this.maxSubAgentDepth,
-      currentAgentRef: { get value() { return self.currentAgent; }, set value(v) { self.currentAgent = v; } },
-      currentDepthRef: { get value() { return self.currentDepth; }, set value(v) { self.currentDepth = v; } },
-      agentChainRef: { get value() { return self.agentChain; }, set value(v) { self.agentChain = v; } },
+      currentAgentRef: {
+        get value() { return self.activeRunContext()?.agent ?? self.currentAgent; },
+        set value(v) {
+          const rc = self.activeRunContext();
+          if (rc) { rc.agent = v; rc.cachedTools = null; rc.cachedToolsAgentId = undefined; }
+          else { self.currentAgent = v; }
+        },
+      },
+      currentDepthRef: {
+        get value() { return self.activeRunContext()?.depth ?? self.currentDepth; },
+        set value(v) {
+          const rc = self.activeRunContext();
+          if (rc) rc.depth = v;
+          else self.currentDepth = v;
+        },
+      },
+      agentChainRef: {
+        get value() { return self.activeRunContext()?.agentChain ?? self.agentChain; },
+        set value(v) {
+          const rc = self.activeRunContext();
+          if (rc) rc.agentChain = v;
+          else self.agentChain = v;
+        },
+      },
       sessionStateRef: {
         get value() { return self["sessionState"]; },
         set value(v) { self["sessionState"] = v; },
       },
       runFn: (prompt, ctx, sessionId, _agentOverride) => this.run(prompt, ctx, sessionId, undefined, _agentOverride),
+      runContextFor: (runId) => this.runContexts.get(runId),
     };
 
     this.lifecycleManager = new LifecycleManager();
@@ -280,12 +307,16 @@ this.stepExecutor = new StepExecutor({
     return sessionAddMessage(this.sessionDeps, sid, role, content, extra);
   }
 
-  private getAvailableTools(): readonly ToolDefinition[] {
-    const agentId = this.currentAgent?.id;
-    if (this.cachedTools && this.cachedToolsAgentId === agentId) {
-      return this.cachedTools;
+  private getAvailableTools(runId?: RunId): readonly ToolDefinition[] {
+    const rc = runId ? this.runContexts.get(runId) : undefined;
+    const target = rc?.agent ?? this.currentAgent;
+    const agentId = target?.id;
+    const cachedTools = rc ? rc.cachedTools : this.cachedTools;
+    const cachedToolsAgentId = rc ? rc.cachedToolsAgentId : this.cachedToolsAgentId;
+    if (cachedTools && cachedToolsAgentId === agentId) {
+      return cachedTools;
     }
-    const caps = this.currentAgent?.capabilities?.tools;
+    const caps = target?.capabilities?.tools;
 
     // Tool source priority: toolProviderRegistry > toolRegistry > tools[]
     let pool: readonly ToolDefinition[];
@@ -299,7 +330,7 @@ this.stepExecutor = new StepExecutor({
     // belongs to plus core tools (tools in no registered domain). Undefined
     // (legacy default) means no filtering — all tools visible. Per-domain
     // permission defaults (e.g. an MCP server set to "deny") remove the tool.
-    const domains = this.currentAgent?.domains;
+    const domains = target?.domains;
     if (domains !== undefined) {
       pool = pool.filter((t) => {
         const domain = this.domainFor(t.id);
@@ -321,7 +352,7 @@ this.stepExecutor = new StepExecutor({
     }
 
     // Apply behaviour mode profile (if not "build" mode, profile rules restrict tools)
-    const behaviourMode = this.currentAgent?.behaviourMode ?? "build";
+    const behaviourMode = target?.behaviourMode ?? "build";
     if (behaviourMode !== "build") {
       const profile = getBehaviourProfile(behaviourMode);
       pool = pool.filter((t) => {
@@ -335,16 +366,21 @@ this.stepExecutor = new StepExecutor({
     }
 
     const result = pool.filter((t) => {
-      const perm = this.permissionGate.checkTool(t.id, t.risk, undefined, this.currentAgent);
+      const perm = this.permissionGate.checkTool(t.id, t.risk, undefined, target);
       return perm.allowed || perm.needsApproval;
     });
-    this.cachedTools = result;
-    this.cachedToolsAgentId = agentId;
+    if (rc) {
+      rc.cachedTools = result;
+      rc.cachedToolsAgentId = agentId;
+    } else {
+      this.cachedTools = result;
+      this.cachedToolsAgentId = agentId;
+    }
     return result;
   }
 
-  private findTool(name: string): ToolDefinition | undefined {
-    return this.getAvailableTools().find((t) => t.id === name);
+  private findTool(name: string, runId?: RunId): ToolDefinition | undefined {
+    return this.getAvailableTools(runId).find((t) => t.id === name);
   }
 
   /** Whether a tool is registered in the underlying pool (regardless of per-agent filtering). */
@@ -421,9 +457,9 @@ this.stepExecutor = new StepExecutor({
   }
 
   /** Delegate a prompt to a named sub-agent. Returns the agent's response text. */
-  async runAgent(agentId: AgentId, prompt: string, ctx: RequestContext, sessionId?: string): Promise<string> {
+  async runAgent(agentId: AgentId, prompt: string, ctx: RequestContext, sessionId?: string, parentRunId?: RunId): Promise<string> {
     if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
-    return runSubAgent(this.subAgentDeps, agentId, prompt, ctx, sessionId);
+    return runSubAgent(this.subAgentDeps, agentId, prompt, ctx, sessionId, parentRunId);
   }
 
   /**
@@ -667,14 +703,21 @@ this.stepExecutor = new StepExecutor({
     return this.runSessionStates.get(runId) ?? this.sessionState;
   }
 
+  /** Resolve the context of the most recently started run, if one is active. */
+  private activeRunContext(): RunContext | undefined {
+    const runId = this.stateMachine.runIdStack.at(-1);
+    return runId ? this.runContexts.get(runId) : undefined;
+  }
+
   /** Run multiple sub-agents concurrently. Returns combined output. */
   async runAgentsParallel(
     tasks: Array<{ agentId: AgentId; prompt: string }>,
     ctx: RequestContext,
     sessionId?: string,
+    parentRunId?: RunId,
   ): Promise<string> {
     if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
-    return runSubAgentsParallel(this.subAgentDeps, tasks, ctx, sessionId);
+    return runSubAgentsParallel(this.subAgentDeps, tasks, ctx, sessionId, parentRunId);
   }
 
   /** Start a run with error-safe wrapper — returns `{ ok, value }` or `{ ok: false, error }`. */
@@ -827,12 +870,13 @@ this.stepExecutor = new StepExecutor({
     }
 
     const runSagaInstance = runSaga ?? new ToolSaga();
-    const prevAgent = this.stepExecutor.getCurrentAgent();
-    this.stepExecutor.setCurrentAgent(currentAgent);
-    // Point the StepExecutor's compensation recorder at this run's saga so that
+    // Per-run context — the active agent, sub-agent depth/chain, saga and tool
+    // cache all live here so parallel runs never clobber each other's state.
+    const runContext = createRunContext(runId, currentAgent, runSagaInstance);
+    this.runContexts.set(runId, runContext);
+    // Point the run's recorder at this run's saga so that
     // record()/registerCompensation()/rollbackStep() operate on the same instance.
     this.runSagas.set(runId, runSagaInstance);
-    this.stepExecutor.setSaga(runSagaInstance);
 
     const orchestratorDeps: RunLoopDeps = {
       modelCaller: this.modelCaller,
@@ -875,9 +919,8 @@ this.stepExecutor = new StepExecutor({
       });
       return result;
     } finally {
-      this.stepExecutor.setCurrentAgent(prevAgent);
-      // Restore the instance saga as the default recorder for the next run.
-      this.stepExecutor.setSaga(this.saga);
+      // Drop this run's context and saga — parallel runs each own their own.
+      this.runContexts.delete(runId);
       this.runSagas.delete(runId);
     }
   }

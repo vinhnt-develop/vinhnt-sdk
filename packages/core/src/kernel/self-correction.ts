@@ -16,7 +16,7 @@ export interface SelfCorrectionDeps {
   readonly modelCaller: ModelCaller;
   readonly maxSelfCorrectAttempts: number;
   readonly doomLoopThreshold: number;
-  readonly findTool: (name: string) => import("@vinhnt-sdk/tools").ToolDefinition | undefined;
+  readonly findTool: (name: string, runId?: RunId) => import("@vinhnt-sdk/tools").ToolDefinition | undefined;
   readonly permissionGate: PermissionGate;
   readonly pluginManager: PluginManager | undefined;
   currentAgent: AgentConfig | undefined;
@@ -77,7 +77,7 @@ export async function runSelfCorrection(
             corrected = true;
             break;
           }
-          const ctool = deps.findTool(ct.name);
+          const ctool = deps.findTool(ct.name, runId);
           if (!ctool) {
             messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Tool "${ct.name}" not found` });
             continue;

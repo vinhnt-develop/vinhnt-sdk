@@ -16,7 +16,7 @@ export interface ModelCallerDeps {
   emitEvent(event: Omit<KnownRunEvent, "sequence">, persist?: boolean): Promise<void>;
   modelForRun(runId: RunId): ModelProvider | undefined;
   setModelForRun(runId: RunId, model: ModelProvider): void;
-  getAvailableTools(): readonly ToolDefinition[];
+  getAvailableTools(runId: RunId): readonly ToolDefinition[];
   /** OpenAI: tool_choice — controls tool calling behavior. */
   readonly toolChoice?: ToolChoice;
   /** OpenAI: parallel_tool_calls — whether to allow parallel tool calls. */
@@ -106,7 +106,7 @@ export class ModelCaller {
     agentMaxTokens?: number,
     disableTools?: boolean,
   ): Promise<ModelResponse> {
-    const availableTools = disableTools ? [] : this.deps.getAvailableTools();
+    const availableTools = disableTools ? [] : this.deps.getAvailableTools(runId);
     const thinkingBudget = this.deps.thinkingBudget > 0 ? this.deps.thinkingBudget : undefined;
     let request: ModelRequest = {
       messages, tools: availableTools, maxTokens: agentMaxTokens ?? this.deps.maxTokens,

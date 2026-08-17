@@ -19,7 +19,7 @@ export interface ToolErrorRouterDeps {
   readonly selfCorrectOnFailure: boolean;
   readonly externalDirectoryAccess?: boolean;
   readonly workspaceRoot?: string;
-  readonly findTool: (name: string) => ToolDefinition | undefined;
+  readonly findTool: (name: string, runId?: RunId) => ToolDefinition | undefined;
   currentAgent: import("@vinhnt-sdk/schema").AgentConfig | undefined;
   runSelfCorrection: (
     tc: ToolExecutionPlan, messages: ChatMessage[], recentCalls: RecentCall[],
@@ -105,7 +105,7 @@ export async function tryReadFileFallback(
   deps: ToolErrorRouterDeps,
 ): Promise<boolean> {
   try {
-    const fallbackTool = deps.findTool("read_file");
+    const fallbackTool = deps.findTool("read_file", runId);
     if (!fallbackTool) return false;
 
     const fbInput = { filePath: (tc.args as Record<string, unknown>)?.filePath ?? "" };

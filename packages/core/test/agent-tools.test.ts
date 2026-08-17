@@ -135,7 +135,7 @@ describe("createDelegateTool", () => {
     const tool = createDelegateTool(kernel);
     const result = await tool.execute({ agentId: "helper", prompt: "do task" }, { sessionId: "s1" });
     expect(result).toBe("task result");
-    expect(kernel.runAgent).toHaveBeenCalledWith("helper", "do task", expect.any(Object), "s1");
+    expect(kernel.runAgent).toHaveBeenCalledWith("helper", "do task", expect.any(Object), "s1", undefined);
   });
 
   it("propagates parent context (traceId/actorId) to the child run", async () => {
@@ -145,7 +145,7 @@ describe("createDelegateTool", () => {
       { agentId: "helper", prompt: "do task" },
       { sessionId: "s1", parentContext: parentCtx },
     );
-    expect(kernel.runAgent).toHaveBeenCalledWith("helper", "do task", parentCtx, "s1");
+    expect(kernel.runAgent).toHaveBeenCalledWith("helper", "do task", parentCtx, "s1", undefined);
   });
 
   it("falls back to a synthetic context when no parent context is available", async () => {
@@ -161,14 +161,14 @@ describe("createDelegateTool", () => {
     const kernel = mockKernel() as never;
     const tool = createDelegateTool(kernel);
     await tool.execute({ agent_id: "snake", prompt: "work" }, {});
-    expect(kernel.runAgent).toHaveBeenCalledWith("snake", "work", expect.any(Object), undefined);
+    expect(kernel.runAgent).toHaveBeenCalledWith("snake", "work", expect.any(Object), undefined, undefined);
   });
 
   it("accepts task alias for prompt", async () => {
     const kernel = mockKernel() as never;
     const tool = createDelegateTool(kernel);
     await tool.execute({ agentId: "a", task: "do it" }, {});
-    expect(kernel.runAgent).toHaveBeenCalledWith("a", "do it", expect.any(Object), undefined);
+    expect(kernel.runAgent).toHaveBeenCalledWith("a", "do it", expect.any(Object), undefined, undefined);
   });
 
   it("throws when agent id is missing", async () => {
@@ -202,6 +202,7 @@ describe("createDelegateBatchTool", () => {
       ],
       expect.any(Object),
       undefined,
+      undefined,
     );
   });
 
@@ -222,6 +223,7 @@ describe("createDelegateBatchTool", () => {
       [{ agentId: "a", prompt: "task1" }],
       parentCtx,
       "s1",
+      undefined,
     );
   });
 });
