@@ -9,6 +9,7 @@ import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "../session/compaction.js";
 import type { ContextRegistry } from "../system-context/types.js";
+import { createRedactingLogger } from "@vinhnt-sdk/security";
 
 import type { SubAgentParams } from "../agent/agent-factory.js";
 import type { DomainManifest } from "@vinhnt-sdk/tools";
@@ -174,6 +175,17 @@ export class AgentKernel {
     this.maxTokens = normalized.maxTokens ?? 4096;
     const maxTokens = this.maxTokens;
     const thinkingPrompt = normalized.thinkingPrompt ?? DEFAULT_THINKING_PROMPT;
+    // P1-N: wire the redacting logger into the kernel so every log line that
+    // passes through it (e.g. model-caller diagnostics) is scrubbed of secrets.
+    const rawLogger = normalized.logger;
+    const redactingLogger = rawLogger
+      ? {
+          debug: createRedactingLogger(rawLogger.debug.bind(rawLogger)),
+          info: createRedactingLogger(rawLogger.info.bind(rawLogger)),
+          warn: createRedactingLogger(rawLogger.warn.bind(rawLogger)),
+          error: createRedactingLogger(rawLogger.error.bind(rawLogger)),
+        }
+      : undefined;
     this.modelCaller = new ModelCaller({
       defaultModel: normalized.model,
       modelRegistry: normalized.modelRegistry,
@@ -181,7 +193,7 @@ export class AgentKernel {
       thinkingBudget: this.thinkingBudget,
       thinkingPrompt,
       pluginManager: normalized.pluginManager,
-      logger: normalized.logger,
+      logger: redactingLogger,
       emitEvent: (event, persist) => this.emitEvent(event, persist),
       modelForRun: (runId) => this.stateMachine.getModelForRun(runId),
       setModelForRun: (runId, model) => this.stateMachine.setModelForRun(runId, model),

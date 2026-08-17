@@ -1966,3 +1966,61 @@ describe("P1-M: single max-steps authority + per-run circuit breaker", () => {
     expect(findEvent(eventsB, "run.completed")?.data.status).toBe("succeeded");
   });
 });
+
+describe("P1-N: scrub env + redact log", () => {
+  it("TC-P1N-01: tool error log never emits raw tool args (secrets redacted)", async () => {
+    const crashTool = new FakeTool("crash_tool", async () => {
+      throw new Error("Unknown error!");
+    });
+    const model = new FakeModelProvider([
+      {
+        content: "Run tool with secret args",
+        toolCalls: [{ id: "call-1", name: "crash_tool", args: { apiKey: "sk-1234567890abcdef1234567890abcdef", query: "test" } }],
+      },
+      { content: "handled" },
+    ]);
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model, store, tools: [crashTool], maxSteps: 5 });
+
+    const errorSpy = vi.spyOn(console, "error");
+    let logged: string[];
+    try {
+      const handle = kernel.run("Try running", testCtx);
+      await handle.completed;
+    } finally {
+      logged = errorSpy.mock.calls.map((call) => JSON.stringify(call));
+      errorSpy.mockRestore();
+    }
+
+    expect(logged.some((line) => line.includes("Tool execution error"))).toBe(true);
+    for (const line of logged) {
+      expect(line).not.toContain("sk-1234567890abcdef1234567890abcdef");
+    }
+    expect(logged.some((line) => line.includes("[REDACTED:openai-key]"))).toBe(true);
+  });
+
+  it("TC-P1N-02: kernel logger is redacted (model name secret scrubbed)", async () => {
+    const logs: string[] = [];
+    const logger = {
+      debug: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
+      info: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
+      warn: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
+      error: (...args: unknown[]) => logs.push(args.map(String).join(" ")),
+    };
+    const secretModel: ModelProvider = {
+      model: "sk-1234567890abcdef1234567890abcdef-llm",
+      pricing: { input: 0, output: 0 },
+      generate: async () => ({ content: "done" }),
+    };
+    const store = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model: secretModel, store, tools: [], maxSteps: 1, logger });
+
+    const handle = kernel.run("hello", testCtx);
+    await handle.completed;
+
+    const llmLine = logs.find((line) => line.startsWith("[llm]"));
+    expect(llmLine).toBeDefined();
+    expect(llmLine).not.toContain("sk-1234567890abcdef1234567890abcdef");
+    expect(llmLine).toContain("[REDACTED:openai-key]");
+  });
+});

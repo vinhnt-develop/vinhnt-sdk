@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { redactSecrets, detectSecrets, createRedactingLogger } from "@vinhnt-sdk/security";
+import { redactSecrets, detectSecrets, createRedactingLogger, redactObjectSecrets } from "@vinhnt-sdk/security";
 
 describe("SecretRedactor", () => {
   describe("redactSecrets", () => {
@@ -103,6 +103,55 @@ describe("SecretRedactor", () => {
       redactingLogger("Normal log message");
 
       expect(logs[0]).toBe("Normal log message");
+    });
+
+    it("TC03_redacts_secrets_nested_in_object_args", () => {
+      const logs: string[] = [];
+      const mockLog = (...args: unknown[]) => {
+        logs.push(JSON.stringify(args));
+      };
+      const redactingLogger = createRedactingLogger(mockLog);
+
+      redactingLogger("[step-executor] Tool execution error", {
+        toolId: "t1",
+        input: { apiKey: "sk-1234567890abcdef1234567890abcdef" },
+      });
+
+      expect(logs[0]).not.toContain("sk-1234");
+      expect(logs[0]).toContain("[REDACTED:openai-key]");
+    });
+  });
+
+  describe("redactObjectSecrets", () => {
+    it("TC01_redacts_secrets_inside_nested_object", () => {
+      const args = {
+        endpoint: "https://api.example.com",
+        input: {
+          apiKey: "sk-1234567890abcdef1234567890abcdef",
+          config: { token: "ghp_abcdefghijklmnopqrstuvwxyz1234567890" },
+        },
+      };
+
+      const result = redactObjectSecrets(args);
+
+      const serialized = JSON.stringify(result);
+      expect(serialized).not.toContain("sk-1234");
+      expect(serialized).not.toContain("ghp_abc");
+      expect(serialized).toContain("[REDACTED:openai-key]");
+      expect(serialized).toContain("[REDACTED:github-token]");
+      expect(result.endpoint).toBe("https://api.example.com");
+      expect(result.input.config).toBeDefined();
+    });
+
+    it("TC02_preserves_clean_object_structure", () => {
+      const args = { query: "search", limit: 10, nested: { ok: true } };
+      expect(redactObjectSecrets(args)).toEqual(args);
+    });
+
+    it("TC03_leaves_non_objects_untouched", () => {
+      expect(redactObjectSecrets("plain text")).toBe("plain text");
+      expect(redactObjectSecrets(undefined)).toBe(undefined);
+      expect(redactObjectSecrets(null)).toBe(null);
     });
   });
 });

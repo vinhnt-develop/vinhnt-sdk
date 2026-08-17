@@ -18,6 +18,7 @@ import { buildToolContext, type MetadataRef } from "./tool-context-builder.js";
 import { handleApproval as handleApprovalFn } from "./approval-handler.js";
 import { handleToolError as handleToolErrorFn } from "./tool-error-router.js";
 import { runSelfCorrection as runSelfCorrectionFn } from "./self-correction.js";
+import { redactObjectSecrets } from "@vinhnt-sdk/security";
 import { processToolResults } from "./tool-result-processor.js";
 
 const PATH_AWARE_TOOLS = new Set(["read_file", "write_file", "edit_file", "apply_patch", "list_directory", "glob_files", "grep_files", "shell"]);
@@ -331,7 +332,8 @@ export class StepExecutor {
           return { tc, result: "success" as const, output: effectiveOutput };
         } catch (err) {
           if (!(err instanceof RunAbortedError)) {
-            console.error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: tc.args });
+            // P1-N: never log raw tool args — they may contain apiKeys/secrets.
+            console.error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: redactObjectSecrets(tc.args) });
           }
           await handleToolErrorFn(err, tc, tool, messages, step, runId, ctx, runAbort, toolCtx, sessionId, recentCalls, runModel, {
             store: this.deps.store,

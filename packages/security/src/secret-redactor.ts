@@ -143,17 +143,38 @@ export function detectSecrets(text: string): string[] {
 }
 
 /**
+ * Deep-redact secrets inside an object/array tree.
+ *
+ * Serializes the value to JSON, redacts known secret patterns, then parses
+ * it back so nested secrets (e.g. `{ apiKey: "sk-..." }` inside tool args)
+ * are scrubbed while the structure is preserved. Falls back to the original
+ * value if it cannot be serialized (circular refs, functions, etc.).
+ *
+ * @param value - Value that may contain nested secrets
+ * @returns Deep copy with secrets redacted (original returned if unserializable)
+ */
+export function redactObjectSecrets<T>(value: T): T {
+  if (value === null || typeof value !== "object") return value;
+  try {
+    return JSON.parse(redactSecrets(JSON.stringify(value))) as T;
+  } catch {
+    return value;
+  }
+}
+
+/**
  * Create a redaction middleware for a logger.
  *
  * Returns a function that wraps log output, automatically redacting
- * any detected secrets before the message is written.
+ * any detected secrets before the message is written. Strings, error
+ * messages and nested object values are all scrubbed.
  *
  * @param originalLog - The original log function (e.g. console.log)
- * @returns Redacted log function
+ * @returns Redacted log function with the same signature
  */
-export function createRedactingLogger<T extends (...args: unknown[]) => void>(
-  originalLog: T,
-): T {
+export function createRedactingLogger<A extends unknown[]>(
+  originalLog: (...args: A) => void,
+): (...args: A) => void {
   return ((...args: unknown[]) => {
     const redacted = args.map((arg) => {
       if (typeof arg === "string") return redactSecrets(arg);
@@ -161,8 +182,9 @@ export function createRedactingLogger<T extends (...args: unknown[]) => void>(
         arg.message = redactSecrets(arg.message);
         return arg;
       }
+      if (arg !== null && typeof arg === "object") return redactObjectSecrets(arg);
       return arg;
     });
-    originalLog(...redacted);
-  }) as T;
+    originalLog(...(redacted as A));
+  }) as (...args: A) => void;
 }
