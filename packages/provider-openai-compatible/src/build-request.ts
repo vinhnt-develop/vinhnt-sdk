@@ -89,7 +89,7 @@ function toOpenAITool(tool: ToolDefinitionLike): OpenAICompatibleTool {
       function: {
         name: fn.name,
         description: fn.description,
-        parameters: fn.parameters,
+        ...(fn.parameters !== undefined ? { parameters: fn.parameters } : {}),
         ...(fn.strict !== undefined ? { strict: fn.strict } : {}),
       },
     };
@@ -99,7 +99,7 @@ function toOpenAITool(tool: ToolDefinitionLike): OpenAICompatibleTool {
     function: {
       name: tool.name ?? tool.id,
       description: tool.description,
-      parameters: tool.inputSchema,
+      ...(tool.inputSchema !== undefined ? { parameters: tool.inputSchema } : {}),
     },
   };
 }

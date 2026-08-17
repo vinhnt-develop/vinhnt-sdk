@@ -59,6 +59,23 @@ describe("buildRequest", () => {
     }]);
   });
 
+  it("omits parameters when the tool has none", () => {
+    const body = buildRequest(baseRequest({
+      tools: [{
+        id: "t1",
+        description: "desc",
+        risk: "low",
+        type: "function",
+        function: { name: "lookup", description: "desc" },
+      }],
+    }), { model: "m" });
+    expect(body.tools).toEqual([{
+      type: "function",
+      function: { name: "lookup", description: "desc" },
+    }]);
+    expect(JSON.stringify(body.tools)).not.toContain("parameters");
+  });
+
   it("builds tools from id/inputSchema when no function passthrough", () => {
     const body = buildRequest(baseRequest({
       tools: [{
