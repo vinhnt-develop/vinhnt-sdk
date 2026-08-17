@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import type { ToolContext } from "./definitions.js";
 import { commandPattern } from "./arity.js";
+import { killProcessTree, treeKillSpawnOptions } from "./kill-tree.js";
 import { z } from "zod";
 import { defineTool } from "./define-tool.js";
 import { detectInjectionPatterns } from "@vinhnt-sdk/security";
@@ -47,6 +48,7 @@ function execAsync(
         maxBuffer: 10 * 1024 * 1024,
         encoding: "utf-8" as const,
         windowsHide: true,
+        ...treeKillSpawnOptions(),
         env: env && Object.keys(env).length > 0
           ? { ...sanitizeEnv(), ...env }
           : sanitizeEnv(),
@@ -63,12 +65,12 @@ function execAsync(
 
     if (signal) {
       if (signal.aborted) {
-        child.kill();
+        killProcessTree(child);
         reject(new DOMException(signal.reason ?? "Aborted", "AbortError"));
         return;
       }
       signal.addEventListener("abort", () => {
-        child.kill();
+        killProcessTree(child);
         reject(new DOMException(signal.reason ?? "Aborted", "AbortError"));
       }, { once: true });
     }

@@ -183,6 +183,11 @@ export type { ToolSearchInput, ToolSearchResult } from "./tool-search.js";
 export { ToolSandbox, signalToToolContext, createSandbox } from "./sandbox.js";
 
 /**
+ * Tree-scoped process termination (kills child + grandchildren on abort/timeout).
+ */
+export { killProcessTree, isPidAlive, treeKillSpawnOptions } from "./kill-tree.js";
+
+/**
  * Sandbox configuration and types.
  */
 export type { SandboxConfig, SandboxScope, ProcessSandbox, SandboxResult } from "./sandbox.js";

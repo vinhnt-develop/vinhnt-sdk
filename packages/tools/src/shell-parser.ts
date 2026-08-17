@@ -20,7 +20,7 @@ export function parseCommand(cmd: string): { file: string; args: string[] } {
       else { current += ch; }
       i++;
     } else if (inDouble) {
-      if (ch === '"') { inDouble = false; }
+      if (ch === '"') { inDouble = false; i++; }
       else if (ch === "\\" && i + 1 < trimmed.length) { current += trimmed[i + 1]; i += 2; }
       else { current += ch; i++; }
     } else if (ch === "'") { inSingle = true; i++; }

@@ -8,6 +8,7 @@
 import type { ToolDefinition, ToolContext } from "./definitions.js";
 import { parseCommand } from "./shell-parser.js";
 import { sanitizeEnv } from "@vinhnt-sdk/security";
+import { killProcessTree, treeKillSpawnOptions } from "./kill-tree.js";
 
 export { sanitizeEnv };
 
@@ -190,6 +191,7 @@ class HostSandbox implements ProcessSandbox {
           maxBuffer: 10 * 1024 * 1024,
           encoding: "utf-8" as const,
           windowsHide: true,
+          ...treeKillSpawnOptions(),
           env: options.env && Object.keys(options.env).length > 0
             ? { ...sanitizeEnv(), ...options.env }
             : sanitizeEnv(),
@@ -218,7 +220,7 @@ class HostSandbox implements ProcessSandbox {
 
       if (options.signal) {
         if (options.signal.aborted) {
-          child.kill();
+          killProcessTree(child);
           resolve({
             result: { stdout: "", stderr: "Aborted", exitCode: 1 },
             exitCode: 1,
@@ -228,7 +230,7 @@ class HostSandbox implements ProcessSandbox {
           return;
         }
         options.signal.addEventListener("abort", () => {
-          child.kill();
+          killProcessTree(child);
           resolve({
             result: { stdout: "", stderr: options.signal?.reason ?? "Aborted", exitCode: 1 },
             exitCode: 1,
@@ -315,6 +317,7 @@ class ProcessSandboxImpl implements ProcessSandbox {
           maxBuffer,
           encoding: "utf-8" as const,
           windowsHide: true,
+          ...treeKillSpawnOptions(),
           env: secureEnv,
           // Security options
           ...(process.platform !== "win32" ? {
@@ -347,7 +350,7 @@ class ProcessSandboxImpl implements ProcessSandbox {
 
       if (options.signal) {
         if (options.signal.aborted) {
-          child.kill();
+          killProcessTree(child);
           resolve({
             result: { stdout: "", stderr: "Aborted", exitCode: 1 },
             exitCode: 1,
@@ -357,7 +360,7 @@ class ProcessSandboxImpl implements ProcessSandbox {
           return;
         }
         options.signal.addEventListener("abort", () => {
-          child.kill();
+          killProcessTree(child);
           resolve({
             result: { stdout: "", stderr: options.signal?.reason ?? "Aborted", exitCode: 1 },
             exitCode: 1,
