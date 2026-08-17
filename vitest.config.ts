@@ -7,6 +7,7 @@ export default defineConfig({
       'packages/event',
       'packages/schema',
       'packages/tools',
+      'packages/tool-saga',
       'packages/sandbox',
       'packages/sandbox-host',
       'packages/sandbox-process',

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { ToolSaga } from "../src/kernel/tool-saga.js";
+import { ToolSaga } from "../src/index.js";
 
 describe("ToolSaga", () => {
   const entry = (overrides: Partial<Parameters<ToolSaga["record"]>[0]> = {}) => ({

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { StepExecutor, type StepExecutorDeps } from "../src/kernel/step-executor.js";
-import { ToolSaga } from "../src/kernel/tool-saga.js";
+import { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 
 function makeDeps(overrides: Partial<StepExecutorDeps> = {}): StepExecutorDeps {

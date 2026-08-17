@@ -4,7 +4,7 @@ import type { EventDefinition, EventBus } from "@vinhnt-sdk/event";
 import type { RunEventStore, SessionStore } from "../session/store.js";
 import type { PluginManager } from "../plugin.js";
 import type { ModelCaller } from "./model-caller.js";
-import type { ToolSaga } from "./tool-saga.js";
+import type { ToolSaga } from "@vinhnt-sdk/tool-saga";
 
 export interface KernelSessionDeps {
   store: RunEventStore;

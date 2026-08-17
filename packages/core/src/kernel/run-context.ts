@@ -1,6 +1,6 @@
 import type { AgentConfig, AgentId, RunId } from "@vinhnt-sdk/schema";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
-import type { ToolSaga } from "./tool-saga.js";
+import type { ToolSaga } from "@vinhnt-sdk/tool-saga";
 
 /**
  * Mutable state that belongs to a single run — kept out of the kernel

@@ -96,6 +96,9 @@ importers:
       '@vinhnt-sdk/security':
         specifier: workspace:*
         version: link:../security
+      '@vinhnt-sdk/tool-saga':
+        specifier: workspace:*
+        version: link:../tool-saga
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -206,6 +209,8 @@ importers:
         version: 4.4.3
 
   packages/security: {}
+
+  packages/tool-saga: {}
 
   packages/tools:
     dependencies:

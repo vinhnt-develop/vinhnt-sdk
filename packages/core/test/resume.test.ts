@@ -6,7 +6,7 @@ import type { RunLoopDeps, RunLoopInput } from "../src/kernel/run-loop.js";
 import { ModelCaller } from "../src/kernel/model-caller.js";
 import { PermissionGate } from "../src/kernel/permission-gate.js";
 import { StepExecutor, type StepExecutorDeps } from "../src/kernel/step-executor.js";
-import { ToolSaga } from "../src/kernel/tool-saga.js";
+import { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { CircuitBreaker } from "../src/kernel/circuit-breaker.js";
 import { RunStateMachine } from "../src/kernel/run-state.js";
 import { InMemorySessionState } from "../src/session/in-memory-session-state.js";

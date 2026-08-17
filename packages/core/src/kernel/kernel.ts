@@ -27,7 +27,7 @@ import type { RunState } from "./run-state.js";
 import { PermissionGate, type ApprovalDecision } from "./permission-gate.js";
 import { ModelCaller } from "./model-caller.js";
 import { StepExecutor } from "./step-executor.js";
-import { ToolSaga } from "./tool-saga.js";
+import { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { createRunContext, type RunContext } from "./run-context.js";
 import { CircuitBreaker } from "./circuit-breaker.js";
 import { KernelError } from "./kernel-error.js";

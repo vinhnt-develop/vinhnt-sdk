@@ -10,7 +10,7 @@ import { KernelError } from "./kernel-error.js";
 import type { ModelCaller } from "./model-caller.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { StepExecutor } from "./step-executor.js";
-import type { ToolSaga } from "./tool-saga.js";
+import type { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import type { CircuitBreaker, CircuitBreakerOpenError } from "./circuit-breaker.js";
 import type { RunStateMachine } from "./run-state.js";
 import { evaluateStopConditions } from "./termination.js";

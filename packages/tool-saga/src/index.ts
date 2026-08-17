@@ -1,3 +1,9 @@
+/**
+ * @module @vinhnt-sdk/tool-saga
+ * Saga tracking for tool execution: record tool calls per step, register
+ * compensating actions, and roll back steps (or the whole run) in reverse.
+ */
+
 export interface SagaEntry {
   toolId: string;
   toolName: string;
