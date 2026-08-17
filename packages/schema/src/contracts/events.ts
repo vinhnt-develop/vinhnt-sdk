@@ -178,6 +178,7 @@ export interface ToolCompletedData { readonly toolId: string; readonly toolName:
 export interface ToolFailedData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask" }
 export interface ToolSelfCorrectingData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly attempt: number }
 export interface StepCompletedData { readonly step: number; readonly toolCallCount: number }
+export interface StepFailedData { readonly step: number; readonly reason: string; readonly error?: string }
 export interface RunCompletedData { readonly status: "succeeded" | "failed"; readonly output?: string; readonly error?: string; readonly totalSteps: number; readonly durationMs?: number; readonly inputTokens?: number; readonly outputTokens?: number; readonly reasoningTokens?: number }
 export interface PermissionRequestedData { readonly requestId: RequestId; readonly toolName: string; readonly resource: string; readonly reason: string; readonly prompt: string }
 export interface PermissionRepliedData { readonly requestId: RequestId; readonly reply: "once" | "always" | "reject" }
@@ -201,6 +202,7 @@ export type KnownRunEvent =
   | (RunEvent<ToolFailedData> & { readonly type: "tool.failed" })
   | (RunEvent<ToolSelfCorrectingData> & { readonly type: "tool.self_correcting" })
   | (RunEvent<StepCompletedData> & { readonly type: "step.completed" })
+  | (RunEvent<StepFailedData> & { readonly type: "step.failed" })
   | (RunEvent<RunCompletedData> & { readonly type: "run.completed" })
   | (RunEvent<PermissionRequestedData> & { readonly type: "permission.requested" })
   | (RunEvent<PermissionRepliedData> & { readonly type: "permission.replied" })

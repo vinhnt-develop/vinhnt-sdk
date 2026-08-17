@@ -881,6 +881,7 @@ describe("AgentKernel", () => {
           onToolFailed: hooks.onToolFailed ?? (async () => {}),
           onContextCompressed: hooks.onContextCompressed ?? (async () => {}),
           onStepCompleted: hooks.onStepCompleted ?? (async () => {}),
+          onStepFailed: hooks.onStepFailed ?? (async () => {}),
           onRunCompleted: hooks.onRunCompleted ?? (async () => {}),
         },
       };
@@ -1016,6 +1017,39 @@ describe("AgentKernel", () => {
       const handle = kernel.run("", testCtx);
       await handle.completed;
       expect(runStatus).toBe("failed");
+    });
+
+    it("TC36b: onStepFailed fires when a step times out but run continues", async () => {
+      let calls = 0;
+      const model: ModelProvider = {
+        model: "hang-once-model",
+        pricing: { input: 0, output: 0 },
+        generate: async (_req, signal) => {
+          calls++;
+          if (calls === 1) {
+            return new Promise<ModelResponse>((_resolve, reject) => {
+              if (signal?.aborted) { reject(new Error("timed out")); return; }
+              signal?.addEventListener("abort", () => reject(new Error("timed out")), { once: true });
+            });
+          }
+          return { content: "recovered" };
+        },
+        countTokens: () => 0,
+      };
+      const store = new FakeRunEventStore();
+      const agentRegistry = new FakeAgentRegistry();
+      const pm = new DefaultPluginManager(agentRegistry);
+      const failedCalls: Array<{ step: number; reason: string }> = [];
+      const plugin = makeSpyPlugin("spy", {
+        onStepFailed: async (data) => { failedCalls.push({ step: data.step, reason: data.reason }); },
+      });
+      await pm.register(plugin);
+      await pm.activate("spy");
+      const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 10, stepTimeout: 1100, pluginManager: pm, circuitBreakerOptions: { maxRetries: 0 } });
+      const handle = kernel.run("test", testCtx);
+      await handle.completed;
+      expect(failedCalls.length).toBeGreaterThan(0);
+      expect(failedCalls[0]).toEqual({ step: 0, reason: "timeout" });
     });
   });
 
@@ -1646,26 +1680,54 @@ describe("AgentKernel", () => {
   });
 
   describe("step timeout + circuit breaker", () => {
-    it("TC50: fails run when model call exceeds stepTimeout", async () => {
+    it("TC50: step-level timeout emits step.failed and run continues to next step", async () => {
+      let calls = 0;
       const model: ModelProvider = {
-        model: "hang-model",
+        model: "hang-once-model",
         pricing: { input: 0, output: 0 },
         generate: async (_req, signal) => {
-          return new Promise<ModelResponse>((_resolve, reject) => {
-            if (signal?.aborted) { reject(new Error("timed out")); return; }
-            signal?.addEventListener("abort", () => reject(new Error("timed out")), { once: true });
-          });
+          calls++;
+          if (calls === 1) {
+            return new Promise<ModelResponse>((_resolve, reject) => {
+              if (signal?.aborted) { reject(new Error("timed out")); return; }
+              signal?.addEventListener("abort", () => reject(new Error("timed out")), { once: true });
+            });
+          }
+          return { content: "recovered after timeout" };
         },
         countTokens: () => 0,
       };
       const store = new FakeRunEventStore();
-      const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 10, stepTimeout: 1100 });
+      const kernel = new AgentKernel({
+        model, store, tools: [], maxSteps: 10, stepTimeout: 1100,
+        circuitBreakerOptions: { maxRetries: 0 },
+      });
       const handle = kernel.run("test", testCtx);
       await handle.completed;
       const events = await store.list(handle.runId);
+      const failedStep = findEvent(events, "step.failed");
+      expect(failedStep?.data.step).toBe(0);
+      expect(failedStep?.data.reason).toBe("timeout");
       const completed = findEvent(events, "run.completed");
-      expect(completed?.data.status).toBe("failed");
-      expect(completed?.data.error).toContain("timed out");
+      expect(completed?.data.status).toBe("succeeded");
+    });
+
+    it("TC50 variant: slow tool exceeding stepTimeout fails the step, run continues to next step", async () => {
+      const slowTool = new FakeTool("slow_tool", () => new Promise<never>(() => {}));
+      const model = new FakeModelProvider([
+        { content: "calling tool", toolCalls: [{ id: "c1", name: "slow_tool", args: {} }] },
+        { content: "done after tool timeout" },
+      ]);
+      const store = new FakeRunEventStore();
+      const kernel = new AgentKernel({ model, store, tools: [slowTool], maxSteps: 10, stepTimeout: 1100 });
+      const handle = kernel.run("test", testCtx);
+      await handle.completed;
+      const events = await store.list(handle.runId);
+      const failedStep = findEvent(events, "step.failed");
+      expect(failedStep?.data.step).toBe(0);
+      expect(failedStep?.data.reason).toBe("timeout");
+      const completed = findEvent(events, "run.completed");
+      expect(completed?.data.status).toBe("succeeded");
     });
 
     it("TC51: circuit breaker opens after consecutive model failures", async () => {

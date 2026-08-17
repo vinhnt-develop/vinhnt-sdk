@@ -1,7 +1,7 @@
 import { defineEvent } from "./definition.js";
 import {
   RunStartedDataSchema, RunCompletedDataSchema, StepStartedDataSchema,
-  StepCompletedDataSchema, ToolInvokedDataSchema, ToolCompletedDataSchema,
+  StepCompletedDataSchema, StepFailedDataSchema, ToolInvokedDataSchema, ToolCompletedDataSchema,
   ToolFailedDataSchema, ToolSelfCorrectingDataSchema, StepTypeChangedDataSchema,
   TokenStreamedDataSchema, TokenCountedDataSchema, ThinkingStartedDataSchema,
   ThinkingContentDataSchema, ThinkingCompletedDataSchema, ModelCostDataSchema,
@@ -36,6 +36,13 @@ export const StepCompleted = defineEvent({
   description: "A step has completed",
   durable: { version: 1, aggregate: "runId" },
   schema: StepCompletedDataSchema,
+});
+
+export const StepFailed = defineEvent({
+  type: "step.failed",
+  description: "A step failed (e.g. timed out) without failing the whole run",
+  durable: { version: 1, aggregate: "runId" },
+  schema: StepFailedDataSchema,
 });
 
 export const ToolInvoked = defineEvent({

@@ -56,7 +56,7 @@ export type {
   ThinkingStartedData, ThinkingContentData, ThinkingCompletedData,
   ContextCompressedData, TokenCountedData,
   ToolInvokedData, ToolCompletedData, ToolFailedData, ToolSelfCorrectingData,
-  StepCompletedData, RunCompletedData,
+  StepCompletedData, StepFailedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
 } from "./contracts/index.js";
 
@@ -256,7 +256,7 @@ export type { EventDefinition, TypedEvent } from "./event/index.js";
  */
 export {
   RunStarted, RunCompleted,
-  StepStarted, StepCompleted,
+  StepStarted, StepCompleted, StepFailed,
   ToolInvoked, ToolCompleted, ToolFailed, ToolSelfCorrecting,
   StepTypeChanged,
   TokenStreamed, TokenCounted,

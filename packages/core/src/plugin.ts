@@ -33,6 +33,7 @@ export interface PluginHooks {
   onToolFailed?(data: { toolId: string; toolName: string; error: string }): Promise<void>;
   onContextCompressed?(data: { originalCount: number; compressedCount: number }): Promise<void>;
   onStepCompleted?(data: { step: number; toolCallCount: number }): Promise<void>;
+  onStepFailed?(data: { step: number; reason: string; error?: string }): Promise<void>;
   onRunCompleted?(data: { status: string; output?: string; error?: string; stopCondition?: string }): Promise<void>;
 
   // Mutation hooks (can modify data flowing through the pipeline)

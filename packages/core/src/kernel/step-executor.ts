@@ -1,5 +1,6 @@
 import { normalize } from "node:path";
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
+import { RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "../model.js";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 
@@ -315,7 +316,9 @@ export class StepExecutor {
 
           return { tc, result: "success" as const, output: effectiveOutput };
         } catch (err) {
-          console.error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: tc.args });
+          if (!(err instanceof RunAbortedError)) {
+            console.error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: tc.args });
+          }
           await handleToolErrorFn(err, tc, tool, messages, step, runId, ctx, runAbort, toolCtx, sessionId, recentCalls, runModel, {
             store: this.deps.store,
             addSessionMessage: this.deps.addSessionMessage,

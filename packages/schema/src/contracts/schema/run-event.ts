@@ -145,6 +145,13 @@ export const StepCompletedDataSchema = z.object({
 });
 export type StepCompletedData = z.infer<typeof StepCompletedDataSchema>;
 
+export const StepFailedDataSchema = z.object({
+  step: z.number(),
+  reason: z.string(),
+  error: z.string().optional(),
+});
+export type StepFailedData = z.infer<typeof StepFailedDataSchema>;
+
 export const RunCompletedDataSchema = z.object({
   status: z.enum(["succeeded", "failed"]),
   output: z.string().optional(),
@@ -221,6 +228,9 @@ export type ToolSelfCorrectingEvent = z.infer<typeof ToolSelfCorrectingEventSche
 export const StepCompletedEventSchema = eventSchema(StepCompletedDataSchema, z.literal("step.completed"));
 export type StepCompletedEvent = z.infer<typeof StepCompletedEventSchema>;
 
+export const StepFailedEventSchema = eventSchema(StepFailedDataSchema, z.literal("step.failed"));
+export type StepFailedEvent = z.infer<typeof StepFailedEventSchema>;
+
 export const RunCompletedEventSchema = eventSchema(RunCompletedDataSchema, z.literal("run.completed"));
 export type RunCompletedEvent = z.infer<typeof RunCompletedEventSchema>;
 
@@ -250,6 +260,7 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   ToolFailedEventSchema,
   ToolSelfCorrectingEventSchema,
   StepCompletedEventSchema,
+  StepFailedEventSchema,
   RunCompletedEventSchema,
 PermissionRequestedEventSchema,
   PermissionRepliedEventSchema,

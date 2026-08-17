@@ -203,6 +203,8 @@ interface StepOutput {
   completed: boolean;
   toolCallCount: number;
   lastStepToolOutcomes: readonly ToolCallOutcome[];
+  /** If set, the step itself failed (e.g. step timeout) without failing the run. */
+  stepFailed?: { reason: string; error?: string };
 }
 
 async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOutput> {
@@ -250,7 +252,19 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         ), stepTimeoutController.signal);
     } catch (err: unknown) {
       if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
-        throw new KernelError("timeout", `Model call timed out after ${deps.stepTimeout}ms`, err as Error);
+        // Step-level timeout: the step fails but the run continues to the next step.
+        return {
+          messages,
+          step: input.step,
+          runId,
+          totalInputTokens: input.totalInputTokens,
+          totalOutputTokens: input.totalOutputTokens,
+          finalOutput: input.finalOutput,
+          completed: false,
+          toolCallCount: 0,
+          lastStepToolOutcomes: [],
+          stepFailed: { reason: "timeout", error: `Model call timed out after ${deps.stepTimeout}ms` },
+        };
       }
       const circuitErr = err as { constructor?: typeof CircuitBreakerOpenError };
       if (circuitErr?.constructor?.name === "CircuitBreakerOpenError") {
@@ -318,6 +332,28 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       toolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
       messages, input.step, runId, ctx, stepTimeoutController, sessionId, runModel,
     );
+
+    if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
+      // Step timed out during tool execution — surface an error for any tool call
+      // that never got a response so the conversation stays coherent for the model.
+      for (const tc of toolCalls) {
+        if (!messages.some((m) => m.role === "tool" && m.toolCallId === tc.id)) {
+          messages.push({ role: "tool", toolCallId: tc.id, content: `Error: Step timed out after ${deps.stepTimeout}ms` });
+        }
+      }
+      return {
+        messages,
+        step: input.step,
+        runId,
+        totalInputTokens: input.totalInputTokens,
+        totalOutputTokens: input.totalOutputTokens,
+        finalOutput: input.finalOutput,
+        completed: false,
+        toolCallCount,
+        lastStepToolOutcomes: toolResults,
+        stepFailed: { reason: "timeout", error: `Tool execution timed out after ${deps.stepTimeout}ms` },
+      };
+    }
 
     // Accumulate self-correction tokens into run totals
     input.totalInputTokens += selfCorrectTokens.input;
@@ -499,8 +535,13 @@ export async function runLoop(
       totalOutputTokens = stepResult.totalOutputTokens;
       finalOutput = stepResult.finalOutput;
 
-      await emitEvt("step.completed", { step, toolCallCount: stepResult.toolCallCount });
-      await deps.pluginManager?.fireHook("onStepCompleted", { step, toolCallCount: stepResult.toolCallCount });
+      if (stepResult.stepFailed) {
+        await emitEvt("step.failed", { step, reason: stepResult.stepFailed.reason, ...(stepResult.stepFailed.error ? { error: stepResult.stepFailed.error } : {}) });
+        await deps.pluginManager?.fireHook("onStepFailed", { step, reason: stepResult.stepFailed.reason, ...(stepResult.stepFailed.error ? { error: stepResult.stepFailed.error } : {}) });
+      } else {
+        await emitEvt("step.completed", { step, toolCallCount: stepResult.toolCallCount });
+        await deps.pluginManager?.fireHook("onStepCompleted", { step, toolCallCount: stepResult.toolCallCount });
+      }
 
       if (stepResult.completed) {
         finalOutput = stepResult.finalOutput;

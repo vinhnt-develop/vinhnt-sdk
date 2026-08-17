@@ -19,7 +19,7 @@ export type {
   ThinkingStartedData, ThinkingContentData, ThinkingCompletedData,
   ContextCompressedData, TokenCountedData, ModelCostData,
   ToolInvokedData, ToolCompletedData, ToolFailedData, ToolSelfCorrectingData,
-  StepCompletedData, RunCompletedData,
+  StepCompletedData, StepFailedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
 } from "./events.js";
 

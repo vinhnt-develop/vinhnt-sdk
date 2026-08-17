@@ -61,7 +61,7 @@ describe("parseRunEvent", () => {
       "thinking.started", "thinking.content", "thinking.completed",
       "context.compressed", "token.counted", "model.cost",
       "tool.invoked", "tool.completed", "tool.failed", "tool.self_correcting",
-      "step.completed", "run.completed",
+      "step.completed", "step.failed", "run.completed",
       "permission.requested", "permission.replied", "step.type_changed",
     ] as const;
 
@@ -70,6 +70,7 @@ describe("parseRunEvent", () => {
       "run.completed": { status: "succeeded" },
       "step.started": { step: 1 },
       "step.completed": { step: 1, toolCallCount: 0 },
+      "step.failed": { step: 1, reason: "timeout", error: "Model call timed out after 1000ms" },
       "token.streamed": { content: "hello", step: 1 },
       "thinking.started": { step: 1 },
       "thinking.content": { content: "hmm", step: 1 },

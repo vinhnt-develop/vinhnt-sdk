@@ -31,7 +31,7 @@ export {
   ThinkingStartedDataSchema, ThinkingContentDataSchema, ThinkingCompletedDataSchema,
   ContextCompressedDataSchema, TokenCountedDataSchema, ModelCostDataSchema,
   ToolInvokedDataSchema, ToolCompletedDataSchema, ToolFailedDataSchema,
-  ToolSelfCorrectingDataSchema, StepCompletedDataSchema, RunCompletedDataSchema,
+  ToolSelfCorrectingDataSchema, StepCompletedDataSchema, StepFailedDataSchema, RunCompletedDataSchema,
   PermissionRequestedDataSchema, PermissionRepliedDataSchema, StepTypeChangedDataSchema,
 } from "./run-event.js";
 export type {
@@ -39,7 +39,7 @@ export type {
   ThinkingStartedData, ThinkingContentData, ThinkingCompletedData,
   ContextCompressedData, TokenCountedData, ModelCostData,
   ToolInvokedData, ToolCompletedData, ToolFailedData,
-  ToolSelfCorrectingData, StepCompletedData, RunCompletedData,
+  ToolSelfCorrectingData, StepCompletedData, StepFailedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
 } from "./run-event.js";
 export {
@@ -47,7 +47,7 @@ export {
   ThinkingStartedEventSchema, ThinkingContentEventSchema, ThinkingCompletedEventSchema,
   ContextCompressedEventSchema, TokenCountedEventSchema, ModelCostEventSchema,
   ToolInvokedEventSchema, ToolCompletedEventSchema, ToolFailedEventSchema,
-  ToolSelfCorrectingEventSchema, StepCompletedEventSchema, RunCompletedEventSchema,
+  ToolSelfCorrectingEventSchema, StepCompletedEventSchema, StepFailedEventSchema, RunCompletedEventSchema,
   PermissionRequestedEventSchema, PermissionRepliedEventSchema, StepTypeChangedEventSchema,
   KnownRunEventSchema, parseRunEvent, safeParseRunEvent,
 } from "./run-event.js";
@@ -56,7 +56,7 @@ export type {
   ThinkingStartedEvent, ThinkingContentEvent, ThinkingCompletedEvent,
   ContextCompressedEvent, TokenCountedEvent, ModelCostEvent,
   ToolInvokedEvent, ToolCompletedEvent, ToolFailedEvent,
-  ToolSelfCorrectingEvent, StepCompletedEvent,
+  ToolSelfCorrectingEvent, StepCompletedEvent, StepFailedEvent,
   RunCompletedEvent, KnownRunEvent,
   PermissionRequestedEvent, PermissionRepliedEvent, StepTypeChangedEvent,
 } from "./run-event.js";
