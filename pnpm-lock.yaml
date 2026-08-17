@@ -96,6 +96,9 @@ importers:
       '@vinhnt-sdk/permission':
         specifier: workspace:*
         version: link:../permission
+      '@vinhnt-sdk/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
@@ -114,6 +117,24 @@ importers:
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
+      '@vinhnt-sdk/tools-agent':
+        specifier: workspace:*
+        version: link:../tools-agent
+      '@vinhnt-sdk/tools-fs':
+        specifier: workspace:*
+        version: link:../tools-fs
+      '@vinhnt-sdk/tools-git':
+        specifier: workspace:*
+        version: link:../tools-git
+      '@vinhnt-sdk/tools-search':
+        specifier: workspace:*
+        version: link:../tools-search
+      '@vinhnt-sdk/tools-shell':
+        specifier: workspace:*
+        version: link:../tools-shell
+      '@vinhnt-sdk/tools-web':
+        specifier: workspace:*
+        version: link:../tools-web
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -292,6 +313,84 @@ importers:
       '@vinhnt-sdk/security':
         specifier: workspace:*
         version: link:../security
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/tools-agent:
+    dependencies:
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/tools-fs:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@vinhnt-sdk/security':
+        specifier: workspace:*
+        version: link:../security
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/tools-git:
+    dependencies:
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/tools-search:
+    dependencies:
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/tools-shell:
+    dependencies:
+      '@vinhnt-sdk/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@vinhnt-sdk/sandbox-host':
+        specifier: workspace:*
+        version: link:../sandbox-host
+      '@vinhnt-sdk/sandbox-process':
+        specifier: workspace:*
+        version: link:../sandbox-process
+      '@vinhnt-sdk/security':
+        specifier: workspace:*
+        version: link:../security
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+
+  packages/tools-web:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@vinhnt-sdk/security':
+        specifier: workspace:*
+        version: link:../security
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
       zod:
         specifier: ^4.4.3
         version: 4.4.3

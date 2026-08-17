@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { createWebSearchTool, TavilySearchProvider } from "@vinhnt-sdk/tools";
-import type { WebSearchProvider } from "@vinhnt-sdk/tools";
+﻿import { describe, it, expect, vi } from "vitest";
+import { createWebSearchTool, TavilySearchProvider } from "@vinhnt-sdk/core";
+import type { WebSearchProvider } from "@vinhnt-sdk/core";
 
 function makeProvider(overrides: Partial<WebSearchProvider> = {}): WebSearchProvider {
   return {

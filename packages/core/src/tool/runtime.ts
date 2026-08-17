@@ -1,7 +1,7 @@
 import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
 import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
 import { ToolRegistry } from "@vinhnt-sdk/tools";
-import { ToolSandbox, signalToToolContext } from "@vinhnt-sdk/tools";
+import { ToolSandbox, signalToToolContext } from "@vinhnt-sdk/tools-shell";
 import type { PermissionGate} from "@vinhnt-sdk/step-executor";
 import { type DynamicRule } from "@vinhnt-sdk/step-executor";
 import type { ApprovalHandler } from "@vinhnt-sdk/tools";

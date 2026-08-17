@@ -288,13 +288,7 @@ export type { VntErrorCtx } from "@vinhnt-sdk/schema";
  * });
  * ```
  */
-export { defineTool, ToolRegistry } from "@vinhnt-sdk/tools";
-
-/**
- * Tool system types.
- */
-export type { Tool, ToolConfig, ToolRisk, ToolDefinition } from "@vinhnt-sdk/tools";
-export type { ToolContext, ToolHook, ToolProvider } from "@vinhnt-sdk/tools";
+export * from "./tool/index.js";
 
 // === Re-export essential types from knowledge ===
 

@@ -10,47 +10,17 @@ import {
   toolToDefinition,
   zodSchemaToNestedJsonSchema,
   ToolRegistry,
-  createReadFileTool,
-  createWriteFileTool,
-  createEditFileTool,
-  createApplyPatchTool,
-  createListDirectoryTool,
-  createShellTool,
-  createGitStatusTool,
-  createGitDiffTool,
-  createGitLogTool,
-  createGitCommitTool,
-  createGlobFilesTool,
-  createGrepFilesTool,
-  createWebFetchTool,
-  createReadImageTool,
-  readImageToContentParts,
-  createQuestionTool,
-  createWebSearchTool,
-  createTodoWriteTool,
-  createToolSearchTool,
-  ToolSandbox,
-  signalToToolContext,
-  createSandbox,
   generateDiff,
   lintToolDescription,
   lintToolDefinitions,
   validateInput,
   ToolInputError,
   commandPattern,
-  FileReadTracker,
-  InMemoryFileHistory,
-  createFileHistoryHook,
   createCodingDomain,
   LazyToolRegistry,
   ToolProviderRegistry,
-  BuiltinToolProvider,
   ToolFileProvider,
   ToolFileLoader,
-  AgentToolProvider,
-  SkillToolProvider,
-  createToolProviderRegistry,
-  createToolProvider,
 } from '../src/index.js';
 import type {
   Tool,
@@ -112,94 +82,6 @@ describe('Tools Package Type Tests', () => {
     });
   });
 
-  describe('Built-in Tools', () => {
-    it('createReadFileTool should be defined', () => {
-      expectTypeOf(createReadFileTool).toBeDefined();
-    });
-
-    it('createWriteFileTool should be defined', () => {
-      expectTypeOf(createWriteFileTool).toBeDefined();
-    });
-
-    it('createEditFileTool should be defined', () => {
-      expectTypeOf(createEditFileTool).toBeDefined();
-    });
-
-    it('createApplyPatchTool should be defined', () => {
-      expectTypeOf(createApplyPatchTool).toBeDefined();
-    });
-
-    it('createListDirectoryTool should be defined', () => {
-      expectTypeOf(createListDirectoryTool).toBeDefined();
-    });
-
-    it('createShellTool should be defined', () => {
-      expectTypeOf(createShellTool).toBeDefined();
-    });
-
-    it('createGitStatusTool should be defined', () => {
-      expectTypeOf(createGitStatusTool).toBeDefined();
-    });
-
-    it('createGitDiffTool should be defined', () => {
-      expectTypeOf(createGitDiffTool).toBeDefined();
-    });
-
-    it('createGitLogTool should be defined', () => {
-      expectTypeOf(createGitLogTool).toBeDefined();
-    });
-
-    it('createGitCommitTool should be defined', () => {
-      expectTypeOf(createGitCommitTool).toBeDefined();
-    });
-
-    it('createGlobFilesTool should be defined', () => {
-      expectTypeOf(createGlobFilesTool).toBeDefined();
-    });
-
-    it('createGrepFilesTool should be defined', () => {
-      expectTypeOf(createGrepFilesTool).toBeDefined();
-    });
-
-    it('createWebFetchTool should be defined', () => {
-      expectTypeOf(createWebFetchTool).toBeDefined();
-    });
-
-    it('createReadImageTool should be defined', () => {
-      expectTypeOf(createReadImageTool).toBeDefined();
-    });
-
-    it('createQuestionTool should be defined', () => {
-      expectTypeOf(createQuestionTool).toBeDefined();
-    });
-
-    it('createWebSearchTool should be defined', () => {
-      expectTypeOf(createWebSearchTool).toBeDefined();
-    });
-
-    it('createTodoWriteTool should be defined', () => {
-      expectTypeOf(createTodoWriteTool).toBeDefined();
-    });
-
-    it('createToolSearchTool should be defined', () => {
-      expectTypeOf(createToolSearchTool).toBeDefined();
-    });
-  });
-
-  describe('Sandbox', () => {
-    it('ToolSandbox should be defined', () => {
-      expectTypeOf(ToolSandbox).toBeDefined();
-    });
-
-    it('signalToToolContext should be defined', () => {
-      expectTypeOf(signalToToolContext).toBeDefined();
-    });
-
-    it('createSandbox should be defined', () => {
-      expectTypeOf(createSandbox).toBeDefined();
-    });
-  });
-
   describe('Utilities', () => {
     it('generateDiff should be defined', () => {
       expectTypeOf(generateDiff).toBeDefined();
@@ -226,20 +108,6 @@ describe('Tools Package Type Tests', () => {
     });
   });
 
-  describe('File History', () => {
-    it('FileReadTracker should be defined', () => {
-      expectTypeOf(FileReadTracker).toBeDefined();
-    });
-
-    it('InMemoryFileHistory should be defined', () => {
-      expectTypeOf(InMemoryFileHistory).toBeDefined();
-    });
-
-    it('createFileHistoryHook should be defined', () => {
-      expectTypeOf(createFileHistoryHook).toBeDefined();
-    });
-  });
-
   describe('Domain', () => {
     it('createCodingDomain should be defined', () => {
       expectTypeOf(createCodingDomain).toBeDefined();
@@ -257,10 +125,6 @@ describe('Tools Package Type Tests', () => {
       expectTypeOf(ToolProviderRegistry).toBeDefined();
     });
 
-    it('BuiltinToolProvider should be defined', () => {
-      expectTypeOf(BuiltinToolProvider).toBeDefined();
-    });
-
     it('ToolFileProvider should be defined', () => {
       expectTypeOf(ToolFileProvider).toBeDefined();
     });
@@ -268,21 +132,15 @@ describe('Tools Package Type Tests', () => {
     it('ToolFileLoader should be defined', () => {
       expectTypeOf(ToolFileLoader).toBeDefined();
     });
+  });
 
-    it('AgentToolProvider should be defined', () => {
-      expectTypeOf(AgentToolProvider).toBeDefined();
+  describe('Provider Types', () => {
+    it('ToolProvider should be an object type', () => {
+      expectTypeOf<ToolProvider>().toHaveProperty('register');
     });
 
-    it('SkillToolProvider should be defined', () => {
-      expectTypeOf(SkillToolProvider).toBeDefined();
-    });
-
-    it('createToolProviderRegistry should be defined', () => {
-      expectTypeOf(createToolProviderRegistry).toBeDefined();
-    });
-
-    it('createToolProvider should be defined', () => {
-      expectTypeOf(createToolProvider).toBeDefined();
+    it('ToolHook should be a function type', () => {
+      expectTypeOf<ToolHook>().toMatchFunctionSignature(() => undefined);
     });
   });
 });

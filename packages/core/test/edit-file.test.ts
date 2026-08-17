@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { createEditFileTool } from "@vinhnt-sdk/tools";
+﻿import { describe, it, expect, vi } from "vitest";
+import { createEditFileTool } from "@vinhnt-sdk/core";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -15,7 +15,7 @@ function makeCtx() {
   };
 }
 
-describe("edit_file — multi-layer matching", () => {
+describe("edit_file â€” multi-layer matching", () => {
   it("exact match (layer 1)", async () => {
     await withTempDir(async (dir) => {
       writeFileSync(join(dir, "test.txt"), "const x = 1;\nconst y = 2;");
@@ -30,7 +30,7 @@ describe("edit_file — multi-layer matching", () => {
     });
   });
 
-  it("trimmed match — ignores per-line whitespace (layer 2)", async () => {
+  it("trimmed match â€” ignores per-line whitespace (layer 2)", async () => {
     await withTempDir(async (dir) => {
       writeFileSync(join(dir, "test.txt"), "  const x = 1;\nconst y = 2;");
       const tool = createEditFileTool(() => dir);
@@ -95,7 +95,7 @@ describe("edit_file — multi-layer matching", () => {
     });
   });
 
-  it("context recovery — partial match with key phrases (layer 8)", async () => {
+  it("context recovery â€” partial match with key phrases (layer 8)", async () => {
     await withTempDir(async (dir) => {
       writeFileSync(join(dir, "test.txt"), "// Copyright 2024\n// SPDX-License-Identifier: MIT\n\nfunction add(a, b) {\n  return a + b;\n}\n\nfunction sub(a, b) {\n  return a - b;\n}");
       const tool = createEditFileTool(() => dir);

@@ -1,0 +1,43 @@
+{
+  "name": "@vinhnt-sdk/tools-shell",
+  "version": "0.1.3",
+  "description": "Shell command tool family for VNT Agent — sandboxed shell execution and tool sandbox helpers",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "LICENSE", "README.md"],
+  "sideEffects": false,
+  "engines": { "node": ">=20" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/tools-shell"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/tools-shell",
+  "bugs": { "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues" },
+  "keywords": ["vnt", "tools", "shell", "sandbox", "agent"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@vinhnt-sdk/sandbox": "workspace:*",
+    "@vinhnt-sdk/sandbox-host": "workspace:*",
+    "@vinhnt-sdk/sandbox-process": "workspace:*",
+    "@vinhnt-sdk/security": "workspace:*",
+    "@vinhnt-sdk/tools": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

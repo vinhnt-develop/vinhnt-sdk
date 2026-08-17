@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+﻿import { describe, expect, it, vi } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
-import { ToolProviderRegistry, BuiltinToolProvider } from "@vinhnt-sdk/tools";
-import type { ToolDefinition } from "@vinhnt-sdk/tools";
-import { defineTool } from "@vinhnt-sdk/tools";
+import { ToolProviderRegistry, BuiltinToolProvider } from "@vinhnt-sdk/core";
+import type { ToolDefinition } from "@vinhnt-sdk/core";
+import { defineTool } from "@vinhnt-sdk/core";
 import { z } from "zod";
 
 function createMockTool(id: string): ToolDefinition {

@@ -1,5 +1,6 @@
-import { ToolProviderRegistry, BuiltinToolProvider } from "@vinhnt-sdk/tools";
+import { ToolProviderRegistry } from "@vinhnt-sdk/tools";
 import type { ToolProvider, ToolDefinition } from "@vinhnt-sdk/tools";
+import { BuiltinToolProvider } from "./builtin-provider.js";
 import type { AgentKernel } from "../kernel/kernel.js";
 
 /**
