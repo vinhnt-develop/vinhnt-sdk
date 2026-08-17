@@ -224,10 +224,6 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       };
     }
 
-    if (!deps.permissionGate.checkMaxSteps(input.step, deps.currentAgent)) {
-      throw new KernelError("max_steps_exceeded", `Agent max steps exceeded (${input.step})`);
-    }
-
     if (!deps.permissionGate.checkMaxTokens(input.totalInputTokens, input.totalOutputTokens, deps.currentAgent)) {
       throw new KernelError("max_tokens_exceeded", `Agent max tokens exceeded (${input.totalInputTokens + input.totalOutputTokens})`);
     }
@@ -413,7 +409,14 @@ export async function runLoop(
   let finalOutput = "";
   let contextEpochActive = false;
 
-  const effectiveMaxSteps = deps.termination?.maxSteps ?? deps.maxSteps;
+  // Single max-steps authority: resolve the run's step budget from every
+  // applicable source (config default, termination policy, agent permission)
+  // once, then enforce it in exactly one place — the loop bound below.
+  const runMaxSteps = Math.min(
+    deps.termination?.maxSteps ?? Number.POSITIVE_INFINITY,
+    deps.currentAgent?.permissions?.maxSteps ?? Number.POSITIVE_INFINITY,
+    deps.maxSteps,
+  );
 
   const emitEvt = (type: string, data: Record<string, unknown>) =>
     emitEvent({
@@ -468,7 +471,7 @@ export async function runLoop(
     // step-relative logic stay continuous across a resume.
     const startedStep = runSessionState?.step ?? 0;
 
-    for (step = startedStep; step < effectiveMaxSteps; step++) {
+    for (step = startedStep; step < runMaxSteps; step++) {
       if (runAbort.signal.aborted) {
         await emitFail(runId, ctx, "Run cancelled", step, sessionId, totalInputTokens, totalOutputTokens);
         await deps.saga.rollbackAll();
@@ -513,14 +516,14 @@ export async function runLoop(
         }
       }
 
-      if (step >= effectiveMaxSteps - 1) {
+      if (step >= runMaxSteps - 1) {
         messages.push({
           role: "system",
-          content: `[You have reached the maximum number of steps (${effectiveMaxSteps}). This is your final opportunity to respond. Do NOT call any tools. Provide a comprehensive summary and any final output.]`,
+          content: `[You have reached the maximum number of steps (${runMaxSteps}). This is your final opportunity to respond. Do NOT call any tools. Provide a comprehensive summary and any final output.]`,
         });
       }
 
-      const onLastStep = step >= effectiveMaxSteps - 1;
+      const onLastStep = step >= runMaxSteps - 1;
       const stepResult = await processStep(deps, {
         messages, step, runId, ctx, runAbort,
         ...(sessionId !== undefined ? { sessionId } : {}),
@@ -630,7 +633,7 @@ export async function runLoop(
     }
 
     const durationMs = Date.now() - startTime;
-    if (step >= effectiveMaxSteps) {
+    if (step >= runMaxSteps) {
       if (finalOutput) {
         await emitEvt("run.completed", {
           status: "succeeded", output: finalOutput, totalSteps: step + 1,
@@ -658,7 +661,7 @@ export async function runLoop(
         setState(runId, "completed");
         return { totalSteps: step + 1, status: "succeeded" };
       }
-      await emitFail(runId, ctx, `Exceeded max steps (${effectiveMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
+      await emitFail(runId, ctx, `Exceeded max steps (${runMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
       await deps.saga.rollbackAll();
       setState(runId, "failed");
       return { totalSteps: step, status: "failed" };

@@ -1900,3 +1900,69 @@ describe("P1-L: parallel run isolation (per-run context object)", () => {
     }
   });
 });
+
+describe("P1-M: single max-steps authority + per-run circuit breaker", () => {
+  it("TC-P1M-01: agent maxSteps is the single step authority (config cannot over-ride it)", async () => {
+    const loopTool = new FakeTool("loop_tool", async () => "keep");
+    const model = new FakeModelProvider([
+      { content: "", toolCalls: [{ id: "c1", name: "loop_tool", args: {} }] },
+      { content: "", toolCalls: [{ id: "c2", name: "loop_tool", args: {} }] },
+      { content: "", toolCalls: [{ id: "c3", name: "loop_tool", args: {} }] },
+    ]);
+    const store = new FakeRunEventStore();
+    const agentRegistry = new FakeAgentRegistry();
+    const limited: AgentConfig = { id: "limited" as AgentId, profile: { name: "Limited", description: "" }, capabilities: {}, permissions: { maxSteps: 2 } };
+    await agentRegistry.register(limited);
+    // Config allows 10 steps; the agent's maxSteps:2 must be the single authority.
+    const kernel = new AgentKernel({ model, store, tools: [loopTool], maxSteps: 10, agentRegistry });
+    await kernel.useAgent("limited" as AgentId);
+
+    const handle = kernel.run("loop", testCtx);
+    await handle.completed;
+    const events = await store.list(handle.runId);
+    const stepStarts = events.filter((e) => e.type === "step.started");
+    expect(stepStarts.length).toBe(2);
+    const completed = findEvent(events, "run.completed");
+    expect(completed?.data.status).toBe("failed");
+    expect(completed?.data.error).toContain("max steps");
+  });
+
+  it("TC-P1M-02: circuit breaker state is per-run, not shared across runs", async () => {
+    const failModel: ModelProvider = {
+      model: "fail-model",
+      pricing: { input: 0, output: 0 },
+      generate: async () => { throw new Error("API unavailable"); },
+    };
+    const okModel = new FakeModelProvider([{ content: "ok" }]);
+    const modelRegistry = new InMemoryModelRegistry();
+    modelRegistry.register("fail-model", failModel);
+    modelRegistry.register("ok-model", okModel);
+
+    const store = new FakeRunEventStore();
+    const agentRegistry = new FakeAgentRegistry();
+    const failAgent: AgentConfig = { id: "fail-a" as AgentId, profile: { name: "FailA", description: "", model: "fail-model" }, capabilities: {} };
+    const okAgent: AgentConfig = { id: "ok-b" as AgentId, profile: { name: "OkB", description: "", model: "ok-model" }, capabilities: {} };
+    await agentRegistry.register(failAgent);
+    await agentRegistry.register(okAgent);
+
+    const kernel = new AgentKernel({
+      model: okModel, modelRegistry, store, tools: [], maxSteps: 5, agentRegistry,
+      circuitBreakerOptions: { failureThreshold: 1, resetTimeoutMs: 60000, maxRetries: 0 },
+    });
+
+    // Run A fails and trips its own (per-run) breaker.
+    const handleA = kernel.run("a", testCtx, "sess-a", undefined, failAgent);
+    await handleA.completed;
+    const eventsA = await store.list(handleA.runId);
+    expect(findEvent(eventsA, "run.completed")?.data.status).toBe("failed");
+
+    // The instance breaker must stay closed — it's no longer global state.
+    expect(kernel.getCircuitBreaker().getState()).toBe("closed");
+
+    // Run B starts with a fresh breaker and is not poisoned by run A.
+    const handleB = kernel.run("b", testCtx, "sess-b", undefined, okAgent);
+    await handleB.completed;
+    const eventsB = await store.list(handleB.runId);
+    expect(findEvent(eventsB, "run.completed")?.data.status).toBe("succeeded");
+  });
+});

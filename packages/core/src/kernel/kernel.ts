@@ -878,13 +878,18 @@ this.stepExecutor = new StepExecutor({
     // record()/registerCompensation()/rollbackStep() operate on the same instance.
     this.runSagas.set(runId, runSagaInstance);
 
+    // Per-run circuit breaker — parallel runs must not share breaker state, so
+    // each run retries/trips independently. The instance breaker stays as the
+    // default config (exposed via getCircuitBreaker()) for new runs.
+    const runCircuitBreaker = new CircuitBreaker(this.circuitBreaker.getOptions());
+
     const orchestratorDeps: RunLoopDeps = {
       modelCaller: this.modelCaller,
       permissionGate: this.permissionGate,
       stepExecutor: this.stepExecutor,
       saga: runSagaInstance,
       store: this.store,
-      circuitBreaker: this.circuitBreaker,
+      circuitBreaker: runCircuitBreaker,
       stateMachine: this.stateMachine,
       ...(this.pluginManager ? { pluginManager: this.pluginManager } : {}),
       ...(this.systemContext ? { systemContext: this.systemContext } : {}),
