@@ -1,4 +1,4 @@
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, asc } from "drizzle-orm";
 import type { Session, Message, SessionStats, SessionId, MessageId, AgentId, WorkspaceId, ToolCallId } from "@vinhnt-sdk/schema";
 import type { SessionStore, SessionUpdates } from "@vinhnt-sdk/schema";
 import { PgSessionTable, PgMessageTable } from "./schema.js";
@@ -92,7 +92,7 @@ export class DrizzlePgSessionStore implements SessionStore {
     const rows = await this.db
       .select()
       .from(PgSessionTable)
-      .orderBy(desc(PgSessionTable.updatedAt))
+      .orderBy(desc(PgSessionTable.updatedAt), asc(PgSessionTable.id))
       .limit(limit)
       .offset(offset);
     return rows.map(sessionFromRow);

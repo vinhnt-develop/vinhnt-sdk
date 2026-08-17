@@ -333,9 +333,6 @@ importers:
 
   packages/tools:
     dependencies:
-      '@vinhnt-sdk/core':
-        specifier: workspace:*
-        version: link:../core
       '@vinhnt-sdk/sandbox':
         specifier: workspace:*
         version: link:../sandbox

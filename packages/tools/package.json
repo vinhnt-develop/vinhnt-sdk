@@ -57,10 +57,7 @@
                          "@vinhnt-sdk/schema":  "workspace:*",
                          "@vinhnt-sdk/security":  "workspace:*",
                          "zod":  "^4.4.3"
-                     },
-    "peerDependencies":  {
-                             "@vinhnt-sdk/core":  "workspace:*"
-                         }
+                     }
 }
 
 

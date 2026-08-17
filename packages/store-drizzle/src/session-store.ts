@@ -1,4 +1,4 @@
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, asc } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { Session, Message, SessionStats, SessionId, MessageId, AgentId, WorkspaceId, ToolCallId } from "@vinhnt-sdk/schema";
 import type { SessionStore, SessionUpdates } from "@vinhnt-sdk/schema";
@@ -113,7 +113,7 @@ export class DrizzleSessionStore implements SessionStore {
     const rows = this.db
       .select()
       .from(SessionTable)
-      .orderBy(desc(SessionTable.timeUpdated))
+      .orderBy(desc(SessionTable.timeUpdated), asc(SessionTable.id))
       .limit(limit)
       .offset(offset)
       .all();

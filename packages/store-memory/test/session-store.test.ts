@@ -15,6 +15,7 @@ describe("InMemorySessionStore", () => {
     const store = new InMemorySessionStore();
     const a = await store.createSession("A");
     const b = await store.createSession("B");
+    await new Promise((r) => setTimeout(r, 2));
     await store.updateSession(a.id, { title: "A2" });
 
     const sessions = await store.listSessions();

@@ -19,6 +19,7 @@
     "test:run": "vitest run",
     "lint": "turbo lint",
     "clean": "turbo clean",
+    "check:deps": "node scripts/check-dep-graph.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "publish-packages": "changeset publish",

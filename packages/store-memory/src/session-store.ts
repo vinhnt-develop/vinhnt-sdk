@@ -66,7 +66,7 @@ export class InMemorySessionStore implements SessionStore {
 
   async listSessions(limit = 50, offset = 0): Promise<readonly Session[]> {
     return [...this.sessions.values()]
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id))
       .slice(offset, offset + limit);
   }
 
