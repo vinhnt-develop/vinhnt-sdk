@@ -1,20 +1,20 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
 import { sanitizeEnv } from "@vinhnt-sdk/security";
-import type { ChatMessage } from "../model.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 import { normalize } from "node:path";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
-import type { PluginManager } from "../plugin.js";
+import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { RecentCall } from "./kernel-utils.js";
 import { hashArgs, raceWithAbort, toolDomain } from "./kernel-utils.js";
 import { ToolPermissionDenied, RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
-import type { ModelProvider } from "../model.js";
+import type { ModelProvider } from "@vinhnt-sdk/schema";
 
 export interface ToolErrorRouterDeps {
   readonly store: { emitEvent(event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;
-  readonly pluginManager: PluginManager | undefined;
+  readonly pluginManager: StepExecutorPluginHooks | undefined;
   readonly permissionGate: PermissionGate;
   readonly selfCorrectOnFailure: boolean;
   readonly externalDirectoryAccess?: boolean;

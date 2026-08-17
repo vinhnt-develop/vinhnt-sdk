@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CircuitBreaker, CircuitBreakerOpenError } from "../src/kernel/circuit-breaker.js";
+import { CircuitBreaker, CircuitBreakerOpenError } from "../src/circuit-breaker.js";
 
 describe("CircuitBreaker", () => {
   it("starts closed and allows calls", async () => {

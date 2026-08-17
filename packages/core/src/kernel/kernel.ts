@@ -13,25 +13,25 @@ import { createRedactingLogger } from "@vinhnt-sdk/security";
 
 import type { SubAgentParams } from "../agent/agent-factory.js";
 import type { DomainManifest } from "@vinhnt-sdk/tools";
-import type { TerminationPolicy } from "./termination.js";
+import type { TerminationPolicy } from "@vinhnt-sdk/step-executor";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { getBehaviourProfile } from "../agent/behaviour-profiles.js";
 import type { EventBus } from "@vinhnt-sdk/event";
-import { DEFAULT_MAX_STEPS, DEFAULT_MAX_TOOL_CALLS_PER_STEP, DOOM_LOOP_THRESHOLD } from "./kernel-utils.js";
+import { DEFAULT_MAX_STEPS, DEFAULT_MAX_TOOL_CALLS_PER_STEP, DOOM_LOOP_THRESHOLD } from "@vinhnt-sdk/step-executor";
 
 /** Default thinking prompt for reasoning steps. Exported for user override. */
 export const DEFAULT_THINKING_PROMPT = "Analyze the user's request and the conversation context. Think step by step about what needs to be done. Output your reasoning.";
 
-import { RunStateMachine } from "./run-state.js";
-import type { RunState } from "./run-state.js";
-import { PermissionGate, type ApprovalDecision } from "./permission-gate.js";
+import { RunStateMachine } from "@vinhnt-sdk/step-executor";
+import type { RunState } from "@vinhnt-sdk/step-executor";
+import { PermissionGate, type ApprovalDecision } from "@vinhnt-sdk/step-executor";
 import { ModelCaller } from "@vinhnt-sdk/model-caller";
-import { StepExecutor } from "./step-executor.js";
+import { StepExecutor } from "@vinhnt-sdk/step-executor";
 import { ToolSaga } from "@vinhnt-sdk/tool-saga";
-import { createRunContext, type RunContext } from "./run-context.js";
-import { CircuitBreaker } from "./circuit-breaker.js";
-import { KernelError } from "./kernel-error.js";
-import type { KernelErrorCode } from "./kernel-error.js";
+import { createRunContext, type RunContext } from "@vinhnt-sdk/step-executor";
+import { CircuitBreaker } from "@vinhnt-sdk/step-executor";
+import { KernelError } from "@vinhnt-sdk/step-executor";
+import type { KernelErrorCode } from "@vinhnt-sdk/step-executor";
 import { runLoop as executeRunLoop } from "./run-loop.js";
 import type { RunLoopDeps, RunLoopResult } from "./run-loop.js";
 import { LifecycleManager, type LifecycleResource } from "./lifecycle-manager.js";
@@ -52,8 +52,8 @@ import {
 import type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult } from "./kernel-types.js";
 import { normalizeConfig } from "./kernel-types.js";
 export type { AgentKernelConfig, RunState, KernelErrorCode };
-export { CircuitBreaker, CircuitBreakerOpenError, type CircuitState, type CircuitBreakerOptions } from "./circuit-breaker.js";
-export { KernelError } from "./kernel-error.js";
+export { CircuitBreaker, CircuitBreakerOpenError, type CircuitState, type CircuitBreakerOptions } from "@vinhnt-sdk/step-executor";
+export { KernelError } from "@vinhnt-sdk/step-executor";
 
 /**
  * Core agent orchestration — run loop, permission gate, tool execution, sub-agent spawning.
@@ -159,7 +159,9 @@ export class AgentKernel {
     this.permissionGate = new PermissionGate({
       store: normalized.store,
       eventBus: normalized.eventBus,
-      pluginManager: normalized.pluginManager,
+      // Core's PluginManager structurally satisfies the step-executor hook
+      // contract (named generic fireHook — castable, matches by design).
+      pluginManager: normalized.pluginManager as import("@vinhnt-sdk/step-executor").StepExecutorPluginHooks | undefined,
       approvalStore: normalized.permissions?.approvalStore,
       autoApprovalEnabled: normalized.permissions?.autoApprovalEnabled,
     });
@@ -205,7 +207,7 @@ export class AgentKernel {
 this.stepExecutor = new StepExecutor({
       store: { emitEvent: (event, persist) => this.emitEvent(event, persist) },
       addSessionMessage: (sid, role, content, extra) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
-      pluginManager: normalized.pluginManager,
+      pluginManager: normalized.pluginManager as import("@vinhnt-sdk/step-executor").StepExecutorPluginHooks | undefined,
       permissionGate: this.permissionGate,
       modelCaller: this.modelCaller,
       maxToolCallsPerStep: this.maxToolCallsPerStep,

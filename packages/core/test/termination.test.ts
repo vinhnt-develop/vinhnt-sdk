@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
-import { evaluateStopConditions, toToolCallOutcome, parseJudgeVerdict, buildJudgeMessages } from "../src/kernel/termination.js";
-import type { StepVerificationContext, TerminationPolicy, ToolCallOutcome } from "../src/kernel/termination.js";
+import { evaluateStopConditions, toToolCallOutcome, parseJudgeVerdict, buildJudgeMessages } from "@vinhnt-sdk/step-executor";
+import type { StepVerificationContext, TerminationPolicy, ToolCallOutcome } from "@vinhnt-sdk/step-executor";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";

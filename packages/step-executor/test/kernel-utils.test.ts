@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashArgs, detectDoomLoop, type RecentCall } from "../src/kernel/kernel-utils.js";
+import { hashArgs, detectDoomLoop, type RecentCall } from "../src/kernel-utils.js";
 
 describe("hashArgs", () => {
   it("produces identical hashes for key-order-different objects", () => {

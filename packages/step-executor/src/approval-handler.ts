@@ -1,7 +1,7 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
-import type { ChatMessage } from "../model.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext } from "@vinhnt-sdk/tools";
-import type { PluginManager } from "../plugin.js";
+import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";
@@ -10,7 +10,7 @@ import { toolDomain } from "./kernel-utils.js";
 export interface ApprovalHandlerDeps {
   readonly store: { emitEvent(event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly permissionGate: PermissionGate;
-  readonly pluginManager: PluginManager | undefined;
+  readonly pluginManager: StepExecutorPluginHooks | undefined;
   currentAgent: AgentConfig | undefined;
 }
 

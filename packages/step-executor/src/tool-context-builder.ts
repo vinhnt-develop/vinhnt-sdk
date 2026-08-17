@@ -1,13 +1,13 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
 import { sanitizeEnv } from "@vinhnt-sdk/security";
 import type { ToolContext, ToolRisk } from "@vinhnt-sdk/tools";
-import type { PluginManager } from "../plugin.js";
+import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";
 
 export interface ToolContextBuilderDeps {
-  readonly pluginManager: PluginManager | undefined;
+  readonly pluginManager: StepExecutorPluginHooks | undefined;
   readonly permissionGate: PermissionGate;
   readonly currentAgent: AgentConfig | undefined;
   /** Tool risk used to evaluate the tool's own `ctx.ask` against the gate. */

@@ -105,6 +105,9 @@ importers:
       '@vinhnt-sdk/session':
         specifier: workspace:*
         version: link:../session
+      '@vinhnt-sdk/step-executor':
+        specifier: workspace:*
+        version: link:../step-executor
       '@vinhnt-sdk/tool-saga':
         specifier: workspace:*
         version: link:../tool-saga
@@ -239,6 +242,33 @@ importers:
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
+
+  packages/step-executor:
+    dependencies:
+      '@vinhnt-sdk/event':
+        specifier: workspace:*
+        version: link:../event
+      '@vinhnt-sdk/model-caller':
+        specifier: workspace:*
+        version: link:../model-caller
+      '@vinhnt-sdk/permission':
+        specifier: workspace:*
+        version: link:../permission
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@vinhnt-sdk/security':
+        specifier: workspace:*
+        version: link:../security
+      '@vinhnt-sdk/session':
+        specifier: workspace:*
+        version: link:../session
+      '@vinhnt-sdk/tool-saga':
+        specifier: workspace:*
+        version: link:../tool-saga
+      '@vinhnt-sdk/tools':
+        specifier: workspace:*
+        version: link:../tools
 
   packages/tool-saga: {}
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { PermissionGate } from "../src/kernel/permission-gate.js";
+import { PermissionGate } from "@vinhnt-sdk/step-executor";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeApprovalStore } from "../src/fakes/fake-approval-store.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";

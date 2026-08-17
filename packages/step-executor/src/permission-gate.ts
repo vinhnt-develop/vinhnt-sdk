@@ -1,6 +1,6 @@
 import type { RunId, RequestId, AgentConfig, PermissionRequest, AgentRule, RunEvent } from "@vinhnt-sdk/schema";
 import type { ToolRisk, PermissionReply } from "@vinhnt-sdk/tools";
-import type { PluginManager } from "../plugin.js";
+import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { ApprovalStore } from "@vinhnt-sdk/permission";
 import type { RunEventStore } from "@vinhnt-sdk/session";
 import type { PermissionRule } from "@vinhnt-sdk/permission";
@@ -28,7 +28,7 @@ export interface PermissionCheckResult {
 export interface PermissionGateDeps {
   readonly store: RunEventStore;
   readonly eventBus?: EventBus;
-  readonly pluginManager: PluginManager | undefined;
+  readonly pluginManager: StepExecutorPluginHooks | undefined;
   readonly approvalStore: ApprovalStore | undefined;
   readonly autoApprovalEnabled?: boolean | undefined;
 }
@@ -216,7 +216,7 @@ export class PermissionGate {
     reason: string,
     _agentId: string,
     traceId: string,
-    pluginManager?: PluginManager,
+    pluginManager?: StepExecutorPluginHooks,
     savePatterns?: readonly string[],
   ): Promise<PermissionReply> {
     if (this.autoApproval) return "once";
@@ -237,7 +237,7 @@ export class PermissionGate {
     runId: RunId,
     reason: string,
     traceId: string,
-    pluginManager?: PluginManager,
+    pluginManager?: StepExecutorPluginHooks,
   ): Promise<PermissionReply> {
     const requestId = crypto.randomUUID() as RequestId;
     const req: PermissionRequest = {

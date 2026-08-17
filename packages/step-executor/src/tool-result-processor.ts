@@ -2,7 +2,7 @@ import type { RecentCall } from "./kernel-utils.js";
 import { hashArgs } from "./kernel-utils.js";
 import { toToolCallOutcome } from "./termination.js";
 import type { ToolCallOutcome } from "./termination.js";
-import type { ChatMessage } from "../model.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 
 export interface ToolResultProcessorDeps {

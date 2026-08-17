@@ -1,10 +1,10 @@
 import { normalize } from "node:path";
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
-import type { ChatMessage } from "../model.js";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 
-import type { PluginManager } from "../plugin.js";
+import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
 import type { RecentCall } from "./kernel-utils.js";
 import { detectDoomLoop, hashArgs, DOOM_LOOP_THRESHOLD, raceWithAbort, toolDomain } from "./kernel-utils.js";
@@ -12,7 +12,7 @@ import type { ToolCallOutcome } from "./termination.js";
 import { inferStepType } from "@vinhnt-sdk/schema";
 import type { KnownRunEvent } from "@vinhnt-sdk/schema";
 import type { ModelCaller } from "@vinhnt-sdk/model-caller";
-import type { ModelProvider } from "../model.js";
+import type { ModelProvider } from "@vinhnt-sdk/schema";
 import type { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { buildToolContext, type MetadataRef } from "./tool-context-builder.js";
 import { handleApproval as handleApprovalFn } from "./approval-handler.js";
@@ -46,7 +46,7 @@ function checkExternalPaths(toolName: string, args: unknown, workspaceRoot: stri
 export interface StepExecutorDeps {
   readonly store: { emitEvent(event: Omit<KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
   readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;
-  readonly pluginManager: PluginManager | undefined;
+  readonly pluginManager: StepExecutorPluginHooks | undefined;
   readonly permissionGate: PermissionGate;
   readonly modelCaller: ModelCaller;
   readonly maxToolCallsPerStep: number;

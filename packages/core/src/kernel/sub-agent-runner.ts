@@ -3,11 +3,11 @@ import type { SessionRuntimeState } from "@vinhnt-sdk/session";
 import type { RunEventStore } from "@vinhnt-sdk/session";
 import type { AgentRegistry } from "../agent/agent-registry.js";
 import type { ModelCaller } from "@vinhnt-sdk/model-caller";
-import type { RunStateMachine } from "./run-state.js";
+import type { RunStateMachine } from "@vinhnt-sdk/step-executor";
 import { createSubAgent } from "../agent/agent-factory.js";
 import type { SubAgentParams } from "../agent/agent-factory.js";
 import type { RunHandle } from "./kernel-types.js";
-import type { RunContext } from "./run-context.js";
+import type { RunContext } from "@vinhnt-sdk/step-executor";
 
 export interface SubAgentRunnerDeps {
   agentRegistry: AgentRegistry;

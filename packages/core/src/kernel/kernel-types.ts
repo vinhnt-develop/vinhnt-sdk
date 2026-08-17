@@ -9,9 +9,7 @@ import type { ConversationCompactor } from "@vinhnt-sdk/session";
 import type { ContextRegistry } from "../system-context/types.js";
 import type { ApprovalStore } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
-import type { CircuitBreaker } from "./circuit-breaker.js";
-import type { CircuitBreakerOptions } from "./circuit-breaker.js";
-import type { TerminationPolicy } from "./termination.js";
+import type { CircuitBreaker, CircuitBreakerOptions, TerminationPolicy } from "@vinhnt-sdk/step-executor";
 
 /** Sandbox configuration for shell command execution. */
 export interface KernelSandboxConfig {

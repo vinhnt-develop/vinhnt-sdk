@@ -43,7 +43,7 @@
  */
 export { AgentKernel, KernelError } from "./kernel/kernel.js";
 export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
-export { RunStateMachine } from "./kernel/run-state.js";
+export { RunStateMachine } from "@vinhnt-sdk/step-executor";
 
 /**
  * Configuration for the agent kernel.

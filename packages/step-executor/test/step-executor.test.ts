@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { StepExecutor, type StepExecutorDeps } from "../src/kernel/step-executor.js";
+import { StepExecutor, type StepExecutorDeps } from "../src/step-executor.js";
 import { ToolSaga } from "@vinhnt-sdk/tool-saga";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 

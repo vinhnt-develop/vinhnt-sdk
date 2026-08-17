@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AgentKernel } from "../../src/kernel/kernel.js";
-import { toolDomain } from "../../src/kernel/kernel-utils.js";
+import { toolDomain } from "@vinhnt-sdk/step-executor";
 import { FakeModelProvider } from "../../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../../src/fakes/fake-store.js";
 import { FakeTool } from "../../src/fakes/fake-tool.js";
