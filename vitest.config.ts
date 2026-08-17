@@ -11,6 +11,9 @@ export default defineConfig({
       'packages/plugin',
       'packages/lsp',
       'packages/provider-openai-compatible',
+      'packages/provider-deepseek',
+      'packages/provider-anthropic',
+      'packages/provider-ollama',
     ],
   },
 });

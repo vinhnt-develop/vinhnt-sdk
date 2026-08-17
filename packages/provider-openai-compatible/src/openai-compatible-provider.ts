@@ -38,6 +38,8 @@ export interface OpenAICompatibleProviderOptions {
   readonly apiKey?: string;
   /** Default model identifier sent in the request body. */
   readonly defaultModel: string;
+  /** Provider name reported on `ModelProvider.provider`. Defaults to `"openai-compatible"`. */
+  readonly providerName?: string;
   /** Extra headers merged over the defaults. */
   readonly headers?: Readonly<Record<string, string>>;
   readonly contextLimit?: number;
@@ -71,7 +73,7 @@ const DEFAULT_CAPABILITIES: ModelCapabilities = {
  * ```
  */
 export class OpenAICompatibleProvider implements ModelProvider {
-  readonly provider = "openai-compatible";
+  readonly provider: string;
   readonly model: string;
   readonly contextLimit: number | undefined;
   readonly pricing?: ModelPricing;
@@ -84,6 +86,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: OpenAICompatibleProviderOptions) {
+    this.provider = opts.providerName ?? "openai-compatible";
     this.model = opts.defaultModel;
     this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
     this.apiKey = opts.apiKey;

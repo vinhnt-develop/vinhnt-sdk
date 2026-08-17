@@ -127,6 +127,33 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/provider-anthropic:
+    dependencies:
+      '@vinhnt-sdk/provider-openai-compatible':
+        specifier: workspace:*
+        version: link:../provider-openai-compatible
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+
+  packages/provider-deepseek:
+    dependencies:
+      '@vinhnt-sdk/provider-openai-compatible':
+        specifier: workspace:*
+        version: link:../provider-openai-compatible
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+
+  packages/provider-ollama:
+    dependencies:
+      '@vinhnt-sdk/provider-openai-compatible':
+        specifier: workspace:*
+        version: link:../provider-openai-compatible
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+
   packages/provider-openai-compatible:
     dependencies:
       '@vinhnt-sdk/schema':

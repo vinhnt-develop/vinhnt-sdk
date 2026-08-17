@@ -33,6 +33,24 @@ function provider(fetchImpl: typeof fetch, retry?: RetryOptions) {
   });
 }
 
+describe("OpenAICompatibleProvider", () => {
+  it("reports the default provider name", () => {
+    const p = provider(vi.fn() as unknown as typeof fetch);
+    expect(p.provider).toBe("openai-compatible");
+  });
+
+  it("reports a custom provider name for tip packages", () => {
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://api.example.com/v1",
+      apiKey: "k",
+      defaultModel: "m",
+      providerName: "deepseek",
+      fetchImpl: vi.fn() as unknown as typeof fetch,
+    });
+    expect(p.provider).toBe("deepseek");
+  });
+});
+
 describe("OpenAICompatibleProvider.generate", () => {
   it("POSTs an OpenAI body to /chat/completions with Bearer auth", async () => {
     const fetchMock = vi.fn(async () => jsonBody({
