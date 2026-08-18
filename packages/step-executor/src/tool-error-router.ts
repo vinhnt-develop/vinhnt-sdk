@@ -123,7 +123,7 @@ export async function tryReadFileFallback(
       const reply = await deps.permissionGate.askForTool(
         "read_file", tc.toolId, runId, sessionId ?? "",
         `Fallback read_file for edit_file after error: ${errorMsg.substring(0, 100)}`,
-        deps.currentAgent?.id ?? "", ctx.traceId,
+        deps.currentAgent?.id ?? "", ctx.traceId, undefined, undefined, runAbort.signal,
       );
       if (reply === "reject") return false;
     }
@@ -137,7 +137,7 @@ export async function tryReadFileFallback(
         return deps.permissionGate.askForTool(
           "read_file", tc.toolId, runId, sessionId ?? "",
           input.reason, deps.currentAgent?.id ?? "",
-          ctx.traceId, deps.pluginManager,
+          ctx.traceId, deps.pluginManager, undefined, runAbort.signal,
         );
       },
       metadata: () => {},

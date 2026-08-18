@@ -63,7 +63,7 @@ export class InMemoryRunEventStore implements RunEventStore {
     this.notify(event);
   }
 
-  /** Allocate the next sequence for the aggregate and append atomically. */
+  /** Allocate the next sequence for the aggregate and append atomically (single synchronous step, no interleaving between compute and push). */
   async appendWithSequence(event: RunEvent): Promise<number> {
     if (event.persist === false) {
       this.notify(event);
@@ -73,11 +73,21 @@ export class InMemoryRunEventStore implements RunEventStore {
     if (existing) {
       return existing.sequence;
     }
-    const seq = await this.getNextSequence(event.runId);
+    // Synchronous allocation: compute and push in the same microtask-free block
+    // so two concurrent fire-and-forget callers can never observe the same max.
+    const seq = this.getNextSequenceSync(event.runId);
     const runEvent = { ...event, sequence: seq } as RunEvent;
     this.events.push(runEvent);
     this.notify(runEvent);
     return seq;
+  }
+
+  /** Synchronous counterpart of {@link getNextSequence}; caller must use the returned value before yielding. */
+  private getNextSequenceSync(aggregateId: string): number {
+    const max = this.events
+      .filter((e) => e.runId === aggregateId)
+      .reduce((m, e) => Math.max(m, e.sequence), 0);
+    return max + 1;
   }
 
   async appendTransactional(

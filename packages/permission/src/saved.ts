@@ -8,9 +8,17 @@ export interface PermissionStore {
   listSavedRules(runId: string): Promise<readonly PermissionRule[]>;
 }
 
+/** Options controlling how long {@link ApprovalStore.awaitReply} waits. */
+export interface AwaitReplyOptions {
+  /** Abort when the caller's run is cancelled; rejects with AbortError. */
+  signal?: AbortSignal | undefined;
+  /** Hard timeout in ms; rejects with AbortError when elapsed. */
+  timeoutMs?: number | undefined;
+}
+
 /** Store managing in-flight approval requests and saved allow/reject decisions. */
 export interface ApprovalStore {
-  awaitReply(request: PermissionRequest): Promise<PermissionReply>;
+  awaitReply(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<PermissionReply>;
   resolveRequest(requestId: string, reply: PermissionReply): void;
   getRequest(requestId: string): PermissionRequest | undefined;
   pendingRequests(runId?: string): readonly PermissionRequest[];
@@ -28,10 +36,34 @@ export class InMemoryApprovalStore implements ApprovalStore {
   readonly savedApprovals: SavedApproval[] = [];
   readonly savedRejections: SavedApproval[] = [];
 
-  awaitReply(request: PermissionRequest): Promise<PermissionReply> {
+  awaitReply(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<PermissionReply> {
     this.requests.push(request);
-    return new Promise((resolve) => {
-      this.pending.set(request.id, resolve);
+    return new Promise<PermissionReply>((resolve, reject) => {
+      const { signal, timeoutMs } = opts ?? {};
+      let settled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
+      const cleanup = () => {
+        if (timer !== undefined) clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
+      };
+      const settle = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        this.pending.delete(request.id);
+        fn();
+      };
+      const onAbort = () => settle(() => reject(new DOMException("Aborted", "AbortError")));
+
+      signal?.addEventListener("abort", onAbort, { once: true });
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
+      if (timeoutMs !== undefined) timer = setTimeout(onAbort, timeoutMs);
+
+      this.pending.set(request.id, (reply: PermissionReply) => settle(() => resolve(reply)));
     });
   }
 
@@ -48,7 +80,13 @@ export class InMemoryApprovalStore implements ApprovalStore {
   }
 
   cancelRequest(requestId: string): void {
-    this.pending.delete(requestId);
+    const resolve = this.pending.get(requestId);
+    if (resolve) {
+      this.pending.delete(requestId);
+      // Settle the waiter as a rejection instead of leaking a dangling promise
+      // (previously the awaited call hung forever after cancel).
+      resolve("reject");
+    }
   }
 
   pendingRequests(runId?: string): readonly PermissionRequest[] {

@@ -44,11 +44,35 @@ describe("InMemoryApprovalStore", () => {
     expect(() => store.resolveRequest("ghost", { allowed: true } as PermissionReply)).not.toThrow();
   });
 
-  it("cancelRequest removes pending entry", async () => {
+  it("cancelRequest settles the waiter with reject (no dangling promise)", async () => {
     const store = new InMemoryApprovalStore();
     const promise = store.awaitReply(makeRequest());
     store.cancelRequest("req-1");
-    // Promise will never resolve (no leak)
+    await expect(promise).resolves.toBe("reject");
+    expect(store.pendingRequests("").length).toBeGreaterThanOrEqual(0);
+  });
+
+  it("awaitReply rejects with AbortError when the run signal aborts (RV-29)", async () => {
+    const store = new InMemoryApprovalStore();
+    const abort = new AbortController();
+    const promise = store.awaitReply(makeRequest(), { signal: abort.signal });
+
+    abort.abort();
+    await expect(promise).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("awaitReply rejects with AbortError when already aborted before wait (RV-29)", async () => {
+    const store = new InMemoryApprovalStore();
+    const abort = new AbortController();
+    abort.abort();
+    const promise = store.awaitReply(makeRequest(), { signal: abort.signal });
+    await expect(promise).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("awaitReply rejects with AbortError on timeout (RV-29)", async () => {
+    const store = new InMemoryApprovalStore();
+    const promise = store.awaitReply(makeRequest(), { timeoutMs: 5 });
+    await expect(promise).rejects.toMatchObject({ name: "AbortError" });
   });
 
   it("cancelRequest is no-op for unknown requestId", () => {

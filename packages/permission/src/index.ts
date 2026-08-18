@@ -13,7 +13,7 @@ export {
 } from "./checker.js";
 export type { PermissionResult } from "./checker.js";
 export { InMemoryApprovalStore } from "./saved.js";
-export type { PermissionStore, ApprovalStore } from "./saved.js";
+export type { PermissionStore, ApprovalStore, AwaitReplyOptions } from "./saved.js";
 export type { PermissionEffect, PermissionRule, PermissionRuleset } from "./permission.js";
 
 // Permission contract types come from the schema package (single source of truth).

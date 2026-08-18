@@ -88,6 +88,22 @@ describe("DrizzleRunEventStore", () => {
     expect(seq2).toBe(2);
   });
 
+  it("never assigns duplicate sequences under concurrency (RV-30)", async () => {
+    const store = new DrizzleRunEventStore(tempDb());
+    const results = await Promise.all([
+      store.appendWithSequence(makeEvent({ id: "c1" })),
+      store.appendWithSequence(makeEvent({ id: "c2" })),
+      store.appendWithSequence(makeEvent({ id: "c3" })),
+      store.appendWithSequence(makeEvent({ id: "c4" })),
+    ]);
+
+    expect(new Set(results).size).toBe(4);
+    expect([...results].sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
+
+    const events = await store.list(runId);
+    expect(events.map((e) => e.sequence).sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
+  });
+
   it("tracks next sequence per aggregate", async () => {
     const store = new DrizzleRunEventStore(tempDb());
     await store.append(makeEvent({ sequence: 3, id: "e1" }));

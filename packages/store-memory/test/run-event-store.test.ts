@@ -68,6 +68,19 @@ describe("InMemoryRunEventStore", () => {
     expect(events.map((e) => e.sequence)).toEqual([1, 2]);
   });
 
+  it("never assigns duplicate sequences under concurrency (RV-30)", async () => {
+    const store = new InMemoryRunEventStore();
+    const results = await Promise.all([
+      store.appendWithSequence(makeEvent({ id: "c1" })),
+      store.appendWithSequence(makeEvent({ id: "c2" })),
+      store.appendWithSequence(makeEvent({ id: "c3" })),
+      store.appendWithSequence(makeEvent({ id: "c4" })),
+    ]);
+
+    expect(new Set(results).size).toBe(4);
+    expect([...results].sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
+  });
+
   it("returns existing sequence for duplicate appendWithSequence", async () => {
     const store = new InMemoryRunEventStore();
     const event = makeEvent({ id: "dup" });

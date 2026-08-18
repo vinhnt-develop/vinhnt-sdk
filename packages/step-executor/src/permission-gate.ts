@@ -223,10 +223,11 @@ export class PermissionGate {
     traceId: string,
     pluginManager?: StepExecutorPluginHooks,
     savePatterns?: readonly string[],
+    signal?: AbortSignal,
   ): Promise<PermissionReply> {
     if (this.autoApproval) return "once";
 
-    const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager);
+    const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal);
 
     if (reply === "always" && savePatterns && savePatterns.length > 0) {
       for (const pattern of savePatterns) {
@@ -243,6 +244,7 @@ export class PermissionGate {
     reason: string,
     traceId: string,
     pluginManager?: StepExecutorPluginHooks,
+    signal?: AbortSignal,
   ): Promise<PermissionReply> {
     const requestId = crypto.randomUUID() as RequestId;
     const req: PermissionRequest = {
@@ -277,7 +279,9 @@ export class PermissionGate {
     if (hookResult?.modified?.reply) {
       reply = hookResult.modified.reply as PermissionReply;
     } else if (this.deps.approvalStore) {
-      reply = await this.deps.approvalStore.awaitReply(req);
+      // Race the approval wait against the run's abort signal so a cancelled
+      // run does not hang forever waiting for a human reply.
+      reply = await this.deps.approvalStore.awaitReply(req, { signal });
     }
 
     // Persist permission.replied to store (sync for tests) AND publish to bus

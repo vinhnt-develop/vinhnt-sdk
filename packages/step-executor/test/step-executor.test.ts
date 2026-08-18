@@ -559,6 +559,7 @@ describe("StepExecutor", () => {
       expect(askSpy).toHaveBeenCalledWith(
         "write_file", "call-sc-1", "run1", "",
         expect.stringContaining("requires approval"), expect.anything(), "trace1", expect.anything(),
+        undefined, expect.any(AbortSignal),
       );
       expect(correctedExecute).not.toHaveBeenCalled();
       expect(messages.some((m) => typeof m === "object" && (m as { content?: string }).content?.includes("rejected by user"))).toBe(true);

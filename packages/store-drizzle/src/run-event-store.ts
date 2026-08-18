@@ -76,8 +76,26 @@ export class DrizzleRunEventStore implements RunEventStore {
     if (existing) {
       return existing.seq;
     }
-    const seq = await this.getNextSequence(event.runId);
-    await this.append({ ...event, sequence: seq } as RunEvent);
+
+    // Allocate and insert inside a single transaction. The sequence counter is
+    // incremented atomically (`seq = seq + 1`) under the transaction lock, so
+    // two concurrent appends can never observe the same value — the previous
+    // read-then-blind-write pair could duplicate or silently drop events.
+    const seq = this.db.transaction(() => {
+      const bumped = this.db.get(
+        sql`INSERT INTO event_sequence (aggregate_id, seq) VALUES (${event.runId}, 1)
+            ON CONFLICT(aggregate_id) DO UPDATE SET seq = event_sequence.seq + 1
+            RETURNING seq`,
+      ) as { seq: number } | undefined;
+      const next = bumped?.seq ?? 1;
+      this.db.run(
+        sql`INSERT OR IGNORE INTO run_events (id, aggregate_id, seq, type, occurred_at, trace_id, data)
+            VALUES (${event.id}, ${event.runId}, ${next}, ${event.type}, ${event.occurredAt}, ${event.traceId}, ${JSON.stringify(event.data)})`,
+      );
+      return next;
+    });
+
+    this.notify({ ...event, sequence: seq } as RunEvent);
     return seq;
   }
 

@@ -60,7 +60,7 @@ export async function buildToolContext(
         tc.toolName, tc.toolId, runId, sessionId ?? "",
         askInput.reason, deps.currentAgent?.id ?? "",
         ctx.traceId, deps.pluginManager,
-        askInput.savePatterns,
+        askInput.savePatterns, runAbort.signal,
       );
     },
     metadata: (input) => {

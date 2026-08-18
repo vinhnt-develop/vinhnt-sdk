@@ -75,8 +75,27 @@ export class DrizzlePgRunEventStore implements RunEventStore {
     if (existing.length > 0) {
       return existing[0]!.seq;
     }
-    const seq = await this.getNextSequence(event.runId);
-    await this.append({ ...event, sequence: seq } as RunEvent);
+
+    // Allocate and insert inside a single transaction with an atomic counter
+    // increment (`seq = seq + 1` under the row lock), so concurrent appends
+    // can never observe the same value. The previous read-then-blind-write
+    // pair could surface unique_violation on the (aggregate_id, seq) index.
+    const seq = await this.db.transaction(async (tx) => {
+      const bumped = await tx.execute(
+        sql`INSERT INTO event_sequence (aggregate_id, seq) VALUES (${event.runId}, 1)
+            ON CONFLICT (aggregate_id) DO UPDATE SET seq = event_sequence.seq + 1
+            RETURNING seq`,
+      );
+      const next = (bumped.rows?.[0] as { seq?: number } | undefined)?.seq ?? 1;
+      await tx.execute(
+        sql`INSERT INTO run_events (id, aggregate_id, seq, type, occurred_at, trace_id, data)
+            VALUES (${event.id}, ${event.runId}, ${next}, ${event.type}, ${new Date(event.occurredAt)}, ${event.traceId}, ${event.data as Record<string, unknown>})
+            ON CONFLICT (id) DO NOTHING`,
+      );
+      return next;
+    });
+
+    this.notify({ ...event, sequence: seq } as RunEvent);
     return seq;
   }
 

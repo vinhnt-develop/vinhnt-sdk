@@ -95,6 +95,7 @@ export async function runSelfCorrection(
                 ct.name, ct.id, runId, "",
                 cpermResult.reason ?? `Tool "${ct.name}" requires approval for self-correction`,
                 deps.currentAgent?.id ?? "", ctx.traceId, deps.pluginManager,
+                undefined, runAbort.signal,
               );
               if (reply === "reject") {
                 messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Tool "${ct.name}" rejected by user` });

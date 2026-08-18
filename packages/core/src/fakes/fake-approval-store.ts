@@ -1,5 +1,5 @@
 import type { PermissionRequest, PermissionReply, SavedApproval } from "@vinhnt-sdk/schema";
-import type { ApprovalStore } from "@vinhnt-sdk/permission";
+import type { ApprovalStore, AwaitReplyOptions } from "@vinhnt-sdk/permission";
 
 export class FakeApprovalStore implements ApprovalStore {
   /** Resolve all pending requests with this reply automatically */
@@ -32,7 +32,7 @@ export class FakeApprovalStore implements ApprovalStore {
     );
   }
 
-  awaitReply(request: PermissionRequest): Promise<PermissionReply> {
+  awaitReply(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<PermissionReply> {
     this.requests.push(request);
 
     if (this.replyQueue.length > 0) {
@@ -42,8 +42,25 @@ export class FakeApprovalStore implements ApprovalStore {
       return Promise.resolve(this.autoReply);
     }
     // Return a promise that stays pending — resolve via resolveRequest
-    return new Promise((resolve) => {
-      this.pending.set(request.id, resolve);
+    return new Promise((resolve, reject) => {
+      const { signal } = opts ?? {};
+      const cleanup = () => {
+        signal?.removeEventListener("abort", onAbort);
+        this.pending.delete(request.id);
+      };
+      const onAbort = () => {
+        cleanup();
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+      signal?.addEventListener("abort", onAbort, { once: true });
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
+      this.pending.set(request.id, (reply: PermissionReply) => {
+        cleanup();
+        resolve(reply);
+      });
     });
   }
 
