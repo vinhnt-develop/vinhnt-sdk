@@ -26,7 +26,14 @@ export async function handleApproval(
   deps: ApprovalHandlerDeps,
   selfApproving?: boolean,
 ): Promise<boolean> {
-  if (!permResult.needsApproval || permResult.allowed) return true;
+  // Allowed or needs-approval → proceed. A hard deny (!allowed, no approval
+  // needed) must surface as a rejection — a caller who skips this check would
+  // otherwise hand a denied tool straight through to execution.
+  if (permResult.allowed) return true;
+  if (!permResult.needsApproval) {
+    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" denied by permission rules` });
+    return false;
+  }
 
   // Single approval path: self-approving tools ask via their own `ctx.ask`
   // (which persists savePatterns on "always"). Defer the gate-level ask.

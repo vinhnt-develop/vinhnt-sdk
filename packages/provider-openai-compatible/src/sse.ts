@@ -14,6 +14,12 @@ type Bytes = ReadableStream<Uint8Array>;
 
 const DONE_MARKER = "[DONE]";
 
+/** Mutable state shared between the SSE parser and its consumer. */
+export interface SSEParseState {
+  /** Set to true when the `[DONE]` terminator was observed. */
+  sawDone: boolean;
+}
+
 function tryParse(text: string): unknown | undefined {
   if (!text) return undefined;
   try {
@@ -27,11 +33,14 @@ function tryParse(text: string): unknown | undefined {
  * Parse an SSE byte stream into OpenAI streaming chunks.
  *
  * Handles: `data:` lines, `[DONE]` termination, multi-line JSON events and
- * providers that omit the blank-line event delimiter.
+ * providers that omit the blank-line event delimiter. `state.sawDone` flips to
+ * true when the `[DONE]` terminator is seen, letting the consumer distinguish
+ * a clean completion from a truncated stream that closed without it.
  */
 export async function* createSSEStream(
   body: Bytes,
   signal?: AbortSignal,
+  state?: SSEParseState,
 ): AsyncIterable<OpenAIStreamChunk> {
   const decoder = new TextDecoder();
   let buffer = "";
@@ -49,6 +58,7 @@ export async function* createSSEStream(
       if (line.startsWith("data:")) {
         const payload = line.slice(5).trimStart();
         if (payload === DONE_MARKER) {
+          if (state) state.sawDone = true;
           const flushed = flushPending();
           if (flushed !== undefined) yield flushed;
           return;
@@ -110,18 +120,38 @@ function safeParseArgs(buffer: string): Record<string, unknown> {
 /**
  * Convert an OpenAI streaming chunk into a list of parsed fields for the
  * streaming assembler. Straightforward per-choice parsing; tool call
- * arguments are raw deltas that the caller accumulates.
+ * arguments are raw deltas that the caller accumulates. Non-chunk frames
+ * (mid-stream error/status objects) are surfaced as `error` instead of
+ * crashing on `chunk.choices` being undefined.
  */
 function chunkToDeltas(chunk: OpenAIStreamChunk): {
   texts: string[];
   toolCalls: OpenAIStreamChoice["delta"]["tool_calls"];
   finishReason: string | null;
   usage: { inputTokens: number; outputTokens: number } | undefined;
+  error: string | undefined;
 } {
   const texts: string[] = [];
   let toolCalls: OpenAIStreamChoice["delta"]["tool_calls"] = [];
   let finishReason: string | null = null;
+  if (!Array.isArray(chunk.choices)) {
+    // Mid-stream status/error object — not a chat.completion chunk.
+    const raw = (chunk as unknown as { error?: { message?: string } }).error;
+    return {
+      texts,
+      toolCalls,
+      finishReason,
+      usage: undefined,
+      error: raw?.message
+        ? raw.message
+        : "Provider stream returned a frame that is not a chat.completion chunk",
+    };
+  }
   for (const choice of chunk.choices) {
+    if (!choice || !choice.delta) {
+      // A choice without a delta (e.g. a final usage-only chunk) carries nothing.
+      continue;
+    }
     if (choice.delta.content !== null && choice.delta.content !== undefined) {
       texts.push(choice.delta.content);
     }
@@ -136,6 +166,7 @@ function chunkToDeltas(chunk: OpenAIStreamChunk): {
       inputTokens: chunk.usage.prompt_tokens,
       outputTokens: chunk.usage.completion_tokens,
     } : undefined,
+    error: undefined,
   };
 }
 
@@ -150,9 +181,16 @@ export async function* toModelStreamEvents(
   signal?: AbortSignal,
 ): AsyncIterable<ModelStreamEvent> {
   const assembled = new Map<number, AssembledToolCall>();
+  const parseState: SSEParseState = { sawDone: false };
 
-  for await (const chunk of createSSEStream(body, signal)) {
-    const { texts, toolCalls, finishReason, usage } = chunkToDeltas(chunk);
+  for await (const chunk of createSSEStream(body, signal, parseState)) {
+    const { texts, toolCalls, finishReason, usage, error } = chunkToDeltas(chunk);
+
+    if (error) {
+      // Stop assembling: the stream is unusable past this frame.
+      yield { type: "error", error };
+      return;
+    }
 
     for (const text of texts) {
       yield { type: "text", content: text };
@@ -183,6 +221,14 @@ export async function* toModelStreamEvents(
     if (usage) {
       yield { type: "usage", inputTokens: usage.inputTokens, outputTokens: usage.outputTokens };
     }
+  }
+
+  // A clean OpenAI stream always ends with `[DONE]`. If the body closed
+  // without it (connection drop / server truncation), the partial result must
+  // not be committed as a normal `done`.
+  if (!parseState.sawDone && !signal?.aborted) {
+    yield { type: "error", error: "Stream ended without the [DONE] terminator" };
+    return;
   }
 
   for (const tc of assembled.values()) {

@@ -52,8 +52,10 @@ export async function buildToolContext(
         tc.toolName, deps.toolRisk, tc.args as Record<string, unknown>, deps.currentAgent,
       );
       if (decision.allowed) return "once";
-      if (deps.permissionGate.checkSavedApproval(tc.toolName, deps.currentAgent?.id)) return "once";
+      // Deny rules must always win over any previously saved approval — a
+      // per-tool approval must not resurrect a tool that is now deny-listed.
       if (!decision.needsApproval) return "reject";
+      if (deps.permissionGate.checkSavedApproval(tc.toolName, deps.currentAgent?.id)) return "once";
       return deps.permissionGate.askForTool(
         tc.toolName, tc.toolId, runId, sessionId ?? "",
         askInput.reason, deps.currentAgent?.id ?? "",

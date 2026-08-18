@@ -1,3 +1,5 @@
+import { VntError } from "@vinhnt-sdk/schema";
+
 /** Current circuit breaker state. */
 export type CircuitState = "closed" | "open" | "half_open";
 
@@ -25,6 +27,11 @@ const DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
   isFailure: (err: unknown) => {
     if (err instanceof DOMException && err.name === "AbortError") return false;
     if (err instanceof Error && err.name === "AbortError") return false;
+    // Structured SDK errors carry an explicit retryable flag — upstream auth
+    // (401/403) and validation failures are marked non-retryable and must never
+    // count toward the breaker or be retried, even if their message text does
+    // not match the substring heuristics below.
+    if (err instanceof VntError && err.retryable === false) return false;
     const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
     if (msg.includes("auth") || msg.includes("unauthorized") || msg.includes("invalid api key")) return false;
     if (msg.includes("context") && msg.includes("token")) return false;

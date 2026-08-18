@@ -123,6 +123,40 @@ describe("ModelCaller", () => {
     expect(res.toolCalls).toEqual([{ id: "t1", name: "read_file", args: { filePath: "/a.txt" } }]);
   });
 
+  it("callModelStream streaming: throws AbortError instead of committing partial output on cancel (RV-28)", async () => {
+    const abort = new AbortController();
+    const caller = new ModelCaller(
+      makeDeps({
+        defaultModel: makeProvider({
+          stream: vi.fn(async function* () {
+            yield { type: "text", content: "partial" } satisfies ModelStreamEvent;
+            abort.abort();
+          }),
+        }),
+      }),
+    );
+
+    await expect(
+      caller.callModelStream([{ role: "user", content: "hi" }] as ChatMessage[], 1, runId, ctx, abort.signal),
+    ).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("callModelStream streaming: surfaces a truncated-stream error as a non-retryable VntError (RV-49)", async () => {
+    const caller = new ModelCaller(
+      makeDeps({
+        defaultModel: makeProvider({
+          stream: vi.fn(async function* () {
+            yield { type: "error", error: "Stream ended without the [DONE] terminator" } satisfies ModelStreamEvent;
+          }),
+        }),
+      }),
+    );
+
+    await expect(
+      caller.callModelStream([{ role: "user", content: "hi" }] as ChatMessage[], 1, runId, ctx, new AbortController().signal),
+    ).rejects.toMatchObject({ message: "Stream ended without the [DONE] terminator", retryable: false });
+  });
+
   it("fires onBeforeModelCall hook and honours modified request", async () => {
     const generate = vi.fn(async (req: { maxTokens: number }) => ({ content: String(req.maxTokens) }));
     const fireHook = vi.fn(async (name: string, data: { request: Record<string, unknown> }) => ({

@@ -158,4 +158,36 @@ describe("runLoop resume (P1-B)", () => {
     // Step starts from 3, not 0.
     expect(emitted).toEqual(["3"]);
   });
+
+  it("continuation run keeps history BEFORE the fresh prompt (chronological)", async () => {
+    const model = new CapturingModel([{ content: "Continuing..." }]);
+    const { deps } = makeDeps(model);
+
+    // Non-resume continuation: same runSessionState reused across runs, so the
+    // prior conversation is present but input.resume is false.
+    const runSessionState = new InMemorySessionState();
+    runSessionState.resetMessages([
+      { role: "user", content: "first request" },
+      { role: "assistant", content: "first response" },
+    ]);
+
+    await runLoop(deps, makeInput({
+      runModel: model,
+      runSessionState,
+      resume: false,
+      prompt: "second prompt",
+    }));
+
+    expect(model.seen.length).toBe(1);
+    const sent = model.seen[0]!;
+
+    const roles = sent.map((m) => `${m.role}:${typeof m.content === "string" ? m.content : ""}`);
+    const historyEnd = sent.findIndex((m) => m.role === "assistant" && m.content === "first response");
+    const promptIndex = sent.findIndex((m) => m.role === "user" && m.content === "second prompt");
+
+    // History present exactly once, and the fresh prompt comes after it.
+    expect(roles.filter((r) => r === "user:first request")).toHaveLength(1);
+    expect(promptIndex).toBeGreaterThan(historyEnd);
+    expect(promptIndex).toBeGreaterThan(0);
+  });
 });

@@ -5,6 +5,7 @@
  */
 
 import type { RunId, RequestContext, KnownRunEvent, ToolChoice, ResponseFormat, StreamOptions } from "@vinhnt-sdk/schema";
+import { VntError } from "@vinhnt-sdk/schema";
 import type {
   ChatMessage,
   ModelProvider,
@@ -237,8 +238,16 @@ export class ModelCaller {
         case "done":
           break;
         case "error":
-          throw new Error(event.error);
+          // Surface as a structured, non-retryable error so the circuit
+          // breaker never retries a truncated/malformed stream.
+          throw new VntError(event.error, { retryable: false });
       }
+    }
+
+    // A cancelled stream must never commit partial content or partially
+    // assembled tool calls as a successful response.
+    if (signal?.aborted) {
+      throw new DOMException("Aborted", "AbortError");
     }
 
     let source: "api" | "local" = "api";

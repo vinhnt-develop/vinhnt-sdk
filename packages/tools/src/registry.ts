@@ -120,7 +120,9 @@ export class ToolRegistry {
       denied,
       getTool: (id) => allowedMap.get(id),
       settle: async ({ name, args, ctx }) => {
-        const tool = this.tools.get(name);
+        // Resolve through the allowed set only — a tool filtered out by a deny
+        // rule is NOT executable via settle.
+        const tool = allowedMap.get(name);
         if (!tool) throw new ToolNotFoundError(name);
         // Validate input via Zod schema if available (non-breaking: falls through to raw execute if no schema)
         let validatedInput = args;

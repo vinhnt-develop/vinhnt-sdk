@@ -157,4 +157,38 @@ describe("toModelStreamEvents", () => {
     for await (const evt of toModelStreamEvents(toStream(input))) events.push(evt);
     expect(events).toContainEqual({ type: "finish", reason: "stop" });
   });
+
+  it("yields error instead of crashing on a mid-stream error frame (RV-27)", async () => {
+    // Some OpenAI-compatible proxies stream `{"error":{...}}` mid-stream.
+    const errorFrame = JSON.stringify({ error: { message: "rate limited upstream", type: "server_error" } });
+    const input = `data: ${JSON.stringify(textChunk("a", "partial"))}\n\ndata: ${errorFrame}\n\n`;
+    const events: ModelStreamEvent[] = [];
+    for await (const evt of toModelStreamEvents(toStream(input))) events.push(evt);
+
+    expect(events[events.length - 1]).toEqual({ type: "error", error: "rate limited upstream" });
+    expect(events.some((e) => e.type === "done")).toBe(false);
+  });
+
+  it("yields error when the stream closes without the [DONE] terminator (RV-27)", async () => {
+    // Connection drop / server truncation — body ends, no `data: [DONE]`.
+    const input = `data: ${JSON.stringify(textChunk("a", "partial"))}\n\n`;
+    const events: ModelStreamEvent[] = [];
+    for await (const evt of toModelStreamEvents(toStream(input))) events.push(evt);
+
+    const last = events[events.length - 1];
+    expect(last?.type).toBe("error");
+    expect((last as { error: string }).error).toContain("[DONE]");
+    expect(events.some((e) => e.type === "done")).toBe(false);
+  });
+
+  it("surfaces an explicit mid-stream error payload via createSSEStream state", async () => {
+    const input = `data: ${JSON.stringify(textChunk("a", "x"))}\n\ndata: [DONE]\n\ndata: trailing\n\n`;
+    const state = { sawDone: false };
+    const events: unknown[] = [];
+    for await (const evt of createSSEStream(toStream(input), undefined, state)) events.push(evt);
+
+    // Parser stops at the [DONE] marker and flags it on the shared state.
+    expect(events).toHaveLength(1);
+    expect(state.sawDone).toBe(true);
+  });
 });

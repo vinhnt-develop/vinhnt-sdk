@@ -455,15 +455,21 @@ export async function runLoop(
     }
 
     // On resume, rebuild from persisted history (never double-append it) and keep
-    // the current steering prompt as the latest user turn. Without resume, the
-    // fresh prompt is already seeded above; append any session history after it.
+    // the current steering prompt as the latest user turn. On a continuation run
+    // the conversation history must come BEFORE the fresh prompt so the
+    // transcript stays chronologically ordered (the prompt was seeded above).
     if (input.resume) {
       if (runSessionState && runSessionState.messages.length > 0) {
         messages = [...runSessionState.messages];
       }
       if (prompt) messages.push({ role: "user", content: prompt });
     } else if (runSessionState && runSessionState.messages.length > 0) {
-      messages.push(...runSessionState.messages);
+      messages = [
+        ...runSessionState.messages,
+        userContentParts?.length
+          ? { role: "user" as const, content: userContentParts as unknown as readonly ContentPart[] }
+          : { role: "user" as const, content: prompt },
+      ];
     }
 
     // Continue from the restored step counter so max-steps accounting and any

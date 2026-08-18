@@ -13,6 +13,7 @@ import type {
   ModelUsage,
   OpenAIMessage,
   OpenAIToolCall,
+  OpenAIChoice,
   OpenAIResponse,
   OpenAIStreamChunk,
   Logprobs,
@@ -149,7 +150,7 @@ export function toOpenAIMessage(msg: ChatMessage): OpenAIMessage {
  * ```
  */
 export function fromOpenAIResponse(res: OpenAIResponse): ModelResponse {
-  const choice = res.choices[0];
+  const choice: OpenAIChoice | undefined = Array.isArray(res.choices) ? res.choices[0] : undefined;
   if (!choice) {
     return { content: "" };
   }

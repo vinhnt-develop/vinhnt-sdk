@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { CircuitBreaker, CircuitBreakerOpenError } from "../src/circuit-breaker.js";
+import { VntError } from "@vinhnt-sdk/schema";
 
 describe("CircuitBreaker", () => {
   it("starts closed and allows calls", async () => {
@@ -227,6 +228,21 @@ describe("CircuitBreaker", () => {
       const result = await pending;
       expect(result).toBeInstanceOf(DOMException);
       expect((result as DOMException).name).toBe("AbortError");
+    });
+
+    it("does not retry or count a structured non-retryable error (RV-26)", async () => {
+      const cb = new CircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 60000, maxRetries: 3, backoffMs: 1000 });
+      const fn = vi.fn().mockRejectedValue(new VntError("Incorrect API key provided: sk-test...", {
+        code: "ERR_UPSTREAM_401",
+        retryable: false,
+      }));
+
+      await expect(cb.call(fn)).rejects.toBeInstanceOf(VntError);
+      expect(fn).toHaveBeenCalledTimes(1); // no retries
+      expect(cb.getState()).toBe("closed"); // never tripped
+
+      // A subsequent success still flows through cleanly.
+      await expect(cb.call(() => Promise.resolve("ok"))).resolves.toBe("ok");
     });
   });
 });
