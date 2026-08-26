@@ -1,0 +1,57 @@
+{
+  "name": "@vinhnt-sdk/schema",
+  "version": "0.1.3",
+  "description": "Shared Zod schemas and types for VNT Agent — tool definitions, event types, and ACP protocol",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/schema"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/schema",
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "schema",
+    "zod",
+    "validation",
+    "types",
+    "protocol"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

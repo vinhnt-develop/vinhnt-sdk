@@ -1,0 +1,66 @@
+import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
+import type { ChatMessage } from "@vinhnt-sdk/schema";
+import type { ToolContext } from "@vinhnt-sdk/tools";
+import type { StepExecutorPluginHooks } from "./hooks.js";
+import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
+import type { ToolExecutionPlan } from "./step-executor.js";
+import type { AgentConfig } from "@vinhnt-sdk/schema";
+import { toolDomain } from "./kernel-utils.js";
+
+/** Dependencies required by {@link handleApproval}. */
+export interface ApprovalHandlerDeps {
+  readonly store: { emitEvent(event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">, persist?: boolean): Promise<void> };
+  readonly permissionGate: PermissionGate;
+  readonly pluginManager: StepExecutorPluginHooks | undefined;
+  currentAgent: AgentConfig | undefined;
+}
+
+export async function handleApproval(
+  permResult: PermissionCheckResult,
+  tc: ToolExecutionPlan,
+  toolCtx: ToolContext,
+  runId: RunId,
+  ctx: RequestContext,
+  _sessionId: string | undefined,
+  messages: ChatMessage[],
+  deps: ApprovalHandlerDeps,
+  selfApproving?: boolean,
+): Promise<boolean> {
+  // Allowed or needs-approval → proceed. A hard deny (!allowed, no approval
+  // needed) must surface as a rejection — a caller who skips this check would
+  // otherwise hand a denied tool straight through to execution.
+  if (permResult.allowed) return true;
+  if (!permResult.needsApproval) {
+    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" denied by permission rules` });
+    return false;
+  }
+
+  // Single approval path: self-approving tools ask via their own `ctx.ask`
+  // (which persists savePatterns on "always"). Defer the gate-level ask.
+  if (selfApproving) return true;
+
+  const savedOk = deps.permissionGate.checkSavedApproval(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id);
+  if (savedOk) return true;
+
+  const reply = await toolCtx.ask({
+    permission: `tool.${tc.toolName}`,
+    resource: tc.toolName,
+    reason: permResult.reason!,
+  });
+
+  if (reply === "reject") {
+    deps.permissionGate.saveRejection(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id);
+    await deps.store.emitEvent({
+      id: crypto.randomUUID(), runId, type: "tool.failed",
+      occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+      data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Tool "${tc.toolName}" rejected by user` },
+    });
+    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" rejected by user` });
+    return false;
+  }
+
+  if (reply === "always") {
+    deps.permissionGate.saveApproval(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id);
+  }
+  return true;
+}

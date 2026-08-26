@@ -1,0 +1,188 @@
+{
+  "total": 651,
+  "documented": 651,
+  "pct": 100,
+  "perPackage": {
+    "core": {
+      "files": 16,
+      "exports": 43,
+      "documented": 43,
+      "pct": 100
+    },
+    "event": {
+      "files": 6,
+      "exports": 42,
+      "documented": 42,
+      "pct": 100
+    },
+    "knowledge": {
+      "files": 10,
+      "exports": 17,
+      "documented": 17,
+      "pct": 100
+    },
+    "lsp": {
+      "files": 7,
+      "exports": 28,
+      "documented": 28,
+      "pct": 100
+    },
+    "model-caller": {
+      "files": 1,
+      "exports": 4,
+      "documented": 4,
+      "pct": 100
+    },
+    "permission": {
+      "files": 4,
+      "exports": 11,
+      "documented": 11,
+      "pct": 100
+    },
+    "plugin": {
+      "files": 1,
+      "exports": 4,
+      "documented": 4,
+      "pct": 100
+    },
+    "provider-anthropic": {
+      "files": 1,
+      "exports": 6,
+      "documented": 6,
+      "pct": 100
+    },
+    "provider-deepseek": {
+      "files": 1,
+      "exports": 6,
+      "documented": 6,
+      "pct": 100
+    },
+    "provider-ollama": {
+      "files": 1,
+      "exports": 5,
+      "documented": 5,
+      "pct": 100
+    },
+    "provider-openai-compatible": {
+      "files": 6,
+      "exports": 22,
+      "documented": 22,
+      "pct": 100
+    },
+    "sandbox": {
+      "files": 6,
+      "exports": 15,
+      "documented": 15,
+      "pct": 100
+    },
+    "sandbox-container": {
+      "files": 1,
+      "exports": 1,
+      "documented": 1,
+      "pct": 100
+    },
+    "sandbox-host": {
+      "files": 1,
+      "exports": 1,
+      "documented": 1,
+      "pct": 100
+    },
+    "sandbox-process": {
+      "files": 1,
+      "exports": 1,
+      "documented": 1,
+      "pct": 100
+    },
+    "schema": {
+      "files": 31,
+      "exports": 268,
+      "documented": 268,
+      "pct": 100
+    },
+    "security": {
+      "files": 4,
+      "exports": 12,
+      "documented": 12,
+      "pct": 100
+    },
+    "session": {
+      "files": 6,
+      "exports": 15,
+      "documented": 15,
+      "pct": 100
+    },
+    "step-executor": {
+      "files": 15,
+      "exports": 44,
+      "documented": 44,
+      "pct": 100
+    },
+    "store-drizzle": {
+      "files": 5,
+      "exports": 12,
+      "documented": 12,
+      "pct": 100
+    },
+    "store-drizzle-pg": {
+      "files": 5,
+      "exports": 11,
+      "documented": 11,
+      "pct": 100
+    },
+    "store-memory": {
+      "files": 3,
+      "exports": 2,
+      "documented": 2,
+      "pct": 100
+    },
+    "tool-saga": {
+      "files": 1,
+      "exports": 3,
+      "documented": 3,
+      "pct": 100
+    },
+    "tools": {
+      "files": 12,
+      "exports": 31,
+      "documented": 31,
+      "pct": 100
+    },
+    "tools-agent": {
+      "files": 5,
+      "exports": 7,
+      "documented": 7,
+      "pct": 100
+    },
+    "tools-fs": {
+      "files": 6,
+      "exports": 14,
+      "documented": 14,
+      "pct": 100
+    },
+    "tools-git": {
+      "files": 2,
+      "exports": 4,
+      "documented": 4,
+      "pct": 100
+    },
+    "tools-search": {
+      "files": 3,
+      "exports": 6,
+      "documented": 6,
+      "pct": 100
+    },
+    "tools-shell": {
+      "files": 3,
+      "exports": 5,
+      "documented": 5,
+      "pct": 100
+    },
+    "tools-web": {
+      "files": 3,
+      "exports": 11,
+      "documented": 11,
+      "pct": 100
+    }
+  },
+  "missing": []
+}

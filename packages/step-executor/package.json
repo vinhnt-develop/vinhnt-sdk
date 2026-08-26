@@ -1,0 +1,64 @@
+{
+  "name": "@vinhnt-sdk/step-executor",
+  "version": "0.1.3",
+  "description": "Step execution kernel for VNT Agent — tool lifecycle, timeouts, permission gating, doom-loop detection, self-correction and run state",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/step-executor"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/step-executor",
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "step",
+    "executor",
+    "tool",
+    "permission",
+    "kernel",
+    "agent"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@vinhnt-sdk/event": "workspace:*",
+    "@vinhnt-sdk/llm": "workspace:*",
+    "@vinhnt-sdk/permission": "workspace:*",
+    "@vinhnt-sdk/schema": "workspace:*",
+    "@vinhnt-sdk/security": "workspace:*",
+    "@vinhnt-sdk/session": "workspace:*",
+    "@vinhnt-sdk/tools": "workspace:*"
+  }
+}
