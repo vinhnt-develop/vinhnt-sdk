@@ -1,18 +1,9 @@
-/**
- * Tool Plugin Template for vinhnt-sdk
- * 
- * This template provides a starting point for creating tool plugins.
- * Copy this directory and customize it for your needs.
- */
-
 import { definePlugin } from "@vinhnt-sdk/plugin";
 import { defineTool } from "@vinhnt-sdk/tools";
 import { z } from "zod";
-import type { PluginManifest, PluginContext, PluginHooks, ToolDefinition } from "@vinhnt-sdk/core";
+import type { PluginManifest, PluginContext, PluginHooks } from "@vinhnt-sdk/plugin";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
 
-/**
- * Plugin manifest - describes the plugin
- */
 const manifest: PluginManifest = {
   id: "my-tool-plugin",
   name: "My Tool Plugin",
@@ -21,9 +12,6 @@ const manifest: PluginManifest = {
   author: "Your Name",
 };
 
-/**
- * Define a custom tool
- */
 const helloTool = defineTool({
   name: "hello",
   description: "Say hello to someone",
@@ -36,9 +24,6 @@ const helloTool = defineTool({
   },
 });
 
-/**
- * Define another custom tool
- */
 const calculatorTool = defineTool({
   name: "calculator",
   description: "Perform basic calculations",
@@ -50,74 +35,44 @@ const calculatorTool = defineTool({
   }),
   async execute(input, ctx) {
     switch (input.operation) {
-      case "add":
-        return input.a + input.b;
-      case "subtract":
-        return input.a - input.b;
-      case "multiply":
-        return input.a * input.b;
+      case "add": return input.a + input.b;
+      case "subtract": return input.a - input.b;
+      case "multiply": return input.a * input.b;
       case "divide":
-        if (input.b === 0) {
-          throw new Error("Division by zero");
-        }
+        if (input.b === 0) throw new Error("Division by zero");
         return input.a / input.b;
     }
   },
 });
 
-/**
- * Collect tools from this plugin
- */
 function getTools(): ToolDefinition[] {
   return [
-    helloTool,
-    calculatorTool,
+    helloTool.toDefinition(),
+    calculatorTool.toDefinition(),
   ];
 }
 
-/**
- * Plugin hooks - implement lifecycle methods
- */
 const hooks: PluginHooks = {
-  /**
-   * Called before a run starts
-   */
-  onRunStart: async (ctx) => {
-    console.log(`[my-tool-plugin] Run started: ${ctx.runId}`);
+  onRunStarted: async (data) => {
+    console.log(`[my-tool-plugin] Run started: ${data.runId}`);
   },
-
-  /**
-   * Called after a run completes
-   */
-  onRunCompleted: async (ctx) => {
-    console.log(`[my-tool-plugin] Run completed: ${ctx.runId}`);
+  onRunCompleted: async (data) => {
+    console.log(`[my-tool-plugin] Run completed: ${data.status}`);
   },
 };
 
-/**
- * Activate the plugin
- */
 async function activate(ctx: PluginContext): Promise<void> {
-  console.log(`[my-tool-plugin] Plugin activated with workspace: ${ctx.workspaceRoot}`);
+  console.log(`[my-tool-plugin] Plugin activated`);
 }
 
-/**
- * Deactivate the plugin
- */
 async function deactivate(): Promise<void> {
   console.log("[my-tool-plugin] Plugin deactivated");
 }
 
-/**
- * Export the plugin
- */
 export default definePlugin(manifest, {
   hooks,
   activate,
   deactivate,
 });
 
-/**
- * Export tools for external use
- */
 export { helloTool, calculatorTool, getTools };

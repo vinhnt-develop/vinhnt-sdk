@@ -20,8 +20,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vinhnt-sdk/core": "^0.1.1-beta.0",
-    "@vinhnt-sdk/plugin": "^0.1.2"
+    "@vinhnt-sdk/plugin": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^6.0.0"
