@@ -1,0 +1,71 @@
+---
+title: "Migration v0.1.x"
+description: "Upgrade guide for v0.1.x versions"
+lang: "en"
+type: "guide"
+category: "More"
+sidebarPosition: 2
+---
+
+# Migration Guide — v0.1.x
+
+## Upgrading to v0.1.3
+
+### Breaking Changes
+
+None — v0.1.3 is backward-compatible with v0.1.2.
+
+### Deprecations
+
+| Old | New | Action |
+|-----|-----|--------|
+| `TokenMeter` (trace) | `CostMeter` | Rename import |
+| `findServerByExtension()` | `LspServerRegistry.findByExtension()` | Use class method |
+| `findServerById()` | `LspServerRegistry.findById()` | Use class method |
+| `getLanguageId()` | `LspServerRegistry.getLanguageId()` | Use class method |
+
+### New Features
+
+- `CircuitBreakerOpenError` — catch circuit breaker errors
+- `ToolTimeoutError` — catch timeout errors
+- Config tests available for `parseEnvFile`, `resolveCredentialMultiLayer`
+- Shared `approximateTokens` utility
+
+### Code Changes Required
+
+```typescript
+// Before (v0.1.2)
+import { TokenMeter } from "@vinhnt-sdk/trace";
+const meter = new TokenMeter();
+
+// After (v0.1.3)
+import { CostMeter } from "@vinhnt-sdk/trace";
+const meter = new CostMeter();
+```
+
+## Upgrading from v0.1.1 to v0.1.2
+
+### New Packages
+
+11 new packages added to the SDK:
+
+- `@vinhnt-sdk/config` — Credential resolution
+- `@vinhnt-sdk/llm` — LLM adapter abstraction
+- `@vinhnt-sdk/sandbox` — Process isolation
+- `@vinhnt-sdk/guard` — Circuit breaker, timeout
+- `@vinhnt-sdk/session` — Session state
+- `@vinhnt-sdk/permission` — Permission rules
+- `@vinhnt-sdk/step-executor` — Execution kernel
+- `@vinhnt-sdk/event` — Event bus
+- `@vinhnt-sdk/trace` — Observability
+- `@vinhnt-sdk/security` — Secret redaction
+- `@vinhnt-sdk/mcp` — MCP integration
+
+### Install New Packages
+
+```bash
+pnpm add @vinhnt-sdk/config @vinhnt-sdk/llm @vinhnt-sdk/sandbox \
+  @vinhnt-sdk/guard @vinhnt-sdk/session @vinhnt-sdk/permission \
+  @vinhnt-sdk/step-executor @vinhnt-sdk/event @vinhnt-sdk/trace \
+  @vinhnt-sdk/security @vinhnt-sdk/mcp
+```

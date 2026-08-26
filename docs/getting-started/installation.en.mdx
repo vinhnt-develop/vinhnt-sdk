@@ -1,0 +1,138 @@
+---
+title: "Installation"
+description: "Install vinhnt-sdk packages"
+lang: "en"
+type: "guide"
+category: "Getting Started"
+sidebarPosition: 2
+---
+
+# Installation
+
+## Package Manager
+
+<Tabs>
+<TabItem value="pnpm" label="pnpm">
+
+```bash
+pnpm add @vinhnt-sdk/schema @vinhnt-sdk/core @vinhnt-sdk/tools
+```
+
+</TabItem>
+<TabItem value="npm" label="npm">
+
+```bash
+npm install @vinhnt-sdk/schema @vinhnt-sdk/core @vinhnt-sdk/tools
+```
+
+</TabItem>
+<TabItem value="yarn" label="yarn">
+
+```bash
+yarn add @vinhnt-sdk/schema @vinhnt-sdk/core @vinhnt-sdk/tools
+```
+
+</TabItem>
+</Tabs>
+
+## Installation Tiers
+
+### Minimum (3 packages)
+
+Start with the essentials for basic LLM integration.
+
+```bash
+pnpm add @vinhnt-sdk/schema @vinhnt-sdk/core @vinhnt-sdk/tools
+```
+
+| Package | Purpose |
+|---------|---------|
+| `schema` | Type definitions and validation |
+| `core` | Core runtime and orchestration |
+| `tools` | Tool calling interface |
+
+### With Tools (7 packages)
+
+Add sandboxing, guards, session management, and permissions.
+
+```bash
+pnpm add @vinhnt-sdk/schema @vinhnt-sdk/core @vinhnt-sdk/tools \
+  @vinhnt-sdk/sandbox @vinhnt-sdk/guard \
+  @vinhnt-sdk/session @vinhnt-sdk/permission
+```
+
+| Package | Purpose |
+|---------|---------|
+| `sandbox` | Isolated execution environments |
+| `guard` | Input/output safety guards |
+| `session` | Session lifecycle management |
+| `permission` | Access control and permissions |
+
+### Full (18 packages)
+
+Install the complete SDK with all extensions.
+
+```bash
+pnpm add @vinhnt-sdk/schema @vinhnt-sdk/config @vinhnt-sdk/llm \
+  @vinhnt-sdk/tools @vinhnt-sdk/sandbox @vinhnt-sdk/guard \
+  @vinhnt-sdk/session @vinhnt-sdk/permission \
+  @vinhnt-sdk/step-executor @vinhnt-sdk/core \
+  @vinhnt-sdk/provider-openai-compatible \
+  @vinhnt-sdk/plugin @vinhnt-sdk/knowledge @vinhnt-sdk/event \
+  @vinhnt-sdk/mcp @vinhnt-sdk/trace @vinhnt-sdk/security @vinhnt-sdk/lsp
+```
+
+## Peer Dependencies
+
+| Peer Dependency | Required Version |
+|-----------------|------------------|
+| `typescript` | `>= 5.3` |
+| `zod` | `>= 3.22` |
+| `node` | `>= 18` |
+
+## TypeScript Configuration
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## Environment Variables
+
+Set the API key for your chosen provider.
+
+```bash
+# DeepSeek (recommended)
+export DEEPSEEK_API_KEY="your-api-key"
+
+# OpenAI (optional)
+export OPENAI_API_KEY="your-api-key"
+
+# Anthropic (optional)
+export ANTHROPIC_API_KEY="your-api-key"
+```
+
+## Verify Installation
+
+After installation, verify everything compiles correctly.
+
+```bash
+npx tsc --noEmit
+```
+
+If the command exits without errors, vinhnt-sdk is ready to use.

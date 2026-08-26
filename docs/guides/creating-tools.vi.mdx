@@ -1,0 +1,333 @@
+---
+title: "Tạo Công Cụ"
+description: "Xây dựng công cụ tùy chỉnh cho agent của bạn"
+lang: "vi"
+type: "guide"
+category: "Guides"
+sidebarPosition: 1
+---
+
+# Tạo Công Cụ
+
+Công cụ là các khối xây dựng giúp agent có khả năng tương tác với thế giới bên ngoài. Hướng dẫn này sẽ hướng dẫn bạn cách tạo công cụ tùy chỉnh sử dụng hàm `defineTool` từ `@vinhnt-sdk/tools`.
+
+## Cấu Trúc Công Cụ
+
+Mỗi công cụ được tạo bằng `defineTool` và phải bao gồm:
+
+```typescript
+import { defineTool } from "@vinhnt-sdk/tools";
+
+const congCuCuaToi = defineTool({
+  name: "cong_cu_cua_toi",
+  description: "Công cụ này làm gì",
+  risk: "read",
+  input: z.object({
+    thamSo: z.string().describe("Mô tả tham số"),
+  }),
+  execute: async (input, context) => {
+    // Logic thực thi công cụ ở đây
+    return { ketQua: "thanh cong" };
+  },
+});
+```
+
+### Các Trường Bắt Buộc
+
+| Trường | Kiểu | Mô tả |
+|--------|------|-------|
+| `name` | `string` | Định danh duy nhất của công cụ |
+| `description` | `string` | Mô tả dễ hiểu về chức năng |
+| `risk` | `RiskLevel` | Mức độ rủi ro của thao tác |
+| `input` | `z.ZodType` | Schema Zod định nghĩa tham số đầu vào |
+| `execute` | `function` | Hàm bất đồng bộ thực hiện hành động |
+
+## Mức Độ Rủi Ro
+
+Trường `risk` cho agent biết công cụ nguy hiểm đến mức nào. Luôn chọn mức hạn chế nhất phù hợp.
+
+| Mức Rủi Ro | Mô tả | Ví dụ |
+|-------------|-------|-------|
+| `read` | Chỉ đọc dữ liệu, không có tác dụng phụ | Tìm kiếm, truy vấn, liệt kê |
+| `write` | Tạo hoặc sửa đổi dữ liệu | Tạo file, cập nhật bản ghi |
+| `destructive` | Xóa hoặc thay đổi vĩnh viễn | Xóa file, xóa bảng |
+| `external` | Gọi dịch vụ hoặc API bên ngoài | Yêu cầu HTTP, webhook |
+
+## Đối Tượng ToolContext
+
+Tham số thứ hai trong `execute` là đối tượng `ToolContext`:
+
+```typescript
+execute: async (input, context) => {
+  // Yêu cầu người dùng xác nhận
+  const xacNhan = await context.ask("Bạn có muốn thực hiện không?");
+
+  // Ghi log thông tin
+  context.logger.info("Bắt đầu thao tác...");
+
+  // Truy cập metadata về phiên hiện tại
+  const sessionId = context.metadata.sessionId;
+
+  return { xacNhan };
+};
+```
+
+### Các Thuộc Tính Context
+
+- `ask(message: string): Promise<string>` - Yêu cầu người dùng nhập liệu
+- `logger` - Giao diện ghi log với các phương thức `info`, `warn`, `error`
+- `metadata` - Thông tin về phiên và yêu cầu hiện tại
+
+## Ví Dụ Công Cụ Cơ Bản
+
+Công cụ máy tính đơn giản:
+
+```typescript
+import { defineTool } from "@vinhnt-sdk/tools";
+import { z } from "zod";
+
+const mayTinh = defineTool({
+  name: "may_tinh",
+  description: "Thực hiện các phép tính số học cơ bản",
+  risk: "read",
+  input: z.object({
+    phepTinh: z.enum(["cong", "tru", "nhan", "chia"]),
+    a: z.number().describe("Số thứ nhất"),
+    b: z.number().describe("Số thứ hai"),
+  }),
+  execute: async (input, context) => {
+    context.logger.info(`Tính ${input.a} ${input.phepTinh} ${input.b}`);
+
+    let ketQua: number;
+    switch (input.phepTinh) {
+      case "cong": ketQua = input.a + input.b; break;
+      case "tru": ketQua = input.a - input.b; break;
+      case "nhan": ketQua = input.a * input.b; break;
+      case "chia":
+        if (input.b === 0) throw new Error("Chia cho 0");
+        ketQua = input.a / input.b;
+        break;
+    }
+
+    return { ketQua, bieuThuc: `${input.a} ${input.phepTinh} ${input.b} = ${ketQua}` };
+  },
+});
+```
+
+## Nâng Cao: Công Cụ API Bên Ngoài
+
+Công cụ thời tiết gọi API bên ngoài:
+
+```typescript
+import { defineTool } from "@vinhnt-sdk/tools";
+import { z } from "zod";
+
+const thoiTiet = defineTool({
+  name: "lay_thoi_tiet",
+  description: "Lấy thông tin thời tiết hiện tại của một địa điểm",
+  risk: "external",
+  input: z.object({
+    thanhPho: z.string().describe("Tên thành phố"),
+    donVi: z.enum(["celcius", "fahrenheit"]).default("celcius"),
+  }),
+  execute: async (input, context) => {
+    context.logger.info(`Đang lấy thời tiết cho ${input.thanhPho}`);
+
+    const apiKey = process.env.WEATHER_API_KEY;
+    const response = await fetch(
+      `https://api.weather.example/v1/current?city=${encodeURIComponent(input.thanhPho)}&units=${input.donVi}`,
+      { headers: { Authorization: `Bearer ${apiKey}` } }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Lỗi API thời tiết: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      thanhPho: input.thanhPho,
+      nhietDo: data.temp,
+      dieuKien: data.conditions,
+      doAm: data.humidity,
+    };
+  },
+});
+```
+
+## Xác Thực Đầu Vào Với Zod
+
+Schema Zod cung cấp xác thực runtime và suy luận kiểu:
+
+```typescript
+import { z } from "zod";
+
+const schema = z.object({
+  // Chuỗi với ràng buộc
+  email: z.string().email().describe("Địa chỉ email người dùng"),
+
+  // Số với phạm vi
+  tuoi: z.number().int().min(0).max(150).describe("Tuổi người dùng"),
+
+  // Trường tùy chọn
+  biDanh: z.string().optional().describe("Bi danh tùy chọn"),
+
+  // Mảng
+  the: z.array(z.string()).describe("Danh sách thẻ"),
+
+  // Enums
+  trangThai: z.enum(["hoatDong", "khongHoatDong", "choXuLy"]),
+
+  // Đối tượng lồng nhau
+  diaChi: z.object({
+    duong: z.string(),
+    thanhPho: z.string(),
+    maBuuChinh: z.string().regex(/^\d{5}$/),
+  }),
+
+  // Giá trị mặc định
+  dinhDang: z.enum(["json", "vanBan"]).default("json"),
+});
+
+// Kiểu được suy luận tự động
+type SchemaInput = z.infer<typeof schema>;
+```
+
+## Đăng Ký Động
+
+Đăng ký công cụ động khi chạy:
+
+```typescript
+import { ToolRegistry } from "@vinhnt-sdk/tools";
+
+const registry = new ToolRegistry();
+
+// Đăng ký từng công cụ
+registry.register(mayTinh);
+registry.register(thoiTiet);
+
+// Đăng ký nhiều công cụ cùng lúc
+registry.registerBatch([mayTinh, thoiTiet]);
+
+// Lấy công cụ
+const congCu = registry.get("may_tinh");
+
+// Liệt kê tất cả công cụ đã đăng ký
+const tatCaCongCu = registry.list();
+
+// Hủy đăng ký công cụ
+registry.unregister("may_tinh");
+```
+
+## Kiểm Thử Công Cụ Với FakeToolContext
+
+Sử dụng `FakeToolContext` để kiểm thử đơn vị:
+
+```typescript
+import { FakeToolContext } from "@vinhnt-sdk/tools";
+
+describe("công cụ máy tính", () => {
+  it("should cộng hai số", async () => {
+    const context = new FakeToolContext();
+
+    const ketQua = await mayTinh.execute(
+      { phepTinh: "cong", a: 2, b: 3 },
+      context
+    );
+
+    expect(ketQua.ketQua).toBe(5);
+    expect(context.logs).toContain("Tính 2 cong 3");
+  });
+
+  it("should ném lỗi khi chia cho 0", async () => {
+    const context = new FakeToolContext();
+
+    await expect(
+      mayTinh.execute({ phepTinh: "chia", a: 1, b: 0 }, context)
+    ).rejects.toThrow("Chia cho 0");
+  });
+});
+```
+
+## Các Mẫu Thường Dùng
+
+### Nhà Máy Công Cụ Tham Số Hóa
+
+Tạo công cụ động từ cấu hình:
+
+```typescript
+function taoCongCuCrud(ntity: string, duongDan: string) {
+  return defineTool({
+    name: `${ntity}_danh_sach`,
+    description: `Liệt kê tất cả bản ghi ${ntity}`,
+    risk: "read",
+    input: z.object({
+      trang: z.number().int().min(1).default(1),
+      gioiHan: z.number().int().min(1).max(100).default(20),
+    }),
+    execute: async (input, context) => {
+      const response = await fetch(
+        `${duongDan}?page=${input.trang}&limit=${input.gioiHan}`
+      );
+      return response.json();
+    },
+  });
+}
+
+const congCuNguoiDung = taoCongCuCrud("nguoiDung", "https://api.example.com/users");
+const congCuDonHang = taoCongCuCrud("donHang", "https://api.example.com/orders");
+```
+
+### Công Cụ Với Xác Nhận
+
+Yêu cầu xác nhận người dùng cho hành động phá hủy:
+
+```typescript
+const congCuXoa = defineTool({
+  name: "xoa_ban_ghi",
+  description: "Xóa vĩnh viễn một bản ghi",
+  risk: "destructive",
+  input: z.object({
+    id: z.string().describe("ID bản ghi cần xóa"),
+  }),
+  execute: async (input, context) => {
+    const xacNhan = await context.ask(
+      `Bạn có chắc muốn xóa bản ghi ${input.id}? Hành động này không thể hoàn tác.`
+    );
+
+    if (xacNhan.toLowerCase() !== "co") {
+      return { daXoa: false, lyDo: "Người dùng đã hủy" };
+    }
+
+    await fetch(`${API_URL}/records/${input.id}`, { method: "DELETE" });
+    return { daXoa: true, id: input.id };
+  },
+});
+```
+
+### Công Cụ Với Logic Thử Lại
+
+Xử lý lỗi tạm thời một cách gracefully:
+
+```typescript
+async function voiThuLai<T>(
+  fn: () => Promise<T>,
+  soLanThuLai: number,
+  doTre: number
+): Promise<T> {
+  for (let i = 0; i <= soLanThuLai; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i === soLanThuLai) throw error;
+      await new Promise((r) => setTimeout(r, doTre * Math.pow(2, i)));
+    }
+  }
+  throw new Error("Unreachable");
+}
+```
+
+## Bước Tiếp Theo
+
+- Khám phá hướng dẫn [Tạo Nhà Cung Cấp](/guides/creating-providers) để thêm hỗ trợ mô hình
+- Xem tham chiếu API cho tùy chọn đầy đủ của `defineTool`
+- Xem các ví dụ công cụ trong repository SDK

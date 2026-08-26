@@ -1,0 +1,61 @@
+# vinhnt-sdk — AI Agent SDK for TypeScript
+
+> A modular, extensible SDK for building AI agents with TypeScript.
+> 18 packages: 11 core + 7 extension.
+
+## Getting Started
+- [Installation](getting-started/installation.en.mdx)
+- [Quickstart](getting-started/quickstart.en.mdx)
+- [Authentication](getting-started/authentication.en.mdx)
+
+## Architecture
+- [System Overview](architecture/index.en.mdx)
+- [Dependency Graph](architecture/dependency-graph.en.mdx)
+- [Design Patterns](architecture/design-patterns.en.mdx)
+- [Package Layers](architecture/package-layers.en.mdx)
+
+## API Reference — Core Layer
+- [@vinhnt-sdk/schema](api/schema.en.mdx) — Types, contracts, branded IDs, errors
+- [@vinhnt-sdk/config](api/config.en.mdx) — Credentials, env resolution, settings
+- [@vinhnt-sdk/llm](api/llm.en.mdx) — LLM adapter abstraction, registry, retry
+- [@vinhnt-sdk/tools](api/tools.en.mdx) — Tool framework + built-in tools (fs, shell, git, web, search)
+- [@vinhnt-sdk/sandbox](api/sandbox.en.mdx) — Process isolation, command parsing
+- [@vinhnt-sdk/guard](api/guard.en.mdx) — Circuit breaker, loop detection, tool timeout
+- [@vinhnt-sdk/session](api/session.en.mdx) — Session state, stores, compaction
+- [@vinhnt-sdk/permission](api/permission.en.mdx) — Permission rules, approval stores
+- [@vinhnt-sdk/step-executor](api/step-executor.en.mdx) — Execution kernel, self-correction
+- [@vinhnt-sdk/core](api/core.en.mdx) — AgentKernel, plugin manager, orchestration
+- [@vinhnt-sdk/provider-openai-compatible](api/provider-openai-compatible.en.mdx) — OpenAI-compatible provider + presets
+
+## API Reference — Extension Layer
+- [@vinhnt-sdk/plugin](api/plugin.en.mdx) — Plugin hooks, npm loader
+- [@vinhnt-sdk/knowledge](api/knowledge.en.mdx) — Memory, context compression
+- [@vinhnt-sdk/event](api/event.en.mdx) — Typed event bus, durable replay
+- [@vinhnt-sdk/mcp](api/mcp.en.mdx) — MCP client, transports
+- [@vinhnt-sdk/trace](api/trace.en.mdx) — Telemetry, timeline, cost tracking
+- [@vinhnt-sdk/security](api/security.en.mdx) — Secret redactor, injection detection
+- [@vinhnt-sdk/lsp](api/lsp.en.mdx) — LSP integration, diagnostics
+
+## Guides
+- [Creating Tools](guides/creating-tools.en.mdx)
+- [Creating Providers](guides/creating-providers.en.mdx)
+- [Configuration](guides/configuration.en.mdx)
+- [Plugins](guides/plugins.en.mdx)
+- [Persistence](guides/persistence.en.mdx)
+- [Observability](guides/observability.en.mdx)
+- [Permissions](guides/permissions.en.mdx)
+- [Session Management](guides/session-management.en.mdx)
+- [MCP Integration](guides/mcp.en.mdx)
+- [NestJS Integration](guides/nestjs-integration.en.mdx)
+
+## Examples
+- [Minimal Agent](examples/minimal-agent.en.mdx)
+- [Custom Tools](examples/custom-tools.en.mdx)
+- [Full Stack](examples/full-stack.en.mdx)
+- [Multi-Model](examples/multi-model.en.mdx)
+- [Persistent Agent](examples/persistent-agent.en.mdx)
+- [Plugin Author](examples/plugin-author.en.mdx)
+
+## More
+- [Changelog](changelog.en.mdx)
+- [Migration v0.1.x](migration/v0.1.x.en.mdx)

@@ -1,0 +1,89 @@
+{
+  "sidebar": [
+    {
+      "label": "Getting Started",
+      "items": [
+        { "id": "getting-started/index", "label": "Overview" },
+        { "id": "getting-started/installation", "label": "Installation" },
+        { "id": "getting-started/quickstart", "label": "Quickstart" },
+        { "id": "getting-started/authentication", "label": "Authentication" }
+      ]
+    },
+    {
+      "label": "Architecture",
+      "items": [
+        { "id": "architecture/index", "label": "Overview" },
+        { "id": "architecture/dependency-graph", "label": "Dependency Graph" },
+        { "id": "architecture/design-patterns", "label": "Design Patterns" },
+        { "id": "architecture/package-layers", "label": "Package Layers" }
+      ]
+    },
+    {
+      "label": "Guides",
+      "items": [
+        { "id": "guides/creating-tools", "label": "Creating Tools" },
+        { "id": "guides/creating-providers", "label": "Creating Providers" },
+        { "id": "guides/configuration", "label": "Configuration" },
+        { "id": "guides/plugins", "label": "Plugins" },
+        { "id": "guides/persistence", "label": "Persistence" },
+        { "id": "guides/observability", "label": "Observability" },
+        { "id": "guides/permissions", "label": "Permissions" },
+        { "id": "guides/session-management", "label": "Session Management" },
+        { "id": "guides/mcp", "label": "MCP Integration" },
+        { "id": "guides/nestjs-integration", "label": "NestJS Integration" }
+      ]
+    },
+    {
+      "label": "API Reference",
+      "collapsed": false,
+      "items": [
+        {
+          "label": "Core Layer",
+          "items": [
+            { "id": "api/schema", "label": "schema" },
+            { "id": "api/config", "label": "config" },
+            { "id": "api/llm", "label": "llm" },
+            { "id": "api/tools", "label": "tools" },
+            { "id": "api/sandbox", "label": "sandbox" },
+            { "id": "api/guard", "label": "guard" },
+            { "id": "api/session", "label": "session" },
+            { "id": "api/permission", "label": "permission" },
+            { "id": "api/step-executor", "label": "step-executor" },
+            { "id": "api/core", "label": "core" },
+            { "id": "api/provider-openai-compatible", "label": "provider-openai-compatible" }
+          ]
+        },
+        {
+          "label": "Extension Layer",
+          "items": [
+            { "id": "api/plugin", "label": "plugin" },
+            { "id": "api/knowledge", "label": "knowledge" },
+            { "id": "api/event", "label": "event" },
+            { "id": "api/mcp", "label": "mcp" },
+            { "id": "api/trace", "label": "trace" },
+            { "id": "api/security", "label": "security" },
+            { "id": "api/lsp", "label": "lsp" }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Examples",
+      "items": [
+        { "id": "examples/minimal-agent", "label": "Minimal Agent" },
+        { "id": "examples/custom-tools", "label": "Custom Tools" },
+        { "id": "examples/full-stack", "label": "Full Stack" },
+        { "id": "examples/multi-model", "label": "Multi-Model" },
+        { "id": "examples/persistent-agent", "label": "Persistent Agent" },
+        { "id": "examples/plugin-author", "label": "Plugin Author" }
+      ]
+    },
+    {
+      "label": "More",
+      "items": [
+        { "id": "changelog", "label": "Changelog" },
+        { "id": "migration/v0.1.x", "label": "Migration" }
+      ]
+    }
+  ]
+}
