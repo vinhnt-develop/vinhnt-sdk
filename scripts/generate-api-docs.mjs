@@ -46,6 +46,8 @@ function getJSDoc(node) {
 
 function truncate(str, max = 120) {
   if (!str) return "void";
+  // Clean up import() type paths
+  str = str.replace(/import\(".*?"\)\./g, "");
   return str.length > max ? str.slice(0, max - 3) + "..." : str;
 }
 
@@ -112,7 +114,31 @@ function extractClass(decl) {
 function extractInterface(decl) {
   const name = decl.getName() || "Anonymous";
   const methods = [];
+  const props = [];
+  const seenProps = new Set();
 
+  // Get inherited properties from base types
+  const baseTypes = decl.getBaseTypes();
+  for (const baseType of baseTypes) {
+    const baseDecl = baseType.getSymbol()?.getDeclarations()?.[0];
+    if (baseDecl && Node.isInterfaceDeclaration(baseDecl)) {
+      for (const prop of baseDecl.getProperties()) {
+        const propName = prop.getName();
+        if (!seenProps.has(propName)) {
+          seenProps.add(propName);
+          props.push({
+            name: propName,
+            type: truncate(prop.getType().getText()),
+            required: !prop.hasQuestionToken(),
+            desc: getJSDoc(prop),
+            inherited: baseDecl.getName(),
+          });
+        }
+      }
+    }
+  }
+
+  // Get own methods
   for (const method of decl.getMethods()) {
     const params = method.getParameters().map(p => ({
       n: p.getName(),
@@ -123,22 +149,27 @@ function extractInterface(decl) {
     const ret = truncate(method.getReturnType().getText());
     methods.push({
       sig: `${method.getName()}(${params.map(p => `${p.n}: ${p.t}`).join(", ")}): ${ret}`,
-      desc: "",
+      desc: getJSDoc(method),
       params,
       ret,
     });
   }
 
+  // Get own properties
   for (const prop of decl.getProperties()) {
-    methods.push({
-      name: prop.getName(),
-      type: truncate(prop.getType().getText()),
-      required: !prop.hasQuestionToken(),
-      desc: getJSDoc(prop),
-    });
+    const propName = prop.getName();
+    if (!seenProps.has(propName)) {
+      seenProps.add(propName);
+      props.push({
+        name: propName,
+        type: truncate(prop.getType().getText()),
+        required: !prop.hasQuestionToken(),
+        desc: getJSDoc(prop),
+      });
+    }
   }
 
-  return { type: "type", name, desc: getJSDoc(decl) || name, methods };
+  return { type: "type", name, desc: getJSDoc(decl) || name, methods, props };
 }
 
 function extractFunction(decl) {
@@ -265,7 +296,7 @@ function processPackage(pkgDir) {
         info = extractEnum(decl);
       }
 
-      if (info && info.methods.length > 0) {
+      if (info && (info.methods.length > 0 || (info.props && info.props.length > 0))) {
         result.push(info);
         break; // Only first declaration per export
       }

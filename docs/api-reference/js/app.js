@@ -69,6 +69,13 @@ function renderCard(exp,full){
   const bc=exp.type==="class"?"b-c":exp.type==="function"?"b-f":exp.type==="type"?"b-i":"b-t";
   let h=`<div class="sec"><div class="sec-h"><span class="badge ${bc}" style="font-size:11px">${exp.type}</span><h2>${exp.name}</h2></div>`;
   if(exp.desc)h+=`<p class="desc">${exp.desc}</p>`;
+  
+  // Render properties if present
+  if(exp.props&&exp.props.length){
+    h+=renderPropsTable(exp.props,"Properties");
+  }
+  
+  // Render methods
   const ms=full?exp.methods:exp.methods.slice(0,2);
   for(const m of ms) h+=renderMethod(m);
   if(!full&&exp.methods.length>2){
@@ -102,6 +109,19 @@ function renderMethod(m){
   }
   if(m.ret) h+=`<div style="margin-top:6px"><span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">Returns</span><br><code style="font-family:monospace;color:#60a5fa;font-size:11px">${esc(m.ret)}</code></div>`;
   h+=`</div>`;return h;
+}
+
+// ── Render properties table ──
+function renderPropsTable(props, label=""){
+  let h=``;
+  if(label) h+=`<div style="margin:8px 0 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px">${label}</div>`;
+  h+=`<table class="tb"><thead><tr><th>Name</th><th>Type</th><th></th><th>Description</th></tr></thead><tbody>`;
+  for(const p of props){
+    const inheritedTag=p.inherited?` <span style="font-size:9px;color:var(--muted);font-style:italic">(from ${esc(p.inherited)})</span>`:'';
+    h+=`<tr><td class="pn">${esc(p.name)}${inheritedTag}</td><td class="pt">${esc(p.type||"")}</td><td>${p.required?'<span class="pr">required</span>':'<span class="po">optional</span>'}</td><td class="pd">${esc(p.desc||"")}</td></tr>`;
+  }
+  h+=`</tbody></table>`;
+  return h;
 }
 
 // ── Highlight ──
