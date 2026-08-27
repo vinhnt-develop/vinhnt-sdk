@@ -7,56 +7,33 @@
 
 > AI Agent SDK — modular TypeScript libraries for building AI coding agents.
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Applications                         │
-│                    (Your AI Agent App)                      │
-├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/core                                         │
-│   ┌─────────────────┐                                      │
-│   │ AgentKernel     │                                      │
-│   │ Orchestration   │                                      │
-│   │ Workflows       │                                      │
-│   └─────────────────┘                                      │
-├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/tools    @vinhnt-sdk/knowledge               │
-│   ┌─────────────────┐  ┌─────────────────┐                 │
-│   │ Built-in Tools  │  │ Memory & RAG    │                 │
-│   │ File/Shell/Git  │  │ Compression     │                 │
-│   └─────────────────┘  └─────────────────┘                 │
-├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/security  @vinhnt-sdk/plugin                 │
-│   ┌─────────────────┐  ┌─────────────────┐                 │
-│   │ Prompt Protect  │  │ Plugin SDK      │                 │
-│   │ Secret Redact   │  │ TypeScript Hooks│                 │
-│   └─────────────────┘  └─────────────────┘                 │
-├─────────────────────────────────────────────────────────────┤
-│   @vinhnt-sdk/schema                                       │
-│   ┌─────────────────┐                                      │
-│   │ Types & Schemas │                                      │
-│   │ Contracts       │                                      │
-│   └─────────────────┘                                      │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ## Packages
 
-| Package | Version | Description |
-|---------|---------|-------------|
-| `@vinhnt-sdk/schema` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/schema.svg)](https://npmjs.com/package/@vinhnt-sdk/schema) | Types, contracts, model interfaces, session store |
-| `@vinhnt-sdk/core` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/core.svg)](https://npmjs.com/package/@vinhnt-sdk/core) | Agent kernel, orchestration, workflows, re-exports |
-| `@vinhnt-sdk/tools` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/tools.svg)](https://npmjs.com/package/@vinhnt-sdk/tools) | Built-in tools (file, shell, git, web, search) |
-| `@vinhnt-sdk/knowledge` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/knowledge.svg)](https://npmjs.com/package/@vinhnt-sdk/knowledge) | Memory, context compression, learning engine |
-| `@vinhnt-sdk/security` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/security.svg)](https://npmjs.com/package/@vinhnt-sdk/security) | Prompt injection protection, secret redaction |
-| `@vinhnt-sdk/plugin` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/plugin.svg)](https://npmjs.com/package/@vinhnt-sdk/plugin) | Plugin SDK with TypeScript hooks |
-| `@vinhnt-sdk/lsp` | [![npm](https://img.shields.io/npm/v/@vinhnt-sdk/lsp.svg)](https://npmjs.com/package/@vinhnt-sdk/lsp) | Language Server Protocol integration |
+| Package | Description |
+|---------|-------------|
+| `@vinhnt-sdk/schema` | Types, contracts, model interfaces, session store |
+| `@vinhnt-sdk/config` | Configuration, credentials, environment validation |
+| `@vinhnt-sdk/llm` | LLM providers, token metering, retry logic |
+| `@vinhnt-sdk/tools` | Built-in tools (file, shell, git, web, search) |
+| `@vinhnt-sdk/knowledge` | Memory, context compression, learning engine |
+| `@vinhnt-sdk/security` | Prompt injection protection, secret redaction |
+| `@vinhnt-sdk/plugin` | Plugin SDK with TypeScript hooks |
+| `@vinhnt-sdk/lsp` | Language Server Protocol integration |
+| `@vinhnt-sdk/mcp` | Model Context Protocol integration |
+| `@vinhnt-sdk/guard` | Circuit breaker, rate limiting, timeouts |
+| `@vinhnt-sdk/sandbox` | Process sandboxing with env sanitization |
+| `@vinhnt-sdk/session` | Session management with event sourcing |
+| `@vinhnt-sdk/permission` | Fine-grained allow/deny/ask permission rules |
+| `@vinhnt-sdk/step-executor` | Tool execution with approval workflows |
+| `@vinhnt-sdk/event` | Event bus, event sourcing, replay |
+| `@vinhnt-sdk/trace` | Telemetry, cost tracking, observability |
+| `@vinhnt-sdk/provider-openai-compatible` | OpenAI-compatible provider |
+| `@vinhnt-sdk/core` | Agent kernel, orchestration, workflows |
 
 ## Quick Start
 
 ```bash
-npm install @vinhnt-sdk/core @vinhnt-sdk/schema
+pnpm add @vinhnt-sdk/core @vinhnt-sdk/schema
 ```
 
 ```typescript
@@ -72,7 +49,6 @@ const calculatorTool = defineTool({
     expression: z.string(),
   }),
   async execute(input) {
-    // Safe evaluation - parse and compute without eval
     const parts = input.expression.match(/^(\d+)\s*([+\-*/])\s*(\d+)$/);
     if (!parts) {
       throw new Error("Invalid expression format. Use: number operator number");
@@ -120,6 +96,7 @@ console.log("Agent completed:", result);
 - **Workflows** — Graph-based sequential and parallel agent orchestration
 - **Security** — Prompt injection protection, secret redaction
 - **LSP Integration** — Language Server Protocol for code intelligence
+- **MCP Integration** — Model Context Protocol for tool discovery
 
 ## Security
 
@@ -143,12 +120,6 @@ pnpm test
 # Typecheck all packages
 pnpm typecheck
 ```
-
-## Documentation
-
-- [Architecture Guide](docs/guides/architecture.md)
-- [Examples](docs/examples/)
-- [Package Docs](docs/packages/)
 
 ## License
 
