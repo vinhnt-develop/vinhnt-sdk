@@ -1,6 +1,6 @@
 {
     "name":  "@vinhnt-sdk/guard",
-    "version":  "0.1.3",
+    "version":  "0.1.4",
     "description":  "Guard plugins — circuit breaker, loop detection, tool timeout",
     "license":  "MIT",
     "type":  "module",
