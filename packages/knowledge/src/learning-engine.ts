@@ -18,6 +18,11 @@ import type { MemoryStore } from "./types.js";
 export interface LearningEngineOptions {
   readonly config: LearningConfig;
   readonly sessionId: string;
+  /**
+   * Pluggable memory store. Defaults to `InMemoryMemoryStore` if not provided.
+   * Inject a persistent implementation (e.g., PostgresMemoryStore) for production.
+   */
+  readonly store?: MemoryStore;
 }
 
 /**
@@ -36,7 +41,7 @@ export class LearningEngine {
   constructor(options: LearningEngineOptions) {
     this.config = options.config;
     this.enabled = options.config.enabled;
-    this.store = new InMemoryMemoryStore();
+    this.store = options.store ?? new InMemoryMemoryStore();
     this.boundedMem = new BoundedMemory(this.store, {
       profileLimit: options.config.userCharLimit,
       workingLimit: options.config.memoryCharLimit,

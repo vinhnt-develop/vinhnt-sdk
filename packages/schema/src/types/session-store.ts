@@ -39,6 +39,17 @@ export interface RunEventStore {
   subscribe(listener: RunEventListener): () => void;
 }
 
+/** Options for adding a message to a session. */
+export interface AddMessageOptions {
+  role: string;
+  content: string;
+  toolCallId?: string;
+  tokens?: { input: number; output: number; reasoning?: number };
+  model?: string;
+  cost?: number;
+  admittedSeq?: number;
+}
+
 export interface SessionStore {
   createSession(title?: string, parentSessionId?: string): Promise<Session>;
   forkSession(sourceSessionId: string, title?: string): Promise<Session>;
@@ -46,7 +57,27 @@ export interface SessionStore {
   listSessions(limit?: number, offset?: number): Promise<readonly Session[]>;
   updateSession(id: string, updates: SessionUpdates): Promise<void>;
   deleteSession(id: string): Promise<void>;
+
+  /**
+   * Add a message to a session.
+   *
+   * @example Options object (preferred)
+   * ```typescript
+   * await store.addMessage(sessionId, {
+   *   role: "user",
+   *   content: "Hello",
+   * });
+   * ```
+   *
+   * @example Legacy positional params (deprecated)
+   * ```typescript
+   * await store.addMessage(sessionId, "user", "Hello");
+   * ```
+   */
+  addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>;
+  /** @deprecated Use options object form: `addMessage(sessionId, { role, content, ... })` */
   addMessage(sessionId: string, role: string, content: string, toolCallId?: string, tokens?: { input: number; output: number; reasoning?: number }, model?: string, cost?: number, admittedSeq?: number): Promise<Message>;
+
   /**
    * Update message-level fields (e.g. mark a pending input as promoted on drain).
    * Optional so minimal stores can skip input-segment tracking.

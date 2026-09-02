@@ -6,4 +6,5 @@ export type {
   RunEventStore,
   SessionStore,
   MessageSeqUpdates,
+  AddMessageOptions,
 } from "@vinhnt-sdk/schema";

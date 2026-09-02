@@ -1,5 +1,5 @@
 import type { RunEvent, Session, Message, SessionStats, SessionId, MessageId } from "@vinhnt-sdk/schema";
-import type { RunEventStore, RunEventSnapshot, SessionStore, SessionUpdates } from "./store.js";
+import type { RunEventStore, RunEventSnapshot, SessionStore, SessionUpdates, AddMessageOptions } from "./store.js";
 
 const nullSessionId = "null-session" as SessionId;
 const nullForkSessionId = "null-session-fork" as SessionId;
@@ -89,12 +89,25 @@ export class NullSessionStore implements SessionStore {
 
   async deleteSession(_id: string): Promise<void> {}
 
-  async addMessage(_sessionId: string, _role: string, _content: string, _toolCallId?: string, _tokens?: { input: number; output: number; reasoning?: number }, _model?: string, _cost?: number, _admittedSeq?: number): Promise<Message> {
+  async addMessage(
+    _sessionId: string,
+    _roleOrMessage: string | { role: string; content: string; toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number; admittedSeq?: number },
+    _content?: string,
+    _toolCallId?: string,
+    _tokens?: { input: number; output: number; reasoning?: number },
+    _model?: string,
+    _cost?: number,
+    _admittedSeq?: number,
+  ): Promise<Message> {
+    // Support both options object and positional params
+    const role = typeof _roleOrMessage === "string" ? _roleOrMessage : _roleOrMessage.role;
+    const content = typeof _roleOrMessage === "string" ? (_content ?? "") : _roleOrMessage.content;
+
     return {
       id: nullMessageId,
       sessionId: _sessionId as SessionId,
-      role: _role as Message["role"],
-      content: _content,
+      role: role as Message["role"],
+      content,
       createdAt: new Date().toISOString(),
     };
   }

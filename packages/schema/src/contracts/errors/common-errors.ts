@@ -1,6 +1,12 @@
 import { VntError } from "./base.js";
 
-/** Generic kernel-level failure. */
+/**
+ * Generic kernel-level failure.
+ *
+ * @deprecated Use `KernelError` from `@vinhnt-sdk/step-executor` instead.
+ * This version lacks a typed `KernelErrorCode`. The step-executor version
+ * is the canonical implementation: `import { KernelError } from "@vinhnt-sdk/step-executor"`.
+ */
 export class KernelError extends VntError {
   public override readonly code = "KERNEL_ERROR";
   public override readonly retryable = false;

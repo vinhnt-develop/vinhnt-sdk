@@ -91,4 +91,5 @@ export type {
   RunEventStore,
   SessionStore,
   MessageSeqUpdates,
+  AddMessageOptions,
 } from "./session-store.js";
