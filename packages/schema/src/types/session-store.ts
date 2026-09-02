@@ -20,7 +20,7 @@ export type MessageSeqUpdates = {
 export interface RunEventStore {
   append(event: RunEvent): Promise<void>;
   appendTransactional?(event: RunEvent, sessionUpdate?: { sessionId: string; updates: SessionUpdates }): Promise<void>;
-  exists?(eventId: string): Promise<boolean>;
+  exists(eventId: string): Promise<boolean>;
   list(runId: string, afterSequence?: number): Promise<readonly RunEvent[]>;
   /** List all run IDs that have persisted events (for active-run discovery on restart). */
   listRunIds(): Promise<string[]>;
@@ -82,7 +82,7 @@ export interface SessionStore {
    * Update message-level fields (e.g. mark a pending input as promoted on drain).
    * Optional so minimal stores can skip input-segment tracking.
    */
-  updateMessage?(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>;
+  updateMessage(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>;
   listMessages(sessionId: string): Promise<readonly Message[]>;
   searchMessages(query: string, limit?: number): Promise<readonly Message[]>;
   getSessionStats(): Promise<SessionStats>;

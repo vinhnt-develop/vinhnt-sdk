@@ -23,6 +23,10 @@ export class NullRunEventStore implements RunEventStore {
     return seq;
   }
 
+  async exists(_eventId: string): Promise<boolean> {
+    return false;
+  }
+
   async list(_runId: string, _afterSequence?: number): Promise<readonly RunEvent[]> {
     return [];
   }

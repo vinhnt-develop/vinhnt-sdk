@@ -110,8 +110,7 @@ export class DefaultPluginManager implements PluginManager {
           unsubscribe = this.eventBus.subscribeAll(handler, event);
         } else {
           // EventDefinition — use typed subscribe
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          unsubscribe = this.eventBus.subscribe(event, handler as any);
+          unsubscribe = this.eventBus.subscribe(event, (typedEvent) => { void handler(typedEvent); });
         }
         return addEffect(createDisposable(async () => { unsubscribe(); }));
       },

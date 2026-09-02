@@ -40,6 +40,27 @@ export class InMemoryMemoryStore implements MemoryStore {
     );
   }
 
+  async deleteAll(sessionId: string): Promise<void> {
+    this.items = this.items.filter((item) => item.sessionId !== sessionId);
+  }
+
+  async list(sessionId: string, options?: { tier?: MemoryTier; limit?: number; offset?: number }): Promise<MemoryItem[]> {
+    let filtered = this.items.filter((item) => item.sessionId === sessionId);
+    if (options?.tier) {
+      filtered = filtered.filter((item) => item.tier === options.tier);
+    }
+    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    const offset = options?.offset ?? 0;
+    const limit = options?.limit ?? filtered.length;
+    return filtered.slice(offset, offset + limit);
+  }
+
+  async count(sessionId: string, tier?: MemoryTier): Promise<number> {
+    return this.items.filter(
+      (item) => item.sessionId === sessionId && (!tier || item.tier === tier),
+    ).length;
+  }
+
   async search(query: string, sessionId: string): Promise<MemoryItem[]> {
     const q = query.toLowerCase();
     return this.items.filter(

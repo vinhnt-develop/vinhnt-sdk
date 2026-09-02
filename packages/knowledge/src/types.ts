@@ -33,6 +33,10 @@ export interface MemoryStore {
   get(key: string, sessionId: string): Promise<MemoryItem | undefined>;
   set(item: Omit<MemoryItem, "id" | "createdAt" | "updatedAt">): Promise<MemoryItem>;
   delete(key: string, sessionId: string): Promise<void>;
+  deleteAll(sessionId: string): Promise<void>;
+  list(sessionId: string, options?: { tier?: MemoryTier; limit?: number; offset?: number }): Promise<MemoryItem[]>;
+  count(sessionId: string, tier?: MemoryTier): Promise<number>;
   search(query: string, sessionId: string): Promise<MemoryItem[]>;
+  searchSimilar?(embedding: number[], sessionId: string, options?: { topK?: number; tier?: MemoryTier }): Promise<MemoryItem[]>;
   listByTier(tier: MemoryTier, sessionId: string): Promise<MemoryItem[]>;
 }
