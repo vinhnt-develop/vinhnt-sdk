@@ -36,6 +36,7 @@ export {
   TurnStartedDataSchema, TurnEndedDataSchema,
   LlmRetryDataSchema, LlmRetryStartedDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
+  RequestHeaderDataSchema, RequestContextDataSchema,
 } from "./run-event.js";
 export type {
   RunStartedData, StepStartedData, TokenStreamedData,
@@ -47,6 +48,7 @@ export type {
   TurnStartedData, TurnEndedData,
   LlmRetryData, LlmRetryStartedData,
   ApprovalAskedData, ApprovalDecidedData,
+  RequestHeaderData, RequestContextData,
 } from "./run-event.js";
 export {
   RunStartedEventSchema, StepStartedEventSchema, TokenStreamedEventSchema,

@@ -184,6 +184,10 @@ export type {
   SkillMode,
   PromptTier,
   AgentStepType,
+  // Projection types (real-time stats)
+  SessionProjection, RunProjection, ProviderCost, TurnSnapshot, ProjectionStore,
+  // LlmFailure (structured error)
+  LlmFailure, LlmFailureKind,
 } from "./types/index.js";
 
 export { getTextContent, toWireToolChoice, KNOWN_FINISH_REASONS, KNOWN_REASONING_EFFORTS } from "./types/index.js";

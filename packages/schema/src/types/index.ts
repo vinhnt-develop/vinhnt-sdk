@@ -93,3 +93,18 @@ export type {
   MessageSeqUpdates,
   AddMessageOptions,
 } from "./session-store.js";
+
+export type {
+  SessionProjection,
+  RunProjection,
+  ProviderCost,
+  TurnSnapshot,
+  ProjectionStore,
+} from "./projection.js";
+
+export type {
+  LlmFailure,
+  LlmFailureKind,
+} from "./llm-failure.js";
+
+export { toLlmFailure } from "./llm-failure.js";
