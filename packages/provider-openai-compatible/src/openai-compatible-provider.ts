@@ -134,7 +134,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
     if (!res.ok) {
       throw toUpstreamError(res.status, body, res.headers);
     }
-    return fromOpenAIResponse(body as OpenAIResponse);
+    return fromOpenAIResponse(body as OpenAIResponse, this.provider);
   }
 
   async *stream(request: ModelRequest, signal?: AbortSignal): AsyncIterable<ModelStreamEvent> {

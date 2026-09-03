@@ -150,10 +150,10 @@ export function toOpenAIMessage(msg: ChatMessage): OpenAIMessage {
  * const vntResponse = fromOpenAIResponse(data);
  * ```
  */
-export function fromOpenAIResponse(res: OpenAIResponse): ModelResponse {
+export function fromOpenAIResponse(res: OpenAIResponse, provider?: string): ModelResponse {
   const choice: OpenAIChoice | undefined = Array.isArray(res.choices) ? res.choices[0] : undefined;
   if (!choice) {
-    return { content: "" };
+    return { content: "", provider: provider ?? "unknown" };
   }
 
   const content = choice.message.content ?? "";
@@ -185,6 +185,7 @@ export function fromOpenAIResponse(res: OpenAIResponse): ModelResponse {
     ...(usage !== undefined ? { usage } : {}),
     id: res.id,
     model: res.model,
+    provider: provider ?? "unknown",
     created: res.created,
     ...(res.system_fingerprint !== undefined ? { systemFingerprint: res.system_fingerprint } : {}),
     ...(choice.logprobs !== undefined && choice.logprobs !== null ? { logprobs: choice.logprobs } : {}),

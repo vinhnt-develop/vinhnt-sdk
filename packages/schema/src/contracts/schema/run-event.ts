@@ -7,8 +7,8 @@ import { RequestContextSchema } from "./request-context.js";
 /** Data payload for the `run.started` event. */
 export const RunStartedDataSchema = z.object({
   prompt: z.string(),
-  model: z.string().optional(),
-  provider: z.string().optional(),
+  model: z.string(),
+  provider: z.string(),
   agentName: z.string().optional(),
   agentId: z.string().optional(),
   maxSteps: z.number().optional(),
@@ -19,6 +19,7 @@ export type RunStartedData = z.infer<typeof RunStartedDataSchema>;
 
 /** Data payload for the `step.started` event. */
 export const StepStartedDataSchema = z.object({
+  turn: z.number(),
   step: z.number(),
 });
 /** Inferred type of {@link StepStartedDataSchema}. */
@@ -69,6 +70,10 @@ export const TokenCountedDataSchema = z.object({
   inputTokens: z.number(),
   outputTokens: z.number().optional(),
   reasoningTokens: z.number().optional(),
+  cacheReadTokens: z.number().optional(),
+  cacheWriteTokens: z.number().optional(),
+  provider: z.string(),
+  model: z.string(),
   step: z.number(),
   source: z.enum(["local", "api"]).optional(),
 });
@@ -81,7 +86,7 @@ export const ModelCostDataSchema = z.object({
   outputTokens: z.number(),
   cost: z.number(),
   model: z.string(),
-  provider: z.string().optional(),
+  provider: z.string(),
   durationMs: z.number(),
   step: z.number(),
 });
@@ -194,6 +199,7 @@ export const LlmRetryDataSchema = z.object({
   attempt: z.number(),
   delayMs: z.number(),
   reason: z.string(),
+  provider: z.string().optional(),
 });
 /** Inferred type of {@link LlmRetryDataSchema}. */
 export type LlmRetryData = z.infer<typeof LlmRetryDataSchema>;
@@ -232,8 +238,27 @@ export const ToolCancelledDataSchema = z.object({
 /** Inferred type of {@link ToolCancelledDataSchema}. */
 export type ToolCancelledData = z.infer<typeof ToolCancelledDataSchema>;
 
+/** Data payload for the `request.header` event. */
+export const RequestHeaderDataSchema = z.object({
+  provider: z.string(),
+  model: z.string(),
+  reason: z.enum(["initial", "resume", "change", "series"]),
+});
+/** Inferred type of {@link RequestHeaderDataSchema}. */
+export type RequestHeaderData = z.infer<typeof RequestHeaderDataSchema>;
+
+/** Data payload for the `request.context` event. */
+export const RequestContextDataSchema = z.object({
+  provider: z.string(),
+  model: z.string(),
+  contextWindow: z.number().optional(),
+});
+/** Inferred type of {@link RequestContextDataSchema}. */
+export type RequestContextData = z.infer<typeof RequestContextDataSchema>;
+
 /** Data payload for the `step.completed` event. */
 export const StepCompletedDataSchema = z.object({
+  turn: z.number(),
   step: z.number(),
   toolCallCount: z.number(),
 });
@@ -242,6 +267,7 @@ export type StepCompletedData = z.infer<typeof StepCompletedDataSchema>;
 
 /** Data payload for the `step.failed` event. */
 export const StepFailedDataSchema = z.object({
+  turn: z.number(),
   step: z.number(),
   reason: z.string(),
   error: z.string().optional(),
@@ -263,6 +289,7 @@ export const RunCompletedDataSchema = z.object({
   inputTokens: z.number().optional(),
   outputTokens: z.number().optional(),
   reasoningTokens: z.number().optional(),
+  provider: z.string().optional(),
 });
 /** Inferred type of {@link RunCompletedDataSchema}. */
 export type RunCompletedData = z.infer<typeof RunCompletedDataSchema>;
@@ -419,6 +446,16 @@ export const ToolCancelledEventSchema = eventSchema(ToolCancelledDataSchema, z.l
 /** Inferred type of {@link ToolCancelledEventSchema}. */
 export type ToolCancelledEvent = z.infer<typeof ToolCancelledEventSchema>;
 
+/** Zod schema for the `request.header` event. */
+export const RequestHeaderEventSchema = eventSchema(RequestHeaderDataSchema, z.literal("request.header"));
+/** Inferred type of {@link RequestHeaderEventSchema}. */
+export type RequestHeaderEvent = z.infer<typeof RequestHeaderEventSchema>;
+
+/** Zod schema for the `request.context` event. */
+export const RequestContextEventSchema = eventSchema(RequestContextDataSchema, z.literal("request.context"));
+/** Inferred type of {@link RequestContextEventSchema}. */
+export type RequestContextEvent = z.infer<typeof RequestContextEventSchema>;
+
 /* ── Discriminated union ── */
 
 /** Zod schema for the KnownRun event. */
@@ -449,6 +486,8 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   LlmRetryStartedEventSchema,
   ApprovalAskedEventSchema,
   ApprovalDecidedEventSchema,
+  RequestHeaderEventSchema,
+  RequestContextEventSchema,
 ]);
 /** Inferred type of {@link KnownRunEventSchema}. */
 export type KnownRunEvent = z.infer<typeof KnownRunEventSchema>;

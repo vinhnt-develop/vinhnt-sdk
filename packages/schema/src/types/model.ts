@@ -84,6 +84,10 @@ export interface ModelUsage {
   readonly outputTokens?: number;
   /** OpenAI: prompt_tokens_details.cached_tokens */
   readonly cachedTokens?: number;
+  /** Cache read tokens — disjoint from promptTokens (Anthropic/DeepSeek pattern). */
+  readonly cacheReadTokens?: number;
+  /** Cache write tokens — disjoint from promptTokens (Anthropic/DeepSeek pattern). */
+  readonly cacheWriteTokens?: number;
   /** OpenAI: completion_tokens_details.reasoning_tokens */
   readonly reasoningTokens?: number;
   /** OpenAI: prompt_tokens_details.audio_tokens + completion_tokens_details.audio_tokens */
@@ -371,8 +375,8 @@ export interface ModelResponse {
   /** OpenAI passthrough fields (optional). */
   readonly id?: string;
   readonly model?: string;
-  /** Provider attribution — which provider generated this response. */
-  readonly provider?: string;
+  /** Provider attribution — which provider generated this response. REQUIRED for timeline tracking. */
+  readonly provider: string;
   /** OpenAI: created — Unix timestamp of when the completion was created. */
   readonly created?: number;
   /** OpenAI: system_fingerprint — backend configuration fingerprint. */
@@ -388,7 +392,7 @@ export type ModelStreamEvent =
   | { type: "text"; content: string }
   | { type: "thinking"; content: string }
   | { type: "tool_call"; id: string; name: string; args: Record<string, unknown> }
-  | { type: "usage"; inputTokens: number; outputTokens: number; reasoningTokens?: number }
+  | { type: "usage"; inputTokens: number; outputTokens: number; reasoningTokens?: number; cacheReadTokens?: number; cacheWriteTokens?: number }
   | { type: "finish"; reason: string }
   | { type: "done" }
   | { type: "error"; error: string }
