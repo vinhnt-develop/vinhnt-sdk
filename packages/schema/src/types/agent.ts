@@ -68,5 +68,10 @@ export interface AgentConfig {
   readonly domains?: readonly string[];
   readonly systemPrompt?: string;
   readonly temperature?: number;
+  /** Provider preferences for this agent — used by ModelCaller to resolve provider. */
+  readonly providerPreferences?: {
+    readonly preferred?: string;
+    readonly fallbacks?: readonly string[];
+  };
   readonly metadata?: Record<string, unknown>;
 }

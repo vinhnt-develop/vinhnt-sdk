@@ -8,6 +8,10 @@ export const RequestContextSchema = z.object({
   actorId: z.string(),
   tenantId: z.string(),
   parentRunId: z.string().refine(isRunId, "Invalid RunId").optional(),
+  overrides: z.object({
+    provider: z.string().optional(),
+    model: z.string().optional(),
+  }).optional(),
 });
 
 /** Inferred type of {@link RequestContextSchema}. */

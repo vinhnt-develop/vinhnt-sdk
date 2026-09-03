@@ -307,6 +307,8 @@ export interface ModelRequest {
   readonly tools: readonly ToolDefinitionLike[];
   /** Model identifier — optional at schema level; set by provider adapter. */
   readonly model?: string;
+  /** Provider route — selects which registered provider handles this request. */
+  readonly provider?: string;
   readonly maxTokens?: number;
   /** OpenAI: max_completion_tokens — required for o-series models. Takes precedence over maxTokens. */
   readonly maxCompletionTokens?: number;
@@ -369,6 +371,8 @@ export interface ModelResponse {
   /** OpenAI passthrough fields (optional). */
   readonly id?: string;
   readonly model?: string;
+  /** Provider attribution — which provider generated this response. */
+  readonly provider?: string;
   /** OpenAI: created — Unix timestamp of when the completion was created. */
   readonly created?: number;
   /** OpenAI: system_fingerprint — backend configuration fingerprint. */
@@ -460,4 +464,8 @@ export interface ModelRegistry {
   register(id: string, provider: ModelProvider): void;
   get(id: string): ModelProvider | undefined;
   list(): readonly { id: string; provider: ModelProvider }[];
+  /** Get all providers registered under a given provider name (e.g. "openai"). */
+  getByProvider(provider: string): readonly { id: string; provider: ModelProvider }[];
+  /** List all distinct provider names registered in this registry. */
+  providers(): readonly string[];
 }

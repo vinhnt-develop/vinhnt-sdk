@@ -41,6 +41,7 @@ export interface AgentStartedEvent extends AgentEventBase {
   readonly runId: RunId;
   readonly prompt: string;
   readonly model?: string;
+  readonly provider?: string;
 }
 
 /**
@@ -50,6 +51,7 @@ export interface ModelRequestEvent extends AgentEventBase {
   readonly type: "model.request";
   readonly runId: RunId;
   readonly model: string;
+  readonly provider?: string;
   readonly tokenCount?: number;
 }
 
@@ -60,6 +62,7 @@ export interface ModelResponseEvent extends AgentEventBase {
   readonly type: "model.response";
   readonly runId: RunId;
   readonly model: string;
+  readonly provider?: string;
   readonly tokensUsed?: number;
   readonly durationMs?: number;
 }
@@ -164,7 +167,7 @@ export type AgentEvent =
 // ---------------------------------------------------------------------------
 // Data payloads (reusable by consumers)
 // ---------------------------------------------------------------------------
-export interface RunStartedData { readonly prompt: string; readonly model?: string; readonly agentName?: string; readonly agentId?: string }
+export interface RunStartedData { readonly prompt: string; readonly model?: string; readonly provider?: string; readonly agentName?: string; readonly agentId?: string }
 export interface StepStartedData { readonly step: number }
 export interface TokenStreamedData { readonly content: string; readonly step: number }
 export interface ThinkingStartedData { readonly step: number }
@@ -172,7 +175,7 @@ export interface ThinkingContentData { readonly content: string; readonly step: 
 export interface ThinkingCompletedData { readonly content: string; readonly step: number }
 export interface ContextCompressedData { readonly originalCount: number; readonly compressedCount: number }
 export interface TokenCountedData { readonly inputTokens: number; readonly outputTokens?: number; readonly reasoningTokens?: number; readonly step: number; readonly source?: "local" | "api" }
-export interface ModelCostData { readonly inputTokens: number; readonly outputTokens: number; readonly cost: number; readonly model: string; readonly durationMs: number; readonly step: number }
+export interface ModelCostData { readonly inputTokens: number; readonly outputTokens: number; readonly cost: number; readonly model: string; readonly provider?: string; readonly durationMs: number; readonly step: number }
 export interface ToolInvokedData { readonly toolId: string; readonly toolName: string; readonly input: unknown; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask" }
 export interface ToolCompletedData { readonly toolId: string; readonly toolName: string; readonly output: unknown; readonly metadata?: Record<string, unknown>; readonly domain?: string }
 export interface ToolFailedData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask" }

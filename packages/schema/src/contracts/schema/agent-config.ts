@@ -78,6 +78,10 @@ export const AgentConfigSchema = z.object({
   domains: z.array(z.string()).optional(),
   systemPrompt: z.string().optional(),
   temperature: z.number().optional(),
+  providerPreferences: z.object({
+    preferred: z.string().optional(),
+    fallbacks: z.array(z.string()).optional(),
+  }).optional(),
 });
 /** Inferred type of {@link AgentConfigSchema}. */
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

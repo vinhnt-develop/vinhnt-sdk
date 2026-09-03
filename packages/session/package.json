@@ -1,6 +1,6 @@
 {
     "name":  "@vinhnt-sdk/session",
-    "version":  "0.1.3",
+"version": "0.2.0",
     "description":  "Session runtime state, run event stores, durable reload and title generation for VNT Agent",
     "license":  "MIT",
     "type":  "module",

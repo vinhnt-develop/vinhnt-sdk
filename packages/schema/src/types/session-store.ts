@@ -9,7 +9,7 @@ export interface RunEventSnapshot {
 
 export type RunEventListener = (event: RunEvent) => void;
 
-export type SessionUpdates = Partial<Pick<Session, "title" | "isActive" | "model" | "cost" | "inputTokens" | "outputTokens" | "location" | "agentId">>;
+export type SessionUpdates = Partial<Pick<Session, "title" | "isActive" | "model" | "provider" | "cost" | "inputTokens" | "outputTokens" | "location" | "agentId">>;
 
 /** Promotion state update for a pending input message (RV-21). */
 export type MessageSeqUpdates = {
@@ -46,6 +46,8 @@ export interface AddMessageOptions {
   toolCallId?: string;
   tokens?: { input: number; output: number; reasoning?: number };
   model?: string;
+  /** Provider that generated this message (attribution). */
+  provider?: string;
   cost?: number;
   admittedSeq?: number;
 }
@@ -83,7 +85,7 @@ export interface SessionStore {
    * Optional so minimal stores can skip input-segment tracking.
    */
   updateMessage(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>;
-  listMessages(sessionId: string): Promise<readonly Message[]>;
-  searchMessages(query: string, limit?: number): Promise<readonly Message[]>;
+  listMessages(sessionId: string, options?: { limit?: number; offset?: number; role?: string }): Promise<readonly Message[]>;
+  searchMessages(query: string, options?: { sessionId?: string; limit?: number }): Promise<readonly Message[]>;
   getSessionStats(): Promise<SessionStats>;
 }

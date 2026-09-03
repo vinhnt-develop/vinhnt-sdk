@@ -8,6 +8,8 @@ export interface Session {
   readonly parentSessionId?: SessionId;
   readonly agentId?: AgentId;
   readonly model?: string;
+  /** Provider that served this session's model calls. */
+  readonly provider?: string;
   readonly cost?: number;
   readonly inputTokens?: number;
   readonly outputTokens?: number;
@@ -30,6 +32,8 @@ export interface Message {
   readonly toolCallId?: ToolCallId;
   readonly tokens?: MessageTokens;
   readonly model?: string;
+  /** Provider that generated this message (attribution). */
+  readonly provider?: string;
   readonly cost?: number;
   readonly createdAt: string;
   /** Admission order for pending user inputs (RV-21). Persisted once and never changed. */

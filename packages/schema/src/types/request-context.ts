@@ -6,4 +6,9 @@ export interface RequestContext {
   readonly actorId: string;
   readonly tenantId: string;
   readonly parentRunId?: RunId | undefined;
+  /** Per-request overrides for provider/model selection. */
+  readonly overrides?: {
+    readonly provider?: string;
+    readonly model?: string;
+  };
 }

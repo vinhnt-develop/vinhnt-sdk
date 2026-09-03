@@ -26,17 +26,31 @@ import type { ModelProvider, ModelRegistry } from "@vinhnt-sdk/schema";
 
 /** In-memory {@link ModelRegistry} keyed by provider id. */
 export class InMemoryModelRegistry implements ModelRegistry {
-  private readonly providers = new Map<string, ModelProvider>();
+  private readonly providersMap = new Map<string, ModelProvider>();
 
   register(id: string, provider: ModelProvider): void {
-    this.providers.set(id, provider);
+    this.providersMap.set(id, provider);
   }
 
   get(id: string): ModelProvider | undefined {
-    return this.providers.get(id);
+    return this.providersMap.get(id);
   }
 
   list(): readonly { id: string; provider: ModelProvider }[] {
-    return [...this.providers.entries()].map(([id, provider]) => ({ id, provider }));
+    return [...this.providersMap.entries()].map(([id, provider]) => ({ id, provider }));
+  }
+
+  getByProvider(provider: string): readonly { id: string; provider: ModelProvider }[] {
+    return [...this.providersMap.entries()]
+      .filter(([, p]) => p.provider === provider)
+      .map(([id, provider]) => ({ id, provider }));
+  }
+
+  providers(): readonly string[] {
+    const seen = new Set<string>();
+    for (const provider of this.providersMap.values()) {
+      seen.add(provider.provider);
+    }
+    return [...seen];
   }
 }

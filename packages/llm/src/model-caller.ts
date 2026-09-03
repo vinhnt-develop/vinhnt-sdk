@@ -86,7 +86,7 @@ function emitTC(runId: RunId, traceId: string, data: {
 }
 
 function emitMC(runId: RunId, traceId: string, data: {
-  inputTokens: number; outputTokens: number; cost: number; model: string; durationMs: number; step: number;
+  inputTokens: number; outputTokens: number; cost: number; model: string; provider?: string; durationMs: number; step: number;
 }): TypedEvent<"model.cost", typeof data> {
   return { id: crypto.randomUUID(), runId, type: "model.cost", occurredAt: new Date().toISOString(), traceId, data };
 }
@@ -124,6 +124,19 @@ export class ModelCaller {
     return this.deps.defaultModel;
   }
 
+  /** Resolve a model provider by explicit provider name from the request or context. */
+  resolveProvider(providerName: string | undefined, modelOverride?: string): ModelProvider | undefined {
+    if (!providerName || !this.deps.modelRegistry) return undefined;
+    // If a model override is provided, try provider+model combo first
+    if (modelOverride) {
+      const byId = this.deps.modelRegistry.get(modelOverride);
+      if (byId) return byId;
+    }
+    // Fall back to first provider matching the provider name
+    const candidates = this.deps.modelRegistry.getByProvider(providerName);
+    return candidates[0]?.provider;
+  }
+
   getActiveModel(runId: RunId): ModelProvider {
     return this.deps.modelForRun(runId) ?? this.deps.defaultModel;
   }
@@ -139,8 +152,13 @@ export class ModelCaller {
   ): Promise<ModelResponse> {
     const availableTools = disableTools ? [] : this.deps.getAvailableTools(runId);
     const thinkingBudget = this.deps.thinkingBudget > 0 ? this.deps.thinkingBudget : undefined;
+    // Resolve provider from context overrides or agent config
+    const resolvedProvider = ctx.overrides?.provider;
+    const resolvedModel = ctx.overrides?.model;
     let request: ModelRequest = {
       messages, tools: availableTools, maxTokens: agentMaxTokens ?? this.deps.maxTokens,
+      ...(resolvedProvider ? { provider: resolvedProvider } : {}),
+      ...(resolvedModel ? { model: resolvedModel } : {}),
       ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
       ...(this.deps.thinkingPrompt ? { thinkingPrompt: this.deps.thinkingPrompt } : {}),
       // OpenAI fields passthrough
@@ -173,7 +191,15 @@ export class ModelCaller {
       request = beforeCallResult.modified.request as unknown as ModelRequest;
     }
 
-    const model = this.getActiveModel(runId);
+    // Resolve model: explicit provider from request/ctx takes precedence over agent config
+    let model = this.getActiveModel(runId);
+    if (resolvedProvider) {
+      const explicit = this.resolveProvider(resolvedProvider, resolvedModel);
+      if (explicit) {
+        model = explicit;
+        if (runId) this.deps.setModelForRun(runId, model);
+      }
+    }
     const modelName = model.model ?? "unknown";
     const startTime = performance.now();
     let inputTokens = 0;
@@ -213,7 +239,7 @@ export class ModelCaller {
       await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
       const durationMs = Math.round(performance.now() - startTime);
       const cost = this.calculateCost(inputTokens, outputTokens, model) ?? 0;
-      await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
+      await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, provider: model.provider, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
       const p = model?.pricing;
       this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
       // RV-42: surface the authoritative usage on the response when the provider
@@ -294,7 +320,7 @@ export class ModelCaller {
 
     const durationMs = Math.round(performance.now() - startTime);
     const cost = this.calculateCost(inputTokens, outputTokens, model) ?? 0;
-    await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
+    await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, provider: model.provider, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
     const p = model?.pricing;
     this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
 

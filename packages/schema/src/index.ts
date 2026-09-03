@@ -178,6 +178,12 @@ export type {
   TokenLogprob, TopLogprob, Logprobs,
   ResponseFormat, ResponseFormatJsonSchema,
   ToolChoice, WireToolChoice, StreamOptions, StreamingToolCallState, JsonSchema,
+  // Additional exports for API integration
+  TreeCursor, SessionTreeEventType,
+  ApprovalCategory, ApprovalStatus, ApprovalContext, PolicyEffect, ApprovalPolicy,
+  SkillMode,
+  PromptTier,
+  AgentStepType,
 } from "./types/index.js";
 
 export { getTextContent, toWireToolChoice, KNOWN_FINISH_REASONS, KNOWN_REASONING_EFFORTS } from "./types/index.js";

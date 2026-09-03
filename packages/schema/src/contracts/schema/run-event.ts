@@ -8,6 +8,7 @@ import { RequestContextSchema } from "./request-context.js";
 export const RunStartedDataSchema = z.object({
   prompt: z.string(),
   model: z.string().optional(),
+  provider: z.string().optional(),
   agentName: z.string().optional(),
   agentId: z.string().optional(),
   maxSteps: z.number().optional(),
@@ -80,6 +81,7 @@ export const ModelCostDataSchema = z.object({
   outputTokens: z.number(),
   cost: z.number(),
   model: z.string(),
+  provider: z.string().optional(),
   durationMs: z.number(),
   step: z.number(),
 });

@@ -123,6 +123,25 @@ export class LlmRegistry {
   }
 
   /**
+   * Get all adapters registered for a given provider name.
+   * For multi-route adapters (e.g. one adapter serving "openai" and "azure"),
+   * this returns the same adapter instance for each route.
+   */
+  getByProvider(provider: string): { adapter: LlmAdapter; routes: string[] } | undefined {
+    const entry = this.adapters.get(provider);
+    if (!entry) return undefined;
+    const routes = this.owners.get(entry.owner) ?? [provider];
+    return { adapter: entry.adapter, routes };
+  }
+
+  /**
+   * List all distinct provider names registered in this registry.
+   */
+  providers(): readonly string[] {
+    return [...this.adapters.keys()];
+  }
+
+  /**
    * Check if a provider is registered.
    */
   hasProvider(provider: string): boolean {

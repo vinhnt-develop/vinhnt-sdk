@@ -38,6 +38,8 @@ import type {
 export interface GenerateOptions {
   /** The provider/model identifier (e.g., "deepseek-chat", "gpt-4o"). */
   readonly model: string;
+  /** Provider route — which registered provider handles this request. */
+  readonly provider?: string;
   /** Conversation messages. */
   readonly messages: readonly { readonly role: string; readonly content: string | readonly unknown[]; readonly [key: string]: unknown }[];
   /** Tool definitions (OpenAI function calling format). */

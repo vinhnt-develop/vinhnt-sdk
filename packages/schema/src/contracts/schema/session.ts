@@ -17,6 +17,7 @@ export const MessageSchema = z.object({
   toolName: z.string().optional(),
   tokens: MessageTokensSchema.optional(),
   model: z.string().optional(),
+  provider: z.string().optional(),
   cost: z.number().optional(),
   createdAt: z.string(),
   /** Admission order for pending user inputs (RV-21). */
@@ -35,6 +36,8 @@ export const SessionSchema = z.object({
   cost: z.number(),
   tokensInput: z.number(),
   tokensOutput: z.number().optional(),
+  model: z.string().optional(),
+  provider: z.string().optional(),
   messages: z.array(MessageSchema).optional(),
   timeCreated: z.string(),
   timeUpdated: z.string(),

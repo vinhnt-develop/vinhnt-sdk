@@ -118,11 +118,11 @@ export class NullSessionStore implements SessionStore {
 
   async updateMessage(_sessionId: string, _messageId: string, _updates: { admittedSeq?: number; promotedSeq?: number }): Promise<void> {}
 
-  async listMessages(_sessionId: string): Promise<readonly Message[]> {
+  async listMessages(_sessionId: string, _options?: { limit?: number; offset?: number; role?: string }): Promise<readonly Message[]> {
     return [];
   }
 
-  async searchMessages(_query: string, _limit?: number): Promise<readonly Message[]> {
+  async searchMessages(_query: string, _options?: { sessionId?: string; limit?: number }): Promise<readonly Message[]> {
     return [];
   }
 

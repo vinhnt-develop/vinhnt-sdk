@@ -17,7 +17,7 @@ export function createMemorySearchTool(store: SessionStore): ToolDefinition {
     risk: "read",
     async execute(input: { query: string; limit?: number }) {
       if (!store.searchMessages) return [];
-      const messages = await store.searchMessages(input.query, input.limit ?? 10);
+      const messages = await store.searchMessages(input.query, { limit: input.limit ?? 10 });
       return messages.map((m) => ({
         sessionId: m.sessionId.slice(0, 8),
         role: m.role,

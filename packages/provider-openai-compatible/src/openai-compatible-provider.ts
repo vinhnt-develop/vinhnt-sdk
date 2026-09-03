@@ -163,7 +163,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
   ): Promise<Response> {
     const url = `${this.baseUrl}/chat/completions`;
     const body = buildRequest(request, {
-      model: this.model,
+      model: request.model ?? this.model,
       stream: opts.stream,
       includeUsage: opts.includeUsage,
     } satisfies BuildRequestOptions);
