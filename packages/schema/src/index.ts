@@ -259,6 +259,14 @@ export type { SchemaVersionedBase, VersionedSchemaOptions } from "./versioned.js
 export { wildcardMatch } from "./wildcard.js";
 
 /**
+ * Error utilities for structured error handling.
+ */
+export {
+  SdkError, isSdkError, errorChain,
+  isContextWindowExceededError, isQuotaExceededError, isAuthError, classifyError,
+} from "./errors/index.js";
+
+/**
  * Contract schemas for validation.
  */
 
