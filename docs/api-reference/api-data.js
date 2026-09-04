@@ -70,6 +70,57 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
+          "sig": "deleteAll(sessionId: string): Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "list(sessionId: string, options: { tier?: string; limit?: number; offset?: number; } | undefined): Promise<MemoryItem[]>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ tier?: string; limit?: number; offset?: number; } | undefined",
+              "r": false,
+              "d": "{ tier?: string; limit?: number; offset?: number; } | undefined"
+            }
+          ],
+          "ret": "Promise<MemoryItem[]>"
+        },
+        {
+          "sig": "count(sessionId: string, tier: string | undefined): Promise<number>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "tier",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "Promise<number>"
+        },
+        {
           "sig": "search(query: string, sessionId: string): Promise<MemoryItem[]>",
           "desc": "",
           "params": [
@@ -452,6 +503,57 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
+          "sig": "deleteAll(sessionId: string): Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "list(sessionId: string, options: { tier?: string; limit?: number; offset?: number; } | undefined): Promise<MemoryItem[]>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ tier?: string; limit?: number; offset?: number; } | undefined",
+              "r": false,
+              "d": "{ tier?: string; limit?: number; offset?: number; } | undefined"
+            }
+          ],
+          "ret": "Promise<MemoryItem[]>"
+        },
+        {
+          "sig": "count(sessionId: string, tier: string | undefined): Promise<number>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "tier",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "Promise<number>"
+        },
+        {
           "sig": "search(query: string, sessionId: string): Promise<MemoryItem[]>",
           "desc": "",
           "params": [
@@ -466,6 +568,31 @@ window.PKG = [
               "t": "string",
               "r": true,
               "d": "string"
+            }
+          ],
+          "ret": "Promise<MemoryItem[]>"
+        },
+        {
+          "sig": "searchSimilar(embedding: number[], sessionId: string, options: { topK?: number; tier?: string; } | undefined): Promise<MemoryItem[]>",
+          "desc": "",
+          "params": [
+            {
+              "n": "embedding",
+              "t": "number[]",
+              "r": true,
+              "d": "number[]"
+            },
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ topK?: number; tier?: string; } | undefined",
+              "r": false,
+              "d": "{ topK?: number; tier?: string; } | undefined"
             }
           ],
           "ret": "Promise<MemoryItem[]>"
@@ -495,11 +622,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "MemoryTier",
-      "desc": "Memory tier — string type, NOT closed union.\nUsers can register custom tiers via MemoryStore adapter.",
+      "desc": "Memory tier — string type, NOT closed union.\r\nUsers can register custom tiers via MemoryStore adapter.",
       "methods": [
         {
           "sig": "type MemoryTier = string",
-          "desc": "Memory tier — string type, NOT closed union.\nUsers can register custom tiers via MemoryStore adapter.",
+          "desc": "Memory tier — string type, NOT closed union.\r\nUsers can register custom tiers via MemoryStore adapter.",
           "params": []
         }
       ]
@@ -991,7 +1118,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "LearningEngine",
-      "desc": "Coordinates memory learning for a session: bounded storage, background\nreview, approval-gated writes and conversation compression.",
+      "desc": "Coordinates memory learning for a session: bounded storage, background\r\nreview, approval-gated writes and conversation compression.",
       "methods": [
         {
           "sig": "constructor(options: LearningEngineOptions)",
@@ -1184,6 +1311,12 @@ window.PKG = [
           "type": "string",
           "required": true,
           "desc": ""
+        },
+        {
+          "name": "store",
+          "type": "MemoryStore | undefined",
+          "required": false,
+          "desc": "Pluggable memory store. Defaults to `InMemoryMemoryStore` if not provided.\r\nInject a persistent implementation (e.g., PostgresMemoryStore) for production."
         }
       ]
     }
@@ -1760,7 +1893,7 @@ window.PKG = [
         },
         {
           "sig": "registerCustomServers(servers: Record<string, Partial<LspServerDefinition>>): void",
-          "desc": "Register custom LSP server definitions from user config.\nAccepts a record keyed by server ID with partial LspServerDefinition fields.\nCustom servers take priority over built-in servers for matching extensions.",
+          "desc": "Register custom LSP server definitions from user config.\r\nAccepts a record keyed by server ID with partial LspServerDefinition fields.\r\nCustom servers take priority over built-in servers for matching extensions.",
           "params": [
             {
               "n": "servers",
@@ -1773,7 +1906,7 @@ window.PKG = [
         },
         {
           "sig": "applyCustomServers(servers: Record<string, Partial<LspServerDefinition>>): void",
-          "desc": "Replace all custom server definitions (config hot-reload). Any previously\nregistered custom servers are dropped, then the new set is registered.",
+          "desc": "Replace all custom server definitions (config hot-reload). Any previously\r\nregistered custom servers are dropped, then the new set is registered.",
           "params": [
             {
               "n": "servers",
@@ -2041,7 +2174,7 @@ window.PKG = [
         },
         {
           "sig": "resolveRoot(filePath: string, definition: LspServerDefinition): string | null",
-          "desc": "Resolve root for a file. Checks:\n1. Registered workspace roots (explicit match)\n2. Auto-detect via rootFiles markers (original behavior)",
+          "desc": "Resolve root for a file. Checks:\r\n1. Registered workspace roots (explicit match)\r\n2. Auto-detect via rootFiles markers (original behavior)",
           "params": [
             {
               "n": "filePath",
@@ -2162,7 +2295,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "LspServerRegistry",
-      "desc": "Registry for LSP servers.\nUsers register new servers via `register()` instead of hardcoding.",
+      "desc": "Registry for LSP servers.\r\nUsers register new servers via `register()` instead of hardcoding.",
       "methods": [
         {
           "sig": "constructor(defaultServers: LspServerDefinition[] | undefined)",
@@ -2409,7 +2542,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "LspToolProvider",
-      "desc": "LspToolProvider — Provides LSP tools.\n\nThis is a ToolProvider implementation that can be registered with\nthe core package's ToolProviderRegistry.",
+      "desc": "LspToolProvider — Provides LSP tools.\r\n\r\nThis is a ToolProvider implementation that can be registered with\r\nthe core package's ToolProviderRegistry.",
       "methods": [
         {
           "sig": "constructor(pool: LspPool)",
@@ -2860,11 +2993,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "mcpDomain",
-      "desc": "Derive the MCP domain from a server name.\nConvention: `mcp__<server>__<tool>` → domain `\"mcp:<server>\"`",
+      "desc": "Derive the MCP domain from a server name.\r\nConvention: `mcp__<server>__<tool>` → domain `\"mcp:<server>\"`",
       "methods": [
         {
           "sig": "mcpDomain(serverName: string): string",
-          "desc": "Derive the MCP domain from a server name.\nConvention: `mcp__<server>__<tool>` → domain `\"mcp:<server>\"`",
+          "desc": "Derive the MCP domain from a server name.\r\nConvention: `mcp__<server>__<tool>` → domain `\"mcp:<server>\"`",
           "params": [
             {
               "n": "serverName",
@@ -2880,11 +3013,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "mcpToolId",
-      "desc": "Create a tool ID for an MCP tool.\nConvention: `mcp__<server>__<tool>`",
+      "desc": "Create a tool ID for an MCP tool.\r\nConvention: `mcp__<server>__<tool>`",
       "methods": [
         {
           "sig": "mcpToolId(serverName: string, toolName: string): string",
-          "desc": "Create a tool ID for an MCP tool.\nConvention: `mcp__<server>__<tool>`",
+          "desc": "Create a tool ID for an MCP tool.\r\nConvention: `mcp__<server>__<tool>`",
           "params": [
             {
               "n": "serverName",
@@ -3271,11 +3404,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "redactSecrets",
-      "desc": "Redact secrets from text.\n\nScans the input for known secret patterns and replaces them with\nplaceholder tokens. Safe to use on log messages, error output, and\narbitrary strings.",
+      "desc": "Redact secrets from text.\r\n\r\nScans the input for known secret patterns and replaces them with\r\nplaceholder tokens. Safe to use on log messages, error output, and\r\narbitrary strings.",
       "methods": [
         {
           "sig": "redactSecrets(text: string): string",
-          "desc": "Redact secrets from text.\n\nScans the input for known secret patterns and replaces them with\nplaceholder tokens. Safe to use on log messages, error output, and\narbitrary strings.",
+          "desc": "Redact secrets from text.\r\n\r\nScans the input for known secret patterns and replaces them with\r\nplaceholder tokens. Safe to use on log messages, error output, and\r\narbitrary strings.",
           "params": [
             {
               "n": "text",
@@ -3311,11 +3444,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createRedactingLogger",
-      "desc": "Create a redaction middleware for a logger.\n\nReturns a function that wraps log output, automatically redacting\nany detected secrets before the message is written. Strings, error\nmessages and nested object values are all scrubbed.",
+      "desc": "Create a redaction middleware for a logger.\r\n\r\nReturns a function that wraps log output, automatically redacting\r\nany detected secrets before the message is written. Strings, error\r\nmessages and nested object values are all scrubbed.",
       "methods": [
         {
           "sig": "createRedactingLogger(originalLog: (...args: A) => void): (...args: A) => void",
-          "desc": "Create a redaction middleware for a logger.\n\nReturns a function that wraps log output, automatically redacting\nany detected secrets before the message is written. Strings, error\nmessages and nested object values are all scrubbed.",
+          "desc": "Create a redaction middleware for a logger.\r\n\r\nReturns a function that wraps log output, automatically redacting\r\nany detected secrets before the message is written. Strings, error\r\nmessages and nested object values are all scrubbed.",
           "params": [
             {
               "n": "originalLog",
@@ -3331,11 +3464,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "redactObjectSecrets",
-      "desc": "Deep-redact secrets inside an object/array tree.\n\nSerializes the value to JSON, redacts known secret patterns, then parses\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\nare scrubbed while the structure is preserved. Falls back to the original\nvalue if it cannot be serialized (circular refs, functions, etc.).",
+      "desc": "Deep-redact secrets inside an object/array tree.\r\n\r\nSerializes the value to JSON, redacts known secret patterns, then parses\r\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\r\nare scrubbed while the structure is preserved. Falls back to the original\r\nvalue if it cannot be serialized (circular refs, functions, etc.).",
       "methods": [
         {
           "sig": "redactObjectSecrets(value: T): T",
-          "desc": "Deep-redact secrets inside an object/array tree.\n\nSerializes the value to JSON, redacts known secret patterns, then parses\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\nare scrubbed while the structure is preserved. Falls back to the original\nvalue if it cannot be serialized (circular refs, functions, etc.).",
+          "desc": "Deep-redact secrets inside an object/array tree.\r\n\r\nSerializes the value to JSON, redacts known secret patterns, then parses\r\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\r\nare scrubbed while the structure is preserved. Falls back to the original\r\nvalue if it cannot be serialized (circular refs, functions, etc.).",
           "params": [
             {
               "n": "value",
@@ -3351,7 +3484,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "SecretRedactor",
-      "desc": "Secret redactor with injectable patterns.\nUsers can register custom patterns without forking.",
+      "desc": "Secret redactor with injectable patterns.\r\nUsers can register custom patterns without forking.",
       "methods": [
         {
           "sig": "constructor(config: SecretRedactorConfig | undefined)",
@@ -3427,7 +3560,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "SecretRedactorConfig",
-      "desc": "Secret redactor configuration — injectable dependency.\nUsers can register custom patterns without forking.",
+      "desc": "Secret redactor configuration — injectable dependency.\r\nUsers can register custom patterns without forking.",
       "methods": [],
       "props": [
         {
@@ -3791,11 +3924,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "SpanStatus",
-      "desc": "Tracing — OpenTelemetry-compatible span model.\n\nSpans represent units of work (model call, tool execution, step, turn).\nThey form a tree: parent span → child spans.\n\nThis is a lightweight, zero-dependency implementation compatible with\nthe OpenTelemetry span model but without requiring the OTel SDK.\nSpan status",
+      "desc": "Tracing — OpenTelemetry-compatible span model.\r\n\r\nSpans represent units of work (model call, tool execution, step, turn).\r\nThey form a tree: parent span → child spans.\r\n\r\nThis is a lightweight, zero-dependency implementation compatible with\r\nthe OpenTelemetry span model but without requiring the OTel SDK.\nSpan status",
       "methods": [
         {
           "sig": "type SpanStatus = SpanStatus",
-          "desc": "Tracing — OpenTelemetry-compatible span model.\n\nSpans represent units of work (model call, tool execution, step, turn).\nThey form a tree: parent span → child spans.\n\nThis is a lightweight, zero-dependency implementation compatible with\nthe OpenTelemetry span model but without requiring the OTel SDK.\nSpan status",
+          "desc": "Tracing — OpenTelemetry-compatible span model.\r\n\r\nSpans represent units of work (model call, tool execution, step, turn).\r\nThey form a tree: parent span → child spans.\r\n\r\nThis is a lightweight, zero-dependency implementation compatible with\r\nthe OpenTelemetry span model but without requiring the OTel SDK.\nSpan status",
           "params": []
         }
       ]
@@ -3987,11 +4120,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "buildTranscript",
-      "desc": "Build a conversation transcript from timeline events.\nExtracts user messages, assistant responses, and tool calls.",
+      "desc": "Build a conversation transcript from timeline events.\r\nExtracts user messages, assistant responses, and tool calls.",
       "methods": [
         {
           "sig": "buildTranscript(events: readonly TimelineEvent[]): TranscriptEntry[]",
-          "desc": "Build a conversation transcript from timeline events.\nExtracts user messages, assistant responses, and tool calls.",
+          "desc": "Build a conversation transcript from timeline events.\r\nExtracts user messages, assistant responses, and tool calls.",
           "params": [
             {
               "n": "events",
@@ -4039,11 +4172,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "TimelineEventType",
-      "desc": "Timeline — session log IS the timeline.\n\nFull replay from durable events. Token-level replay fidelity\nvia assistant/chunk events.\n\nThe timeline is a linear sequence of events that can be replayed\nto reconstruct the full conversation history.\nTimeline event types — maps to KnownRunEvent from schema",
+      "desc": "Timeline — session log IS the timeline.\r\n\r\nFull replay from durable events. Token-level replay fidelity\r\nvia assistant/chunk events.\r\n\r\nThe timeline is a linear sequence of events that can be replayed\r\nto reconstruct the full conversation history.\nTimeline event types — maps to KnownRunEvent from schema",
       "methods": [
         {
           "sig": "type TimelineEventType = TimelineEventType",
-          "desc": "Timeline — session log IS the timeline.\n\nFull replay from durable events. Token-level replay fidelity\nvia assistant/chunk events.\n\nThe timeline is a linear sequence of events that can be replayed\nto reconstruct the full conversation history.\nTimeline event types — maps to KnownRunEvent from schema",
+          "desc": "Timeline — session log IS the timeline.\r\n\r\nFull replay from durable events. Token-level replay fidelity\r\nvia assistant/chunk events.\r\n\r\nThe timeline is a linear sequence of events that can be replayed\r\nto reconstruct the full conversation history.\nTimeline event types — maps to KnownRunEvent from schema",
           "params": []
         }
       ]
@@ -4095,7 +4228,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "CostMeter",
-      "desc": "Cost meter — tracks token usage and cost across operations.\nNamed differently from llm/TokenMeter to clarify purpose:\n- llm/TokenMeter: heuristic token estimation for request sizing\n- trace/CostMeter: actual usage tracking and cost aggregation",
+      "desc": "Cost meter — tracks token usage and cost across operations.\r\nNamed differently from llm/TokenMeter to clarify purpose:\r\n- llm/TokenMeter: heuristic token estimation for request sizing\r\n- trace/CostMeter: actual usage tracking and cost aggregation",
       "methods": [
         {
           "sig": "record(inputTokens: number, outputTokens: number, modelId: string | undefined): UsageStats",
@@ -4230,7 +4363,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "UsageStats",
-      "desc": "Telemetry — usage aggregation, cost tracking, context pressure monitoring.\n\nAggregates usage per session/provider/model and tracks token costs.\nUsage statistics for a single operation",
+      "desc": "Telemetry — usage aggregation, cost tracking, context pressure monitoring.\r\n\r\nAggregates usage per session/provider/model and tracks token costs.\nUsage statistics for a single operation",
       "methods": [],
       "props": [
         {
@@ -4332,11 +4465,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "CredentialRef",
-      "desc": "Branded credential reference — a POSIX-style environment variable name.\nUse this instead of plain `string` to prevent passing literal secrets.",
+      "desc": "Branded credential reference — a POSIX-style environment variable name.\r\nUse this instead of plain `string` to prevent passing literal secrets.",
       "methods": [
         {
           "sig": "type CredentialRef = CredentialRef",
-          "desc": "Branded credential reference — a POSIX-style environment variable name.\nUse this instead of plain `string` to prevent passing literal secrets.",
+          "desc": "Branded credential reference — a POSIX-style environment variable name.\r\nUse this instead of plain `string` to prevent passing literal secrets.",
           "params": []
         }
       ]
@@ -4402,11 +4535,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "CredentialProvider",
-      "desc": "Abstract credential provider — resolves credential references to values.\n\nImplementations layer multiple sources (env, managed store, .env files)\nwith the following precedence:\n1. Process environment (read-only, always wins)\n2. Managed store (writable)\n3. Project .env (read-only fallback)\n4. User home .env (read-only fallback)",
+      "desc": "Abstract credential provider — resolves credential references to values.\r\n\r\nImplementations layer multiple sources (env, managed store, .env files)\r\nwith the following precedence:\r\n1. Process environment (read-only, always wins)\r\n2. Managed store (writable)\r\n3. Project .env (read-only fallback)\r\n4. User home .env (read-only fallback)",
       "methods": [
         {
           "sig": "resolve(ref: CredentialRef): Promise<ResolvedCredential | undefined>",
-          "desc": "Resolve a credential reference to its value.\nReturns undefined if the credential is not configured.\nResolution is per-request — rotated credentials reach the next request.",
+          "desc": "Resolve a credential reference to its value.\r\nReturns undefined if the credential is not configured.\r\nResolution is per-request — rotated credentials reach the next request.",
           "params": [
             {
               "n": "ref",
@@ -4419,7 +4552,7 @@ window.PKG = [
         },
         {
           "sig": "describe(ref: CredentialRef): Promise<CredentialInfo>",
-          "desc": "Describe a credential without exposing its value.\nUsed by configuration UIs to show which credentials are configured.",
+          "desc": "Describe a credential without exposing its value.\r\nUsed by configuration UIs to show which credentials are configured.",
           "params": [
             {
               "n": "ref",
@@ -4432,7 +4565,7 @@ window.PKG = [
         },
         {
           "sig": "set(ref: CredentialRef, value: string): Promise<void>",
-          "desc": "Set a credential value in the managed store.\nRejects if the credential is shadowed by the process environment.",
+          "desc": "Set a credential value in the managed store.\r\nRejects if the credential is shadowed by the process environment.",
           "params": [
             {
               "n": "ref",
@@ -4451,7 +4584,7 @@ window.PKG = [
         },
         {
           "sig": "unset(ref: CredentialRef): Promise<void>",
-          "desc": "Remove a credential from the managed store.\nRejects if the credential is shadowed by the process environment.",
+          "desc": "Remove a credential from the managed store.\r\nRejects if the credential is shadowed by the process environment.",
           "params": [
             {
               "n": "ref",
@@ -4468,11 +4601,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "credentialRef",
-      "desc": "Create a credential reference from an environment variable name.\nThis is a type-level marker — no runtime validation.",
+      "desc": "Create a credential reference from an environment variable name.\r\nThis is a type-level marker — no runtime validation.",
       "methods": [
         {
           "sig": "credentialRef(envName: string): CredentialRef",
-          "desc": "Create a credential reference from an environment variable name.\nThis is a type-level marker — no runtime validation.",
+          "desc": "Create a credential reference from an environment variable name.\r\nThis is a type-level marker — no runtime validation.",
           "params": [
             {
               "n": "envName",
@@ -4526,11 +4659,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "SettingsProvider",
-      "desc": "Abstract settings provider — manages per-namespace configuration.\n\nSettings flow: schema defaults < composition base (cordis.yml) < user document.",
+      "desc": "Abstract settings provider — manages per-namespace configuration.\r\n\r\nSettings flow: schema defaults < composition base (cordis.yml) < user document.",
       "methods": [
         {
           "sig": "get(namespace: SettingsNamespace): SettingsSection<T> | undefined",
-          "desc": "Get the current resolved config for a namespace.\nReturns undefined if the namespace is not registered.",
+          "desc": "Get the current resolved config for a namespace.\r\nReturns undefined if the namespace is not registered.",
           "params": [
             {
               "n": "namespace",
@@ -4543,7 +4676,7 @@ window.PKG = [
         },
         {
           "sig": "install(namespace: SettingsNamespace, schema: SettingsSchema<T>, base: T, callbacks: { setSource: (config: T) => void; onChange?: (config: T) => void; }): () => void",
-          "desc": "Register a settings section with a schema and callbacks.\nThe section is merged from layers and watched for changes.",
+          "desc": "Register a settings section with a schema and callbacks.\r\nThe section is merged from layers and watched for changes.",
           "params": [
             {
               "n": "namespace",
@@ -4574,7 +4707,7 @@ window.PKG = [
         },
         {
           "sig": "setSection(namespace: SettingsNamespace, config: T): void",
-          "desc": "Update the user-document layer for a namespace.\nTriggers re-validation and onChange callbacks.",
+          "desc": "Update the user-document layer for a namespace.\r\nTriggers re-validation and onChange callbacks.",
           "params": [
             {
               "n": "namespace",
@@ -4644,11 +4777,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "mergeLayers",
-      "desc": "Merge configuration layers. Higher layers override lower layers.\nOnly defined properties override — undefined means \"keep lower layer\".",
+      "desc": "Merge configuration layers. Higher layers override lower layers.\r\nOnly defined properties override — undefined means \"keep lower layer\".",
       "methods": [
         {
           "sig": "mergeLayers(base: T, override: Partial<T>): T",
-          "desc": "Merge configuration layers. Higher layers override lower layers.\nOnly defined properties override — undefined means \"keep lower layer\".",
+          "desc": "Merge configuration layers. Higher layers override lower layers.\r\nOnly defined properties override — undefined means \"keep lower layer\".",
           "params": [
             {
               "n": "base",
@@ -4670,7 +4803,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "EnvSnapshot",
-      "desc": "Environment variable resolution — multi-layer env access.\n\nProvides a structured way to read environment variables with\nlayering (process env > .env file > defaults) and type-safe\nresolution.\nA frozen snapshot of environment variables.",
+      "desc": "Environment variable resolution — multi-layer env access.\r\n\r\nProvides a structured way to read environment variables with\r\nlayering (process env > .env file > defaults) and type-safe\r\nresolution.\nA frozen snapshot of environment variables.",
       "methods": [
         {
           "sig": "get(key: string): string | undefined",
@@ -4762,11 +4895,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "resolveCredentialFromEnv",
-      "desc": "Resolve a credential from a process environment snapshot.\nChecks in order: env > undefined (caller handles other layers).",
+      "desc": "Resolve a credential from a process environment snapshot.\r\nChecks in order: env > undefined (caller handles other layers).",
       "methods": [
         {
           "sig": "resolveCredentialFromEnv(env: EnvSnapshot, ref: CredentialRef): ResolvedCredential | undefined",
-          "desc": "Resolve a credential from a process environment snapshot.\nChecks in order: env > undefined (caller handles other layers).",
+          "desc": "Resolve a credential from a process environment snapshot.\r\nChecks in order: env > undefined (caller handles other layers).",
           "params": [
             {
               "n": "env",
@@ -4788,11 +4921,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "parseEnvFile",
-      "desc": "Parse a .env file content into a record.\nSupports `KEY=value`, `KEY=\"value\"`, `# comments`, and blank lines.",
+      "desc": "Parse a .env file content into a record.\r\nSupports `KEY=value`, `KEY=\"value\"`, `# comments`, and blank lines.",
       "methods": [
         {
           "sig": "parseEnvFile(content: string): Record<string, string>",
-          "desc": "Parse a .env file content into a record.\nSupports `KEY=value`, `KEY=\"value\"`, `# comments`, and blank lines.",
+          "desc": "Parse a .env file content into a record.\r\nSupports `KEY=value`, `KEY=\"value\"`, `# comments`, and blank lines.",
           "params": [
             {
               "n": "content",
@@ -4808,11 +4941,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "resolveCredentialMultiLayer",
-      "desc": "Resolve a credential through 4 layers:\n1. Process environment (always wins, read-only)\n2. Managed store (writable)\n3. Project .env (read-only fallback)\n4. User home .env (read-only fallback)\n\nEmpty values are treated as absent.",
+      "desc": "Resolve a credential through 4 layers:\r\n1. Process environment (always wins, read-only)\r\n2. Managed store (writable)\r\n3. Project .env (read-only fallback)\r\n4. User home .env (read-only fallback)\r\n\r\nEmpty values are treated as absent.",
       "methods": [
         {
           "sig": "resolveCredentialMultiLayer(config: MultiLayerEnvConfig, ref: CredentialRef): ResolvedCredential | undefined",
-          "desc": "Resolve a credential through 4 layers:\n1. Process environment (always wins, read-only)\n2. Managed store (writable)\n3. Project .env (read-only fallback)\n4. User home .env (read-only fallback)\n\nEmpty values are treated as absent.",
+          "desc": "Resolve a credential through 4 layers:\r\n1. Process environment (always wins, read-only)\r\n2. Managed store (writable)\r\n3. Project .env (read-only fallback)\r\n4. User home .env (read-only fallback)\r\n\r\nEmpty values are treated as absent.",
           "params": [
             {
               "n": "config",
@@ -7512,7 +7645,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"cost\" | \"inputTokens\" | \"output...): Promise<void>",
+          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputToke...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -7523,9 +7656,9 @@ window.PKG = [
             },
             {
               "n": "sessionUpdate",
-              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"cost\" | \"inputTokens\" | \"output...",
+              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputToke...",
               "r": false,
-              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"cost\" | \"inputTokens\" | \"output..."
+              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputToke..."
             }
           ],
           "ret": "Promise<void>"
@@ -7737,7 +7870,7 @@ window.PKG = [
           "ret": "Promise<readonly Session[]>"
         },
         {
-          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...): Promise<void>",
+          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -7748,9 +7881,9 @@ window.PKG = [
             },
             {
               "n": "updates",
-              "t": "Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...",
+              "t": "Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
               "r": true,
-              "d": "Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI..."
+              "d": "Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
             }
           ],
           "ret": "Promise<void>"
@@ -7767,6 +7900,25 @@ window.PKG = [
             }
           ],
           "ret": "Promise<void>"
+        },
+        {
+          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>",
+          "desc": "Add a message to a session.",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "AddMessageOptions",
+              "r": true,
+              "d": "AddMessageOptions"
+            }
+          ],
+          "ret": "Promise<Message>"
         },
         {
           "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<Message>",
@@ -7849,7 +8001,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(sessionId: string): Promise<readonly Message[]>",
+          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -7857,12 +8009,18 @@ window.PKG = [
               "t": "string",
               "r": true,
               "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ limit?: number; offset?: number; role?: string; } | undefined",
+              "r": false,
+              "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
         },
         {
-          "sig": "searchMessages(query: string, limit: number | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -7872,10 +8030,10 @@ window.PKG = [
               "d": "string"
             },
             {
-              "n": "limit",
-              "t": "number | undefined",
+              "n": "options",
+              "t": "{ sessionId?: string; limit?: number; } | undefined",
               "r": false,
-              "d": "number | undefined"
+              "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
@@ -8268,8 +8426,27 @@ window.PKG = [
           "ret": "readonly { id: string; provider: ModelProvider; }[]"
         },
         {
-          "sig": "providers: Map<string, ModelProvider>",
-          "desc": "providers",
+          "sig": "getByProvider(provider: string): readonly { id: string; provider: ModelProvider; }[]",
+          "desc": "",
+          "params": [
+            {
+              "n": "provider",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "readonly { id: string; provider: ModelProvider; }[]"
+        },
+        {
+          "sig": "providers(): readonly string[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly string[]"
+        },
+        {
+          "sig": "providersMap: Map<string, ModelProvider>",
+          "desc": "providersMap",
           "params": []
         }
       ]
@@ -8387,6 +8564,12 @@ window.PKG = [
           "type": "string | undefined",
           "required": false,
           "desc": "Model identifier — optional at schema level; set by provider adapter."
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider route — selects which registered provider handles this request."
         },
         {
           "name": "maxTokens",
@@ -8559,6 +8742,12 @@ window.PKG = [
           "desc": ""
         },
         {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": "Provider attribution — which provider generated this response. REQUIRED for timeline tracking."
+        },
+        {
           "name": "created",
           "type": "number | undefined",
           "required": false,
@@ -8637,6 +8826,18 @@ window.PKG = [
           "type": "number | undefined",
           "required": false,
           "desc": "OpenAI: prompt_tokens_details.cached_tokens"
+        },
+        {
+          "name": "cacheReadTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache read tokens — disjoint from promptTokens (Anthropic/DeepSeek pattern)."
+        },
+        {
+          "name": "cacheWriteTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache write tokens — disjoint from promptTokens (Anthropic/DeepSeek pattern)."
         },
         {
           "name": "reasoningTokens",
@@ -9709,7 +9910,7 @@ window.PKG = [
         },
         {
           "sig": "effect(cleanup: () => Promise<void>): Disposable",
-          "desc": "Register an effect — a side-effect with automatic cleanup.\nThe returned Disposable unregisters the effect when disposed.",
+          "desc": "Register an effect — a side-effect with automatic cleanup.\r\nThe returned Disposable unregisters the effect when disposed.",
           "params": [
             {
               "n": "cleanup",
@@ -9722,7 +9923,7 @@ window.PKG = [
         },
         {
           "sig": "on(event: string | EventDefinition<unknown>, handler: (data: unknown) => void | Promise<void>): Disposable",
-          "desc": "Subscribe to an event on the event bus.\nReturns a Disposable that unsubscribes when disposed.",
+          "desc": "Subscribe to an event on the event bus.\r\nReturns a Disposable that unsubscribes when disposed.",
           "params": [
             {
               "n": "event",
@@ -10014,7 +10215,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "Disposable",
-      "desc": "Disposable — cleanup handle returned by effects and event subscriptions.\nCall `dispose()` to unregister/cleanup. Multiple calls are safe (idempotent).",
+      "desc": "Disposable — cleanup handle returned by effects and event subscriptions.\r\nCall `dispose()` to unregister/cleanup. Multiple calls are safe (idempotent).",
       "methods": [
         {
           "sig": "dispose(): Promise<void>",
@@ -10229,6 +10430,12 @@ window.PKG = [
           "type": "RunId | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "overrides",
+          "type": "{ readonly provider?: string; readonly model?: string; } | undefined",
+          "required": false,
+          "desc": "Per-request overrides for provider/model selection."
         }
       ]
     },
@@ -10285,6 +10492,12 @@ window.PKG = [
           "type": "number | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "providerPreferences",
+          "type": "{ readonly preferred?: string; readonly fallbacks?: readonly string[]; } | undefined",
+          "required": false,
+          "desc": "Provider preferences for this agent — used by ModelCaller to resolve provider."
         },
         {
           "name": "metadata",
@@ -10393,6 +10606,12 @@ window.PKG = [
           "desc": ""
         },
         {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider that served this session's model calls."
+        },
+        {
           "name": "cost",
           "type": "number | undefined",
           "required": false,
@@ -10477,6 +10696,12 @@ window.PKG = [
           "type": "string | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider that generated this message (attribution)."
         },
         {
           "name": "cost",
@@ -14042,7 +14267,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "BuiltinToolProvider",
-      "desc": "BuiltinToolProvider — Provides all built-in coding tools.\n\nThese tools are always available and can be overridden\nby user tools in .vnt/tools/ or ~/.vnt/tools/.",
+      "desc": "BuiltinToolProvider — Provides all built-in coding tools.\r\n\r\nThese tools are always available and can be overridden\r\nby user tools in .vnt/tools/ or ~/.vnt/tools/.",
       "methods": [
         {
           "sig": "constructor(config: BuiltinToolConfig)",
@@ -14161,7 +14386,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "ToolRuntime",
-      "desc": "Runtime that registers tool definitions and executes them through the\npermission gate (deny/approve) and lifecycle hooks, isolated in a sandbox.",
+      "desc": "Runtime that registers tool definitions and executes them through the\r\npermission gate (deny/approve) and lifecycle hooks, isolated in a sandbox.",
       "methods": [
         {
           "sig": "constructor(config: ToolRuntimeConfig | undefined)",
@@ -14307,7 +14532,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "ToolRuntimeConfig",
-      "desc": "Configuration for {@link ToolRuntime}.\n`permissionGate` enforces tool policy — REQUIRED for execution (fail-closed:\nwithout a gate, every execution is denied), `approvalHandler` drives\ninteractive approvals, and `sandbox` executes tools (defaults to an\nin-process {@link ToolSandbox}).",
+      "desc": "Configuration for {@link ToolRuntime}.\r\n`permissionGate` enforces tool policy — REQUIRED for execution (fail-closed:\r\nwithout a gate, every execution is denied), `approvalHandler` drives\r\ninteractive approvals, and `sandbox` executes tools (defaults to an\r\nin-process {@link ToolSandbox}).",
       "methods": [],
       "props": [
         {
@@ -14373,11 +14598,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createToolProviderRegistry",
-      "desc": "Create a ToolProviderRegistry with all built-in providers.\n\nThis is the main entry point for setting up the tool system.\nIt creates:\n1. BuiltinToolProvider (coding tools)\n2. User tools from .vnt/tools/ (if any)",
+      "desc": "Create a ToolProviderRegistry with all built-in providers.\r\n\r\nThis is the main entry point for setting up the tool system.\r\nIt creates:\r\n1. BuiltinToolProvider (coding tools)\r\n2. User tools from .vnt/tools/ (if any)",
       "methods": [
         {
           "sig": "createToolProviderRegistry(config: { workspaceRoot: string; shell: { workspaceRoot: string | (() => string); defaultTimeoutMs: number; maxTimeoutMs?: nu...): Promise<ToolProviderRegistry>",
-          "desc": "Create a ToolProviderRegistry with all built-in providers.\n\nThis is the main entry point for setting up the tool system.\nIt creates:\n1. BuiltinToolProvider (coding tools)\n2. User tools from .vnt/tools/ (if any)",
+          "desc": "Create a ToolProviderRegistry with all built-in providers.\r\n\r\nThis is the main entry point for setting up the tool system.\r\nIt creates:\r\n1. BuiltinToolProvider (coding tools)\r\n2. User tools from .vnt/tools/ (if any)",
           "params": [
             {
               "n": "config",
@@ -14750,6 +14975,57 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
+          "sig": "deleteAll(sessionId: string): Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "list(sessionId: string, options: { tier?: string; limit?: number; offset?: number; } | undefined): Promise<MemoryItem[]>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ tier?: string; limit?: number; offset?: number; } | undefined",
+              "r": false,
+              "d": "{ tier?: string; limit?: number; offset?: number; } | undefined"
+            }
+          ],
+          "ret": "Promise<MemoryItem[]>"
+        },
+        {
+          "sig": "count(sessionId: string, tier: string | undefined): Promise<number>",
+          "desc": "",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "tier",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "Promise<number>"
+        },
+        {
           "sig": "search(query: string, sessionId: string): Promise<MemoryItem[]>",
           "desc": "",
           "params": [
@@ -14764,6 +15040,31 @@ window.PKG = [
               "t": "string",
               "r": true,
               "d": "string"
+            }
+          ],
+          "ret": "Promise<MemoryItem[]>"
+        },
+        {
+          "sig": "searchSimilar(embedding: number[], sessionId: string, options: { topK?: number; tier?: string; } | undefined): Promise<MemoryItem[]>",
+          "desc": "",
+          "params": [
+            {
+              "n": "embedding",
+              "t": "number[]",
+              "r": true,
+              "d": "number[]"
+            },
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ topK?: number; tier?: string; } | undefined",
+              "r": false,
+              "d": "{ topK?: number; tier?: string; } | undefined"
             }
           ],
           "ret": "Promise<MemoryItem[]>"
@@ -15239,7 +15540,7 @@ window.PKG = [
         },
         {
           "sig": "streamWithReplay(def: EventDefinition<T> & { durable: { readonly version: number; readonly aggregate: string; }; }, aggregateId: string, after: number | undefined, signal: AbortSignal | undefined): AsyncIterable<TypedEvent<T>>",
-          "desc": "Stream events with durable replay + live merge.\nFirst yields historical events from durable storage, then yields live events.",
+          "desc": "Stream events with durable replay + live merge.\r\nFirst yields historical events from durable storage, then yields live events.",
           "params": [
             {
               "n": "def",
@@ -15294,7 +15595,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "GlobalEventBus",
-      "desc": "Process-wide {@link EventBus} backed by a Node EventEmitter, optionally\nbridged to other processes via a {@link RedisAdapter}.",
+      "desc": "Process-wide {@link EventBus} backed by a Node EventEmitter, optionally\r\nbridged to other processes via a {@link RedisAdapter}.",
       "methods": [
         {
           "sig": "constructor(id: string | undefined)",
@@ -15455,7 +15756,7 @@ window.PKG = [
         },
         {
           "sig": "streamWithReplay(def: EventDefinition<T> & { durable: { readonly version: number; readonly aggregate: string; }; }, aggregateId: string, after: number | undefined, signal: AbortSignal | undefined): AsyncIterable<TypedEvent<T>>",
-          "desc": "Stream events with durable replay + live merge.\nFirst yields historical events from durable storage, then yields live events.",
+          "desc": "Stream events with durable replay + live merge.\r\nFirst yields historical events from durable storage, then yields live events.",
           "params": [
             {
               "n": "def",
@@ -15830,7 +16131,7 @@ window.PKG = [
         },
         {
           "sig": "call(fn: () => Promise<T>, signal: AbortSignal | undefined): Promise<T>",
-          "desc": "Execute a function with circuit breaker and retry logic.\nRetries on transient failures with exponential backoff.",
+          "desc": "Execute a function with circuit breaker and retry logic.\r\nRetries on transient failures with exponential backoff.",
           "params": [
             {
               "n": "fn",
@@ -16141,11 +16442,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "hashArgs",
-      "desc": "Stable, order-independent hash of an arbitrary tool-arguments value.\nObject key order is normalized so `{a:1,b:2}` and `{b:2,a:1}` hash the same.",
+      "desc": "Stable, order-independent hash of an arbitrary tool-arguments value.\r\nObject key order is normalized so `{a:1,b:2}` and `{b:2,a:1}` hash the same.",
       "methods": [
         {
           "sig": "hashArgs(value: unknown): string",
-          "desc": "Stable, order-independent hash of an arbitrary tool-arguments value.\nObject key order is normalized so `{a:1,b:2}` and `{b:2,a:1}` hash the same.",
+          "desc": "Stable, order-independent hash of an arbitrary tool-arguments value.\r\nObject key order is normalized so `{a:1,b:2}` and `{b:2,a:1}` hash the same.",
           "params": [
             {
               "n": "value",
@@ -16222,11 +16523,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "withToolTimeout",
-      "desc": "Execute a function with a cooperative deadline.\n\nIf the deadline is exceeded, the function is aborted via the signal\nand `ToolTimeoutError` is thrown.",
+      "desc": "Execute a function with a cooperative deadline.\r\n\r\nIf the deadline is exceeded, the function is aborted via the signal\r\nand `ToolTimeoutError` is thrown.",
       "methods": [
         {
           "sig": "withToolTimeout(toolId: string, timeoutMs: number, fn: (signal: AbortSignal) => Promise<T>): Promise<T>",
-          "desc": "Execute a function with a cooperative deadline.\n\nIf the deadline is exceeded, the function is aborted via the signal\nand `ToolTimeoutError` is thrown.",
+          "desc": "Execute a function with a cooperative deadline.\r\n\r\nIf the deadline is exceeded, the function is aborted via the signal\r\nand `ToolTimeoutError` is thrown.",
           "params": [
             {
               "n": "toolId",
@@ -16268,7 +16569,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "GenerateOptions",
-      "desc": "Options for a model generation call.\nThis is the adapter's view of the request — provider-owned fields\n(model, apiKey, baseUrl) are resolved before reaching the adapter.",
+      "desc": "Options for a model generation call.\r\nThis is the adapter's view of the request — provider-owned fields\r\n(model, apiKey, baseUrl) are resolved before reaching the adapter.",
       "methods": [],
       "props": [
         {
@@ -16276,6 +16577,12 @@ window.PKG = [
           "type": "string",
           "required": true,
           "desc": "The provider/model identifier (e.g., \"deepseek-chat\", \"gpt-4o\")."
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider route — which registered provider handles this request."
         },
         {
           "name": "messages",
@@ -16342,11 +16649,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "StreamChunk",
-      "desc": "Raw streaming chunk emitted by an adapter.\nThis is the adapter → runtime protocol.",
+      "desc": "Raw streaming chunk emitted by an adapter.\r\nThis is the adapter → runtime protocol.",
       "methods": [
         {
           "sig": "type StreamChunk = StreamChunk",
-          "desc": "Raw streaming chunk emitted by an adapter.\nThis is the adapter → runtime protocol.",
+          "desc": "Raw streaming chunk emitted by an adapter.\r\nThis is the adapter → runtime protocol.",
           "params": []
         }
       ]
@@ -16444,11 +16751,11 @@ window.PKG = [
     {
       "type": "class",
       "name": "LlmAdapter",
-      "desc": "Abstract LLM adapter — the Service Definition for model providers.\n\nEvery provider implements this interface. The only required method is `stream()`.\nEverything else has sensible defaults.\n\nAdapters are stateless — all configuration is captured at registration time.\nThe adapter receives only the `GenerateOptions` per call.",
+      "desc": "Abstract LLM adapter — the Service Definition for model providers.\r\n\r\nEvery provider implements this interface. The only required method is `stream()`.\r\nEverything else has sensible defaults.\r\n\r\nAdapters are stateless — all configuration is captured at registration time.\r\nThe adapter receives only the `GenerateOptions` per call.",
       "methods": [
         {
           "sig": "stream(options: GenerateOptions, signal: AbortSignal | undefined): AsyncIterable<StreamChunk>",
-          "desc": "Stream one model call as raw chunks (token-level deltas).\nThis is the ONLY required method.",
+          "desc": "Stream one model call as raw chunks (token-level deltas).\r\nThis is the ONLY required method.",
           "params": [
             {
               "n": "options",
@@ -16467,7 +16774,7 @@ window.PKG = [
         },
         {
           "sig": "providerInfo(provider: string): ProviderInfo",
-          "desc": "Provider metadata — used for display and logging.\nDefault: `{ id: \"unknown\", name: \"Unknown Provider\" }`.",
+          "desc": "Provider metadata — used for display and logging.\r\nDefault: `{ id: \"unknown\", name: \"Unknown Provider\" }`.",
           "params": [
             {
               "n": "provider",
@@ -16480,7 +16787,7 @@ window.PKG = [
         },
         {
           "sig": "providerRetryPolicy(provider: string): RetryPolicy | undefined",
-          "desc": "Provider-specific retry policy — captured at registration time.\nDefault: undefined (use global defaults).",
+          "desc": "Provider-specific retry policy — captured at registration time.\r\nDefault: undefined (use global defaults).",
           "params": [
             {
               "n": "provider",
@@ -16493,7 +16800,7 @@ window.PKG = [
         },
         {
           "sig": "listModels(provider: string): Promise<readonly ResolvedModelInfo[]>",
-          "desc": "List available models for a provider.\nDefault: empty array.",
+          "desc": "List available models for a provider.\r\nDefault: empty array.",
           "params": [
             {
               "n": "provider",
@@ -16506,7 +16813,7 @@ window.PKG = [
         },
         {
           "sig": "resolveModel(provider: string, model: string, signal: AbortSignal | undefined): Promise<ResolvedModelInfo>",
-          "desc": "Resolve a model identifier to full info.\nDefault: returns the model id as-is.",
+          "desc": "Resolve a model identifier to full info.\r\nDefault: returns the model id as-is.",
           "params": [
             {
               "n": "provider",
@@ -16561,7 +16868,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "LlmRegistry",
-      "desc": "Registry for LLM adapters — manages provider → adapter mapping.\n\nRegistration rules:\n- All-or-nothing: if any provider name conflicts, nothing registers\n- One adapter per provider route\n- Non-empty provider names required\n- Atomic swap: replace() validates the full candidate set before mutating",
+      "desc": "Registry for LLM adapters — manages provider → adapter mapping.\r\n\r\nRegistration rules:\r\n- All-or-nothing: if any provider name conflicts, nothing registers\r\n- One adapter per provider route\r\n- Non-empty provider names required\r\n- Atomic swap: replace() validates the full candidate set before mutating",
       "methods": [
         {
           "sig": "registerAdapter(providerNames: readonly string[], adapter: LlmAdapter): AdapterRegistrationHandle",
@@ -16596,6 +16903,25 @@ window.PKG = [
           "ret": "LlmAdapter | undefined"
         },
         {
+          "sig": "getByProvider(provider: string): { adapter: LlmAdapter; routes: string[]; } | undefined",
+          "desc": "Get all adapters registered for a given provider name.\r\nFor multi-route adapters (e.g. one adapter serving \"openai\" and \"azure\"),\r\nthis returns the same adapter instance for each route.",
+          "params": [
+            {
+              "n": "provider",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "{ adapter: LlmAdapter; routes: string[]; } | undefined"
+        },
+        {
+          "sig": "providers(): readonly string[]",
+          "desc": "List all distinct provider names registered in this registry.",
+          "params": [],
+          "ret": "readonly string[]"
+        },
+        {
           "sig": "hasProvider(provider: string): boolean",
           "desc": "Check if a provider is registered.",
           "params": [
@@ -16616,7 +16942,7 @@ window.PKG = [
         },
         {
           "sig": "getRetryPolicy(provider: string): RetryPolicy | undefined",
-          "desc": "Get the retry policy for a provider.\nFalls back to the adapter's policy, then to the default.",
+          "desc": "Get the retry policy for a provider.\r\nFalls back to the adapter's policy, then to the default.",
           "params": [
             {
               "n": "provider",
@@ -16763,7 +17089,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "TokenMeter",
-      "desc": "Token meter — estimates token counts heuristically.\n\nProvider-specific tokenizers would be more accurate but would\ncouple the meter to a specific provider. The heuristic is\nintentionally approximate for budget estimation.",
+      "desc": "Token meter — estimates token counts heuristically.\r\n\r\nProvider-specific tokenizers would be more accurate but would\r\ncouple the meter to a specific provider. The heuristic is\r\nintentionally approximate for budget estimation.",
       "methods": [
         {
           "sig": "estimateMessage(message: { readonly role: string; readonly content: string | readonly unknown[]; }): number",
@@ -16917,6 +17243,25 @@ window.PKG = [
             }
           ],
           "ret": "ModelProvider"
+        },
+        {
+          "sig": "resolveProvider(providerName: string | undefined, modelOverride: string | undefined): ModelProvider | undefined",
+          "desc": "Resolve a model provider by explicit provider name from the request or context.",
+          "params": [
+            {
+              "n": "providerName",
+              "t": "string | undefined",
+              "r": true,
+              "d": "string | undefined"
+            },
+            {
+              "n": "modelOverride",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "ModelProvider | undefined"
         },
         {
           "sig": "getActiveModel(runId: RunId): ModelProvider",
@@ -17240,7 +17585,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "ModelCallerPluginHooks",
-      "desc": "Minimal structural hook surface used by the model caller.\n\nHosts (e.g. core's `PluginManager`) only need to implement `fireHook` for\nthe model-call hook names; no direct dependency on the full plugin contract.",
+      "desc": "Minimal structural hook surface used by the model caller.\r\n\r\nHosts (e.g. core's `PluginManager`) only need to implement `fireHook` for\r\nthe model-call hook names; no direct dependency on the full plugin contract.",
       "methods": [
         {
           "sig": "fireHook(name: \"onChatParams\" | \"onBeforeModelCall\" | \"onAfterModelCall\" | \"onTokenStreamed\", data: Record<string, unknown>): Promise<{ modified: Record<string, unknown>; } | null>",
@@ -17306,11 +17651,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "matchPermission",
-      "desc": "Evaluate a list of permission rules against a tool action and context.\nUses last-match-wins semantics: later rules override earlier ones.\n\nIf no rule matches, returns \"ask\" by default (safe default).",
+      "desc": "Evaluate a list of permission rules against a tool action and context.\r\nUses last-match-wins semantics: later rules override earlier ones.\r\n\r\nIf no rule matches, returns \"ask\" by default (safe default).",
       "methods": [
         {
           "sig": "matchPermission(rules: readonly AnyRule[], action: string, context: string | undefined): { effect: PermissionEffect; matchedRule?: AnyRule; }",
-          "desc": "Evaluate a list of permission rules against a tool action and context.\nUses last-match-wins semantics: later rules override earlier ones.\n\nIf no rule matches, returns \"ask\" by default (safe default).",
+          "desc": "Evaluate a list of permission rules against a tool action and context.\r\nUses last-match-wins semantics: later rules override earlier ones.\r\n\r\nIf no rule matches, returns \"ask\" by default (safe default).",
           "params": [
             {
               "n": "rules",
@@ -17338,11 +17683,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "buildPermissionRules",
-      "desc": "Build a lookup-friendly permission set from raw config rules.\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
+      "desc": "Build a lookup-friendly permission set from raw config rules.\r\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
       "methods": [
         {
           "sig": "buildPermissionRules(config: Record<string, string | Record<string, string>>): PermissionRule[]",
-          "desc": "Build a lookup-friendly permission set from raw config rules.\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
+          "desc": "Build a lookup-friendly permission set from raw config rules.\r\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
           "params": [
             {
               "n": "config",
@@ -17430,11 +17775,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "evaluatePermission",
-      "desc": "Evaluate a resource against a ruleset.\n\nSemantics (matching OpenCode's findLast):\n- Rules are evaluated in order; last matching rule wins.\n- \"deny\" blocks access.\n- \"ask\" triggers human-in-the-loop.\n- \"allow\" permits access.\n- If no rule matches, the default is \"ask\" (safe default).\n\nWhen `paramPattern` is set on a rule, the rule only matches if\nthe JSON-stringified tool args also match the paramPattern glob.",
+      "desc": "Evaluate a resource against a ruleset.\r\n\r\nSemantics (matching OpenCode's findLast):\r\n- Rules are evaluated in order; last matching rule wins.\r\n- \"deny\" blocks access.\r\n- \"ask\" triggers human-in-the-loop.\r\n- \"allow\" permits access.\r\n- If no rule matches, the default is \"ask\" (safe default).\r\n\r\nWhen `paramPattern` is set on a rule, the rule only matches if\r\nthe JSON-stringified tool args also match the paramPattern glob.",
       "methods": [
         {
           "sig": "evaluatePermission(ruleset: AgentRuleset | undefined, resource: string, args: Record<string, unknown> | undefined): PermissionResult",
-          "desc": "Evaluate a resource against a ruleset.\n\nSemantics (matching OpenCode's findLast):\n- Rules are evaluated in order; last matching rule wins.\n- \"deny\" blocks access.\n- \"ask\" triggers human-in-the-loop.\n- \"allow\" permits access.\n- If no rule matches, the default is \"ask\" (safe default).\n\nWhen `paramPattern` is set on a rule, the rule only matches if\nthe JSON-stringified tool args also match the paramPattern glob.",
+          "desc": "Evaluate a resource against a ruleset.\r\n\r\nSemantics (matching OpenCode's findLast):\r\n- Rules are evaluated in order; last matching rule wins.\r\n- \"deny\" blocks access.\r\n- \"ask\" triggers human-in-the-loop.\r\n- \"allow\" permits access.\r\n- If no rule matches, the default is \"ask\" (safe default).\r\n\r\nWhen `paramPattern` is set on a rule, the rule only matches if\r\nthe JSON-stringified tool args also match the paramPattern glob.",
           "params": [
             {
               "n": "ruleset",
@@ -17594,7 +17939,7 @@ window.PKG = [
         },
         {
           "sig": "checkApproval(resource: string, action: string, agentId: string | undefined): boolean",
-          "desc": "Check whether a saved approval covers `resource`. A saved approval matches\nwhen its `action` and agent scope agree AND its `resource` glob-matches the\nrequested resource (e.g. `tool.read_file(src/*)` covers `tool.read_file(src/a.ts)`).",
+          "desc": "Check whether a saved approval covers `resource`. A saved approval matches\r\nwhen its `action` and agent scope agree AND its `resource` glob-matches the\r\nrequested resource (e.g. `tool.read_file(src/*)` covers `tool.read_file(src/a.ts)`).",
           "params": [
             {
               "n": "resource",
@@ -17644,7 +17989,7 @@ window.PKG = [
         },
         {
           "sig": "checkRejection(resource: string, action: string, agentId: string | undefined): boolean",
-          "desc": "Check whether a saved rejection covers `resource`. A saved rejection matches\nwhen its `action` and agent scope agree AND its `resource` glob-matches the\nrequested resource (e.g. `tool.write_file(src/*)` covers `tool.write_file(src/a.ts)`).",
+          "desc": "Check whether a saved rejection covers `resource`. A saved rejection matches\r\nwhen its `action` and agent scope agree AND its `resource` glob-matches the\r\nrequested resource (e.g. `tool.write_file(src/*)` covers `tool.write_file(src/a.ts)`).",
           "params": [
             {
               "n": "resource",
@@ -19240,13 +19585,13 @@ window.PKG = [
           "name": "timeoutMs",
           "type": "number | undefined",
           "required": false,
-          "desc": "Per-attempt request timeout in ms — bounds the time until the upstream\nresponds (headers arrive). A long-running stream is NOT cut off: the timer\nis discarded once the response headers arrive. Default: 120000."
+          "desc": "Per-attempt request timeout in ms — bounds the time until the upstream\r\nresponds (headers arrive). A long-running stream is NOT cut off: the timer\r\nis discarded once the response headers arrive. Default: 120000."
         },
         {
           "name": "includeUsage",
           "type": "boolean | undefined",
           "required": false,
-          "desc": "Whether to request token usage via `stream_options.include_usage` when\nstreaming. Some OpenAI-compatible shims (e.g. Ollama) reject unknown\n`stream_options` fields — set `false` for those. Per-call override:\n`request.streamOptions.includeUsage`. Default: true."
+          "desc": "Whether to request token usage via `stream_options.include_usage` when\r\nstreaming. Some OpenAI-compatible shims (e.g. Ollama) reject unknown\r\n`stream_options` fields — set `false` for those. Per-call override:\r\n`request.streamOptions.includeUsage`. Default: true."
         },
         {
           "name": "fetchImpl",
@@ -19265,11 +19610,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "buildRequest",
-      "desc": "Build an OpenAI Chat Completions request body from a vinhnt-sdk ModelRequest.\n\nMaps: messages, system (top-level), tools, tool_choice, parallel_tool_calls,\nmax_completion_tokens/max_tokens, temperature/top_p/stop, penalties,\nlogit_bias, seed, user, logprobs, reasoning_effort, response_format, and\n(when streaming) `stream: true` + `stream_options.include_usage`.",
+      "desc": "Build an OpenAI Chat Completions request body from a vinhnt-sdk ModelRequest.\r\n\r\nMaps: messages, system (top-level), tools, tool_choice, parallel_tool_calls,\r\nmax_completion_tokens/max_tokens, temperature/top_p/stop, penalties,\r\nlogit_bias, seed, user, logprobs, reasoning_effort, response_format, and\r\n(when streaming) `stream: true` + `stream_options.include_usage`.",
       "methods": [
         {
           "sig": "buildRequest(request: ModelRequest, opts: BuildRequestOptions | undefined): OpenAICompatibleRequestBody",
-          "desc": "Build an OpenAI Chat Completions request body from a vinhnt-sdk ModelRequest.\n\nMaps: messages, system (top-level), tools, tool_choice, parallel_tool_calls,\nmax_completion_tokens/max_tokens, temperature/top_p/stop, penalties,\nlogit_bias, seed, user, logprobs, reasoning_effort, response_format, and\n(when streaming) `stream: true` + `stream_options.include_usage`.",
+          "desc": "Build an OpenAI Chat Completions request body from a vinhnt-sdk ModelRequest.\r\n\r\nMaps: messages, system (top-level), tools, tool_choice, parallel_tool_calls,\r\nmax_completion_tokens/max_tokens, temperature/top_p/stop, penalties,\r\nlogit_bias, seed, user, logprobs, reasoning_effort, response_format, and\r\n(when streaming) `stream: true` + `stream_options.include_usage`.",
           "params": [
             {
               "n": "request",
@@ -19451,11 +19796,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createSSEStream",
-      "desc": "Parse an SSE byte stream into OpenAI streaming chunks.\n\nHandles: `data:` lines, `[DONE]` termination, multi-line JSON events and\nproviders that omit the blank-line event delimiter. `state.sawDone` flips to\ntrue when the `[DONE]` terminator is seen, letting the consumer distinguish\na clean completion from a truncated stream that closed without it.",
+      "desc": "Parse an SSE byte stream into OpenAI streaming chunks.\r\n\r\nHandles: `data:` lines, `[DONE]` termination, multi-line JSON events and\r\nproviders that omit the blank-line event delimiter. `state.sawDone` flips to\r\ntrue when the `[DONE]` terminator is seen, letting the consumer distinguish\r\na clean completion from a truncated stream that closed without it.",
       "methods": [
         {
           "sig": "createSSEStream(body: Bytes, signal: AbortSignal | undefined, state: SSEParseState | undefined): AsyncIterable<OpenAIStreamChunk>",
-          "desc": "Parse an SSE byte stream into OpenAI streaming chunks.\n\nHandles: `data:` lines, `[DONE]` termination, multi-line JSON events and\nproviders that omit the blank-line event delimiter. `state.sawDone` flips to\ntrue when the `[DONE]` terminator is seen, letting the consumer distinguish\na clean completion from a truncated stream that closed without it.",
+          "desc": "Parse an SSE byte stream into OpenAI streaming chunks.\r\n\r\nHandles: `data:` lines, `[DONE]` termination, multi-line JSON events and\r\nproviders that omit the blank-line event delimiter. `state.sawDone` flips to\r\ntrue when the `[DONE]` terminator is seen, letting the consumer distinguish\r\na clean completion from a truncated stream that closed without it.",
           "params": [
             {
               "n": "body",
@@ -19483,11 +19828,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "toModelStreamEvents",
-      "desc": "Assemble an OpenAI SSE stream into vinhnt-sdk `ModelStreamEvent`s.\n\nAccumulates fragmented tool-call argument deltas across chunks and emits\none complete `tool_call` event per call, then `done`.",
+      "desc": "Assemble an OpenAI SSE stream into vinhnt-sdk `ModelStreamEvent`s.\r\n\r\nAccumulates fragmented tool-call argument deltas across chunks and emits\r\none complete `tool_call` event per call, then `done`.",
       "methods": [
         {
           "sig": "toModelStreamEvents(body: Bytes, signal: AbortSignal | undefined): AsyncIterable<ModelStreamEvent>",
-          "desc": "Assemble an OpenAI SSE stream into vinhnt-sdk `ModelStreamEvent`s.\n\nAccumulates fragmented tool-call argument deltas across chunks and emits\none complete `tool_call` event per call, then `done`.",
+          "desc": "Assemble an OpenAI SSE stream into vinhnt-sdk `ModelStreamEvent`s.\r\n\r\nAccumulates fragmented tool-call argument deltas across chunks and emits\r\none complete `tool_call` event per call, then `done`.",
           "params": [
             {
               "n": "body",
@@ -19525,7 +19870,7 @@ window.PKG = [
           "ret": "ChatMessage"
         }
       ],
-      "example": "```ts\nconst vntMsg = fromOpenAIMessage({\n  role: \"user\",\n  content: [{ type: \"text\", text: \"Hello\" }],\n});\n```"
+      "example": "```ts\r\nconst vntMsg = fromOpenAIMessage({\r\n  role: \"user\",\r\n  content: [{ type: \"text\", text: \"Hello\" }],\r\n});\r\n```"
     },
     {
       "type": "function",
@@ -19546,7 +19891,7 @@ window.PKG = [
           "ret": "OpenAIMessage"
         }
       ],
-      "example": "```ts\nconst openaiMsg = toOpenAIMessage({\n  role: \"user\",\n  content: \"Hello\",\n});\n```"
+      "example": "```ts\r\nconst openaiMsg = toOpenAIMessage({\r\n  role: \"user\",\r\n  content: \"Hello\",\r\n});\r\n```"
     },
     {
       "type": "function",
@@ -19554,7 +19899,7 @@ window.PKG = [
       "desc": "Convert OpenAI Chat Completion response to vinhnt-sdk ModelResponse.",
       "methods": [
         {
-          "sig": "fromOpenAIResponse(res: OpenAIResponse): ModelResponse",
+          "sig": "fromOpenAIResponse(res: OpenAIResponse, provider: string | undefined): ModelResponse",
           "desc": "Convert OpenAI Chat Completion response to vinhnt-sdk ModelResponse.",
           "params": [
             {
@@ -19562,12 +19907,18 @@ window.PKG = [
               "t": "OpenAIResponse",
               "r": true,
               "d": "OpenAIResponse"
+            },
+            {
+              "n": "provider",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
             }
           ],
           "ret": "ModelResponse"
         }
       ],
-      "example": "```ts\nconst response = await fetch(\"https://api.openai.com/v1/chat/completions\", ...);\nconst data = await response.json();\nconst vntResponse = fromOpenAIResponse(data);\n```"
+      "example": "```ts\r\nconst response = await fetch(\"https://api.openai.com/v1/chat/completions\", ...);\r\nconst data = await response.json();\r\nconst vntResponse = fromOpenAIResponse(data);\r\n```"
     },
     {
       "type": "function",
@@ -19588,16 +19939,16 @@ window.PKG = [
           "ret": "OpenAIResponse"
         }
       ],
-      "example": "```ts\nconst openaiRes = toOpenAIResponse({\n  content: \"Hello!\",\n  finishReason: \"stop\",\n  usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },\n});\n```"
+      "example": "```ts\r\nconst openaiRes = toOpenAIResponse({\r\n  content: \"Hello!\",\r\n  finishReason: \"stop\",\r\n  usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },\r\n});\r\n```"
     },
     {
       "type": "function",
       "name": "fromOpenAIStreamChunk",
-      "desc": "Convert an OpenAI streaming chunk into an array of individual events.\n\nEach chunk can contain multiple choices, each with its own deltas. This\nfunction extracts each chunk's individual deltas. Use\n`toModelStreamEvents` (or the provider's `stream()`) for assembled output.",
+      "desc": "Convert an OpenAI streaming chunk into an array of individual events.\r\n\r\nEach chunk can contain multiple choices, each with its own deltas. This\r\nfunction extracts each chunk's individual deltas. Use\r\n`toModelStreamEvents` (or the provider's `stream()`) for assembled output.",
       "methods": [
         {
           "sig": "fromOpenAIStreamChunk(chunk: OpenAIStreamChunk): StreamChunkEvent[]",
-          "desc": "Convert an OpenAI streaming chunk into an array of individual events.\n\nEach chunk can contain multiple choices, each with its own deltas. This\nfunction extracts each chunk's individual deltas. Use\n`toModelStreamEvents` (or the provider's `stream()`) for assembled output.",
+          "desc": "Convert an OpenAI streaming chunk into an array of individual events.\r\n\r\nEach chunk can contain multiple choices, each with its own deltas. This\r\nfunction extracts each chunk's individual deltas. Use\r\n`toModelStreamEvents` (or the provider's `stream()`) for assembled output.",
           "params": [
             {
               "n": "chunk",
@@ -19609,7 +19960,7 @@ window.PKG = [
           "ret": "StreamChunkEvent[]"
         }
       ],
-      "example": "```ts\nfor await (const chunk of stream) {\n  const events = fromOpenAIStreamChunk(chunk);\n  for (const event of events) { /* handle event *\\/ }\n}\n```"
+      "example": "```ts\r\nfor await (const chunk of stream) {\r\n  const events = fromOpenAIStreamChunk(chunk);\r\n  for (const event of events) { /* handle event *\\/ }\r\n}\r\n```"
     },
     {
       "type": "function",
@@ -19630,16 +19981,16 @@ window.PKG = [
           "ret": "VntError"
         }
       ],
-      "example": "```ts\nconst error = fromOpenAIError({\n  error: {\n    message: \"Rate limit exceeded\",\n    type: \"rate_limit_error\",\n    param: null,\n    code: \"rate_limit_exceeded\",\n  },\n});\n// error instanceof RateLimitError === true\n```"
+      "example": "```ts\r\nconst error = fromOpenAIError({\r\n  error: {\r\n    message: \"Rate limit exceeded\",\r\n    type: \"rate_limit_error\",\r\n    param: null,\r\n    code: \"rate_limit_exceeded\",\r\n  },\r\n});\r\n// error instanceof RateLimitError === true\r\n```"
     },
     {
       "type": "function",
       "name": "fromAnthropicMessage",
-      "desc": "Convert Anthropic Messages API message to vinhnt-sdk ChatMessage.\n\nNote: Anthropic uses top-level `system` parameter, not role in messages.",
+      "desc": "Convert Anthropic Messages API message to vinhnt-sdk ChatMessage.\r\n\r\nNote: Anthropic uses top-level `system` parameter, not role in messages.",
       "methods": [
         {
           "sig": "fromAnthropicMessage(msg: { role: \"user\" | \"assistant\"; content: string | { type: string; text?: string; }[]; }): ChatMessage",
-          "desc": "Convert Anthropic Messages API message to vinhnt-sdk ChatMessage.\n\nNote: Anthropic uses top-level `system` parameter, not role in messages.",
+          "desc": "Convert Anthropic Messages API message to vinhnt-sdk ChatMessage.\r\n\r\nNote: Anthropic uses top-level `system` parameter, not role in messages.",
           "params": [
             {
               "n": "msg",
@@ -19655,7 +20006,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "UpstreamError",
-      "desc": "Error representing a non-transient (or exhausted) upstream HTTP failure.\nCarries the HTTP status and an `ERR_UPSTREAM_<STATUS>` code.",
+      "desc": "Error representing a non-transient (or exhausted) upstream HTTP failure.\r\nCarries the HTTP status and an `ERR_UPSTREAM_<STATUS>` code.",
       "methods": [
         {
           "sig": "constructor(status: number, message: string, opts: { retryAfterMs?: number; cause?: unknown; } | undefined)",
@@ -19696,11 +20047,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "parseRetryAfterMs",
-      "desc": "Parse a `Retry-After` header value into milliseconds.\nSupports both delta-seconds and HTTP-date forms.",
+      "desc": "Parse a `Retry-After` header value into milliseconds.\r\nSupports both delta-seconds and HTTP-date forms.",
       "methods": [
         {
           "sig": "parseRetryAfterMs(value: string | null | undefined): number | undefined",
-          "desc": "Parse a `Retry-After` header value into milliseconds.\nSupports both delta-seconds and HTTP-date forms.",
+          "desc": "Parse a `Retry-After` header value into milliseconds.\r\nSupports both delta-seconds and HTTP-date forms.",
           "params": [
             {
               "n": "value",
@@ -19782,11 +20133,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "abortableSleep",
-      "desc": "Sleep that aborts early when the given signal fires.\n\nRV-50: the abort listener must be removed once the timer completes,\notherwise every backoff attaches one extra listener to long-lived signals\nthat never fires again (a listener leak).",
+      "desc": "Sleep that aborts early when the given signal fires.\r\n\r\nRV-50: the abort listener must be removed once the timer completes,\r\notherwise every backoff attaches one extra listener to long-lived signals\r\nthat never fires again (a listener leak).",
       "methods": [
         {
           "sig": "abortableSleep(ms: number, signal: AbortSignal | undefined): Promise<void>",
-          "desc": "Sleep that aborts early when the given signal fires.\n\nRV-50: the abort listener must be removed once the timer completes,\notherwise every backoff attaches one extra listener to long-lived signals\nthat never fires again (a listener leak).",
+          "desc": "Sleep that aborts early when the given signal fires.\r\n\r\nRV-50: the abort listener must be removed once the timer completes,\r\notherwise every backoff attaches one extra listener to long-lived signals\r\nthat never fires again (a listener leak).",
           "params": [
             {
               "n": "ms",
@@ -19846,11 +20197,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "toUpstreamError",
-      "desc": "Map an upstream failure into a VntError. Prefers the provider's\nstructured OpenAI error body via `fromOpenAIError`, otherwise produces\nan `UpstreamError` with an `ERR_UPSTREAM_*` code.",
+      "desc": "Map an upstream failure into a VntError. Prefers the provider's\r\nstructured OpenAI error body via `fromOpenAIError`, otherwise produces\r\nan `UpstreamError` with an `ERR_UPSTREAM_*` code.",
       "methods": [
         {
           "sig": "toUpstreamError(status: number, body: unknown, headers: Headers | undefined, cause: unknown): VntError",
-          "desc": "Map an upstream failure into a VntError. Prefers the provider's\nstructured OpenAI error body via `fromOpenAIError`, otherwise produces\nan `UpstreamError` with an `ERR_UPSTREAM_*` code.",
+          "desc": "Map an upstream failure into a VntError. Prefers the provider's\r\nstructured OpenAI error body via `fromOpenAIError`, otherwise produces\r\nan `UpstreamError` with an `ERR_UPSTREAM_*` code.",
           "params": [
             {
               "n": "status",
@@ -20366,7 +20717,7 @@ window.PKG = [
           "ret": "ModelProvider"
         }
       ],
-      "example": "```ts\nconst custom = createProviderFromPreset({\n  name: \"my-llm\",\n  baseUrl: \"https://my-llm.example.com/v1\",\n  defaultModel: \"my-model\",\n  contextLimit: 32000,\n  capabilities: { streaming: true, toolCalling: true },\n}, { apiKey: \"sk-...\" });\n```"
+      "example": "```ts\r\nconst custom = createProviderFromPreset({\r\n  name: \"my-llm\",\r\n  baseUrl: \"https://my-llm.example.com/v1\",\r\n  defaultModel: \"my-model\",\r\n  contextLimit: 32000,\r\n  capabilities: { streaming: true, toolCalling: true },\r\n}, { apiKey: \"sk-...\" });\r\n```"
     },
     {
       "type": "function",
@@ -20778,7 +21129,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "ProcessSandbox",
-      "desc": "Interface for sandbox execution adapters.\n\nImplementations can provide different levels of isolation:\n- `host`: No isolation\n- `process`: Node.js Permission Model + empty env + command allowlist\n- `container`: Docker/Firecracker microVM",
+      "desc": "Interface for sandbox execution adapters.\r\n\r\nImplementations can provide different levels of isolation:\r\n- `host`: No isolation\r\n- `process`: Node.js Permission Model + empty env + command allowlist\r\n- `container`: Docker/Firecracker microVM",
       "methods": [
         {
           "sig": "execute(options: ProcessSandboxExecuteOptions): Promise<SandboxResult<{ stdout: string; stderr: string; exitCode: number; }>>",
@@ -20850,7 +21201,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "SandboxUnavailableError",
-      "desc": "Thrown when a sandbox scope is requested but no backend is available for it.\n\nSandboxes are **fail-closed**: requesting an unsupported/unavailable scope\nnever silently downgrades to a weaker sandbox. Instead this error makes the\ngap explicit, listing the scopes that ARE wired.",
+      "desc": "Thrown when a sandbox scope is requested but no backend is available for it.\r\n\r\nSandboxes are **fail-closed**: requesting an unsupported/unavailable scope\r\nnever silently downgrades to a weaker sandbox. Instead this error makes the\r\ngap explicit, listing the scopes that ARE wired.",
       "methods": [
         {
           "sig": "constructor(scope: string, availableScopes: readonly string[])",
@@ -20955,11 +21306,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "killProcessTree",
-      "desc": "Kill a child process and its whole subtree. Idempotent per pid while the\nkill is in-flight (the registry is pruned once the process exits).",
+      "desc": "Kill a child process and its whole subtree. Idempotent per pid while the\r\nkill is in-flight (the registry is pruned once the process exits).",
       "methods": [
         {
           "sig": "killProcessTree(child: ChildProcess, signal: NodeJS.Signals): boolean",
-          "desc": "Kill a child process and its whole subtree. Idempotent per pid while the\nkill is in-flight (the registry is pruned once the process exits).",
+          "desc": "Kill a child process and its whole subtree. Idempotent per pid while the\r\nkill is in-flight (the registry is pruned once the process exits).",
           "params": [
             {
               "n": "child",
@@ -20981,11 +21332,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "killProcessTreeAndWait",
-      "desc": "Kill a child process and its whole subtree, then await its exit.\n\nThis is the awaited form of {@link killProcessTree} (RV-11): on Windows the\n`taskkill /T` spawn is no longer fire-and-forget — the returned promise\nresolves only after the child has actually exited, or the given timeout\nelapses.",
+      "desc": "Kill a child process and its whole subtree, then await its exit.\r\n\r\nThis is the awaited form of {@link killProcessTree} (RV-11): on Windows the\r\n`taskkill /T` spawn is no longer fire-and-forget — the returned promise\r\nresolves only after the child has actually exited, or the given timeout\r\nelapses.",
       "methods": [
         {
           "sig": "killProcessTreeAndWait(child: ChildProcess, signal: NodeJS.Signals, timeoutMs: number): Promise<boolean>",
-          "desc": "Kill a child process and its whole subtree, then await its exit.\n\nThis is the awaited form of {@link killProcessTree} (RV-11): on Windows the\n`taskkill /T` spawn is no longer fire-and-forget — the returned promise\nresolves only after the child has actually exited, or the given timeout\nelapses.",
+          "desc": "Kill a child process and its whole subtree, then await its exit.\r\n\r\nThis is the awaited form of {@link killProcessTree} (RV-11): on Windows the\r\n`taskkill /T` spawn is no longer fire-and-forget — the returned promise\r\nresolves only after the child has actually exited, or the given timeout\r\nelapses.",
           "params": [
             {
               "n": "child",
@@ -21013,11 +21364,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "killTreeTrackedPids",
-      "desc": "Pids currently tracked as \"kill already issued\".\n\nExposed for observability/tests so a caller can confirm that a terminated\npid is no longer held (i.e. it is safe to kill again after reuse).",
+      "desc": "Pids currently tracked as \"kill already issued\".\r\n\r\nExposed for observability/tests so a caller can confirm that a terminated\r\npid is no longer held (i.e. it is safe to kill again after reuse).",
       "methods": [
         {
           "sig": "killTreeTrackedPids(): number[]",
-          "desc": "Pids currently tracked as \"kill already issued\".\n\nExposed for observability/tests so a caller can confirm that a terminated\npid is no longer held (i.e. it is safe to kill again after reuse).",
+          "desc": "Pids currently tracked as \"kill already issued\".\r\n\r\nExposed for observability/tests so a caller can confirm that a terminated\r\npid is no longer held (i.e. it is safe to kill again after reuse).",
           "params": [],
           "ret": "number[]"
         }
@@ -21046,11 +21397,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "pruneKillTreeState",
-      "desc": "Prune the idempotency registry: drop pids whose process has exited or whose\nkill is older than the TTL. Without pruning the registry grows forever and a\nreused pid is treated as \"already killed\" — a silent no-op (RV-11).",
+      "desc": "Prune the idempotency registry: drop pids whose process has exited or whose\r\nkill is older than the TTL. Without pruning the registry grows forever and a\r\nreused pid is treated as \"already killed\" — a silent no-op (RV-11).",
       "methods": [
         {
           "sig": "pruneKillTreeState(now: number): void",
-          "desc": "Prune the idempotency registry: drop pids whose process has exited or whose\nkill is older than the TTL. Without pruning the registry grows forever and a\nreused pid is treated as \"already killed\" — a silent no-op (RV-11).",
+          "desc": "Prune the idempotency registry: drop pids whose process has exited or whose\r\nkill is older than the TTL. Without pruning the registry grows forever and a\r\nreused pid is treated as \"already killed\" — a silent no-op (RV-11).",
           "params": [
             {
               "n": "now",
@@ -21079,11 +21430,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "treeKillSpawnOptions",
-      "desc": "Cross-platform spawn option that makes `killProcessTree` reach the whole\ntree. On Windows no extra flag is needed (taskkill walks the tree).",
+      "desc": "Cross-platform spawn option that makes `killProcessTree` reach the whole\r\ntree. On Windows no extra flag is needed (taskkill walks the tree).",
       "methods": [
         {
           "sig": "treeKillSpawnOptions(): { detached: boolean; }",
-          "desc": "Cross-platform spawn option that makes `killProcessTree` reach the whole\ntree. On Windows no extra flag is needed (taskkill walks the tree).",
+          "desc": "Cross-platform spawn option that makes `killProcessTree` reach the whole\r\ntree. On Windows no extra flag is needed (taskkill walks the tree).",
           "params": [],
           "ret": "{ detached: boolean; }"
         }
@@ -21092,11 +21443,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "withTimeoutAndAbort",
-      "desc": "Attach timeout + abort handling to a child process.\n\nThis is the shared pattern used by all sandbox backends (host, process,\ncontainer) to enforce execution timeouts and abort signals. It replaces\nthe duplicated `setTimeout` + `killProcessTree` + abort listener logic\nthat was previously copy-pasted across backends.\n\nRV-11: the timeout must kill the whole tree, not just the direct child.\n`execFile`'s built-in `timeout` option only SIGTERMs the spawned pid,\norphaning grandchildren — so the timeout is handled here instead.",
+      "desc": "Attach timeout + abort handling to a child process.\r\n\r\nThis is the shared pattern used by all sandbox backends (host, process,\r\ncontainer) to enforce execution timeouts and abort signals. It replaces\r\nthe duplicated `setTimeout` + `killProcessTree` + abort listener logic\r\nthat was previously copy-pasted across backends.\r\n\r\nRV-11: the timeout must kill the whole tree, not just the direct child.\r\n`execFile`'s built-in `timeout` option only SIGTERMs the spawned pid,\r\norphaning grandchildren — so the timeout is handled here instead.",
       "methods": [
         {
           "sig": "withTimeoutAndAbort(child: ChildProcess, timeoutMs: number, signal: AbortSignal | undefined, onAbort: (reason: string) => void): { timedOut: boolean; clearTimer: () => void; }",
-          "desc": "Attach timeout + abort handling to a child process.\n\nThis is the shared pattern used by all sandbox backends (host, process,\ncontainer) to enforce execution timeouts and abort signals. It replaces\nthe duplicated `setTimeout` + `killProcessTree` + abort listener logic\nthat was previously copy-pasted across backends.\n\nRV-11: the timeout must kill the whole tree, not just the direct child.\n`execFile`'s built-in `timeout` option only SIGTERMs the spawned pid,\norphaning grandchildren — so the timeout is handled here instead.",
+          "desc": "Attach timeout + abort handling to a child process.\r\n\r\nThis is the shared pattern used by all sandbox backends (host, process,\r\ncontainer) to enforce execution timeouts and abort signals. It replaces\r\nthe duplicated `setTimeout` + `killProcessTree` + abort listener logic\r\nthat was previously copy-pasted across backends.\r\n\r\nRV-11: the timeout must kill the whole tree, not just the direct child.\r\n`execFile`'s built-in `timeout` option only SIGTERMs the spawned pid,\r\norphaning grandchildren — so the timeout is handled here instead.",
           "params": [
             {
               "n": "child",
@@ -21126,7 +21477,7 @@ window.PKG = [
           "ret": "{ timedOut: boolean; clearTimer: () => void; }"
         }
       ],
-      "example": "```ts\nconst child = execFile(file, args, options, callback);\nwithTimeoutAndAbort(child, 30_000, signal, () => {\n  resolve({ result: { stdout: \"\", stderr: \"Aborted\", exitCode: 1 }, exitCode: 1, durationMs: Date.now() - start, timedOut: false });\n});\n```"
+      "example": "```ts\r\nconst child = execFile(file, args, options, callback);\r\nwithTimeoutAndAbort(child, 30_000, signal, () => {\r\n  resolve({ result: { stdout: \"\", stderr: \"Aborted\", exitCode: 1 }, exitCode: 1, durationMs: Date.now() - start, timedOut: false });\r\n});\r\n```"
     },
     {
       "type": "function",
@@ -21638,8 +21989,14 @@ window.PKG = [
         },
         {
           "name": "model",
-          "type": "string | undefined",
-          "required": false,
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
           "desc": ""
         },
         {
@@ -21662,6 +22019,12 @@ window.PKG = [
       "desc": "StepStartedData",
       "methods": [],
       "props": [
+        {
+          "name": "turn",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
         {
           "name": "step",
           "type": "number",
@@ -21786,6 +22149,30 @@ window.PKG = [
           "name": "reasoningTokens",
           "type": "number | undefined",
           "required": false,
+          "desc": ""
+        },
+        {
+          "name": "cacheReadTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "cacheWriteTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "required": true,
           "desc": ""
         },
         {
@@ -21981,6 +22368,12 @@ window.PKG = [
       "methods": [],
       "props": [
         {
+          "name": "turn",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
           "name": "step",
           "type": "number",
           "required": true,
@@ -22000,6 +22393,12 @@ window.PKG = [
       "desc": "StepFailedData",
       "methods": [],
       "props": [
+        {
+          "name": "turn",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
         {
           "name": "step",
           "type": "number",
@@ -22077,6 +22476,12 @@ window.PKG = [
         {
           "name": "reasoningTokens",
           "type": "number | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
           "required": false,
           "desc": ""
         }
@@ -22229,6 +22634,12 @@ window.PKG = [
           "type": "string",
           "required": true,
           "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
         }
       ]
     },
@@ -22301,11 +22712,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "AgentEvent",
-      "desc": "Agent event — discriminated union of all agent events.\nUse this type for type-safe event handling.",
+      "desc": "Agent event — discriminated union of all agent events.\r\nUse this type for type-safe event handling.",
       "methods": [
         {
           "sig": "type AgentEvent = AgentEvent",
-          "desc": "Agent event — discriminated union of all agent events.\nUse this type for type-safe event handling.",
+          "desc": "Agent event — discriminated union of all agent events.\r\nUse this type for type-safe event handling.",
           "params": []
         }
       ]
@@ -22313,7 +22724,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "AgentEventBase",
-      "desc": "Base agent event interface.\nAll agent events extend this interface.",
+      "desc": "Base agent event interface.\r\nAll agent events extend this interface.",
       "methods": [],
       "props": [
         {
@@ -22387,6 +22798,12 @@ window.PKG = [
           "type": "string | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
         }
       ]
     },
@@ -22428,6 +22845,12 @@ window.PKG = [
           "name": "model",
           "type": "string",
           "required": true,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
           "desc": ""
         },
         {
@@ -22476,6 +22899,12 @@ window.PKG = [
           "name": "model",
           "type": "string",
           "required": true,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
           "desc": ""
         },
         {
@@ -23582,6 +24011,12 @@ window.PKG = [
           "type": "RunId | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "overrides",
+          "type": "{ readonly provider?: string; readonly model?: string; } | undefined",
+          "required": false,
+          "desc": "Per-request overrides for provider/model selection."
         }
       ]
     },
@@ -23644,6 +24079,12 @@ window.PKG = [
           "type": "string | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider that served this session's model calls."
         },
         {
           "name": "cost",
@@ -23730,6 +24171,12 @@ window.PKG = [
           "type": "string | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider that generated this message (attribution)."
         },
         {
           "name": "cost",
@@ -23942,6 +24389,12 @@ window.PKG = [
           "type": "number | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "providerPreferences",
+          "type": "{ readonly preferred?: string; readonly fallbacks?: readonly string[]; } | undefined",
+          "required": false,
+          "desc": "Provider preferences for this agent — used by ModelCaller to resolve provider."
         },
         {
           "name": "metadata",
@@ -24738,7 +25191,7 @@ window.PKG = [
           "ret": "Promise<readonly Session[]>"
         },
         {
-          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...): Promise<void>",
+          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -24749,9 +25202,9 @@ window.PKG = [
             },
             {
               "n": "updates",
-              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...",
+              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
               "r": true,
-              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI..."
+              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
             }
           ],
           "ret": "Promise<void>"
@@ -24768,6 +25221,25 @@ window.PKG = [
             }
           ],
           "ret": "Promise<void>"
+        },
+        {
+          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>",
+          "desc": "Add a message to a session.",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "AddMessageOptions",
+              "r": true,
+              "d": "AddMessageOptions"
+            }
+          ],
+          "ret": "Promise<Message>"
         },
         {
           "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<Message>",
@@ -24826,7 +25298,7 @@ window.PKG = [
         },
         {
           "sig": "updateMessage(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>",
-          "desc": "Update message-level fields (e.g. mark a pending input as promoted on drain).\nOptional so minimal stores can skip input-segment tracking.",
+          "desc": "Update message-level fields (e.g. mark a pending input as promoted on drain).\r\nOptional so minimal stores can skip input-segment tracking.",
           "params": [
             {
               "n": "sessionId",
@@ -24850,7 +25322,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(sessionId: string): Promise<readonly Message[]>",
+          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -24858,12 +25330,18 @@ window.PKG = [
               "t": "string",
               "r": true,
               "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ limit?: number; offset?: number; role?: string; } | undefined",
+              "r": false,
+              "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
         },
         {
-          "sig": "searchMessages(query: string, limit: number | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -24873,10 +25351,10 @@ window.PKG = [
               "d": "string"
             },
             {
-              "n": "limit",
-              "t": "number | undefined",
+              "n": "options",
+              "t": "{ sessionId?: string; limit?: number; } | undefined",
               "r": false,
-              "d": "number | undefined"
+              "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
@@ -24899,6 +25377,62 @@ window.PKG = [
           "sig": "type MessageSeqUpdates = MessageSeqUpdates",
           "desc": "Promotion state update for a pending input message (RV-21).",
           "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "AddMessageOptions",
+      "desc": "Options for adding a message to a session.",
+      "methods": [],
+      "props": [
+        {
+          "name": "role",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolCallId",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "tokens",
+          "type": "{ input: number; output: number; reasoning?: number; } | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "model",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider that generated this message (attribution)."
+        },
+        {
+          "name": "cost",
+          "type": "number | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "admittedSeq",
+          "type": "number | undefined",
+          "required": false,
+          "desc": ""
         }
       ]
     },
@@ -25123,6 +25657,12 @@ window.PKG = [
           "desc": "Model identifier — optional at schema level; set by provider adapter."
         },
         {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider route — selects which registered provider handles this request."
+        },
+        {
           "name": "maxTokens",
           "type": "number | undefined",
           "required": false,
@@ -25293,6 +25833,12 @@ window.PKG = [
           "desc": ""
         },
         {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": "Provider attribution — which provider generated this response. REQUIRED for timeline tracking."
+        },
+        {
           "name": "created",
           "type": "number | undefined",
           "required": false,
@@ -25371,6 +25917,18 @@ window.PKG = [
           "type": "number | undefined",
           "required": false,
           "desc": "OpenAI: prompt_tokens_details.cached_tokens"
+        },
+        {
+          "name": "cacheReadTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache read tokens — disjoint from promptTokens (Anthropic/DeepSeek pattern)."
+        },
+        {
+          "name": "cacheWriteTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache write tokens — disjoint from promptTokens (Anthropic/DeepSeek pattern)."
         },
         {
           "name": "reasoningTokens",
@@ -25498,6 +26056,25 @@ window.PKG = [
           "desc": "",
           "params": [],
           "ret": "readonly { id: string; provider: ModelProvider; }[]"
+        },
+        {
+          "sig": "getByProvider(provider: string): readonly { id: string; provider: ModelProvider; }[]",
+          "desc": "Get all providers registered under a given provider name (e.g. \"openai\").",
+          "params": [
+            {
+              "n": "provider",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "readonly { id: string; provider: ModelProvider; }[]"
+        },
+        {
+          "sig": "providers(): readonly string[]",
+          "desc": "List all distinct provider names registered in this registry.",
+          "params": [],
+          "ret": "readonly string[]"
         }
       ],
       "props": []
@@ -25552,7 +26129,7 @@ window.PKG = [
       "desc": "SessionUpdates",
       "methods": [
         {
-          "sig": "type SessionUpdates = Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | ...",
+          "sig": "type SessionUpdates = Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"out...",
           "desc": "SessionUpdates",
           "params": []
         }
@@ -25577,7 +26154,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"output...): Promise<void>",
+          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -25588,9 +26165,9 @@ window.PKG = [
             },
             {
               "n": "sessionUpdate",
-              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"output...",
+              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...",
               "r": false,
-              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"output..."
+              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke..."
             }
           ],
           "ret": "Promise<void>"
@@ -25648,7 +26225,7 @@ window.PKG = [
         },
         {
           "sig": "appendWithSequence(event: RunEvent<unknown>): Promise<number>",
-          "desc": "Atomically allocate the next sequence for the aggregate and append the event\nin a single operation, then return the assigned sequence.\n\nImplementations that cannot do this atomically should fall back to\n`getNextSequence() + append()` for the returned value.",
+          "desc": "Atomically allocate the next sequence for the aggregate and append the event\r\nin a single operation, then return the assigned sequence.\r\n\r\nImplementations that cannot do this atomically should fall back to\r\n`getNextSequence() + append()` for the returned value.",
           "params": [
             {
               "n": "event",
@@ -26157,6 +26734,676 @@ window.PKG = [
           "type": "string | undefined",
           "required": false,
           "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "TreeCursor",
+      "desc": "Navigation pointer describing a node's relatives in the tree.",
+      "methods": [],
+      "props": [
+        {
+          "name": "sessionId",
+          "type": "SessionId",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "depth",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "parentId",
+          "type": "SessionId | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "firstChildId",
+          "type": "SessionId | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "nextSiblingId",
+          "type": "SessionId | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "prevSiblingId",
+          "type": "SessionId | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "SessionTreeEventType",
+      "desc": "Session tree event type — open string for extensibility.",
+      "methods": [
+        {
+          "sig": "type SessionTreeEventType = string",
+          "desc": "Session tree event type — open string for extensibility.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ApprovalCategory",
+      "desc": "Approval category — open string for extensibility.",
+      "methods": [
+        {
+          "sig": "type ApprovalCategory = string",
+          "desc": "Approval category — open string for extensibility.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ApprovalStatus",
+      "desc": "Lifecycle status of an approval request.",
+      "methods": [
+        {
+          "sig": "type ApprovalStatus = ApprovalStatus",
+          "desc": "Lifecycle status of an approval request.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ApprovalContext",
+      "desc": "Context attached to an approval request.",
+      "methods": [],
+      "props": [
+        {
+          "name": "sessionId",
+          "type": "SessionId | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "agentId",
+          "type": "AgentId | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "runId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "step",
+          "type": "number | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "toolName",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "PolicyEffect",
+      "desc": "Effect an approval policy applies to matching requests.",
+      "methods": [
+        {
+          "sig": "type PolicyEffect = PolicyEffect",
+          "desc": "Effect an approval policy applies to matching requests.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ApprovalPolicy",
+      "desc": "Declarative policy that auto-approves/rejects matching approval requests.",
+      "methods": [],
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "pattern",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "effect",
+          "type": "PolicyEffect",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "priority",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "scope",
+          "type": "\"global\" | \"session\" | \"agent\" | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "expiresAt",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "createdBy",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "SkillMode",
+      "desc": "Skill mode — open string for extensibility.",
+      "methods": [
+        {
+          "sig": "type SkillMode = string",
+          "desc": "Skill mode — open string for extensibility.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "PromptTier",
+      "desc": "Prompt tier — open string for extensibility.",
+      "methods": [
+        {
+          "sig": "type PromptTier = string",
+          "desc": "Prompt tier — open string for extensibility.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "AgentStepType",
+      "desc": "Agent step type — open string for extensibility.",
+      "methods": [
+        {
+          "sig": "type AgentStepType = string",
+          "desc": "Agent step type — open string for extensibility.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "SessionProjection",
+      "desc": "Session projection types — real-time aggregated stats built from run events.\r\n\r\nSimilar to deepseek-harness's projection system: events → projection → UI state.\r\nThe projection runs server-side and pushes updated stats to the client via WebSocket.\nAggregated real-time stats for a session, built by projecting run events.",
+      "methods": [],
+      "props": [
+        {
+          "name": "sessionId",
+          "type": "string",
+          "required": true,
+          "desc": "Session ID this projection belongs to"
+        },
+        {
+          "name": "turn",
+          "type": "number",
+          "required": true,
+          "desc": "Current turn number (incremented per model call)"
+        },
+        {
+          "name": "steps",
+          "type": "number",
+          "required": true,
+          "desc": "Total steps completed across all turns"
+        },
+        {
+          "name": "toolCalls",
+          "type": "number",
+          "required": true,
+          "desc": "Number of tool calls made"
+        },
+        {
+          "name": "inputTokens",
+          "type": "number",
+          "required": true,
+          "desc": "Cumulative token counts"
+        },
+        {
+          "name": "outputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reasoningTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "cacheReadTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "cacheWriteTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "costs",
+          "type": "readonly ProviderCost[]",
+          "required": true,
+          "desc": "Cost tracking per provider"
+        },
+        {
+          "name": "totalCost",
+          "type": "number",
+          "required": true,
+          "desc": "Total cost across all providers"
+        },
+        {
+          "name": "activeProvider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Current provider in use"
+        },
+        {
+          "name": "activeModel",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Current model in use"
+        },
+        {
+          "name": "turns",
+          "type": "readonly TurnSnapshot[]",
+          "required": true,
+          "desc": "Timeline of turns with their tool usage"
+        },
+        {
+          "name": "updatedAt",
+          "type": "string",
+          "required": true,
+          "desc": "Last updated timestamp"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "RunProjection",
+      "desc": "Aggregated real-time stats for a single run.",
+      "methods": [],
+      "props": [
+        {
+          "name": "runId",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "sessionId",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "turn",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "steps",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolCalls",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "inputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "outputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reasoningTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "totalCost",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "activeProvider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "activeModel",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "turns",
+          "type": "readonly TurnSnapshot[]",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "status",
+          "type": "\"failed\" | \"completed\" | \"running\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "startedAt",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "endedAt",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ProviderCost",
+      "desc": "Cost breakdown for a single provider within a session.",
+      "methods": [],
+      "props": [
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "inputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "outputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "cost",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "durationMs",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "steps",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "TurnSnapshot",
+      "desc": "Snapshot of a single turn for the timeline UI.",
+      "methods": [],
+      "props": [
+        {
+          "name": "turn",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "steps",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolCalls",
+          "type": "readonly string[]",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "inputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "outputTokens",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "cost",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "durationMs",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "model",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "status",
+          "type": "\"completed\" | \"aborted\" | \"error\"",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ProjectionStore",
+      "desc": "Stores and retrieves session projections. Implementations can use Redis or in-memory.",
+      "methods": [
+        {
+          "sig": "getSessionProjection(sessionId: string): Promise<SessionProjection>",
+          "desc": "Get or create a session projection",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<SessionProjection>"
+        },
+        {
+          "sig": "getRunProjection(runId: string): Promise<RunProjection>",
+          "desc": "Get or create a run projection",
+          "params": [
+            {
+              "n": "runId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<RunProjection>"
+        },
+        {
+          "sig": "applyEvent(event: { type: string; runId: string; data: unknown; occurredAt: string; }): Promise<void>",
+          "desc": "Update projection from a run event (called by event handler)",
+          "params": [
+            {
+              "n": "event",
+              "t": "{ type: string; runId: string; data: unknown; occurredAt: string; }",
+              "r": true,
+              "d": "{ type: string; runId: string; data: unknown; occurredAt: string; }"
+            }
+          ],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "subscribe(sessionId: string, listener: (projection: SessionProjection) => void): () => void",
+          "desc": "Subscribe to projection updates for real-time push",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "listener",
+              "t": "(projection: SessionProjection) => void",
+              "r": true,
+              "d": "(projection: SessionProjection) => void"
+            }
+          ],
+          "ret": "() => void"
+        }
+      ],
+      "props": []
+    },
+    {
+      "type": "type",
+      "name": "LlmFailure",
+      "desc": "Structured error for LLM call failures.",
+      "methods": [],
+      "props": [
+        {
+          "name": "kind",
+          "type": "LlmFailureKind",
+          "required": true,
+          "desc": "Error category"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
+          "desc": "Human-readable error message"
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": "Provider that failed"
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "required": true,
+          "desc": "Model that failed"
+        },
+        {
+          "name": "statusCode",
+          "type": "number | undefined",
+          "required": true,
+          "desc": "HTTP status code (if available)"
+        },
+        {
+          "name": "retryable",
+          "type": "boolean",
+          "required": true,
+          "desc": "Whether this failure is retryable"
+        },
+        {
+          "name": "retryAfterMs",
+          "type": "number | undefined",
+          "required": true,
+          "desc": "Suggested retry delay in ms (if retryable)"
+        },
+        {
+          "name": "cause",
+          "type": "unknown",
+          "required": true,
+          "desc": "Original error for debugging"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LlmFailureKind",
+      "desc": "Typed LLM failure — structured error for model call failures.\r\n\r\nSimilar to deepseek-harness's LlmFailure: replaces generic Error with\r\na typed object that carries provider, model, and retry context.\nCategories of LLM failures for structured error handling.",
+      "methods": [
+        {
+          "sig": "type LlmFailureKind = LlmFailureKind",
+          "desc": "Typed LLM failure — structured error for model call failures.\r\n\r\nSimilar to deepseek-harness's LlmFailure: replaces generic Error with\r\na typed object that carries provider, model, and retry context.\nCategories of LLM failures for structured error handling.",
+          "params": []
         }
       ]
     },
@@ -26782,7 +28029,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "JsonRpcMessage",
-      "desc": "JSON-RPC 2.0 types — shared between MCP and LSP packages.\n\nThese are the wire-format types for JSON-RPC communication.\nJSON-RPC 2.0 base message.",
+      "desc": "JSON-RPC 2.0 types — shared between MCP and LSP packages.\r\n\r\nThese are the wire-format types for JSON-RPC communication.\nJSON-RPC 2.0 base message.",
       "methods": [],
       "props": [
         {
@@ -26974,7 +28221,7 @@ window.PKG = [
       "desc": "SessionUpdates",
       "methods": [
         {
-          "sig": "type SessionUpdates = Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | ...",
+          "sig": "type SessionUpdates = Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"out...",
           "desc": "SessionUpdates",
           "params": []
         }
@@ -26999,7 +28246,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"output...): Promise<void>",
+          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -27010,9 +28257,9 @@ window.PKG = [
             },
             {
               "n": "sessionUpdate",
-              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"output...",
+              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...",
               "r": false,
-              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"output..."
+              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke..."
             }
           ],
           "ret": "Promise<void>"
@@ -27224,7 +28471,7 @@ window.PKG = [
           "ret": "Promise<readonly Session[]>"
         },
         {
-          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...): Promise<void>",
+          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -27235,9 +28482,9 @@ window.PKG = [
             },
             {
               "n": "updates",
-              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...",
+              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
               "r": true,
-              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI..."
+              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
             }
           ],
           "ret": "Promise<void>"
@@ -27254,6 +28501,25 @@ window.PKG = [
             }
           ],
           "ret": "Promise<void>"
+        },
+        {
+          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>",
+          "desc": "Add a message to a session.",
+          "params": [
+            {
+              "n": "sessionId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "AddMessageOptions",
+              "r": true,
+              "d": "AddMessageOptions"
+            }
+          ],
+          "ret": "Promise<Message>"
         },
         {
           "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<Message>",
@@ -27336,7 +28602,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(sessionId: string): Promise<readonly Message[]>",
+          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -27344,12 +28610,18 @@ window.PKG = [
               "t": "string",
               "r": true,
               "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ limit?: number; offset?: number; role?: string; } | undefined",
+              "r": false,
+              "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
         },
         {
-          "sig": "searchMessages(query: string, limit: number | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -27359,10 +28631,10 @@ window.PKG = [
               "d": "string"
             },
             {
-              "n": "limit",
-              "t": "number | undefined",
+              "n": "options",
+              "t": "{ sessionId?: string; limit?: number; } | undefined",
               "r": false,
-              "d": "number | undefined"
+              "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
@@ -27391,7 +28663,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "SessionProvider",
-      "desc": "Session provider — bundles session store + event store as a single unit.\n\nThis is the top-level abstraction that consumers (core kernel) depend on.\nIt encapsulates the persistence layer and can be swapped without\ntouching the kernel.",
+      "desc": "Session provider — bundles session store + event store as a single unit.\r\n\r\nThis is the top-level abstraction that consumers (core kernel) depend on.\r\nIt encapsulates the persistence layer and can be swapped without\r\ntouching the kernel.",
       "methods": [
         {
           "sig": "dispose(): Promise<void>",
@@ -27483,6 +28755,19 @@ window.PKG = [
             }
           ],
           "ret": "Promise<number>"
+        },
+        {
+          "sig": "exists(_eventId: string): Promise<boolean>",
+          "desc": "",
+          "params": [
+            {
+              "n": "_eventId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<boolean>"
         },
         {
           "sig": "list(_runId: string, _afterSequence: number | undefined): Promise<readonly RunEvent<unknown>[]>",
@@ -27674,7 +28959,7 @@ window.PKG = [
           "ret": "Promise<readonly Session[]>"
         },
         {
-          "sig": "updateSession(_id: string, _updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...): Promise<void>",
+          "sig": "updateSession(_id: string, _updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -27685,9 +28970,9 @@ window.PKG = [
             },
             {
               "n": "_updates",
-              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI...",
+              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
               "r": true,
-              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"location\" | \"agentI..."
+              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
             }
           ],
           "ret": "Promise<void>"
@@ -27706,7 +28991,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "addMessage(_sessionId: string, _role: string, _content: string, _toolCallId: string | undefined, _tokens: { input: number; output: number; reasoning?: number; } | undefined, _model: string | undefined, _cost: number | undefined, _admittedSeq: number | undefined): Promise<Message>",
+          "sig": "addMessage(_sessionId: string, _roleOrMessage: string | { role: string; content: string; toolCallId?: string; tokens?: { input: number; output: number; reasoning?: ..., _content: string | undefined, _toolCallId: string | undefined, _tokens: { input: number; output: number; reasoning?: number; } | undefined, _model: string | undefined, _cost: number | undefined, _admittedSeq: number | undefined): Promise<Message>",
           "desc": "",
           "params": [
             {
@@ -27716,16 +29001,16 @@ window.PKG = [
               "d": "string"
             },
             {
-              "n": "_role",
-              "t": "string",
+              "n": "_roleOrMessage",
+              "t": "string | { role: string; content: string; toolCallId?: string; tokens?: { input: number; output: number; reasoning?: ...",
               "r": true,
-              "d": "string"
+              "d": "string | { role: string; content: string; toolCallId?: string; tokens?: { input: number; output: number; reasoning?: ..."
             },
             {
               "n": "_content",
-              "t": "string",
-              "r": true,
-              "d": "string"
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
             },
             {
               "n": "_toolCallId",
@@ -27786,7 +29071,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(_sessionId: string): Promise<readonly Message[]>",
+          "sig": "listMessages(_sessionId: string, _options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -27794,12 +29079,18 @@ window.PKG = [
               "t": "string",
               "r": true,
               "d": "string"
+            },
+            {
+              "n": "_options",
+              "t": "{ limit?: number; offset?: number; role?: string; } | undefined",
+              "r": false,
+              "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
         },
         {
-          "sig": "searchMessages(_query: string, _limit: number | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(_query: string, _options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
           "desc": "",
           "params": [
             {
@@ -27809,10 +29100,10 @@ window.PKG = [
               "d": "string"
             },
             {
-              "n": "_limit",
-              "t": "number | undefined",
+              "n": "_options",
+              "t": "{ sessionId?: string; limit?: number; } | undefined",
               "r": false,
-              "d": "number | undefined"
+              "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
           "ret": "Promise<readonly Message[]>"
@@ -28155,11 +29446,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "restoreRunFromStore",
-      "desc": "Restore a run's state from durable storage (snapshot + messages).\n\nThis enables \"durable history reload\" — after a process restart, the kernel\ncan reconstruct the conversation context and continue from where it left off.\n\nUsage:\n  const restored = await restoreRunFromStore(store, sessionStore, runId);\n  if (restored) {\n    // Use restored.sessionState to resume the run\n    kernel.run(prompt, ctx, sessionId, restored.sessionState);\n  }",
+      "desc": "Restore a run's state from durable storage (snapshot + messages).\r\n\r\nThis enables \"durable history reload\" — after a process restart, the kernel\r\ncan reconstruct the conversation context and continue from where it left off.\r\n\r\nUsage:\r\n  const restored = await restoreRunFromStore(store, sessionStore, runId);\r\n  if (restored) {\r\n    // Use restored.sessionState to resume the run\r\n    kernel.run(prompt, ctx, sessionId, restored.sessionState);\r\n  }",
       "methods": [
         {
           "sig": "restoreRunFromStore(eventStore: RunEventStore, sessionStore: SessionStore | undefined, runId: RunId): Promise<RestoredRun | null>",
-          "desc": "Restore a run's state from durable storage (snapshot + messages).\n\nThis enables \"durable history reload\" — after a process restart, the kernel\ncan reconstruct the conversation context and continue from where it left off.\n\nUsage:\n  const restored = await restoreRunFromStore(store, sessionStore, runId);\n  if (restored) {\n    // Use restored.sessionState to resume the run\n    kernel.run(prompt, ctx, sessionId, restored.sessionState);\n  }",
+          "desc": "Restore a run's state from durable storage (snapshot + messages).\r\n\r\nThis enables \"durable history reload\" — after a process restart, the kernel\r\ncan reconstruct the conversation context and continue from where it left off.\r\n\r\nUsage:\r\n  const restored = await restoreRunFromStore(store, sessionStore, runId);\r\n  if (restored) {\r\n    // Use restored.sessionState to resume the run\r\n    kernel.run(prompt, ctx, sessionId, restored.sessionState);\r\n  }",
           "params": [
             {
               "n": "eventStore",
@@ -28187,11 +29478,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "findActiveSessionIds",
-      "desc": "Reconstruct session busy state from event store on startup.\nReturns session IDs that have non-terminal (pending/running) events.",
+      "desc": "Reconstruct session busy state from event store on startup.\r\nReturns session IDs that have non-terminal (pending/running) events.",
       "methods": [
         {
           "sig": "findActiveSessionIds(eventStore: RunEventStore): Promise<string[]>",
-          "desc": "Reconstruct session busy state from event store on startup.\nReturns session IDs that have non-terminal (pending/running) events.",
+          "desc": "Reconstruct session busy state from event store on startup.\r\nReturns session IDs that have non-terminal (pending/running) events.",
           "params": [
             {
               "n": "eventStore",
@@ -29167,11 +30458,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "toolDomain",
-      "desc": "Derive the owning domain from a namespaced tool id:\n`mcp__<server>__<tool>` → \"mcp:<server>\", `coding.read_file` → \"coding\",\nbare ids → \"core\".",
+      "desc": "Derive the owning domain from a namespaced tool id:\r\n`mcp__<server>__<tool>` → \"mcp:<server>\", `coding.read_file` → \"coding\",\r\nbare ids → \"core\".",
       "methods": [
         {
           "sig": "toolDomain(toolName: string): string",
-          "desc": "Derive the owning domain from a namespaced tool id:\n`mcp__<server>__<tool>` → \"mcp:<server>\", `coding.read_file` → \"coding\",\nbare ids → \"core\".",
+          "desc": "Derive the owning domain from a namespaced tool id:\r\n`mcp__<server>__<tool>` → \"mcp:<server>\", `coding.read_file` → \"coding\",\r\nbare ids → \"core\".",
           "params": [
             {
               "n": "toolName",
@@ -29453,7 +30744,7 @@ window.PKG = [
         },
         {
           "sig": "setTopLevelRules(rules: Record<\"allow\" | \"deny\" | \"ask\", string[]>): void",
-          "desc": "Apply top-level `allow`/`deny`/`ask` pattern lists (OpenCode-style\n`\"ToolName(glob)\"` strings). These take precedence over risk defaults and\nagent-level allowed/denied tool lists.",
+          "desc": "Apply top-level `allow`/`deny`/`ask` pattern lists (OpenCode-style\r\n`\"ToolName(glob)\"` strings). These take precedence over risk defaults and\r\nagent-level allowed/denied tool lists.",
           "params": [
             {
               "n": "rules",
@@ -29492,7 +30783,7 @@ window.PKG = [
         },
         {
           "sig": "checkTool(name: string, risk: string, args: Record<string, unknown> | undefined, agent: AgentConfig | undefined): PermissionCheckResult",
-          "desc": "Evaluate whether a tool call is allowed.\n4-phase gate: global rules → agent permissions → dynamic rules → risk defaults.\nReturns { allowed, reason, needsApproval }.",
+          "desc": "Evaluate whether a tool call is allowed.\r\n4-phase gate: global rules → agent permissions → dynamic rules → risk defaults.\r\nReturns { allowed, reason, needsApproval }.",
           "params": [
             {
               "n": "name",
@@ -29567,7 +30858,7 @@ window.PKG = [
         },
         {
           "sig": "askForTool(toolName: string, _toolId: string, runId: RunId, _sessionId: string, reason: string, _agentId: string, traceId: string, pluginManager: StepExecutorPluginHooks | undefined, savePatterns: readonly string[] | undefined, signal: AbortSignal | undefined): Promise<PermissionReply>",
-          "desc": "Ask the user to approve a tool call.\nRoutes through ApprovalStore and plugin hooks.\nWhen reply is \"always\", `savePatterns` are persisted as allow rules so\nfuture matching calls auto-approve (without opening the whole tool).\nReturns \"once\", \"always\", or \"reject\".",
+          "desc": "Ask the user to approve a tool call.\r\nRoutes through ApprovalStore and plugin hooks.\r\nWhen reply is \"always\", `savePatterns` are persisted as allow rules so\r\nfuture matching calls auto-approve (without opening the whole tool).\r\nReturns \"once\", \"always\", or \"reject\".",
           "params": [
             {
               "n": "toolName",
@@ -29677,7 +30968,7 @@ window.PKG = [
         },
         {
           "sig": "checkSavedApproval(toolName: string, argsOrAgentId: string | Record<string, unknown> | undefined, agentId: string | undefined): boolean",
-          "desc": "Check whether a previously saved approval exists for this tool+args+agent.\nScoped to the args context pattern (e.g. `tool.write_file(src/*)` covers\n`src/a.ts`), falling back to a whole-tool approval (`tool.write_file`).\nA matching saved rejection always wins over a saved approval.",
+          "desc": "Check whether a previously saved approval exists for this tool+args+agent.\r\nScoped to the args context pattern (e.g. `tool.write_file(src/*)` covers\r\n`src/a.ts`), falling back to a whole-tool approval (`tool.write_file`).\r\nA matching saved rejection always wins over a saved approval.",
           "params": [
             {
               "n": "toolName",
@@ -29708,7 +30999,7 @@ window.PKG = [
         },
         {
           "sig": "saveApproval(toolName: string, argsOrAgentId: string | Record<string, unknown> | undefined, agentId: string | undefined): void",
-          "desc": "Persist a saved approval so future matching calls skip the ask dialog.\nScoped to the args context pattern — approving `read_file(\"a.txt\")` does\nNOT auto-approve `read_file(\"b.txt\")` (whole-tool approval requires a call\nwith no scoped context, which resolves to `tool.<name>`).",
+          "desc": "Persist a saved approval so future matching calls skip the ask dialog.\r\nScoped to the args context pattern — approving `read_file(\"a.txt\")` does\r\nNOT auto-approve `read_file(\"b.txt\")` (whole-tool approval requires a call\r\nwith no scoped context, which resolves to `tool.<name>`).",
           "params": [
             {
               "n": "toolName",
@@ -29733,7 +31024,7 @@ window.PKG = [
         },
         {
           "sig": "saveRejection(toolName: string, argsOrAgentId: string | Record<string, unknown> | undefined, agentId: string | undefined): void",
-          "desc": "Persist a saved rejection so future matching calls are auto-denied.\nScoped to the args context pattern like {@link saveApproval}.",
+          "desc": "Persist a saved rejection so future matching calls are auto-denied.\r\nScoped to the args context pattern like {@link saveApproval}.",
           "params": [
             {
               "n": "toolName",
@@ -29882,7 +31173,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "RunContext",
-      "desc": "Mutable state that belongs to a single run — kept out of the kernel\ninstance so concurrent runs never share (and clobber) each other's\nactive agent, sub-agent depth, agent chain, tool cache or saga.",
+      "desc": "Mutable state that belongs to a single run — kept out of the kernel\r\ninstance so concurrent runs never share (and clobber) each other's\r\nactive agent, sub-agent depth, agent chain, tool cache or saga.",
       "methods": [],
       "props": [
         {
@@ -30513,7 +31804,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "ToolConfig",
-      "desc": "── Schema-first tool authoring (OpenCode-style `Tool.make`) ──────────────\nThe tool OWNS its validation schema (`input`) instead of importing a\nstandalone static schema. `toDefinition()` derives the provider-facing\n`ToolDefinition` (JSON Schema) from that schema, so there is exactly one\nsource of truth per tool. Domain namespacing is applied via `name`.",
+      "desc": "── Schema-first tool authoring (OpenCode-style `Tool.make`) ──────────────\r\nThe tool OWNS its validation schema (`input`) instead of importing a\r\nstandalone static schema. `toDefinition()` derives the provider-facing\r\n`ToolDefinition` (JSON Schema) from that schema, so there is exactly one\r\nsource of truth per tool. Domain namespacing is applied via `name`.",
       "methods": [
         {
           "sig": "normalize(raw: unknown): unknown",
@@ -31113,7 +32404,7 @@ window.PKG = [
         },
         {
           "sig": "materialize(permissions: readonly ToolPermissionRule[] | undefined): ToolMaterialization",
-          "desc": "Materialize the tool set for a given permission ruleset: drop tools the\nmodel must not see (wholly-denied), and return a `settle` that validates\nand executes a single tool call. Defaults to exposing every registered tool.",
+          "desc": "Materialize the tool set for a given permission ruleset: drop tools the\r\nmodel must not see (wholly-denied), and return a `settle` that validates\r\nand executes a single tool call. Defaults to exposing every registered tool.",
           "params": [
             {
               "n": "permissions",
@@ -31883,7 +33174,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "ToolFileProvider",
-      "desc": "ToolFileProvider — Loads tools from .vnt/tools/ directories.\n\nSupports both workspace-local and global tools.\nTools can override built-in tools by using the same name.",
+      "desc": "ToolFileProvider — Loads tools from .vnt/tools/ directories.\r\n\r\nSupports both workspace-local and global tools.\r\nTools can override built-in tools by using the same name.",
       "methods": [
         {
           "sig": "constructor(id: string, name: string, tools: ToolDefinition<unknown, unknown>[])",
@@ -31965,7 +33256,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "ToolFileLoader",
-      "desc": "ToolFileLoader — Discovers and loads tools from .vnt/tools/ directories.\n\nFiles are verified before import (RV-48): symlinks are rejected, the file\nmust resolve back inside its source directory, and an optional SHA-256 hash\npin can be enforced so a swapped file is never executed.",
+      "desc": "ToolFileLoader — Discovers and loads tools from .vnt/tools/ directories.\r\n\r\nFiles are verified before import (RV-48): symlinks are rejected, the file\r\nmust resolve back inside its source directory, and an optional SHA-256 hash\r\npin can be enforced so a swapped file is never executed.",
       "methods": [
         {
           "sig": "loadFromDirectory(dir: string, hashes: Record<string, string> | undefined): Promise<ToolDefinition<unknown, unknown>[]>",
@@ -31988,7 +33279,7 @@ window.PKG = [
         },
         {
           "sig": "isVerifiedFile(filePath: string, dir: string, expectedHash: string | undefined): Promise<boolean>",
-          "desc": "Verify a candidate tool file before importing it:\n1. Rejects symlinks outright (closes the TOCTOU window between listing and\n   import — Dirent already filters most symlinks, this is belt-and-braces).\n2. The canonical real path must resolve back INSIDE the source directory —\n   a file that escapes its directory is never executed.\n3. Optional SHA-256 hash pin: when a hash is supplied for this file, a\n   mismatch means the content changed on disk — skip, do not import.",
+          "desc": "Verify a candidate tool file before importing it:\r\n1. Rejects symlinks outright (closes the TOCTOU window between listing and\r\n   import — Dirent already filters most symlinks, this is belt-and-braces).\r\n2. The canonical real path must resolve back INSIDE the source directory —\r\n   a file that escapes its directory is never executed.\r\n3. Optional SHA-256 hash pin: when a hash is supplied for this file, a\r\n   mismatch means the content changed on disk — skip, do not import.",
           "params": [
             {
               "n": "filePath",
@@ -32039,7 +33330,7 @@ window.PKG = [
         },
         {
           "sig": "discover(workspaceRoot: string, hashes: Record<string, string> | undefined): Promise<ToolFileProvider>",
-          "desc": "Discover tools from workspace and global directories.\n\nDiscovery order:\n1. Workspace-local: .vnt/tools/*.ts\n2. Global: ~/.vnt/tools/*.ts\n\nWorkspace tools override global tools with the same name.",
+          "desc": "Discover tools from workspace and global directories.\r\n\r\nDiscovery order:\r\n1. Workspace-local: .vnt/tools/*.ts\r\n2. Global: ~/.vnt/tools/*.ts\r\n\r\nWorkspace tools override global tools with the same name.",
           "params": [
             {
               "n": "workspaceRoot",
@@ -32245,11 +33536,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createReadFileTool",
-      "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\nenforcing workspace boundaries and optionally tracking reads for the\nkernel's file-history features.",
+      "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\r\nenforcing workspace boundaries and optionally tracking reads for the\r\nkernel's file-history features.",
       "methods": [
         {
           "sig": "createReadFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined, maxFileSize: number | undefined): ToolDefinition<{ filePath: string; stripTrailingNewline?: boolean; }, string>",
-          "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\nenforcing workspace boundaries and optionally tracking reads for the\nkernel's file-history features.",
+          "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\r\nenforcing workspace boundaries and optionally tracking reads for the\r\nkernel's file-history features.",
           "params": [
             {
               "n": "workspaceRoot",
@@ -32283,11 +33574,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createWriteFileTool",
-      "desc": "Create the `write_file` tool. Writes content to a file, creating parent\ndirectories as needed and returning a diff of the change.",
+      "desc": "Create the `write_file` tool. Writes content to a file, creating parent\r\ndirectories as needed and returning a diff of the change.",
       "methods": [
         {
           "sig": "createWriteFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; content: string; }, { written: string; bytes: number; diff: string; additions: num...",
-          "desc": "Create the `write_file` tool. Writes content to a file, creating parent\ndirectories as needed and returning a diff of the change.",
+          "desc": "Create the `write_file` tool. Writes content to a file, creating parent\r\ndirectories as needed and returning a diff of the change.",
           "params": [
             {
               "n": "workspaceRoot",
@@ -32315,11 +33606,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createEditFileTool",
-      "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
+      "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\r\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
       "methods": [
         {
           "sig": "createEditFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; oldString?: string | undefined; newString?: string | undefined; edits?: readonly {...",
-          "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
+          "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\r\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
           "params": [
             {
               "n": "workspaceRoot",
@@ -32347,11 +33638,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createApplyPatchTool",
-      "desc": "Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where\neach search string must match exactly once in the target file.",
+      "desc": "Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where\r\neach search string must match exactly once in the target file.",
       "methods": [
         {
           "sig": "createApplyPatchTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; patch: string; }, { patched: string; blocks: number; diff: string; additions: numb...",
-          "desc": "Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where\neach search string must match exactly once in the target file.",
+          "desc": "Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where\r\neach search string must match exactly once in the target file.",
           "params": [
             {
               "n": "workspaceRoot",
@@ -32379,11 +33670,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createListDirectoryTool",
-      "desc": "Create the `list_directory` tool. Lists a directory's entries\n(non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).",
+      "desc": "Create the `list_directory` tool. Lists a directory's entries\r\n(non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).",
       "methods": [
         {
           "sig": "createListDirectoryTool(workspaceRoot: RootGetter, externalDirAccess: boolean | undefined, excludedDirs: string[] | undefined): ToolDefinition<{ dirPath: string; }, { name: string; type: string; path: string; }[]>",
-          "desc": "Create the `list_directory` tool. Lists a directory's entries\n(non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).",
+          "desc": "Create the `list_directory` tool. Lists a directory's entries\r\n(non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).",
           "params": [
             {
               "n": "workspaceRoot",
@@ -32411,11 +33702,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "ensurePathAccess",
-      "desc": "Verify `target` stays inside the (realpath'd) workspace and return the real\npath to use for I/O. Symlink/junction escapes are always rejected — even\nwhen `externalDirAccess` is enabled — because the caller asked for a path\ninside the workspace; escaping it silently would bypass containment.",
+      "desc": "Verify `target` stays inside the (realpath'd) workspace and return the real\r\npath to use for I/O. Symlink/junction escapes are always rejected — even\r\nwhen `externalDirAccess` is enabled — because the caller asked for a path\r\ninside the workspace; escaping it silently would bypass containment.",
       "methods": [
         {
           "sig": "ensurePathAccess(target: string, root: string, pathLabel: string, ctx: ToolContext, externalDirAccess: boolean | undefined): Promise<string>",
-          "desc": "Verify `target` stays inside the (realpath'd) workspace and return the real\npath to use for I/O. Symlink/junction escapes are always rejected — even\nwhen `externalDirAccess` is enabled — because the caller asked for a path\ninside the workspace; escaping it silently would bypass containment.",
+          "desc": "Verify `target` stays inside the (realpath'd) workspace and return the real\r\npath to use for I/O. Symlink/junction escapes are always rejected — even\r\nwhen `externalDirAccess` is enabled — because the caller asked for a path\r\ninside the workspace; escaping it silently would bypass containment.",
           "params": [
             {
               "n": "target",
@@ -32513,11 +33804,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "readImageToContentParts",
-      "desc": "Read an image file into model message parts (`text` + base64 `image`),\nvalidating the file extension, magic bytes and workspace containment.\n\nWhen `workspaceRoot` is provided the path is checked against the workspace\nboundary (realpath-aware, symlink-safe) before reading.",
+      "desc": "Read an image file into model message parts (`text` + base64 `image`),\r\nvalidating the file extension, magic bytes and workspace containment.\r\n\r\nWhen `workspaceRoot` is provided the path is checked against the workspace\r\nboundary (realpath-aware, symlink-safe) before reading.",
       "methods": [
         {
           "sig": "readImageToContentParts(filePath: string, workspaceRoot: RootGetter | undefined, externalDirAccess: boolean | undefined): Promise<MessageContentPart[]>",
-          "desc": "Read an image file into model message parts (`text` + base64 `image`),\nvalidating the file extension, magic bytes and workspace containment.\n\nWhen `workspaceRoot` is provided the path is checked against the workspace\nboundary (realpath-aware, symlink-safe) before reading.",
+          "desc": "Read an image file into model message parts (`text` + base64 `image`),\r\nvalidating the file extension, magic bytes and workspace containment.\r\n\r\nWhen `workspaceRoot` is provided the path is checked against the workspace\r\nboundary (realpath-aware, symlink-safe) before reading.",
           "params": [
             {
               "n": "filePath",
@@ -32545,7 +33836,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "FileReadTracker",
-      "desc": "Tracks when files were read and enforces read-before-write: writes to a\nfile that was never read (or changed externally since) are denied.\n\nRecords are keyed by canonical real path and snapshotted with inode + size\n+ mtime so external replacement (delete/recreate, rename over) is caught\neven when the modification time happens to be unchanged.",
+      "desc": "Tracks when files were read and enforces read-before-write: writes to a\r\nfile that was never read (or changed externally since) are denied.\r\n\r\nRecords are keyed by canonical real path and snapshotted with inode + size\r\n+ mtime so external replacement (delete/recreate, rename over) is caught\r\neven when the modification time happens to be unchanged.",
       "methods": [
         {
           "sig": "trackRead(filePath: string, st: Stats): Promise<void>",
@@ -32903,11 +34194,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createShellTool",
-      "desc": "Create the `shell` tool that executes a command in the workspace root with\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
+      "desc": "Create the `shell` tool that executes a command in the workspace root with\r\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
       "methods": [
         {
           "sig": "createShellTool(config: ShellToolConfig): ToolDefinition<{ command: string; timeoutMs?: number | undefined; }, ExecResult>",
-          "desc": "Create the `shell` tool that executes a command in the workspace root with\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
+          "desc": "Create the `shell` tool that executes a command in the workspace root with\r\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
           "params": [
             {
               "n": "config",
@@ -32967,7 +34258,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "ToolSandbox",
-      "desc": "Executes tool definitions with a default timeout applied on top of the\ncaller's abort signal, aborting the tool when either fires.",
+      "desc": "Executes tool definitions with a default timeout applied on top of the\r\ncaller's abort signal, aborting the tool when either fires.",
       "methods": [
         {
           "sig": "constructor(config: SandboxConfig)",
@@ -33031,11 +34322,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createSandbox",
-      "desc": "Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`\n(`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.",
+      "desc": "Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`\r\n(`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.",
       "methods": [
         {
           "sig": "createSandbox(config: SandboxConfig): ProcessSandbox",
-          "desc": "Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`\n(`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.",
+          "desc": "Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`\r\n(`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.",
           "params": [
             {
               "n": "config",
@@ -33169,11 +34460,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createWebFetchTool",
-      "desc": "Create the `web_fetch` tool that fetches a URL and returns its content as\ntext (HTML is stripped unless `format: \"html\"`), truncated to the max size.",
+      "desc": "Create the `web_fetch` tool that fetches a URL and returns its content as\r\ntext (HTML is stripped unless `format: \"html\"`), truncated to the max size.",
       "methods": [
         {
           "sig": "createWebFetchTool(config: WebFetchToolConfig | undefined): ToolDefinition<{ url: string; format?: \"markdown\" | \"text\" | \"html\" | undefined; timeout?: number | undefined; }, str...",
-          "desc": "Create the `web_fetch` tool that fetches a URL and returns its content as\ntext (HTML is stripped unless `format: \"html\"`), truncated to the max size.",
+          "desc": "Create the `web_fetch` tool that fetches a URL and returns its content as\r\ntext (HTML is stripped unless `format: \"html\"`), truncated to the max size.",
           "params": [
             {
               "n": "config",
@@ -33223,7 +34514,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "TavilySearchProvider",
-      "desc": "Tavily search provider adapter — convenience only.\nUser có thể tự implement provider khác: Serper, Bing, Google...",
+      "desc": "Tavily search provider adapter — convenience only.\r\nUser có thể tự implement provider khác: Serper, Bing, Google...",
       "methods": [
         {
           "sig": "constructor(config: { apiKey: string; defaultNumResults?: number; baseUrl?: string; })",
@@ -33346,7 +34637,7 @@ window.PKG = [
           "name": "provider",
           "type": "WebSearchProvider",
           "required": true,
-          "desc": "Web search provider — injectable dependency.\nUser tự implement provider hoặc dùng built-in adapters."
+          "desc": "Web search provider — injectable dependency.\r\nUser tự implement provider hoặc dùng built-in adapters."
         },
         {
           "name": "defaultNumResults",
@@ -33365,7 +34656,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "WebSearchProvider",
-      "desc": "Web search provider interface — user tự implement.\nVí dụ: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...",
+      "desc": "Web search provider interface — user tự implement.\r\nVí dụ: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...",
       "methods": [
         {
           "sig": "search(query: string, options: { numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined): Promise<WebSearchResponse>",
@@ -33531,11 +34822,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "createQuestionTool",
-      "desc": "Create the `question` tool that asks the user a question (with optional\npredefined options). Pass a {@link QuestionHandler} to resolve answers.",
+      "desc": "Create the `question` tool that asks the user a question (with optional\r\npredefined options). Pass a {@link QuestionHandler} to resolve answers.",
       "methods": [
         {
           "sig": "createQuestionTool(handler: QuestionHandler | undefined): ToolDefinition<QuestionInput, { answer: string; error?: string; }>",
-          "desc": "Create the `question` tool that asks the user a question (with optional\npredefined options). Pass a {@link QuestionHandler} to resolve answers.",
+          "desc": "Create the `question` tool that asks the user a question (with optional\r\npredefined options). Pass a {@link QuestionHandler} to resolve answers.",
           "params": [
             {
               "n": "handler",
@@ -33608,7 +34899,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "AgentToolProvider",
-      "desc": "AgentToolProvider — Provides agent-related tools.\n\nTools are lazily created after the kernel is initialized\nto avoid circular dependencies.",
+      "desc": "AgentToolProvider — Provides agent-related tools.\r\n\r\nTools are lazily created after the kernel is initialized\r\nto avoid circular dependencies.",
       "methods": [
         {
           "sig": "setKernel(kernel: KernelLike): void",
@@ -33690,7 +34981,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "KernelLike",
-      "desc": "Minimal kernel interface for tool registration.\nAvoids circular dependency with",
+      "desc": "Minimal kernel interface for tool registration.\r\nAvoids circular dependency with",
       "methods": [
         {
           "sig": "registerTool(tool: ToolDefinition<unknown, unknown>): void",
@@ -33711,7 +35002,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "SkillToolProvider",
-      "desc": "SkillToolProvider — Provides skill-related tools.\n\nThis is a metadata provider that declares skill tools exist.\nActual tool creation happens in the composition root to avoid circular dependencies.",
+      "desc": "SkillToolProvider — Provides skill-related tools.\r\n\r\nThis is a metadata provider that declares skill tools exist.\r\nActual tool creation happens in the composition root to avoid circular dependencies.",
       "methods": [
         {
           "sig": "addTools(tools: ToolDefinition<unknown, unknown>[]): void",
@@ -33782,11 +35073,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "readImageToContentParts",
-      "desc": "Read an image file into model message parts (`text` + base64 `image`),\nvalidating the file extension, magic bytes and workspace containment.\n\nWhen `workspaceRoot` is provided the path is checked against the workspace\nboundary (realpath-aware, symlink-safe) before reading.",
+      "desc": "Read an image file into model message parts (`text` + base64 `image`),\r\nvalidating the file extension, magic bytes and workspace containment.\r\n\r\nWhen `workspaceRoot` is provided the path is checked against the workspace\r\nboundary (realpath-aware, symlink-safe) before reading.",
       "methods": [
         {
           "sig": "readImageToContentParts(filePath: string, workspaceRoot: RootGetter | undefined, externalDirAccess: boolean | undefined): Promise<MessageContentPart[]>",
-          "desc": "Read an image file into model message parts (`text` + base64 `image`),\nvalidating the file extension, magic bytes and workspace containment.\n\nWhen `workspaceRoot` is provided the path is checked against the workspace\nboundary (realpath-aware, symlink-safe) before reading.",
+          "desc": "Read an image file into model message parts (`text` + base64 `image`),\r\nvalidating the file extension, magic bytes and workspace containment.\r\n\r\nWhen `workspaceRoot` is provided the path is checked against the workspace\r\nboundary (realpath-aware, symlink-safe) before reading.",
           "params": [
             {
               "n": "filePath",
