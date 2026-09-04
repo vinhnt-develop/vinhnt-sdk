@@ -27,3 +27,22 @@ export {
   parseEnvFile,
   resolveCredentialMultiLayer,
 } from "./env.js";
+
+export { parseJsonc, parseJsoncFile } from "./jsonc-parser.js";
+
+export {
+  FileCredentialProvider,
+  type FileCredentialProviderOptions,
+} from "./file-credential-provider.js";
+
+export {
+  FileSettingsProvider,
+  type FileSettingsProviderOptions,
+} from "./file-settings-provider.js";
+
+export {
+  ConfigMigrator,
+  defineMigration,
+  type ConfigMigration,
+  WORKSPACE_V1_TO_V2,
+} from "./config-migrator.js";

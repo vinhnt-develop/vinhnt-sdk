@@ -72,6 +72,6 @@ export class FakeModelProvider implements ModelProvider {
       ? `${prefix}${getTextContent(lastMsg.content)}`
       : `${prefix}(no user message)`;
 
-    return { content };
+    return { content, provider: "fake" };
   }
 }

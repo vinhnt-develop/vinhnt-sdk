@@ -304,7 +304,9 @@ export class ModelCaller {
     // P1-F: onAfterModelCall — intercept/modify the response after streaming completes.
     // RV-42: attach the authoritative usage (provider-reported or local fallback).
     const streamedResponse: ModelResponse = {
-      ...(toolCalls.length > 0 ? { content, toolCalls } : { content }),
+      content,
+      provider: model.provider ?? "unknown",
+      ...(toolCalls.length > 0 ? { toolCalls } : {}),
       ...(inputTokens > 0 || outputTokens > 0
         ? { usage: { promptTokens: inputTokens, completionTokens: outputTokens, ...(reasoningTokens > 0 ? { reasoningTokens } : {}) } }
         : {}),

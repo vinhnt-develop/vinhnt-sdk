@@ -42,10 +42,10 @@ export type { RunContext } from "./run-context.js";
 export { KernelError } from "./kernel-error.js";
 export type { KernelErrorCode } from "./kernel-error.js";
 
-// === Circuit Breaker ===
+// === Circuit Breaker (re-exported from @vinhnt-sdk/guard) ===
 
-export { CircuitBreaker, CircuitBreakerOpenError } from "./circuit-breaker.js";
-export type { CircuitState, CircuitBreakerOptions } from "./circuit-breaker.js";
+export { CircuitBreaker, CircuitBreakerOpenError } from "@vinhnt-sdk/guard";
+export type { CircuitState, CircuitBreakerOptions } from "@vinhnt-sdk/guard";
 
 // === Run State ===
 
