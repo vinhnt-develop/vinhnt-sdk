@@ -10,6 +10,16 @@ import { createWebFetchTool, createWebSearchTool, type WebSearchProvider, Tavily
 import { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool } from "@vinhnt-sdk/tools";
 import { createTodoWriteTool, createQuestionTool } from "@vinhnt-sdk/tools";
 
+/** Per-tool configuration overrides. Keys are tool IDs (e.g., "shell", "web_search"). */
+export interface ToolConfigOverrides {
+  /** Enable/disable this tool. If false, tool is excluded from the provider. */
+  readonly enabled?: boolean;
+  /** Override timeout for this tool (ms). */
+  readonly timeoutMs?: number;
+  /** Tool-specific config (passed to the tool factory). */
+  readonly config?: Record<string, unknown>;
+}
+
 /** Configuration for {@link BuiltinToolProvider}. */
 export interface BuiltinToolConfig {
   workspaceRoot: string | (() => string);
@@ -21,6 +31,12 @@ export interface BuiltinToolConfig {
    * Kept for backward compatibility — creates a TavilySearchProvider automatically.
    */
   webSearchApiKey?: string | (() => string);
+  /**
+   * Per-tool configuration overrides.
+   * Keys are tool IDs (e.g., "shell", "web_search", "read_file").
+   * Use to enable/disable individual tools or set per-tool timeouts.
+   */
+  readonly toolConfigs?: Record<string, ToolConfigOverrides>;
 }
 
 /**
@@ -49,40 +65,54 @@ export class BuiltinToolProvider implements ToolProvider {
   }
 
   private createTools(): ToolDefinition[] {
-    const { workspaceRoot, shell } = this.config;
+    const { workspaceRoot, shell, toolConfigs } = this.config;
+    const cfg = (id: string) => toolConfigs?.[id];
 
-    const tools: ToolDefinition[] = [
+    const allTools: Array<ToolDefinition | null> = [
       // File tools
-      createReadFileTool(workspaceRoot),
-      createWriteFileTool(workspaceRoot),
-      createEditFileTool(workspaceRoot),
-      createApplyPatchTool(workspaceRoot),
-      createListDirectoryTool(workspaceRoot),
+      this.applyConfig(createReadFileTool(workspaceRoot), cfg("read_file")),
+      this.applyConfig(createWriteFileTool(workspaceRoot), cfg("write_file")),
+      this.applyConfig(createEditFileTool(workspaceRoot), cfg("edit_file")),
+      this.applyConfig(createApplyPatchTool(workspaceRoot), cfg("apply_patch")),
+      this.applyConfig(createListDirectoryTool(workspaceRoot), cfg("list_directory")),
 
       // Shell tool
-      createShellTool(shell),
+      this.applyConfig(createShellTool(shell), cfg("execute_command")),
 
       // Search tools
-      createGlobFilesTool(workspaceRoot),
-      createGrepFilesTool(workspaceRoot),
+      this.applyConfig(createGlobFilesTool(workspaceRoot), cfg("glob_files")),
+      this.applyConfig(createGrepFilesTool(workspaceRoot), cfg("grep_files")),
 
       // Web tools
-      createWebFetchTool(),
-      ...this.createWebSearchTool(),
+      this.applyConfig(createWebFetchTool(), cfg("web_fetch")),
+      ...this.createWebSearchTool().map((t) => this.applyConfig(t, cfg("web_search"))),
 
       // Git tools
-      createGitStatusTool(workspaceRoot),
-      createGitDiffTool(workspaceRoot),
-      createGitLogTool(workspaceRoot),
-      createGitCommitTool(workspaceRoot),
+      this.applyConfig(createGitStatusTool(workspaceRoot), cfg("git_status")),
+      this.applyConfig(createGitDiffTool(workspaceRoot), cfg("git_diff")),
+      this.applyConfig(createGitLogTool(workspaceRoot), cfg("git_log")),
+      this.applyConfig(createGitCommitTool(workspaceRoot), cfg("git_commit")),
 
       // Utility tools
-      createTodoWriteTool(),
-      createQuestionTool(),
-      createReadImageTool(workspaceRoot),
+      this.applyConfig(createTodoWriteTool(), cfg("todowrite")),
+      this.applyConfig(createQuestionTool(), cfg("question")),
+      this.applyConfig(createReadImageTool(workspaceRoot), cfg("read_image")),
     ];
 
-    return tools;
+    // Filter out disabled tools (null)
+    return allTools.filter((t): t is ToolDefinition => t !== null);
+  }
+
+  /** Apply per-tool config overrides. Returns null if tool is disabled. */
+  private applyConfig(tool: ToolDefinition, override?: ToolConfigOverrides): ToolDefinition | null {
+    if (!override) return tool;
+    if (override.enabled === false) return null;
+
+    let result = tool;
+    if (override.timeoutMs !== undefined) {
+      result = { ...result, timeoutMs: override.timeoutMs };
+    }
+    return result;
   }
 
   private createWebSearchTool(): ToolDefinition[] {

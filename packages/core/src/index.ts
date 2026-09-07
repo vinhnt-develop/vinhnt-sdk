@@ -312,11 +312,11 @@ export type {
   ToolSearchInput, ToolSearchResult, QuestionInput, QuestionHandler,
 } from "@vinhnt-sdk/tools";
 export { BuiltinToolProvider } from "./tool/builtin-provider.js";
-export type { BuiltinToolConfig } from "./tool/builtin-provider.js";
+export type { BuiltinToolConfig, ToolConfigOverrides } from "./tool/builtin-provider.js";
 export { ToolRuntime } from "./tool/runtime.js";
 export type { ToolRuntimeConfig } from "./tool/runtime.js";
 export { createKernelTools, createPluginToolHook } from "./tool/bridge.js";
-export { createToolProviderRegistry, createToolProvider, registerProviderTools } from "./tool/provider-helpers.js";
+export { createToolProviderRegistry, createToolProvider, registerProviderTools, wireAgentAndSkillTools } from "./tool/provider-helpers.js";
 
 // === Re-export essential types from knowledge ===
 

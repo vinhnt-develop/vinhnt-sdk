@@ -1,42 +1,40 @@
 import type { ToolProvider, ToolDefinition, ToolRegistry } from "@vinhnt-sdk/tools";
 
 /**
- * Minimal kernel interface for tool registration.
- * Avoids circular dependency with @vinhnt-sdk/core.
- */
-export interface KernelLike {
-  registerTool(tool: ToolDefinition): void;
-}
-
-/**
  * AgentToolProvider — Provides agent-related tools.
  *
- * Tools are lazily created after the kernel is initialized
- * to avoid circular dependencies.
+ * Tools are added externally via addTools() to avoid circular dependencies
+ * with @vinhnt-sdk/core (where the factory functions live).
+ *
+ * @example
+ * ```ts
+ * const provider = new AgentToolProvider();
+ * // After kernel is created:
+ * provider.addTools([
+ *   createSpawnAgentTool(kernel),
+ *   createDelegateTool(kernel),
+ *   createCreateAgentTool(kernel),
+ *   createListAgentsTool(kernel),
+ * ]);
+ * registry.registerProvider(provider);
+ * ```
  */
 export class AgentToolProvider implements ToolProvider {
   readonly id = "agents";
   readonly name = "Agent Tools";
   readonly description = "Agent management tools: spawn, delegate, list, create";
 
-  private kernel: KernelLike | null = null;
   private _tools: ToolDefinition[] = [];
-
-  /**
-   * Set the kernel instance (call after kernel is created).
-   */
-  setKernel(kernel: KernelLike): void {
-    this.kernel = kernel;
-    this._tools = this.createTools();
-  }
 
   get tools(): ToolDefinition[] {
     return this._tools;
   }
 
-  private createTools(): ToolDefinition[] {
-    if (!this.kernel) return [];
-    return [];
+  /**
+   * Add agent tools externally (called by composition root after kernel is created).
+   */
+  addTools(tools: ToolDefinition[]): void {
+    this._tools.push(...tools);
   }
 
   register(_registry: ToolRegistry): void {

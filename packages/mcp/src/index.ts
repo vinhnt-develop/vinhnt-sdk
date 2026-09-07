@@ -12,6 +12,9 @@
 export { McpClient } from "./client.js";
 export type { McpConnection } from "./client.js";
 
+export { McpToolProvider } from "./mcp-provider.js";
+export type { McpToolProviderConfig } from "./mcp-provider.js";
+
 export { mapMcpTool, discoverMcpTools, mcpDomain, mcpToolId } from "./tool-mapper.js";
 
 export type {

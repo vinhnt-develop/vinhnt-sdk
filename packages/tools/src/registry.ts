@@ -4,6 +4,7 @@ import { ToolNotFoundError } from "@vinhnt-sdk/schema";
 import type { DomainManifest, DomainSummary } from "./domain.js";
 import { summarizeDomains } from "./domain.js";
 import { validateInput } from "./validate.js";
+import { lintToolDescription } from "./description-lint.js";
 
 /** Filter options for listing tools. */
 export type ToolFilter = {
@@ -37,6 +38,14 @@ export class ToolRegistry {
   protected readonly domains = new Map<string, DomainManifest>();
 
   register(tool: ToolDefinition): void {
+    // Lint description quality — warn but don't block registration
+    const report = lintToolDescription(tool.id, tool.description);
+    if (report.issues.length > 0) {
+      console.warn(
+        `[ToolRegistry] Description issues for "${tool.id}":`,
+        report.issues.map((i) => i.message).join("; "),
+      );
+    }
     this.tools.set(tool.id, tool);
   }
 

@@ -49,10 +49,10 @@ export type { QuestionInput, QuestionHandler } from "@vinhnt-sdk/tools";
 
 // Aggregator (composition root lives in core)
 export { BuiltinToolProvider } from "./builtin-provider.js";
-export type { BuiltinToolConfig } from "./builtin-provider.js";
+export type { BuiltinToolConfig, ToolConfigOverrides } from "./builtin-provider.js";
 
 // Core-only: kernel integration
 export { ToolRuntime } from "./runtime.js";
 export type { ToolRuntimeConfig } from "./runtime.js";
 export { createKernelTools, createPluginToolHook } from "./bridge.js";
-export { createToolProviderRegistry, createToolProvider, registerProviderTools } from "./provider-helpers.js";
+export { createToolProviderRegistry, createToolProvider, registerProviderTools, wireAgentAndSkillTools } from "./provider-helpers.js";
