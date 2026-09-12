@@ -24,7 +24,7 @@ const DEFAULT_BASE_DELAY_MS = 1000;
 const DEFAULT_MAX_DELAY_MS = 30_000;
 
 /** Default set of retryable HTTP status codes. */
-const DEFAULT_RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+const DEFAULT_RETRYABLE_STATUSES = new Set([408, 500, 502, 503, 504]);
 
 /**
  * Determine whether a failure should be retried.

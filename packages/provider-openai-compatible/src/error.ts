@@ -8,7 +8,7 @@ import { VntError } from "@vinhnt-sdk/schema";
 import { redactSecrets } from "@vinhnt-sdk/security";
 
 /** HTTP statuses that are safe to retry (transient). */
-export const RETRYABLE_STATUSES = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
+export const RETRYABLE_STATUSES = new Set([408, 409, 425, 500, 502, 503, 504]);
 
 /** Retry configuration for the provider's HTTP calls. */
 export interface RetryOptions {
