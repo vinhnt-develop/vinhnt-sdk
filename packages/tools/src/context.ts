@@ -46,4 +46,7 @@ export interface ToolContext {
    * to undo the tool's side effect (e.g., restore original file content).
    */
   setCompensation(action: () => Promise<void>): void;
+
+  /** Extensible metadata bag for plugins/consumers. */
+  readonly extensionData?: Record<string, unknown>;
 }

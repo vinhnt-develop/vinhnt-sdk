@@ -35,6 +35,7 @@ export interface McpTool {
   readonly description?: string;
   readonly inputSchema: Record<string, unknown>;
   readonly annotations?: Record<string, unknown>;
+  readonly metadata?: Record<string, unknown>;
 }
 
 export interface ListToolsResult {

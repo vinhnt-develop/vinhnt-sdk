@@ -49,7 +49,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "0.1.3"
+    "@vinhnt-sdk/schema": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.8.0"

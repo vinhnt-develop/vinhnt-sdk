@@ -53,6 +53,11 @@ export function isToolCallId(v: unknown): v is ToolCallId {
   return isNonEmptyString(v);
 }
 
+/** Type guard: is `v` a valid WorkspaceId? */
+export function isWorkspaceId(v: unknown): v is WorkspaceId {
+  return isNonEmptyString(v);
+}
+
 /** Type guard: is `v` a valid TraceId? */
 export function isTraceId(v: unknown): v is TraceId {
   return isNonEmptyString(v);
@@ -88,4 +93,9 @@ export function assertSessionId(v: unknown): asserts v is SessionId {
 /** Assert `v` is a valid MessageId, throwing a TypeError otherwise. */
 export function assertMessageId(v: unknown): asserts v is MessageId {
   if (!isMessageId(v)) throw new TypeError(`Expected MessageId, got ${typeof v}`);
+}
+
+/** Assert `v` is a valid WorkspaceId, throwing a TypeError otherwise. */
+export function assertWorkspaceId(v: unknown): asserts v is WorkspaceId {
+  if (!isWorkspaceId(v)) throw new TypeError(`Expected WorkspaceId, got ${typeof v}`);
 }

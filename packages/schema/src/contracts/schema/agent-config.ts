@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { isAgentId } from "../branded.js";
 
+/** Known agent modes. Use as reference, not exhaustive. */
+export const KNOWN_AGENT_MODES = ["primary", "subagent", "all"] as const;
+
 /** Zod schema for agent mode — open: known modes plus arbitrary extensions (matches the open {@link AgentMode} type). */
 export const AgentModeSchema = z.enum(["primary", "subagent", "all"]).or(z.string());
 /** Inferred type of {@link AgentModeSchema}. */
@@ -27,7 +30,7 @@ export const AgentRulesetSchema = z.object({
   allowedRisks: z.array(z.string()).optional(),
   maxSteps: z.number().int().positive().optional(),
   maxTokens: z.number().int().positive().optional(),
-  inheritFromParent: z.boolean().optional().default(true),
+  inheritFromParent: z.boolean().optional(),
 });
 /** Inferred type of {@link AgentRulesetSchema}. */
 export type AgentRuleset = z.infer<typeof AgentRulesetSchema>;
@@ -53,6 +56,8 @@ export const AgentProfileSchema = z.object({
   author: z.string().optional(),
   model: z.string().optional(),
   hidden: z.boolean().optional(),
+  /** Extensible metadata bag for plugins/consumers. */
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 /** Inferred type of {@link AgentProfileSchema}. */
 export type AgentProfile = z.infer<typeof AgentProfileSchema>;
@@ -82,6 +87,8 @@ export const AgentConfigSchema = z.object({
     preferred: z.string().optional(),
     fallbacks: z.array(z.string()).optional(),
   }).optional(),
+  /** Extensible metadata bag for plugins/consumers. */
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 /** Inferred type of {@link AgentConfigSchema}. */
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

@@ -1,7 +1,10 @@
 import { VntError } from "@vinhnt-sdk/schema";
 
-/** Current circuit breaker state — strict union, state machine core. */
-export type CircuitState = "closed" | "open" | "half_open";
+/** Current circuit breaker state — open for extension (custom states). */
+export type CircuitState = "closed" | "open" | "half_open" | (string & {});
+
+/** Known circuit states for runtime checks. */
+export const KNOWN_CIRCUIT_STATES = ["closed", "open", "half_open"] as const;
 
 /** Tuning for {@link CircuitBreaker}: failure/success thresholds and retry policy. */
 export interface CircuitBreakerOptions {

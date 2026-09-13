@@ -44,7 +44,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "0.2.0",
+    "@vinhnt-sdk/schema": "workspace:*",
     "zod": "^4.4.3"
   },
   "scripts": {

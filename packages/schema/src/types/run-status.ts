@@ -1,8 +1,1 @@
-export type RunStatus =
-  | "queued"
-  | "running"
-  | "awaiting_approval"
-  | "paused"
-  | "succeeded"
-  | "failed"
-  | "cancelled";
+export type { RunStatus } from "../contracts/schema/run-status.js";

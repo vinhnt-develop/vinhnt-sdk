@@ -51,7 +51,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "0.2.0"
+    "@vinhnt-sdk/schema": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^3.2.7"

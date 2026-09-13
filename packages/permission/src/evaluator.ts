@@ -2,7 +2,16 @@ import type { PermissionRule, PermissionEffect } from "./permission.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { normalize } from "node:path";
 
-type AnyRule = { effect: PermissionEffect; action?: string; target?: string; paramPattern?: string };
+type AnyRule = { effect: PermissionEffect; action?: string; target?: string; paramPattern: string | undefined };
+
+function asAnyRule(rule: PermissionRule): AnyRule {
+  return {
+    effect: rule.effect,
+    action: rule.action,
+    target: rule.action,
+    paramPattern: rule.paramPattern,
+  };
+}
 
 /**
  * Normalize a path-like string for consistent glob matching.
@@ -30,7 +39,7 @@ function normalizeMatchValue(value: string): string {
  * If no rule matches, returns "ask" by default (safe default).
  */
 export function matchPermission(
-  rules: readonly AnyRule[],
+  rules: readonly PermissionRule[],
   action: string,
   context?: string,
 ): { effect: PermissionEffect; matchedRule?: AnyRule } {
@@ -40,9 +49,10 @@ export function matchPermission(
   const normContext = context !== undefined ? normalizeMatchValue(context) : undefined;
 
   for (const rule of rules) {
-    if (matchesRule(rule, action, normContext)) {
-      matched = rule;
-      effect = rule.effect;
+    const anyRule = asAnyRule(rule);
+    if (matchesRule(anyRule, action, normContext)) {
+      matched = anyRule;
+      effect = anyRule.effect;
     }
   }
 

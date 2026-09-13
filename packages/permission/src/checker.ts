@@ -1,4 +1,5 @@
 import type { AgentConfig, AgentRule, AgentRuleset, AgentPermissions } from "@vinhnt-sdk/schema";
+import type { PermissionRule, PermissionEffect } from "./permission.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { matchPermission } from "./evaluator.js";
 
@@ -8,6 +9,18 @@ export type PermissionResult =
   | { decision: "deny"; reason: string }
   | { decision: "ask"; reason: string };
 
+/** Convert AgentRule to PermissionRule for the evaluator. */
+function toPermissionRule(rule: AgentRule): PermissionRule {
+  const result: PermissionRule = {
+    action: rule.target,
+    resource: "*",
+    effect: rule.effect,
+    ...(rule.reason ? { metadata: { reason: rule.reason } as const } : {}),
+    ...(rule.paramPattern !== undefined ? { paramPattern: rule.paramPattern } : {}),
+  };
+  return result;
+}
+
 /** Normalize a permissions shorthand into a full {@link AgentRuleset}. */
 export function normalizePermissions(p: AgentPermissions | undefined): AgentRuleset {
   if (!p) return {};
@@ -15,10 +28,10 @@ export function normalizePermissions(p: AgentPermissions | undefined): AgentRule
   const result: Record<string, unknown> = { inheritFromParent: true };
   const rules: AgentRule[] = [];
   if (p.allowedTools) {
-    for (const t of p.allowedTools) rules.push({ effect: "allow", target: `tool.${t}` });
+    for (const t of p.allowedTools) rules.push({ effect: "allow", target: `tool.${t}`, paramPattern: undefined });
   }
   if (p.deniedTools) {
-    for (const t of p.deniedTools) rules.push({ effect: "deny", target: `tool.${t}` });
+    for (const t of p.deniedTools) rules.push({ effect: "deny", target: `tool.${t}`, paramPattern: undefined });
   }
   if (rules.length > 0) result.rules = rules;
   if (p.allowedRisks) result.allowedRisks = [...p.allowedRisks];
@@ -100,13 +113,16 @@ export function evaluatePermission(
   }
 
   const context = args ? JSON.stringify(args) : undefined;
-  const { effect, matchedRule } = matchPermission(ruleset.rules, resource, context);
+  // Convert AgentRule[] to PermissionRule[] for the evaluator
+  const permRules = ruleset.rules.map(toPermissionRule);
+  const { effect, matchedRule } = matchPermission(permRules, resource, context);
 
   if (!matchedRule) {
     return { decision: "ask", reason: `No matching rule for "${resource}"` };
   }
 
-  const rule = matchedRule as AgentRule;
+  // matchedRule is AnyRule, we need to get the original AgentRule for reason
+  const rule = matchedRule as unknown as AgentRule;
   switch (effect) {
     case "deny":
       return { decision: "deny", reason: rule.reason ?? `Denied by rule: ${resource}` };
@@ -118,7 +134,6 @@ export function evaluatePermission(
       return { decision: "ask", reason: rule.reason ?? `Unknown effect "${effect}" for "${resource}"` };
   }
 }
-
 
 
 /** Return whether the given risk level is allowed by the ruleset. */

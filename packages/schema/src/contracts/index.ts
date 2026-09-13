@@ -9,8 +9,8 @@ export type {
 } from "./branded.js";
 export {
   isAgentId, isRunId, isSessionId, isMessageId, isToolCallId,
-  isTraceId, isRequestId, isRecord,
-  assertAgentId, assertRunId, assertSessionId, assertMessageId,
+  isTraceId, isRequestId, isRecord, isWorkspaceId,
+  assertAgentId, assertRunId, assertSessionId, assertMessageId, assertWorkspaceId,
 } from "./branded.js";
 
 export type {

@@ -207,6 +207,7 @@ export {
  * OpenAI Chat Completion wire-format types. Conversion functions
  * (fromOpenAI, toOpenAI, ...) are provided by
  * `@vinhnt-sdk/provider-openai-compatible`.
+ * @internal
  */
 export type {
   OpenAIMessage,
@@ -223,6 +224,7 @@ export type {
 
 /**
  * Utility constants and functions.
+ * @internal
  */
 export {
   APPROVAL_CATEGORY_LABELS, AGENT_STEP_LABELS, inferStepType,
@@ -233,33 +235,14 @@ export {
  * The event system (event definitions, registry, and event bus) lives in
  * `@vinhnt-sdk/event`. This package provides the shared data contracts that
  * event payloads validate against (see the run-event schemas below).
+ * @internal
  */
 
 // === Schema versioning ===
 
 /**
- * Schema versioning utilities.
- */
-export { SchemaVersionedBaseSchema, versionedSchema, deprecated } from "./versioned.js";
-
-/**
- * Schema versioning types.
- */
-export type { SchemaVersionedBase, VersionedSchemaOptions } from "./versioned.js";
-
-/**
- * Utility functions.
- */
-
-// === Utilities ===
-
-/**
- * Wildcard pattern matching utility.
- */
-export { wildcardMatch } from "./wildcard.js";
-
-/**
  * Error utilities for structured error handling.
+ * @internal
  */
 export {
   SdkError, isSdkError, errorChain,
@@ -267,32 +250,32 @@ export {
 } from "./errors/index.js";
 
 /**
- * Contract schemas for validation.
+ * Schema versioning utilities.
+ * @internal
  */
-
-// === Contract schemas ===
+export { SchemaVersionedBaseSchema, versionedSchema, deprecated } from "./versioned.js";
 
 /**
- * Zod schemas for core types.
+ * Schema versioning types.
+ * @internal
  */
-export { AgentConfigSchema, RequestContextSchema, parseRunEvent, safeParseRunEvent, KnownRunEventSchema } from "./contracts/schema/index.js";
+export type { SchemaVersionedBase, VersionedSchemaOptions } from "./versioned.js";
 
 /**
- * Run-event payload schemas consumed by `@vinhnt-sdk/event` built-in event
- * definitions for runtime validation.
+ * Utility functions.
+ * @internal
  */
-export {
-  RunStartedDataSchema, RunCompletedDataSchema, StepStartedDataSchema,
-  StepCompletedDataSchema, StepFailedDataSchema, ToolInvokedDataSchema,
-  ToolCompletedDataSchema, ToolFailedDataSchema, ToolCancelledDataSchema, ToolSelfCorrectingDataSchema,
-  StepTypeChangedDataSchema, TokenStreamedDataSchema, TokenCountedDataSchema,
-  ThinkingStartedDataSchema, ThinkingContentDataSchema, ThinkingCompletedDataSchema,
-  ModelCostDataSchema, PermissionRequestedDataSchema, PermissionRepliedDataSchema,
-  ContextCompressedDataSchema,
-  TurnStartedDataSchema, TurnEndedDataSchema,
-  LlmRetryDataSchema, LlmRetryStartedDataSchema,
-  ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
-} from "./contracts/schema/index.js";
 
-// === JSON-RPC 2.0 types (shared between MCP and LSP) ===
+// === Utilities ===
+
+/**
+ * Wildcard pattern matching utility.
+ * @internal
+ */
+export { wildcardMatch } from "./wildcard.js";
+
+/**
+ * JSON-RPC 2.0 types (shared between MCP and LSP)
+ * @internal
+ */
 export type { JsonRpcMessage, JsonRpcRequest, JsonRpcResponse, JsonRpcError, JsonRpcNotification } from "./contracts/json-rpc.js";
