@@ -5,7 +5,7 @@
  */
 
 import type { RunId, RequestContext, KnownRunEvent, ToolChoice, ResponseFormat, StreamOptions } from "@vinhnt-sdk/schema";
-import { VntError } from "@vinhnt-sdk/schema";
+import { VntError, ConfigurationError } from "@vinhnt-sdk/schema";
 import type {
   ChatMessage,
   ModelProvider,
@@ -93,7 +93,11 @@ function emitMC(runId: RunId, traceId: string, data: {
 
 /** Runs model generation (streaming and non-streaming) with hooks, token counting and cost/token events. */
 export class ModelCaller {
-  constructor(private readonly deps: ModelCallerDeps) {}
+  constructor(private readonly deps: ModelCallerDeps) {
+    if (!deps.defaultModel?.model?.trim()) {
+      throw new ConfigurationError("ModelCaller requires a defaultModel with non-empty model string");
+    }
+  }
 
   /** Swap the default model at runtime (config hot-reload). */
   setDefaultModel(model: ModelProvider): void {

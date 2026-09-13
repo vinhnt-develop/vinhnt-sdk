@@ -241,6 +241,35 @@ export {
 // === Schema versioning ===
 
 /**
+ * Contract schemas for validation (Zod schemas used by other packages).
+ */
+export {
+  AgentConfigSchema, RequestContextSchema, RunStatusSchema,
+  PromptAssemblySchema, CompressionSummarySchema,
+  AgentProfileSchema, AgentCapabilitiesSchema,
+  AgentPermissionsSchema, AgentModeSchema, AgentBehaviourModeSchema,
+  AgentRuleSchema, AgentRulesetSchema,
+  MessageTokensSchema, MessageSchema, SessionSchema,
+} from "./contracts/schema/index.js";
+
+/**
+ * Run-event payload schemas consumed by `@vinhnt-sdk/event` built-in event
+ * definitions for runtime validation.
+ */
+export {
+  RunStartedDataSchema, RunCompletedDataSchema, StepStartedDataSchema,
+  StepCompletedDataSchema, StepFailedDataSchema, ToolInvokedDataSchema,
+  ToolCompletedDataSchema, ToolFailedDataSchema, ToolCancelledDataSchema, ToolSelfCorrectingDataSchema,
+  StepTypeChangedDataSchema, TokenStreamedDataSchema, TokenCountedDataSchema,
+  ThinkingStartedDataSchema, ThinkingContentDataSchema, ThinkingCompletedDataSchema,
+  ModelCostDataSchema, PermissionRequestedDataSchema, PermissionRepliedDataSchema,
+  ContextCompressedDataSchema,
+  TurnStartedDataSchema, TurnEndedDataSchema,
+  LlmRetryDataSchema, LlmRetryStartedDataSchema,
+  ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
+} from "./contracts/schema/index.js";
+
+/**
  * Error utilities for structured error handling.
  * @internal
  */

@@ -1,4 +1,5 @@
 import type { RequestContext, RunId, AgentConfig, KnownRunEvent, RunEvent } from "@vinhnt-sdk/schema";
+import { ConfigurationError } from "@vinhnt-sdk/schema";
 import { EventRegistry } from "@vinhnt-sdk/event";
 import type { EventDefinition, EventBus } from "@vinhnt-sdk/event";
 import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
@@ -70,7 +71,7 @@ export async function updateSessionOnComplete(
 ): Promise<void> {
   if (!sessionId || !deps.sessionStore || deps.noStore) return;
   const runModel = deps.modelCaller.getActiveModel(runId);
-  const modelName = runModel.model;
+  const modelName = runModel?.model?.trim() ?? "";
   const totalCost = deps.modelCaller.calculateCost(totalInputTokens, totalOutputTokens, runModel);
   await deps.sessionStore.updateSession(sessionId, {
     ...(modelName ? { model: modelName } : {}),
@@ -87,7 +88,7 @@ function computeSessionUpdates(
   totalOutputTokens: number,
 ): Record<string, unknown> {
   const runModel = deps.modelCaller.getActiveModel(runId);
-  const modelName = runModel.model;
+  const modelName = runModel?.model?.trim() ?? "";
   const totalCost = deps.modelCaller.calculateCost(totalInputTokens, totalOutputTokens, runModel);
   return {
     ...(modelName ? { model: modelName } : {}),

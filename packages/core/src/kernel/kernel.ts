@@ -540,8 +540,8 @@ this.stepExecutor = new StepExecutor({
 
         const agent = agentOverride ?? this.currentAgent;
         if (agent) {
-        this.modelCaller.resolveAgentModel(agent, runId);
-      }
+          this.modelCaller.resolveAgentModel(agent as { profile: { model?: string } }, runId);
+        }
 
       // RV-40: keep the system head separate from the user prompt so the model
       // receives a real `system` message instead of a flattened user turn.
@@ -615,7 +615,7 @@ this.stepExecutor = new StepExecutor({
 
       const agent = agentOverride ?? this.currentAgent;
       if (agent) {
-        this.modelCaller.resolveAgentModel(agent, runId);
+        this.modelCaller.resolveAgentModel(agent as { profile: { model?: string } }, runId);
       }
 
       // RV-40: keep the system head separate from the steering prompt.
@@ -706,7 +706,7 @@ this.stepExecutor = new StepExecutor({
 
         const agent = agentOverride ?? this.currentAgent;
         if (agent) {
-          this.modelCaller.resolveAgentModel(agent, runId);
+          this.modelCaller.resolveAgentModel(agent as { profile: { model?: string } }, runId);
         }
 
         // RV-40: keep the system head separate from the user prompt.
@@ -1095,7 +1095,7 @@ this.stepExecutor = new StepExecutor({
     const evaluatorId = this.termination?.evaluatorAgent;
     if (evaluatorId && this.agentRegistry) {
       const evaluator = await this.agentRegistry.get(evaluatorId as AgentId);
-      if (evaluator) judgeModel = this.modelCaller.resolveAgentModel(evaluator);
+      if (evaluator) judgeModel = this.modelCaller.resolveAgentModel(evaluator as { profile: { model?: string } });
     }
 
     const runSagaInstance = runSaga ?? new ToolSaga();

@@ -38,7 +38,7 @@ export class AgentParser implements AgentDefParser {
       permissions: {
         mode,
         ...(rules !== undefined || maxSteps !== undefined
-          ? { ruleset: { rules: rules ?? [], ...(maxSteps !== undefined ? { maxSteps } : {}) } }
+          ? { ruleset: { rules: (rules ?? []) as { effect: "allow" | "deny" | "ask"; target: string; paramPattern?: string; reason?: string }[], ...(maxSteps !== undefined ? { maxSteps } : {}) } }
           : {}),
       },
       ...(body ? { systemPrompt: body } : {}),

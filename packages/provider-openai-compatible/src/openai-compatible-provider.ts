@@ -36,8 +36,8 @@ export interface OpenAICompatibleProviderOptions {
   readonly baseUrl: string;
   /** Bearer API key for `Authorization` (optional for local providers). */
   readonly apiKey?: string;
-  /** Default model identifier sent in the request body (optional, can be overridden per-request). */
-  readonly defaultModel?: string;
+  /** Default model identifier sent in the request body (REQUIRED - must be non-empty). */
+  readonly defaultModel: string;
   /** Provider name reported on `ModelProvider.provider`. Defaults to `"openai-compatible"`. */
   readonly providerName?: string;
   /** Extra headers merged over the defaults. */
@@ -105,8 +105,11 @@ export class OpenAICompatibleProvider implements ModelProvider {
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: OpenAICompatibleProviderOptions) {
+    if (!opts.defaultModel || opts.defaultModel.trim() === "") {
+      throw new ConfigurationError("OpenAICompatibleProvider requires a non-empty `defaultModel`");
+    }
     this.provider = opts.providerName ?? "openai-compatible";
-    this.model = opts.defaultModel ?? "";
+    this.model = opts.defaultModel;
     this.baseUrl = normalizeBaseUrl(opts.baseUrl);
     this.apiKey = opts.apiKey;
     this.headers = opts.headers ?? {};
