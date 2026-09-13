@@ -88,10 +88,11 @@ export const StepTypeChanged = defineEvent({
   schema: StepTypeChangedDataSchema,
 });
 
-/** Event definition for `token.streamed` — Tokens were streamed (ephemeral). */
+/** Event definition for `token.streamed` — Tokens were streamed (ephemeral, but EventBus-publishable for streaming). */
 export const TokenStreamed = defineEvent({
   type: "token.streamed",
-  description: "Tokens were streamed (ephemeral)",
+  description: "Tokens were streamed (ephemeral, EventBus-publishable for streaming)",
+  durable: { version: 1, aggregate: "runId" },
   schema: TokenStreamedDataSchema,
 });
 
