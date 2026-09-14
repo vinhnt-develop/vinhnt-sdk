@@ -1,4 +1,4 @@
-# VINHNT-SDK Bug Fix Plan - 2026-09-14
+# VINHNT-SDK Bug Fix Plan - 2026-09-14 (UPDATED)
 
 ## Root Cause Analysis
 
@@ -21,78 +21,32 @@ this.model = opts.defaultModel ?? "";  // BUG: defaults to empty string
 
 ## Fix Plan
 
-### Phase 1: Immediate Fix (P0 - Critical)
+### Phase 1: Immediate Fix (P0 - Critical) ✅ COMPLETED
 
-#### 1.1 Fix `OpenAICompatibleProvider` to require valid model
-**File**: `packages/provider-openai-compatible/src/openai-compatible-provider.ts`
-- Make `defaultModel` required in constructor options OR throw if not provided
-- Add validation in constructor
+| # | Task | Status | File |
+|---|------|--------|------|
+| 1.1 | Fix OpenAICompatibleProvider to require defaultModel | ✅ DONE | provider-openai-compatible/src/openai-compatible-provider.ts |
+| 1.2 | Add defensive checks in computeSessionUpdates | ✅ DONE | core/src/kernel/kernel-session.ts |
+| 1.3 | Add defensive checks in updateSessionOnComplete | ✅ DONE | core/src/kernel/kernel-session.ts |
+| 1.4 | Validate defaultModel at ModelCaller construction | ✅ DONE | llm/src/model-caller.ts |
+| 1.5 | Fix kernel.ts agent type for resolveAgentModel | ✅ DONE | core/src/kernel/kernel.ts |
+| 1.6 | Add test for provider constructor validation | ✅ DONE | provider-openai-compatible/test/constructor-validation.test.ts |
 
-#### 1.2 Add defensive null/empty checks in `kernel-session.ts`
-**File**: `packages/core/src/kernel/kernel-session.ts`
-- `computeSessionUpdates()` - guard against empty model
-- `updateSessionOnComplete()` - same
+### Phase 2: Architecture Hardening (P1 - High) ⬜ PENDING
 
-#### 1.3 Ensure `ModelCallerDeps.defaultModel` is always valid
-**File**: `packages/core/src/kernel/kernel.ts` (where ModelCaller is instantiated)
-- Validate defaultModel has non-empty model string at kernel init
+| # | Task | Status | File |
+|---|------|--------|------|
+| 2.1 | Add NonEmptyString branded type for model field | ⬜ | schema/src/types/model.ts |
+| 2.2 | Validate at kernel bootstrap (AgentKernel constructor) | ⬜ | core/src/kernel/kernel.ts |
+| 2.3 | Add validation in buildRequest/postCompletion | ⬜ | provider-openai-compatible/src/openai-compatible-provider.ts |
+| 2.4 | Review all ModelProvider implementations for same issue | ⬜ | - |
 
----
+### Phase 3: Test Coverage (P1 - High) ⬜ PENDING
 
-### Phase 2: Architecture Hardening (P1 - High)
-
-#### 2.1 Make `ModelProvider.model` non-empty in type system
-**File**: `packages/schema/src/types/model.ts`
-- Add branded type or validation: `NonEmptyString` for model
-- Or add runtime assertion in `OpenAICompatibleProvider` constructor
-
-#### 2.2 Add fail-closed validation in `ModelCaller.getActiveModel()`
-**File**: `packages/llm/src/model-caller.ts`
-- Assert returned model has non-empty `.model` string
-- Throw `ConfigurationError` if not
-
-#### 2.3 Validate at kernel bootstrap
-**File**: `packages/core/src/kernel/kernel.ts`
-- In `AgentKernel` constructor or `run()`, verify `modelCaller.getDefaultModel().model` is non-empty
-
----
-
-### Phase 3: Test Coverage (P1 - High)
-
-#### 3.1 Add test for provider without defaultModel
-**File**: `packages/provider-openai-compatible/test/openai-compatible-provider.test.ts`
-- Test constructor throws without defaultModel
-- Test session update works with valid model
-
-#### 3.2 Add integration test for kernel-session
-**File**: `packages/core/test/kernel-session.test.ts`
-- Test `computeSessionUpdates` with valid model
-- Test `computeSessionUpdates` with empty model (should not crash)
-
----
-
-### Phase 4: Other Potential Bugs Found During Review
-
-#### 4.1 `OpenAICompatibleProvider.postCompletion` line 166
-```typescript
-model: request.model ?? this.model,
-```
-If both are empty, sends `model: ""` to API → upstream error
-**Fix**: Validate before request, throw if no model available
-
-#### 4.2 `ModelCaller.resolveAgentModel` line 123
-```typescript
-if (runId) this.deps.setModelForRun(runId, this.deps.defaultModel);
-```
-If `defaultModel.model === ""`, stores invalid model for run
-**Fix**: Validate defaultModel at ModelCaller construction
-
-#### 4.3 `buildRequest` in `provider-openai-compatible`
-May send empty model to API if both request and provider lack model
-**Fix**: Add validation in `buildRequest` or `postCompletion`
-
-#### 4.4 `kernel.ts` run loop - no validation of model before starting
-Should validate model exists before entering step loop
+| # | Task | Status | File |
+|---|------|--------|------|
+| 3.1 | Add integration test for kernel-session with valid/empty model | ⬜ | core/test/kernel-session.test.ts |
+| 3.2 | Add test for ModelCaller with invalid defaultModel | ⬜ | llm/test/model-caller.test.ts |
 
 ---
 
@@ -100,25 +54,29 @@ Should validate model exists before entering step loop
 
 | # | Task | Priority | File | Status |
 |---|------|----------|------|--------|
-| 1 | Fix OpenAICompatibleProvider to require defaultModel | P0 | provider-openai-compatible/src/openai-compatible-provider.ts | ⬜ |
-| 2 | Add defensive checks in computeSessionUpdates | P0 | core/src/kernel/kernel-session.ts | ⬜ |
-| 3 | Add defensive checks in updateSessionOnComplete | P0 | core/src/kernel/kernel-session.ts | ⬜ |
-| 4 | Validate defaultModel at ModelCaller construction | P1 | llm/src/model-caller.ts | ⬜ |
-| 5 | Validate at kernel bootstrap | P1 | core/src/kernel/kernel.ts | ⬜ |
-| 6 | Add validation in buildRequest/postCompletion | P1 | provider-openai-compatible/src/openai-compatible-provider.ts | ⬜ |
-| 7 | Add test: provider without defaultModel throws | P1 | provider-openai-compatible/test/ | ⬜ |
-| 8 | Add test: kernel-session with valid/empty model | P1 | core/test/ | ⬜ |
-| 9 | Review all ModelProvider implementations for same issue | P2 | - | ⬜ |
-| 10 | Add NonEmptyString branded type for model field | P2 | schema/src/types/model.ts | ⬜ |
+| 1 | Fix OpenAICompatibleProvider to require defaultModel | P0 | provider-openai-compatible/src/openai-compatible-provider.ts | ✅ |
+| 2 | Add defensive checks in computeSessionUpdates | P0 | core/src/kernel/kernel-session.ts | ✅ |
+| 3 | Add defensive checks in updateSessionOnComplete | P0 | core/src/kernel/kernel-session.ts | ✅ |
+| 4 | Validate defaultModel at ModelCaller construction | P0 | llm/src/model-caller.ts | ✅ |
+| 5 | Fix kernel.ts agent type casts | P0 | core/src/kernel/kernel.ts | ✅ |
+| 6 | Add test: provider without defaultModel throws | P0 | provider-openai-compatible/test/ | ✅ |
+| 7 | Add NonEmptyString branded type for model field | P1 | schema/src/types/model.ts | ⬜ |
+| 8 | Validate at kernel bootstrap | P1 | core/src/kernel/kernel.ts | ⬜ |
+| 9 | Add validation in buildRequest/postCompletion | P1 | provider-openai-compatible/src/openai-compatible-provider.ts | ⬜ |
+| 10 | Add test: kernel-session with valid/empty model | P1 | core/test/ | ⬜ |
+| 11 | Add test: ModelCaller with invalid defaultModel | P1 | llm/test/ | ⬜ |
+| 12 | Review all ModelProvider implementations | P2 | - | ⬜ |
 
 ---
 
 ## Verification Checklist
 
 After fixes:
-- [ ] `pnpm build` passes all 18 packages
-- [ ] `pnpm test` passes all packages
-- [ ] Manual test: create provider without defaultModel → throws ConfigurationError
+- [x] `pnpm build` passes all 18 packages
+- [x] `pnpm test` passes for packages affected by changes
+- [x] Manual test: create provider without defaultModel → throws ConfigurationError
+- [x] Manual test: create provider with empty defaultModel → throws ConfigurationError
+- [x] Manual test: create provider with valid defaultModel → works
 - [ ] Manual test: run kernel with valid provider → session updates work
 - [ ] Manual test: run kernel fails → emitFail doesn't crash on session update
 - [ ] No regression in existing tests
@@ -135,4 +93,32 @@ Current versions (from package.json):
 
 Since `OpenAICompatibleProvider` constructor behavior changes (required defaultModel), this is a **breaking change** → **0.3.0** for that package, others can stay `0.2.0` or bump to `0.3.0` for consistency.
 
-**Action**: After fixes pass tests, run `pnpm version prerelease --preid=rc` or manual version bump, then `pnpm publish:all`
+**Action**: After fixes pass tests, run version bump, then `pnpm publish:all`
+
+---
+
+## Other Potential Bugs Found During Review
+
+### P1 - High Priority
+
+| # | Issue | Location | Risk |
+|---|-------|----------|------|
+| 4.1 | `OpenAICompatibleProvider.postCompletion` line 166 sends empty model if both request and provider lack model | provider-openai-compatible/src/openai-compatible-provider.ts | Upstream API error |
+| 4.2 | `ModelCaller.resolveAgentModel` stores invalid model if defaultModel.model === "" | llm/src/model-caller.ts:123 | Silent bug |
+| 4.3 | `kernel.ts` run loop - no validation of model before starting step loop | core/src/kernel/kernel.ts | Runtime crash |
+
+### P2 - Medium Priority
+
+| # | Issue | Location | Risk |
+|---|-------|----------|------|
+| 4.4 | `AgentKernelConfig.model` is required but no validation that model.model is non-empty | core/src/kernel/kernel-types.ts | Config validation gap |
+| 4.5 | Preset providers (DeepSeek, Anthropic, Ollama) all have defaultModel so not affected | provider-openai-compatible/src/presets.ts | Low (but verify) |
+
+---
+
+## Next Steps
+
+1. **Complete Phase 2** - Add branded type, kernel bootstrap validation, request validation
+2. **Complete Phase 3** - Add integration tests
+3. **Version bump** - Decide on 0.2.0 vs 0.3.0 strategy
+4. **Publish to npm** - Run `pnpm publish:all` after version bump

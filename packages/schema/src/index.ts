@@ -19,7 +19,7 @@
  * Branded ID types for type-safe identifiers.
  */
 export type {
-  BrandedId, RunId, SessionId, AgentId, TraceId, RequestId, ToolCallId, MessageId, WorkspaceId, EnvironmentId, FilePatchId,
+  BrandedId, RunId, SessionId, AgentId, TraceId, RequestId, ToolCallId, MessageId, WorkspaceId, EnvironmentId, FilePatchId, ModelId,
 } from "./contracts/index.js";
 
 /**
@@ -36,8 +36,8 @@ export type {
  */
 export {
   isAgentId, isRunId, isSessionId, isMessageId, isToolCallId,
-  isTraceId, isRequestId, isRecord,
-  assertAgentId, assertRunId, assertSessionId, assertMessageId,
+  isTraceId, isRequestId, isRecord, isWorkspaceId, isModelId,
+  assertAgentId, assertRunId, assertSessionId, assertMessageId, assertWorkspaceId, assertModelId,
 } from "./contracts/index.js";
 
 /**

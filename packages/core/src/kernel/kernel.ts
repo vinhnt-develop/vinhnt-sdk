@@ -1,5 +1,5 @@
 import type { RequestContext, RunId, AgentId, AgentConfig, AgentBehaviourMode, KnownRunEvent, AgentEvent } from "@vinhnt-sdk/schema";
-import { ValidationError, AgentNotFoundError } from "@vinhnt-sdk/schema";
+import { ValidationError, AgentNotFoundError, ConfigurationError } from "@vinhnt-sdk/schema";
 import type { MessageContentPart } from "../model.js";
 import type { ModelProvider } from "../model.js";
 import type { SessionRuntimeState } from "@vinhnt-sdk/session";
@@ -232,6 +232,12 @@ export class AgentKernel {
       setModelForRun: (runId, model) => this.stateMachine.setModelForRun(runId, model),
       getAvailableTools: (runId) => this.getAvailableTools(runId),
     });
+
+    // Validate default model has non-empty model string (fail-closed)
+    const defaultModel = this.modelCaller.getDefaultModel();
+    if (!defaultModel?.model?.trim()) {
+      throw new ConfigurationError("AgentKernel requires a defaultModel with non-empty model string");
+    }
     const self = this;
 this.stepExecutor = new StepExecutor({
       store: { emitEvent: (event, persist) => this.emitEvent(event, persist) },

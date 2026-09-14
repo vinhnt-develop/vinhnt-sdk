@@ -81,7 +81,7 @@ export async function updateSessionOnComplete(
   }).catch((err) => { console.warn("[kernel] Session update failed:", err); });
 }
 
-function computeSessionUpdates(
+export function computeSessionUpdates(
   deps: KernelSessionDeps,
   runId: RunId,
   totalInputTokens: number,

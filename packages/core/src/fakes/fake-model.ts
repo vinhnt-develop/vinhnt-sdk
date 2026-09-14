@@ -1,5 +1,6 @@
 import type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing } from "../model.js";
 import { getTextContent } from "../model.js";
+import type { ModelId } from "@vinhnt-sdk/schema";
 
 /**
  * FakeModelProvider — Mock LLM provider for unit tests.
@@ -22,7 +23,7 @@ import { getTextContent } from "../model.js";
  */
 export class FakeModelProvider implements ModelProvider {
   readonly provider = "fake";
-  readonly model = "fake-model";
+  readonly model: ModelId = "fake-model" as ModelId;
   readonly pricing: ModelPricing = { input: 1.0, output: 2.0 };
   readonly contextLimit: number | undefined = undefined;
   readonly capabilities = {

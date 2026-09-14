@@ -21,11 +21,23 @@ export type WorkspaceId = BrandedId<"WorkspaceId">;
 export type EnvironmentId = BrandedId<"EnvironmentId">;
 /** A branded string identifying a file patch. */
 export type FilePatchId = BrandedId<"FilePatchId">;
+/** A branded string identifying a model (non-empty). */
+export type ModelId = BrandedId<"ModelId">;
 
 /* ── Branded type guards ── */
 
 function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.length > 0;
+}
+
+/** Type guard: is `v` a valid ModelId (non-empty string)? */
+export function isModelId(v: unknown): v is ModelId {
+  return isNonEmptyString(v);
+}
+
+/** Assert `v` is a valid ModelId, throwing a TypeError otherwise. */
+export function assertModelId(v: unknown): asserts v is ModelId {
+  if (!isModelId(v)) throw new TypeError(`Expected ModelId (non-empty string), got ${typeof v}`);
 }
 
 /** Type guard: is `v` a valid AgentId? */

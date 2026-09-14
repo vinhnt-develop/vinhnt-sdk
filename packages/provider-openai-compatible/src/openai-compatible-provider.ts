@@ -15,6 +15,7 @@ import type {
   ModelPricing,
   ModelCapabilities,
   OpenAIResponse,
+  ModelId,
 } from "@vinhnt-sdk/schema";
 import { ConfigurationError, NetworkError, TimeoutError } from "@vinhnt-sdk/schema";
 import { buildRequest } from "./build-request.js";
@@ -91,7 +92,7 @@ const DEFAULT_TIMEOUT_MS = 120000;
  */
 export class OpenAICompatibleProvider implements ModelProvider {
   readonly provider: string;
-  readonly model: string;
+  readonly model: ModelId;
   readonly contextLimit: number | undefined;
   readonly pricing?: ModelPricing;
   readonly capabilities: ModelCapabilities;
@@ -109,7 +110,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
       throw new ConfigurationError("OpenAICompatibleProvider requires a non-empty `defaultModel`");
     }
     this.provider = opts.providerName ?? "openai-compatible";
-    this.model = opts.defaultModel;
+    this.model = opts.defaultModel as ModelId;
     this.baseUrl = normalizeBaseUrl(opts.baseUrl);
     this.apiKey = opts.apiKey;
     this.headers = opts.headers ?? {};

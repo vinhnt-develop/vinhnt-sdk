@@ -5,12 +5,12 @@
 // ───────────────────────────────────────────────
 
 export type {
-  BrandedId, RunId, SessionId, AgentId, ToolCallId, MessageId, TraceId, RequestId, WorkspaceId, EnvironmentId, FilePatchId,
+  BrandedId, RunId, SessionId, AgentId, ToolCallId, MessageId, TraceId, RequestId, WorkspaceId, EnvironmentId, FilePatchId, ModelId,
 } from "./branded.js";
 export {
   isAgentId, isRunId, isSessionId, isMessageId, isToolCallId,
-  isTraceId, isRequestId, isRecord, isWorkspaceId,
-  assertAgentId, assertRunId, assertSessionId, assertMessageId, assertWorkspaceId,
+  isTraceId, isRequestId, isRecord, isWorkspaceId, isModelId,
+  assertAgentId, assertRunId, assertSessionId, assertMessageId, assertWorkspaceId, assertModelId,
 } from "./branded.js";
 
 export type {

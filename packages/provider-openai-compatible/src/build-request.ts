@@ -12,6 +12,7 @@ import type {
   OpenAIMessage,
 } from "@vinhnt-sdk/schema";
 import { toOpenAIMessage } from "./convert.js";
+import { ConfigurationError } from "@vinhnt-sdk/schema";
 
 /** OpenAI Chat Completions request body (as POSTed to /chat/completions). */
 export interface OpenAICompatibleRequestBody {
@@ -113,13 +114,17 @@ function toOpenAITool(tool: ToolDefinitionLike): OpenAICompatibleTool {
  * (when streaming) `stream: true` + `stream_options.include_usage`.
  */
 export function buildRequest(request: ModelRequest, opts?: BuildRequestOptions): OpenAICompatibleRequestBody {
+  const model = opts?.model ?? "";
+  if (!model.trim()) {
+    throw new ConfigurationError("Model identifier is required (either in request or provider default)");
+  }
   const messages = request.messages.map((m: ChatMessage) => toOpenAIMessage(m));
   if (request.system) {
     messages.unshift({ role: "system" as const, content: request.system });
   }
 
   const body: OpenAICompatibleRequestBody = {
-    model: opts?.model ?? "",
+    model,
     messages,
   };
 

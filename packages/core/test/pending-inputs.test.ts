@@ -99,7 +99,7 @@ class TestSessionStore implements SessionStore {
 /** A model whose first call can be gated until the test releases it. */
 class GatedModel implements ModelProvider {
   readonly provider = "gated";
-  readonly model = "gated-model";
+  readonly model: ModelId = "gated-model" as ModelId;
   readonly pricing: ModelPricing = { input: 1, output: 1 };
   readonly capabilities = { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false } as const;
   readonly contextLimit: number | undefined;

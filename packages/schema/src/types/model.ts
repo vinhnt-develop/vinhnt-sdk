@@ -8,6 +8,8 @@
  * with OpenAI, Anthropic, Qwen, GLM, Kimi, Ollama, LM Studio, etc.
  */
 
+import type { ModelId } from "../contracts/branded.js";
+
 // ── Known constants ──
 
 /** Known finish reasons from OpenAI spec. Use as reference, not exhaustive. */
@@ -449,7 +451,7 @@ export interface ModelCapabilities {
 /** Interface for a model provider (generate/stream/token count). */
 export interface ModelProvider {
   readonly provider: string;
-  readonly model: string;
+  readonly model: ModelId;
   readonly contextLimit: number | undefined;
   readonly capabilities: ModelCapabilities;
   readonly pricing?: ModelPricing | undefined;
