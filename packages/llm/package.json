@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/llm",
-  "version": "0.1.6",
+  "version": "0.3.0",
   "description": "LLM capability seam — adapter abstraction, registry, retry, token metering",
   "type": "module",
   "main": "./dist/index.js",

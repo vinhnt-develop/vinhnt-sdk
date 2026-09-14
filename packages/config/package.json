@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/config",
-  "version": "0.1.5",
+  "version": "0.3.0",
   "description": "Configuration layer for vinhnt-sdk — credential references, settings namespaces, env resolution",
   "type": "module",
   "main": "./dist/index.js",

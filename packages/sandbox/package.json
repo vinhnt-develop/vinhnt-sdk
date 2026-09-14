@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/sandbox",
-  "version": "0.1.4",
+  "version": "0.3.0",
   "description": "Sandbox primitives for VNT Agent — ProcessSandbox interface, config/result types, fail-closed SandboxUnavailableError, command parsing and tree-scoped process termination",
   "license": "MIT",
   "type": "module",
