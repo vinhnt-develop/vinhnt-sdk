@@ -555,9 +555,8 @@ export async function runLoop(
 
     // Skip run.started event when resuming from durable storage
     if (!input.resume) {
-      // Audit + session record keep the full effective prompt (system head +
-      // user prompt); the messages sent to the model split them into a real
-      // `system` head + `user` turn (RV-40).
+      // Audit keeps full effective prompt on run.started; session history stores
+      // the raw user prompt so UI optimistic dedupe and display stay correct.
       const effectivePrompt = [input.systemPrompt, prompt].filter(Boolean).join("\n\n");
       await emitEvt("run.started", {
         prompt: effectivePrompt,
@@ -569,7 +568,7 @@ export async function runLoop(
       await deps.pluginManager?.fireHook("onRunStarted", { runId, prompt });
 
       const currentModel = runModel.model;
-      await addSessionMessage(sessionId, "user", effectivePrompt,
+      await addSessionMessage(sessionId, "user", prompt,
         { ...(currentModel ? { model: currentModel } : {}) },
       );
 

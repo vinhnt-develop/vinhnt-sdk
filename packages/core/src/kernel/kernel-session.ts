@@ -58,8 +58,12 @@ export async function addSessionMessage(
   extra?: { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number },
 ): Promise<void> {
   if (!sessionId || !deps.sessionStore || deps.noStore) return;
-  await deps.sessionStore.addMessage(sessionId, role, content, extra?.toolCallId, extra?.tokens, extra?.model, extra?.cost)
-    .catch((err) => { console.warn("[kernel] Failed to add session message:", err); });
+  try {
+    await deps.sessionStore.addMessage(sessionId, role, content, extra?.toolCallId, extra?.tokens, extra?.model, extra?.cost);
+  } catch (err) {
+    console.error("[kernel] Failed to add session message:", err);
+    throw err;
+  }
 }
 
 export async function updateSessionOnComplete(
