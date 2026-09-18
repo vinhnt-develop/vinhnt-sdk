@@ -22,7 +22,7 @@ function resolveRoot(r: RootGetter): string {
 
 /**
  * Default ignored directories for search — convenience only.
- * User tự extend: `config.ignoredDirs = [...DEFAULT_IGNORED_DIRS, "my-dir"]`
+ * Extend via: `config.ignoredDirs = [...DEFAULT_IGNORED_DIRS, "my-dir"]`
  */
 export const DEFAULT_IGNORED_DIRS = ["node_modules", ".git", ".next", "dist", ".turbo", "coverage", ".vscode"];
 

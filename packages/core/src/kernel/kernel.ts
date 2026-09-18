@@ -10,7 +10,7 @@ import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "@vinhnt-sdk/session";
 import type { ContextRegistry } from "../system-context/types.js";
-import { createRedactingLogger } from "@vinhnt-sdk/security";
+import { createRedactingLogger } from "@vinhnt-sdk/guard";
 
 import type { SubAgentParams } from "../agent/agent-factory.js";
 import type { DomainManifest } from "@vinhnt-sdk/tools";

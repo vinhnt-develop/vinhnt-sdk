@@ -26,8 +26,8 @@ export interface WebSearchResponse {
 }
 
 /**
- * Web search provider interface — user tự implement.
- * Ví dụ: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...
+ * Web search provider interface — implement your own.
+ * Examples: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...
  */
 export interface WebSearchProvider {
   name: string;
@@ -41,7 +41,7 @@ export interface WebSearchProvider {
 export interface WebSearchToolConfig {
   /**
    * Web search provider — injectable dependency.
-   * User tự implement provider hoặc dùng built-in adapters.
+   * Implement your own provider or use built-in adapters.
    */
   provider: WebSearchProvider;
   /** Default number of search results (default: 5) */
@@ -52,7 +52,7 @@ export interface WebSearchToolConfig {
 
 /**
  * Default API URLs — exported for convenience.
- * User override được qua baseUrl option.
+ * Override via the baseUrl option.
  */
 export const DEFAULT_TAVILY_URL = "https://api.tavily.com/search";
 /** Default Serper (Google Search) API URL. */
@@ -60,7 +60,7 @@ export const DEFAULT_SERPER_URL = "https://google.serper.dev/search";
 
 /**
  * Tavily search provider adapter — convenience only.
- * User có thể tự implement provider khác: Serper, Bing, Google...
+ * Implement other providers: Serper, Bing, Google...
  */
 export class TavilySearchProvider implements WebSearchProvider {
   name = "tavily";

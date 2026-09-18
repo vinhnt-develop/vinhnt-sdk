@@ -623,7 +623,7 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
 
 /**
  * Default excluded directories — convenience only.
- * User tự extend: `config.excludedDirs = [...DEFAULT_EXCLUDED_DIRS, "my-dir"]`
+ * Extend via: `config.excludedDirs = [...DEFAULT_EXCLUDED_DIRS, "my-dir"]`
  */
 export const DEFAULT_EXCLUDED_DIRS = ["node_modules", ".git"];
 

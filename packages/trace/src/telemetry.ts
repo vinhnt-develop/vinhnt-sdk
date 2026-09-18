@@ -30,8 +30,11 @@ const DEFAULT_PRICING: ModelPricing = {
   outputPer1M: 0,
 };
 
-/** Known model pricing (as of 2026) */
-export const MODEL_PRICING: Record<string, ModelPricing> = {
+/**
+ * Default model pricing (as of 2026).
+ * Exported for user extension: `const myPricing = { ...DEFAULT_MODEL_PRICING, "my-model": { inputPer1M: 1, outputPer1M: 2 } }`
+ */
+export const DEFAULT_MODEL_PRICING: Record<string, ModelPricing> = {
   "deepseek-chat": { inputPer1M: 0.27, outputPer1M: 1.10 },
   "deepseek-reasoner": { inputPer1M: 0.55, outputPer1M: 2.19 },
   "gpt-4o": { inputPer1M: 2.50, outputPer1M: 10.00 },
@@ -39,6 +42,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   "claude-sonnet-4-20250514": { inputPer1M: 3.00, outputPer1M: 15.00 },
   "claude-haiku-4-20250414": { inputPer1M: 0.80, outputPer1M: 4.00 },
 };
+
+/**
+ * @deprecated Use `DEFAULT_MODEL_PRICING` instead. Will be removed in 0.5.0.
+ */
+export const MODEL_PRICING = DEFAULT_MODEL_PRICING;
 
 /**
  * Calculate cost from token counts.
@@ -63,10 +71,15 @@ export class CostMeter {
   private totalInput = 0;
   private totalOutput = 0;
   private readonly operations: UsageStats[] = [];
+  private readonly pricingTable: Record<string, ModelPricing>;
+
+  constructor(pricingTable?: Record<string, ModelPricing>) {
+    this.pricingTable = pricingTable ?? DEFAULT_MODEL_PRICING;
+  }
 
   /** Record a token usage event */
   record(inputTokens: number, outputTokens: number, modelId?: string): UsageStats {
-    const pricing = modelId ? MODEL_PRICING[modelId] : undefined;
+    const pricing = modelId ? this.pricingTable[modelId] : undefined;
     const costUsd = calculateCost(inputTokens, outputTokens, pricing);
     const stats: UsageStats = {
       inputTokens,

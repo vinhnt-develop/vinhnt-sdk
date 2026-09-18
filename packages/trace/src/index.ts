@@ -20,5 +20,5 @@ export { Timeline, buildTranscript } from "./timeline.js";
 export type { TimelineEvent, TimelineEventType, TranscriptEntry } from "./timeline.js";
 
 // ── Telemetry ──
-export { CostMeter, calculateCost, calculateContextPressure, MODEL_PRICING } from "./telemetry.js";
+export { CostMeter, calculateCost, calculateContextPressure, DEFAULT_MODEL_PRICING, MODEL_PRICING } from "./telemetry.js";
 export type { UsageStats, ModelPricing, ContextPressure } from "./telemetry.js";

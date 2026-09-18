@@ -1,9 +1,11 @@
 /**
  * MCP Client — Service Definition for connecting to MCP servers.
  *
- * This is the "Service Definition" in the capability seam pattern.
- * Transport implementations (stdio, SSE, Streamable HTTP) provide
- * the actual connection.
+ * MCP 2026-07-28 spec changes:
+ * - Stateless by default (no session tracking)
+ * - MRTR (Model-Relative Tool Registration) replaces server-initiated requests
+ * - Sampling and Roots are deprecated (use tool calls instead)
+ * - Resources and Prompts are now tools (unified interface)
  *
  * Capability Seam:
  *   Service Definition (this module) → Transport (stdio, SSE, HTTP) → Consumer (core kernel)
@@ -19,20 +21,28 @@ export interface McpConnection {
   readonly serverInfo: { name: string; version: string };
   /** Server capabilities. */
   readonly capabilities: Record<string, unknown>;
+  /** Protocol version negotiated. */
+  readonly protocolVersion: string;
   /** List tools exposed by the server. */
   listTools(): Promise<McpTool[]>;
   /** Call a tool on the server. */
   callTool(name: string, args?: Record<string, unknown>): Promise<CallToolResult>;
-  /** List resources exposed by the server. */
+  /** List resources exposed by the server (deprecated in 2026-07-28, prefer tools). */
   listResources(): Promise<McpResource[]>;
-  /** Read a resource from the server. */
+  /** Read a resource from the server (deprecated in 2026-07-28, prefer tools). */
   readResource(uri: string): Promise<string>;
+  /** List prompts exposed by the server (deprecated in 2026-07-28, prefer tools). */
+  listPrompts(): Promise<Array<{ name: string; description?: string; arguments?: unknown[] }>>;
+  /** Get a prompt from the server (deprecated in 2026-07-28, prefer tools). */
+  getPrompt(name: string, args?: Record<string, unknown>): Promise<string>;
   /** Disconnect from the server. */
   close(): Promise<void>;
 }
 
 /**
  * MCP Client — connects to MCP servers and provides tool/resource access.
+ *
+ * MCP 2026-07-28: Stateless by default, no session tracking.
  *
  * @example
  * ```ts
@@ -105,16 +115,17 @@ export class McpClient {
     config: McpServerConfig,
   ): Promise<McpConnection> {
     const timeoutMs = config.timeoutMs ?? 30_000;
+    const protocolVersion = config.protocolVersion ?? "2026-07-28";
 
-    // Send initialize request
+    // Send initialize request (MCP 2026-07-28)
     const initResponse = await transport.request({
       jsonrpc: "2.0",
       id: 1,
       method: "initialize",
       params: {
-        protocolVersion: "2025-03-26",
+        protocolVersion,
         capabilities: {},
-        clientInfo: { name: "vinhnt-sdk", version: "0.2.0" },
+        clientInfo: { name: "vinhnt-sdk", version: "0.4.0" },
       },
     });
 
@@ -125,6 +136,7 @@ export class McpClient {
     const initResult = initResponse.result as {
       serverInfo: { name: string; version: string };
       capabilities: Record<string, unknown>;
+      protocolVersion?: string;
     };
 
     // Send initialized notification
@@ -151,6 +163,7 @@ export class McpClient {
     return {
       serverInfo: initResult.serverInfo,
       capabilities: initResult.capabilities,
+      protocolVersion: initResult.protocolVersion ?? protocolVersion,
 
       async listTools(): Promise<McpTool[]> {
         const result = (await request("tools/list")) as { tools: McpTool[] };
@@ -171,6 +184,18 @@ export class McpClient {
           contents: Array<{ uri: string; mimeType?: string; text?: string }>;
         };
         return result.contents?.[0]?.text ?? "";
+      },
+
+      async listPrompts(): Promise<Array<{ name: string; description?: string; arguments?: unknown[] }>> {
+        const result = (await request("prompts/list")) as { prompts: Array<{ name: string; description?: string; arguments?: unknown[] }> };
+        return result.prompts ?? [];
+      },
+
+      async getPrompt(name: string, args?: Record<string, unknown>): Promise<string> {
+        const result = (await request("prompts/get", { name, arguments: args })) as {
+          messages: Array<{ role: string; content: string }>;
+        };
+        return result.messages?.[0]?.content ?? "";
       },
 
       async close(): Promise<void> {

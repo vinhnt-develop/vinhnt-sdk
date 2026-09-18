@@ -1,7 +1,7 @@
-{
+﻿{
     "name":  "@vinhnt-sdk/security",
-    "version": "0.3.0",
-    "description":  "Security utilities for VNT Agent — prompt injection protection and secret redaction",
+    "version":  "0.4.0",
+    "description":  "Security utilities for VNT Agent â€” prompt injection protection and secret redaction",
     "license":  "MIT",
     "type":  "module",
     "main":  "./dist/index.js",
@@ -37,7 +37,8 @@
                      "security",
                      "secret-redactor",
                      "prompt-injection",
-                     "sanitizer"
+                     "sanitizer",
+                     "deprecated"
                  ],
     "publishConfig":  {
                           "access":  "public"
@@ -49,6 +50,8 @@
                     "prepublishOnly":  "pnpm build",
                     "test":  "vitest run",
                     "lint":  "eslint ."
-                }
+                },
+    "dependencies":  {
+                         "@vinhnt-sdk/guard":  "workspace:*"
+                     }
 }
-

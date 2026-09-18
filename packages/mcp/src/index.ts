@@ -2,6 +2,8 @@
  * @module mcp
  * MCP (Model Context Protocol) client/server for vinhnt-sdk.
  *
+ * MCP 2026-07-28: Stateless by default, MRTR, resources/prompts deprecated.
+ *
  * Capability Seam:
  *   Service Definition (McpClient, McpConnection)
  *     → Transport (stdio, SSE, Streamable HTTP)

@@ -1,0 +1,40 @@
+{
+  "name": "@vinhnt-sdk/workflow",
+  "version": "0.4.0",
+  "description": "Workflow primitives for agent orchestration - parallel, sequential, conditional",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "LICENSE", "README.md"],
+  "sideEffects": false,
+  "engines": { "node": ">=20" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/workflow"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/workflow",
+  "bugs": { "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues" },
+  "keywords": ["vnt", "workflow", "orchestration", "parallel", "sequential"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vinhnt-sdk/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,11 +1,13 @@
 /**
  * Security utilities for vinhnt-sdk.
  *
+ * @deprecated Use @vinhnt-sdk/guard instead. This package re-exports from guard.
+ *
  * @module security
  * @packageDocumentation
  */
 
-export { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "./input-sanitizer.js";
+export { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "@vinhnt-sdk/guard";
 export {
   redactSecrets,
   detectSecrets,
@@ -14,6 +16,6 @@ export {
   SecretRedactor,
   defaultSecretRedactor,
   DEFAULT_SECRET_PATTERNS,
-} from "./secret-redactor.js";
-export type { SecretRedactorConfig, SecretPattern } from "./secret-redactor.js";
-export { sanitizeEnv } from "./env-sanitizer.js";
+} from "@vinhnt-sdk/guard";
+export type { SecretRedactorConfig, SecretPattern } from "@vinhnt-sdk/guard";
+export { sanitizeEnv } from "@vinhnt-sdk/guard";

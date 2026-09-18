@@ -15,6 +15,8 @@ export default defineConfig({
       'packages/config',
       'packages/llm',
       'packages/guard',
+      'packages/guardrails',
+      'packages/workflow',
       'packages/mcp',
       'packages/trace',
       'packages/event',

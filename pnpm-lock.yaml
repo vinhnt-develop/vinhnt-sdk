@@ -51,6 +51,12 @@ importers:
       '@vinhnt-sdk/event':
         specifier: workspace:*
         version: link:../event
+      '@vinhnt-sdk/guard':
+        specifier: workspace:*
+        version: link:../guard
+      '@vinhnt-sdk/guardrails':
+        specifier: workspace:*
+        version: link:../guardrails
       '@vinhnt-sdk/knowledge':
         specifier: workspace:*
         version: link:../knowledge
@@ -66,9 +72,6 @@ importers:
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
-      '@vinhnt-sdk/security':
-        specifier: workspace:*
-        version: link:../security
       '@vinhnt-sdk/session':
         specifier: workspace:*
         version: link:../session
@@ -78,6 +81,9 @@ importers:
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
+      '@vinhnt-sdk/workflow':
+        specifier: workspace:*
+        version: link:../workflow
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -93,6 +99,19 @@ importers:
 
   packages/guard:
     dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.10)
+
+  packages/guardrails:
+    dependencies:
+      '@vinhnt-sdk/guard':
+        specifier: workspace:*
+        version: link:../guard
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
@@ -128,9 +147,6 @@ importers:
 
   packages/lsp:
     dependencies:
-      '@vinhnt-sdk/core':
-        specifier: workspace:*
-        version: link:../core
       '@vinhnt-sdk/schema':
         specifier: workspace:*
         version: link:../schema
@@ -193,7 +209,11 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  packages/security: {}
+  packages/security:
+    dependencies:
+      '@vinhnt-sdk/guard':
+        specifier: workspace:*
+        version: link:../guard
 
   packages/session:
     dependencies:
@@ -244,6 +264,16 @@ importers:
         version: 4.4.3
 
   packages/trace:
+    dependencies:
+      '@vinhnt-sdk/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.10)
+
+  packages/workflow:
     dependencies:
       '@vinhnt-sdk/schema':
         specifier: workspace:*

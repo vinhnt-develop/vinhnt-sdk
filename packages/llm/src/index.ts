@@ -1,5 +1,5 @@
 // @vinhnt-sdk/llm
-// LLM capability seam — adapter abstraction, registry, retry, token metering, model caller
+// LLM capability seam — adapter abstraction, registry, retry, model caller
 
 export {
   type GenerateOptions,
@@ -22,6 +22,10 @@ export {
   sleep,
 } from "./retry.js";
 
+/**
+ * @deprecated Use CostMeter from @vinhnt-sdk/trace instead.
+ * TokenMeter is kept for backward compatibility only.
+ */
 export { TokenMeter } from "./token-meter.js";
 
 // Re-export ModelCaller (previously in @vinhnt-sdk/model-caller)

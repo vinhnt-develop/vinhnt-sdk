@@ -6,6 +6,84 @@ export type CircuitState = "closed" | "open" | "half_open" | (string & {});
 /** Known circuit states for runtime checks. */
 export const KNOWN_CIRCUIT_STATES = ["closed", "open", "half_open"] as const;
 
+/**
+ * Monotonic guard decision — once denied, cannot be reopened by later listeners.
+ * Inspired by DeepSeek Harness monotonic guard pattern.
+ */
+export type GuardDecision = "allow" | "deny" | "escalate";
+
+/**
+ * Tool guard interface — intercepts tool calls before execution.
+ * Guards can only deny or escalate, never reopen a denied decision.
+ */
+export interface ToolGuard {
+  readonly name: string;
+  check: (ctx: ToolGuardContext, toolCall: ToolGuardInput) => Promise<ToolGuardDecision>;
+}
+
+/** Context passed to tool guards */
+export interface ToolGuardContext {
+  readonly toolId: string;
+  readonly sessionId?: string;
+  readonly runId?: string;
+  readonly metadata?: Record<string, unknown>;
+}
+
+/** Input provided to tool guards */
+export interface ToolGuardInput {
+  readonly toolName: string;
+  readonly input: unknown;
+  readonly risk?: string;
+}
+
+/** Result of a tool guard check */
+export interface ToolGuardDecision {
+  readonly decision: GuardDecision;
+  readonly reason?: string;
+}
+
+/**
+ * Evaluate multiple guards in monotonic order.
+ * Once a guard denies, subsequent guards cannot override.
+ */
+export function evaluateGuards(
+  guards: ToolGuard[],
+  ctx: ToolGuardContext,
+  input: ToolGuardInput,
+): Promise<ToolGuardDecision> {
+  return evaluateGuardsSequential(guards, ctx, input, 0, { decision: "allow" });
+}
+
+async function evaluateGuardsSequential(
+  guards: ToolGuard[],
+  ctx: ToolGuardContext,
+  input: ToolGuardInput,
+  index: number,
+  current: ToolGuardDecision,
+): Promise<ToolGuardDecision> {
+  if (index >= guards.length) return current;
+
+  // Monotonic: once denied, cannot be reopened
+  if (current.decision === "deny") {
+    return current;
+  }
+
+  const guard = guards[index];
+  if (!guard) return current;
+
+  const result = await guard.check(ctx, input);
+
+  // Deny takes precedence over escalate
+  const next: ToolGuardDecision =
+    result.decision === "deny"
+      ? result
+      : result.decision === "escalate" && current.decision === "allow"
+        ? result
+        : current;
+
+  return evaluateGuardsSequential(guards, ctx, input, index + 1, next);
+}
+
 /** Tuning for {@link CircuitBreaker}: failure/success thresholds and retry policy. */
 export interface CircuitBreakerOptions {
   failureThreshold?: number;

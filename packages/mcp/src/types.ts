@@ -81,6 +81,8 @@ export interface McpTransport {
 export interface McpServerConfig {
   readonly name: string;
   readonly transport: "stdio" | "sse" | "streamable-http";
+  /** MCP protocol version (default: "2026-07-28") */
+  readonly protocolVersion?: string;
   readonly command?: string;
   readonly args?: string[];
   readonly env?: Record<string, string>;

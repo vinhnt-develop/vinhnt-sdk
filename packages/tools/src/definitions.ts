@@ -10,9 +10,23 @@ export const KNOWN_TOOL_RISKS = ["read", "write", "destructive", "external"] as 
 /** Tool risk level — open string for extensibility. */
 export type ToolRisk = string;
 
+/** Tool annotations — hint about tool behavior for LLMs (MCP 2026-07-28 pattern) */
+export interface ToolAnnotations {
+  /** If true, tool does not modify its environment */
+  readonly readOnlyHint?: boolean;
+  /** If true, tool may perform destructive actions (delete, overwrite) */
+  readonly destructiveHint?: boolean;
+  /** If true, tool performs network access */
+  readonly openWorldHint?: boolean;
+  /** If true, tool requires human approval before execution */
+  readonly requiresApproval?: boolean;
+}
+
 /** Provider-facing tool definition: schema, risk and execute. */
 export interface ToolDefinition<TInput = unknown, TOutput = unknown> extends ToolDefinitionLike {
   readonly inputSchema?: NestedJsonSchema | undefined;
+  /** JSON Schema for tool output (MCP 2026-07-28 pattern) */
+  readonly outputSchema?: NestedJsonSchema | undefined;
   readonly risk: ToolRisk;
   /** Per-tool timeout in ms (overrides global default). */
   readonly timeoutMs?: number;
@@ -32,6 +46,12 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> extends Too
   readonly deferred?: boolean;
   /** Tags for tool search (e.g. ["file", "read", "search"]). */
   readonly tags?: readonly string[];
+  /** Tool annotations — hints about tool behavior for LLMs */
+  readonly annotations?: ToolAnnotations;
+  /** Icon identifier or emoji for UI display */
+  readonly icon?: string;
+  /** Human-readable category for tool grouping */
+  readonly category?: string;
   readonly metadata?: Record<string, unknown>;
   execute(input: TInput, ctx: ToolContext): Promise<TOutput>;
 }
