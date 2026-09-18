@@ -4,7 +4,7 @@ description: "Tích hợp LSP và chẩn đoán"
 lang: "vi"
 type: "reference"
 category: "API Reference"
-version: "0.1.3"
+version: "0.4.0"
 sidebarLabel: "lsp"
 ---
 

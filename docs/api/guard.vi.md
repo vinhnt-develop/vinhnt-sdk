@@ -1,16 +1,36 @@
 ---
 title: "@vinhnt-sdk/guard"
-description: "Circuit breaker, phát hiện vòng lặp, timeout công cụ"
+description: "Circuit breaker, phát hiện vòng lặp, timeout công cụ, monotonic guards, redaction bí mật"
 lang: vi
 type: "reference"
 category: "API Reference"
 sidebarLabel: guard
-version: "0.1.3"
+version: "0.4.0"
 ---
 
 # @vinhnt-sdk/guard
 
-Circuit breaker, phát hiện vòng lặp, và timeout công cụ cho thực thi agent resilent.
+Circuit breaker, phát hiện vòng lặp, timeout công cụ, monotonic guards, và redaction bí mật cho thực thi agent resilent.
+
+## Xuất (Exports)
+
+### `evaluateGuards(guards, ctx, input)`
+
+Đánh giá nhiều guards với ngữ nghĩa monotonic — khi deny, không thể mở lại.
+
+```ts
+import { evaluateGuards } from "@vinhnt-sdk/guard";
+
+const result = await evaluateGuards(
+  [
+    { name: "safety", check: async () => ({ decision: "allow" }) },
+    { name: "rate-limit", check: async () => ({ decision: "deny", reason: "qua nhanh" }) },
+  ],
+  { toolId: "my-tool" },
+  { toolName: "read_file", input: { path: "/etc/passwd" } },
+);
+// result.decision → "deny" (monotonic: guards sau không thể override)
+```
 
 ## Xuất (Exports)
 

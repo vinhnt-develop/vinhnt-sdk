@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/config"
 description: "Thông tin xác thực, phân giải môi trường, cài đặt"
 lang: "vi"
-version: "0.1.3"
+version: "0.4.0"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "config"

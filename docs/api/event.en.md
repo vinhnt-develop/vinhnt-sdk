@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/event"
 description: "Typed event bus with durable replay for agentic workflows"
-version: "0.1.3"
+version: "0.4.0"
 lang: "en"
 type: "reference"
 category: "API Reference"

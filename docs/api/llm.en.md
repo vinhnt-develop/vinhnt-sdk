@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/llm"
 description: "LLM adapter abstraction, registry, retry"
 lang: "en"
-version: "0.1.3"
+version: "0.4.0"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "llm"
@@ -28,6 +28,10 @@ abstract class LlmAdapter {
   abstract stream(request: ModelRequest): AsyncIterable<StreamChunk>;
 }
 ```
+
+#### `TokenMeter` (deprecated)
+
+> **Deprecated:** Use `CostMeter` from `@vinhnt-sdk/trace` instead.
 
 | Method | Returns | Description |
 |--------|---------|-------------|

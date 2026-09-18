@@ -5,7 +5,7 @@ lang: en
 type: "reference"
 category: "API Reference"
 sidebarLabel: tools
-version: "0.1.3"
+version: "0.4.0"
 ---
 
 # @vinhnt-sdk/tools
@@ -25,15 +25,18 @@ const myTool = defineTool({
   name: "my_tool",
   description: "Does something useful",
   risk: "read",
-  parameters: {
-    type: "object",
-    properties: {
-      query: { type: "string", description: "Search query" },
-    },
-    required: ["query"],
+  input: z.object({
+    query: z.string().describe("Search query"),
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
   },
-  execute: async (params, context) => {
-    return { result: `Processed: ${params.query}` };
+  icon: "🔍",
+  category: "search",
+  execute: async (input, ctx) => {
+    return { result: `Processed: ${input.query}` };
   },
 });
 ```

@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/core"
 description: "AgentKernel, plugin manager, orchestration"
-version: "0.1.3"
+version: "0.4.0"
 lang: "en"
 type: "reference"
 category: "API Reference"
@@ -10,7 +10,9 @@ sidebarLabel: "core"
 
 # @vinhnt-sdk/core
 
-The core orchestration module of vinhnt-sdk. Provides the `AgentKernel` entry point, plugin management, event bus, model registry, and all built-in tools for agent workflows.
+The core orchestration module of vinhnt-sdk. Provides the `AgentKernel` entry point, plugin management, event bus, model registry, and essential tools for agent workflows.
+
+> **Note:** As of v0.4.0, core exports are slimmed down. Import from specific packages for full access.
 
 ## Imports
 

@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/mcp"
-description: "MCP client, connection pooling, and tool mapping"
-version: "0.1.3"
+description: "MCP client for Model Context Protocol 2026-07-28"
+version: "0.4.0"
 lang: "en"
 type: "reference"
 category: "API Reference"
@@ -10,7 +10,13 @@ sidebarLabel: "mcp"
 
 # @vinhnt-sdk/mcp
 
-Model Context Protocol (MCP) client implementations for connecting to external tool servers, managing connections, and mapping MCP tools to the vinhnt-sdk tool interface.
+Model Context Protocol (MCP) client for vinhnt-sdk — MCP 2026-07-28 compliant.
+
+Key changes from MCP 2025-03-26:
+- **Stateless by default** — no session tracking
+- **MRTR** (Model-Relative Tool Registration) replaces server-initiated requests
+- **Resources and Prompts** are now tools (unified interface)
+- **Sampling and Roots** are deprecated (use tool calls instead)
 
 ## Installation
 
@@ -22,20 +28,28 @@ npm install @vinhnt-sdk/mcp
 
 ### `McpClient`
 
-Manages a single connection to an MCP server. Handles JSON-RPC communication, tool discovery, and lifecycle.
+Connects to MCP servers and provides tool/resource access. Stateless by default (MCP 2026-07-28).
 
 ```ts
-import { McpClient, StdioTransport } from "@vinhnt-sdk/mcp";
+import { McpClient } from "@vinhnt-sdk/mcp";
 
-const client = new McpClient({
+const client = new McpClient();
+const conn = await client.connect({
   name: "my-server",
-  transport: new StdioTransport({ command: "node", args: ["server.js"] }),
+  transport: "stdio",
+  command: "node",
+  args: ["server.js"],
+  protocolVersion: "2026-07-28", // default
 });
 
-await client.connect();
-const tools = await client.listTools();
-const result = await client.callTool("get_weather", { city: "Hanoi" });
-await client.disconnect();
+const tools = await conn.listTools();
+const result = await conn.callTool("get_weather", { city: "Hanoi" });
+
+// Deprecated in 2026-07-28 — prefer tools
+const resources = await conn.listResources();
+const prompts = await conn.listPrompts();
+
+await conn.close();
 ```
 
 **Constructor:** `McpClient(config: McpServerConfig)`

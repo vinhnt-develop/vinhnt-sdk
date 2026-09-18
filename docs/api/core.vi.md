@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/core"
 description: "AgentKernel, quản lý plugin, điều phối"
-version: "0.1.3"
+version: "0.4.0"
 lang: "vi"
 type: "reference"
 category: "API Reference"

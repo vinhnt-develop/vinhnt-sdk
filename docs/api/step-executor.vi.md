@@ -4,7 +4,7 @@ description: "Hạt nhân thực thi và tự sửa lỗi"
 lang: "vi"
 type: "reference"
 category: "API Reference"
-version: "0.1.3"
+version: "0.4.0"
 sidebarLabel: "step-executor"
 ---
 

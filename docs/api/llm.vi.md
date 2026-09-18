@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/llm"
 description: "Trừu tượng hóa adapter LLM, registry, thử lại"
 lang: "vi"
-version: "0.1.3"
+version: "0.4.0"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "llm"

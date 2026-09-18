@@ -1,14 +1,16 @@
 ---
 title: "@vinhnt-sdk/security"
-description: "Secret redactor and injection detection"
+description: "Secret redactor and injection detection (deprecated — use guard)"
 lang: "en"
 type: "reference"
 category: "API Reference"
-version: "0.1.3"
+version: "0.4.0"
 sidebarLabel: "security"
 ---
 
 # @vinhnt-sdk/security
+
+> **Deprecated:** Use `@vinhnt-sdk/guard` instead. This package re-exports from guard.
 
 Secret redaction, prompt injection detection, and text sanitization for safe LLM consumption.
 

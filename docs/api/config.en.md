@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/config"
 description: "Credentials, env resolution, settings"
 lang: "en"
-version: "0.1.3"
+version: "0.4.0"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "config"

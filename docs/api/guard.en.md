@@ -1,18 +1,36 @@
 ---
 title: "@vinhnt-sdk/guard"
-description: "Circuit breaker, loop detection, tool timeout"
+description: "Circuit breaker, loop detection, tool timeout, monotonic guards, secret redaction"
 lang: en
 type: "reference"
 category: "API Reference"
 sidebarLabel: guard
-version: "0.1.3"
+version: "0.4.0"
 ---
 
 # @vinhnt-sdk/guard
 
-Circuit breaker, loop detection, and tool timeout guards for resilient agent execution.
+Circuit breaker, loop detection, tool timeout, monotonic guards, and secret redaction for resilient agent execution.
 
 ## Exports
+
+### `evaluateGuards(guards, ctx, input)`
+
+Evaluate multiple guards with monotonic semantics — once denied, cannot be reopened.
+
+```ts
+import { evaluateGuards } from "@vinhnt-sdk/guard";
+
+const result = await evaluateGuards(
+  [
+    { name: "safety", check: async () => ({ decision: "allow" }) },
+    { name: "rate-limit", check: async () => ({ decision: "deny", reason: "too fast" }) },
+  ],
+  { toolId: "my-tool" },
+  { toolName: "read_file", input: { path: "/etc/passwd" } },
+);
+// result.decision → "deny" (monotonic: later guards can't override)
+```
 
 ### `CircuitBreaker`
 
@@ -137,10 +155,25 @@ try {
 
 ## Types
 
+### `GuardDecision`
+
+```ts
+type GuardDecision = "allow" | "deny" | "escalate";
+```
+
+### `ToolGuard`
+
+```ts
+interface ToolGuard {
+  readonly name: string;
+  check: (ctx: ToolGuardContext, toolCall: ToolGuardInput) => Promise<ToolGuardDecision>;
+}
+```
+
 ### `CircuitState`
 
 ```ts
-type CircuitState = "closed" | "open" | "half_open";
+type CircuitState = "closed" | "open" | "half_open" | (string & {});
 ```
 
 - `closed` — Normal operation, calls pass through
@@ -186,6 +219,30 @@ async function safeToolCall(toolFn) {
 }
 ```
 
+## Security Re-exports
+
+The guard package now includes security utilities (merged from `@vinhnt-sdk/security`):
+
+### `redactSecrets(text)`
+
+Redact secrets from text using default patterns.
+
+### `detectSecrets(text)`
+
+Detect suspected secrets in text.
+
+### `sanitizeForLLM(text, source?)`
+
+Sanitize external text before it enters the LLM context window.
+
+### `detectInjectionPatterns(text)`
+
+Check whether text contains suspected prompt injection patterns.
+
+### `SecretRedactor`
+
+ Injectable redactor with custom patterns.
+
 ## Dependencies
 
-- `@vinhnt-sdk/schema` — JSON Schema validation and type definitions
+- `@vinhnt-sdk/schema`

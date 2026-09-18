@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/event"
 description: "Bus sự kiện có kiểu với khả năng phát lại bền bỉ cho workflow agent"
-version: "0.1.3"
+version: "0.4.0"
 lang: "vi"
 type: "reference"
 category: "API Reference"

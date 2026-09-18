@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/knowledge"
 description: "Bộ nhớ, nén ngữ cảnh và xây dựng prompt cho workflow agent"
-version: "0.1.3"
+version: "0.4.0"
 lang: "vi"
 type: "reference"
 category: "API Reference"

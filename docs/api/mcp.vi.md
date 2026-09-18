@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/mcp"
 description: "Khách MCP, pooling kết nối và ánh xạ tool"
-version: "0.1.3"
+version: "0.4.0"
 lang: "vi"
 type: "reference"
 category: "API Reference"

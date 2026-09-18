@@ -40,9 +40,11 @@
 - [plugin](api/plugin.md) - Plugin SDK
 - [knowledge](api/knowledge.md) - Memory, context compression
 - [event](api/event.md) - Event bus
-- [mcp](api/mcp.md) - Model Context Protocol
+- [mcp](api/mcp.md) - Model Context Protocol (2026-07-28)
 - [trace](api/trace.md) - Telemetry, cost tracking
-- [security](api/security.md) - Prompt injection protection
+- [security](api/security.md) - Deprecated → use guard
+- [guardrails](api/guardrails.md) - Guardrail tripwires for inputs/outputs
+- [workflow](api/workflow.md) - Workflow primitives (parallel, sequential, conditional)
 - [lsp](api/lsp.md) - Language Server Protocol
 
 ## Examples

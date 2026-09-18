@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/provider-openai-compatible"
 description: "Nhà cung cấp tương thích OpenAI + preset"
-version: "0.1.3"
+version: "0.4.0"
 lang: "vi"
 type: "reference"
 category: "API Reference"

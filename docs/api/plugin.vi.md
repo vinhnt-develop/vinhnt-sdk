@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/plugin"
 description: "Hook plugin và trình tải npm"
-version: "0.1.3"
+version: "0.4.0"
 lang: "vi"
 type: "reference"
 category: "API Reference"

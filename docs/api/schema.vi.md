@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/schema"
 description: "Các kiểu cơ bản, hợp đồng, ID được đóng gói"
 lang: "vi"
-version: "0.1.3"
+version: "0.4.0"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "schema"

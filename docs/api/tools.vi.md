@@ -5,7 +5,7 @@ lang: vi
 type: "reference"
 category: "API Reference"
 sidebarLabel: tools
-version: "0.1.3"
+version: "0.4.0"
 ---
 
 # @vinhnt-sdk/tools
