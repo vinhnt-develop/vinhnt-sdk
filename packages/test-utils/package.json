@@ -1,0 +1,41 @@
+{
+  "name": "@vinhnt-sdk/test-utils",
+  "version": "0.6.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {},
+  "description": "Test utilities for vinhnt-sdk packages",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk",
+    "directory": "packages/test-utils"
+  }
+}
