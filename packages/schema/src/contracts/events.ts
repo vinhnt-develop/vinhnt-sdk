@@ -175,7 +175,12 @@ export interface TokenStreamedData { readonly content: string; readonly step: nu
 export interface ThinkingStartedData { readonly step: number }
 export interface ThinkingContentData { readonly content: string; readonly step: number }
 export interface ThinkingCompletedData { readonly content: string; readonly step: number }
-export interface ContextCompressedData { readonly originalCount: number; readonly compressedCount: number }
+export interface ContextCompressedData {
+  readonly originalCount: number;
+  readonly compressedCount: number;
+  readonly summary?: string;
+  readonly removedMessageIds?: string[];
+}
 export interface TokenCountedData { readonly inputTokens: number; readonly outputTokens?: number; readonly reasoningTokens?: number; readonly cacheReadTokens?: number; readonly cacheWriteTokens?: number; readonly provider: string; readonly model: string; readonly step: number; readonly source?: "local" | "api" }
 export interface ModelCostData { readonly inputTokens: number; readonly outputTokens: number; readonly cost: number; readonly model: string; readonly provider: string; readonly durationMs: number; readonly step: number }
 export interface ToolInvokedData { readonly toolId: string; readonly toolName: string; readonly input: unknown; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask" }
@@ -184,7 +189,7 @@ export interface ToolFailedData { readonly toolId: string; readonly toolName: st
 export interface ToolSelfCorrectingData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly attempt: number }
 export interface StepCompletedData { readonly turn: number; readonly step: number; readonly toolCallCount: number }
 export interface StepFailedData { readonly turn: number; readonly step: number; readonly reason: string; readonly error?: string }
-export interface RunCompletedData { readonly status: "succeeded" | "failed"; readonly cancelled?: boolean; readonly output?: string; readonly error?: string; readonly totalSteps: number; readonly durationMs?: number; readonly inputTokens?: number; readonly outputTokens?: number; readonly reasoningTokens?: number; readonly provider?: string }
+export interface RunCompletedData { readonly status: "succeeded" | "failed"; readonly cancelled?: boolean; readonly output?: string; readonly error?: string; readonly totalSteps: number; readonly durationMs?: number; readonly inputTokens?: number; readonly outputTokens?: number; readonly reasoningTokens?: number; readonly stopReason?: string; readonly provider?: string }
 export interface PermissionRequestedData { readonly requestId: RequestId; readonly toolName: string; readonly resource: string; readonly reason: string; readonly prompt: string }
 export interface PermissionRepliedData { readonly requestId: RequestId; readonly reply: "once" | "always" | "reject" }
 export interface StepTypeChangedData { readonly stepType: AgentStepType; readonly stepNumber: number; readonly toolName?: string; readonly detail?: string }
@@ -197,6 +202,20 @@ export interface ApprovalDecidedData { readonly requestId: RequestId; readonly d
 export interface ToolCancelledData { readonly toolId: string; readonly toolName: string; readonly callId?: string }
 export interface RequestHeaderData { readonly provider: string; readonly model: string; readonly reason: "initial" | "resume" | "change" | "series" }
 export interface RequestContextData { readonly provider: string; readonly model: string; readonly contextWindow?: number }
+export interface LlmRequestData {
+  readonly step: number;
+  readonly model: string;
+  readonly provider?: string;
+  readonly temperature?: number;
+  readonly maxTokens?: number;
+  readonly topP?: number;
+  readonly stopSequences?: string[];
+  readonly frequencyPenalty?: number;
+  readonly presencePenalty?: number;
+  readonly systemPromptLength?: number;
+  readonly messageCount?: number;
+  readonly toolCount?: number;
+}
 
 // ---------------------------------------------------------------------------
 // Discriminated union — enables type-safe narrowing in consumers
@@ -230,4 +249,5 @@ export type KnownRunEvent =
   | (RunEvent<ApprovalAskedData> & { readonly type: "approval.asked" })
   | (RunEvent<ApprovalDecidedData> & { readonly type: "approval.decided" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
-  | (RunEvent<RequestContextData> & { readonly type: "request.context" });
+  | (RunEvent<RequestContextData> & { readonly type: "request.context" })
+  | (RunEvent<LlmRequestData> & { readonly type: "llm.request" });

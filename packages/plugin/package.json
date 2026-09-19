@@ -51,6 +51,6 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@vinhnt-sdk/core": "workspace:*"
+    "@vinhnt-sdk/core": ">=0.6.0"
   }
 }

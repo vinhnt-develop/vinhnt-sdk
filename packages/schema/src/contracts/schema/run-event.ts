@@ -60,7 +60,8 @@ export type ThinkingCompletedData = z.infer<typeof ThinkingCompletedDataSchema>;
 export const ContextCompressedDataSchema = z.object({
   originalCount: z.number(),
   compressedCount: z.number(),
-  step: z.number().optional(),
+  summary: z.string().optional(),
+  removedMessageIds: z.array(z.string()).optional(),
 });
 /** Inferred type of {@link ContextCompressedDataSchema}. */
 export type ContextCompressedData = z.infer<typeof ContextCompressedDataSchema>;
@@ -255,6 +256,24 @@ export const RequestContextDataSchema = z.object({
 });
 /** Inferred type of {@link RequestContextDataSchema}. */
 export type RequestContextData = z.infer<typeof RequestContextDataSchema>;
+
+/** Data payload for the `llm.request` event. */
+export const LlmRequestDataSchema = z.object({
+  step: z.number(),
+  model: z.string(),
+  provider: z.string().optional(),
+  temperature: z.number().optional(),
+  maxTokens: z.number().optional(),
+  topP: z.number().optional(),
+  stopSequences: z.array(z.string()).optional(),
+  frequencyPenalty: z.number().optional(),
+  presencePenalty: z.number().optional(),
+  systemPromptLength: z.number().optional(),
+  messageCount: z.number().optional(),
+  toolCount: z.number().optional(),
+});
+/** Inferred type of {@link LlmRequestDataSchema}. */
+export type LlmRequestData = z.infer<typeof LlmRequestDataSchema>;
 
 /** Data payload for the `step.completed` event. */
 export const StepCompletedDataSchema = z.object({
@@ -456,6 +475,11 @@ export const RequestContextEventSchema = eventSchema(RequestContextDataSchema, z
 /** Inferred type of {@link RequestContextEventSchema}. */
 export type RequestContextEvent = z.infer<typeof RequestContextEventSchema>;
 
+/** Zod schema for the `llm.request` event. */
+export const LlmRequestEventSchema = eventSchema(LlmRequestDataSchema, z.literal("llm.request"));
+/** Inferred type of {@link LlmRequestEventSchema}. */
+export type LlmRequestEvent = z.infer<typeof LlmRequestEventSchema>;
+
 /* ── Discriminated union ── */
 
 /** Zod schema for the KnownRun event. */
@@ -488,6 +512,7 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   ApprovalDecidedEventSchema,
   RequestHeaderEventSchema,
   RequestContextEventSchema,
+  LlmRequestEventSchema,
 ]);
 /** Inferred type of {@link KnownRunEventSchema}. */
 export type KnownRunEvent = z.infer<typeof KnownRunEventSchema>;

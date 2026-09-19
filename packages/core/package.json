@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/core",
-  "version": "0.5.2",
+  "version": "0.6.1",
   "description": "Core agent engine for VNT Agent â€” kernel, tools, sessions, plugins, permissions, and knowledge",
   "license": "MIT",
   "type": "module",
@@ -57,7 +57,7 @@
     "@vinhnt-sdk/llm": "workspace:*",
     "@vinhnt-sdk/permission": "workspace:*",
     "@vinhnt-sdk/sandbox": "workspace:*",
-    "@vinhnt-sdk/schema": "workspace:*",
+    "@vinhnt-sdk/schema": ">=0.5.0",
     "@vinhnt-sdk/guard": "workspace:*",
     "@vinhnt-sdk/guardrails": "workspace:*",
     "@vinhnt-sdk/workflow": "workspace:*",

@@ -37,6 +37,7 @@ export {
   LlmRetryDataSchema, LlmRetryStartedDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
   RequestHeaderDataSchema, RequestContextDataSchema,
+  LlmRequestDataSchema,
 } from "./run-event.js";
 export type {
   RunStartedData, StepStartedData, TokenStreamedData,
@@ -49,6 +50,7 @@ export type {
   LlmRetryData, LlmRetryStartedData,
   ApprovalAskedData, ApprovalDecidedData,
   RequestHeaderData, RequestContextData,
+  LlmRequestData,
 } from "./run-event.js";
 export {
   RunStartedEventSchema, StepStartedEventSchema, TokenStreamedEventSchema,
@@ -61,6 +63,7 @@ export {
   LlmRetryEventSchema, LlmRetryStartedEventSchema,
   ApprovalAskedEventSchema, ApprovalDecidedEventSchema,
   KnownRunEventSchema, parseRunEvent, safeParseRunEvent,
+  LlmRequestEventSchema,
 } from "./run-event.js";
 export type {
   RunStartedEvent, StepStartedEvent, TokenStreamedEvent,
@@ -73,4 +76,5 @@ export type {
   TurnStartedEvent, TurnEndEvent,
   LlmRetryEvent, LlmRetryStartedEvent,
   ApprovalAskedEvent, ApprovalDecidedEvent,
+  LlmRequestEvent,
 } from "./run-event.js";

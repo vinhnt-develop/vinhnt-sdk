@@ -80,7 +80,7 @@ type TypedEvent<Type extends string, Data> = {
 };
 
 function emitTC(runId: RunId, traceId: string, data: {
-  inputTokens: number; outputTokens?: number; step: number; source?: "local" | "api";
+  inputTokens: number; outputTokens?: number; reasoningTokens?: number; cacheReadTokens?: number; cacheWriteTokens?: number; step: number; source?: "local" | "api";
 }): TypedEvent<"token.counted", typeof data> {
   return { id: crypto.randomUUID(), runId, type: "token.counted", occurredAt: new Date().toISOString(), traceId, data };
 }
@@ -209,6 +209,30 @@ export class ModelCaller {
     let inputTokens = 0;
     let outputTokens = 0;
     let reasoningTokens = 0;
+    let cacheReadTokens = 0;
+    let cacheWriteTokens = 0;
+
+    // Emit llm.request with request parameters for trajectory visibility
+    if (runId) {
+      await this.deps.emitEvent({
+        id: crypto.randomUUID(), runId, type: "llm.request" as const,
+        occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
+        data: {
+          step,
+          model: modelName,
+          provider: model.provider,
+          ...(request.temperature != null ? { temperature: request.temperature } : {}),
+          ...(request.maxTokens != null ? { maxTokens: request.maxTokens } : {}),
+          ...(request.topP != null ? { topP: request.topP } : {}),
+          ...(request.stopSequences?.length ? { stopSequences: [...request.stopSequences] } : {}),
+          ...(request.frequencyPenalty != null ? { frequencyPenalty: request.frequencyPenalty } : {}),
+          ...(request.presencePenalty != null ? { presencePenalty: request.presencePenalty } : {}),
+          systemPromptLength: messages[0]?.content ? getTextContent(messages[0].content).length : undefined,
+          messageCount: messages.length,
+          ...(request.tools?.length ? { toolCount: request.tools.length } : {}),
+        },
+      } as Omit<KnownRunEvent, "sequence">);
+    }
 
     const modelHasTokens = !!model.countTokens;
     // RV-42: the input count here is only a local FALLBACK estimate — the
@@ -231,16 +255,23 @@ export class ModelCaller {
       let source: "api" | "local" = "api";
       const input = effectiveRes.usage?.inputTokens ?? effectiveRes.usage?.promptTokens ?? 0;
       const output = effectiveRes.usage?.outputTokens ?? effectiveRes.usage?.completionTokens ?? 0;
+      const reasoning = effectiveRes.usage?.reasoningTokens ?? 0;
+      const usageAny = effectiveRes.usage as Record<string, unknown> | undefined;
+      const cacheRead = (typeof usageAny?.cacheReadTokens === 'number' ? usageAny.cacheReadTokens : 0) as number;
+      const cacheWrite = (typeof usageAny?.cacheWriteTokens === 'number' ? usageAny.cacheWriteTokens : 0) as number;
       if (input > 0 && output > 0) {
         inputTokens = input;
         outputTokens = output;
+        reasoningTokens = reasoning;
+        cacheReadTokens = cacheRead;
+        cacheWriteTokens = cacheWrite;
       } else if (modelHasTokens && effectiveRes.content) {
         const localOut = model.countTokens!(effectiveRes.content);
         if (input > 0) inputTokens = input;
         outputTokens = localOut;
         source = localOut === (output || -1) ? "api" : "local";
       }
-      await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
+      await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, ...(reasoningTokens > 0 ? { reasoningTokens } : {}), ...(cacheReadTokens > 0 ? { cacheReadTokens } : {}), ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}), step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
       const durationMs = Math.round(performance.now() - startTime);
       const cost = this.calculateCost(inputTokens, outputTokens, model) ?? 0;
       await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, provider: model.provider, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
@@ -283,6 +314,8 @@ export class ModelCaller {
           inputTokens = event.inputTokens;
           outputTokens = event.outputTokens;
           reasoningTokens = event.reasoningTokens ?? 0;
+          cacheReadTokens = event.cacheReadTokens ?? 0;
+          cacheWriteTokens = event.cacheWriteTokens ?? 0;
           break;
         case "done":
           break;
@@ -321,7 +354,7 @@ export class ModelCaller {
     const effectiveRes = (afterCallResult?.modified?.response ?? streamedResponse) as ModelResponse;
 
     if (inputTokens > 0 || outputTokens > 0) {
-      await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
+      await this.deps.emitEvent(emitTC(runId, ctx.traceId, { inputTokens, outputTokens, ...(reasoningTokens > 0 ? { reasoningTokens } : {}), ...(cacheReadTokens > 0 ? { cacheReadTokens } : {}), ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}), step, source }) as unknown as Omit<KnownRunEvent, "sequence">);
     }
 
     const durationMs = Math.round(performance.now() - startTime);
