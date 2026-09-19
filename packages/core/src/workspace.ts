@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { access, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { WorkspaceId } from "@vinhnt-sdk/schema";
 
@@ -30,12 +30,12 @@ export class WorkspaceManager {
   private activeRoot: string | null = null;
   private readonly listeners = new Set<(event: WorkspaceEvent) => void>();
 
-  add(root: string): boolean {
+  async add(root: string): Promise<boolean> {
     const resolved = resolve(root);
     if (this.workspaces.has(resolved)) return false;
-    if (!existsSync(resolved)) return false;
+    if (!(await pathExists(resolved))) return false;
 
-    const name = this.guessName(resolved);
+    const name = await this.guessName(resolved);
     const id = this.makeWorkspaceId(resolved);
     const workspace: Workspace = {
       id,
@@ -108,20 +108,20 @@ export class WorkspaceManager {
     return () => { this.listeners.delete(listener); };
   }
 
-  static detect(root: string): string[] {
+  static async detect(root: string): Promise<string[]> {
     const detected: string[] = [];
     const rootDir = resolve(root);
 
-    if (hasWorkspaceMarker(rootDir)) {
+    if (await hasWorkspaceMarker(rootDir)) {
       detected.push(rootDir);
     }
 
     try {
-      const entries = readdirSync(rootDir, { withFileTypes: true });
+      const entries = await readdir(rootDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isDirectory() && !entry.name.startsWith(".") && entry.name !== "node_modules") {
           const subPath = join(rootDir, entry.name);
-          if (hasWorkspaceMarker(subPath)) {
+          if (await hasWorkspaceMarker(subPath)) {
             detected.push(subPath);
           }
         }
@@ -143,11 +143,11 @@ export class WorkspaceManager {
     return `ws_${hex}` as WorkspaceId;
   }
 
-  private guessName(root: string): string {
+  private async guessName(root: string): Promise<string> {
     try {
       const pkgPath = join(root, "package.json");
-      if (existsSync(pkgPath)) {
-        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+      if (await pathExists(pkgPath)) {
+        const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
         if (pkg.name) return pkg.name;
       }
     } catch {
@@ -162,8 +162,17 @@ export class WorkspaceManager {
   }
 }
 
-function hasWorkspaceMarker(dir: string): boolean {
-  return existsSync(join(dir, ".vnt", "config.json")) ||
-    existsSync(join(dir, "package.json")) ||
-    existsSync(join(dir, ".git"));
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function hasWorkspaceMarker(dir: string): Promise<boolean> {
+  return (await pathExists(join(dir, ".vnt", "config.json"))) ||
+    (await pathExists(join(dir, "package.json"))) ||
+    (await pathExists(join(dir, ".git")));
 }

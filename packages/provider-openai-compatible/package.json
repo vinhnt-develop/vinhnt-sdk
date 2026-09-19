@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/provider-openai-compatible",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "OpenAI-compatible model provider â€” raw fetch + SSE streaming, zero AI SDK, retry/backoff with ERR_UPSTREAM_* errors",
   "license": "MIT",
   "type": "module",

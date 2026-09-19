@@ -29,4 +29,5 @@ export type {
   ListToolsResult,
   InitializeRequest,
   InitializeResult,
+  ReadResourceResult,
 } from "./types.js";

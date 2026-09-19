@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/trace",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Observability â€” OpenTelemetry spans, timeline replay, telemetry aggregation",
   "license": "MIT",
   "type": "module",

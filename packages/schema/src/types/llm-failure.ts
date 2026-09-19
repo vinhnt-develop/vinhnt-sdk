@@ -65,11 +65,11 @@ export function toLlmFailure(
 
 function extractStatusCode(error: unknown): number | undefined {
   if (error && typeof error === "object") {
-    if ("status" in error && typeof (error as any).status === "number") return (error as any).status;
-    if ("statusCode" in error && typeof (error as any).statusCode === "number") return (error as any).statusCode;
+    if ("status" in error && typeof (error as Record<string, unknown>).status === "number") return (error as Record<string, unknown>).status as number;
+    if ("statusCode" in error && typeof (error as Record<string, unknown>).statusCode === "number") return (error as Record<string, unknown>).statusCode as number;
     if ("response" in error) {
-      const resp = (error as any).response;
-      if (resp && typeof resp === "object" && "status" in resp) return resp.status;
+      const resp = (error as Record<string, unknown>).response as Record<string, unknown> | undefined;
+      if (resp && typeof resp === "object" && "status" in resp && typeof resp.status === "number") return resp.status;
     }
   }
   return undefined;
@@ -100,9 +100,9 @@ function isRetryable(kind: LlmFailureKind, statusCode?: number): boolean {
 
 function extractRetryAfter(error: unknown): number | undefined {
   if (error && typeof error === "object") {
-    if ("retryAfter" in error && typeof (error as any).retryAfter === "number") return (error as any).retryAfter;
+    if ("retryAfter" in error && typeof (error as Record<string, unknown>).retryAfter === "number") return (error as Record<string, unknown>).retryAfter as number;
     if ("headers" in error) {
-      const headers = (error as any).headers;
+      const headers = (error as Record<string, unknown>).headers as Record<string, unknown> | undefined;
       if (headers && typeof headers === "object" && "retry-after" in headers) {
         const val = Number(headers["retry-after"]);
         if (!isNaN(val)) return val * 1000;

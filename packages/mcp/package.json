@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/mcp",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "MCP client/server for vinhnt-sdk â€” Model Context Protocol integration",
   "license": "MIT",
   "type": "module",

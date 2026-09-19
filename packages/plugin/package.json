@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/plugin",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Plugin SDK for VNT Agent â€” define plugins with TypeScript hooks and auto-install support",
   "license": "MIT",
   "type": "module",

@@ -11,6 +11,7 @@ export { commandPattern, prefix } from "./arity.js";
 
 export type { ToolDefinitionLike } from "@vinhnt-sdk/schema";
 export type { ToolDefinition, ToolRisk, ToolAnnotations } from "./definitions.js";
+export { KNOWN_TOOL_RISKS } from "./definitions.js";
 
 // === Registry ===
 

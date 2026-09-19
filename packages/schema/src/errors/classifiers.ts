@@ -94,10 +94,13 @@ export function classifyError(error: unknown): {
     return { category: 'unknown', retryable: false };
   }
 
-  const detail = {
+  const errObj = error as unknown as Record<string, unknown>;
+  const rawCode = errObj.code != null ? String(errObj.code) : undefined;
+  const rawStatus = typeof errObj.status === "number" ? errObj.status : typeof errObj.statusCode === "number" ? errObj.statusCode : undefined;
+  const detail: { message: string; code?: string; status?: number } = {
     message: error.message,
-    code: (error as any).code,
-    status: (error as any).status || (error as any).statusCode,
+    ...(rawCode != null ? { code: rawCode } : {}),
+    ...(rawStatus != null ? { status: rawStatus } : {}),
   };
 
   if (isContextWindowExceededError(detail)) {

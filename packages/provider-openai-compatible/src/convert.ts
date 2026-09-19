@@ -83,11 +83,17 @@ export function fromOpenAIMessage(msg: OpenAIMessage): ChatMessage {
   }
 
   if (msg.tool_calls) {
-    (result as { toolCalls?: readonly ToolCall[] }).toolCalls = msg.tool_calls.map((tc): ToolCall => ({
-      id: tc.id,
-      name: tc.function.name,
-      args: JSON.parse(tc.function.arguments || "{}"),
-    }));
+    (result as { toolCalls?: readonly ToolCall[] }).toolCalls = msg.tool_calls.map((tc): ToolCall => {
+      let parsedArgs: Record<string, unknown> = {};
+      try {
+        parsedArgs = JSON.parse(tc.function.arguments || "{}");
+      } catch { /* malformed arguments — default to empty */ }
+      return {
+        id: tc.id,
+        name: tc.function.name,
+        args: parsedArgs,
+      };
+    });
   }
 
   if (msg.refusal) {
@@ -157,11 +163,17 @@ export function fromOpenAIResponse(res: OpenAIResponse, provider?: string): Mode
   }
 
   const content = choice.message.content ?? "";
-  const toolCalls = choice.message.tool_calls?.map((tc) => ({
-    id: tc.id,
-    name: tc.function.name,
-    args: JSON.parse(tc.function.arguments || "{}"),
-  }));
+  const toolCalls = choice.message.tool_calls?.map((tc) => {
+    let parsedArgs: Record<string, unknown> = {};
+    try {
+      parsedArgs = JSON.parse(tc.function.arguments || "{}");
+    } catch { /* malformed arguments — default to empty */ }
+    return {
+      id: tc.id,
+      name: tc.function.name,
+      args: parsedArgs,
+    };
+  });
 
   const usage: ModelUsage | undefined = res.usage ? {
     promptTokens: res.usage.prompt_tokens,
@@ -306,7 +318,7 @@ export function fromOpenAIStreamChunk(chunk: OpenAIStreamChunk): StreamChunkEven
             type: "tool_call",
             id: tc.id,
             ...(tc.function?.name !== undefined ? { name: tc.function.name } : {}),
-            ...(tc.function?.arguments ? { args: JSON.parse(tc.function.arguments || "{}") } : {}),
+            ...(tc.function?.arguments ? { args: (() => { try { return JSON.parse(tc.function.arguments || "{}"); } catch { return {}; } })() } : {}),
           });
         } else if (tc.function?.arguments) {
           // Arguments delta — consumer needs to accumulate

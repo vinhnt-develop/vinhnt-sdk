@@ -7,6 +7,7 @@
  */
 
 export { CircuitBreaker, CircuitBreakerOpenError } from "./circuit-breaker.js";
+export { KNOWN_CIRCUIT_STATES } from "./circuit-breaker.js";
 export type { CircuitState, CircuitBreakerOptions } from "./circuit-breaker.js";
 
 // Monotonic guard pattern (from DeepSeek Harness)
