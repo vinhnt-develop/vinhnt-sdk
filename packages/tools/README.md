@@ -1,8 +1,8 @@
 # @vinhnt-sdk/tools
 
-> Version: 0.1.2-beta.0 | Status: BETA
+> Version: 0.4.2 | Status: STABLE
 
-Built-in tools for vinhnt-sdk — file, shell, git, web, search, image, and more.
+Tool framework and built-in tools for vinhnt-sdk — file, shell, git, web, search, middleware, and more.
 
 ## Install
 
@@ -14,34 +14,39 @@ npm install @vinhnt-sdk/tools
 pnpm add @vinhnt-sdk/tools
 ```
 
+## Features
+
+- **defineTool** — Define tools with Zod schemas, JSON Schema, risk levels, and annotations
+- **ToolMiddleware** — Wrap tool execution with cross-cutting concerns (logging, auth, retry)
+- **ToolHook** — Pre/post lifecycle hooks for tool calls
+- **ToolRegistry** — Tool registration, lookup, and execution with filtering
+- **LazyToolRegistry** — Lazy-load tools on first use
+- **ToolProvider** — Plugin-based tool discovery
+- **Built-in Tools** — File, shell, git, web search, glob, grep, image tools
+- **ToolSaga** — Compensation actions for multi-step tool operations
+
 ## Quick Start
 
 ```typescript
-import { defineTool, ToolRegistry } from '@vinhnt-sdk/tools';
-import type { ToolConfig, ToolDefinition } from '@vinhnt-sdk/schema';
+import { defineTool, ToolRegistry } from "@vinhnt-sdk/tools";
+import { z } from "zod";
 
-// Define a custom tool
 const calculatorTool = defineTool({
   name: "calculator",
   description: "Evaluate math expressions",
-  parameters: {
-    type: "object",
-    properties: {
-      expression: { type: "string", description: "Math expression" },
-    },
-    required: ["expression"],
-  },
+  risk: "read",
+  input: z.object({
+    expression: z.string().describe("Math expression"),
+  }),
   async execute(args, context) {
     const result = Function(`"use strict"; return (${args.expression})`)();
     return { success: true, output: String(result) };
   },
-});
+}).toDefinition();
 
-// Register tool
 const registry = new ToolRegistry();
 registry.register(calculatorTool);
 
-// Execute tool
 const result = await registry.execute("calculator", { expression: "2 + 2" });
 console.log(result.output); // "4"
 ```
@@ -51,31 +56,50 @@ console.log(result.output); // "4"
 ### Tool Definition
 
 ```typescript
-import { defineTool } from '@vinhnt-sdk/tools';
+import { defineTool } from "@vinhnt-sdk/tools";
+import { z } from "zod";
 
 const myTool = defineTool({
   name: "my-tool",
   description: "My custom tool",
-  riskLevel: "low", // "low" | "medium" | "high"
-  parameters: {
-    type: "object",
-    properties: {
-      input: { type: "string", description: "Input parameter" },
-    },
-    required: ["input"],
+  risk: "read", // "none" | "read" | "write" | "destructive" | "external"
+  input: z.object({
+    input: z.string().describe("Input parameter"),
+  }),
+  annotations: {
+    title: "My Tool",
+    readOnlyHint: true,
+    openWorldHint: false,
   },
   async execute(args, context) {
-    // args.input is the input parameter
-    // context contains sessionId, userId, etc.
     return { success: true, output: `Processed: ${args.input}` };
   },
-});
+}).toDefinition();
 ```
 
-### Tool Registry
+### ToolMiddleware
 
 ```typescript
-import { ToolRegistry } from '@vinhnt-sdk/tools';
+import type { ToolMiddleware } from "@vinhnt-sdk/tools";
+
+const loggingMiddleware: ToolMiddleware = {
+  id: "logging",
+  async execute(tool, input, next) {
+    console.log(`Tool ${tool.id} called with`, input);
+    const result = await next(input);
+    console.log(`Tool ${tool.id} returned`, result);
+    return result;
+  },
+};
+
+// Apply middleware via ToolRegistry
+const registry = new ToolRegistry({ middleware: [loggingMiddleware] });
+```
+
+### ToolRegistry
+
+```typescript
+import { ToolRegistry } from "@vinhnt-sdk/tools";
 
 const registry = new ToolRegistry();
 
@@ -98,80 +122,90 @@ const validation = registry.validate("calculator", { expression: "2 + 2" });
 
 ### Built-in Tools
 
-| Tool | Description | Risk Level |
+| Tool Factory | Description | Risk Level |
 |------|-------------|------------|
-| `file_read` | Read file contents | medium |
-| `file_write` | Write to files | high |
-| `file_edit` | Edit files | high |
-| `shell_exec` | Execute shell commands | high |
-| `git_status` | Get git status | low |
-| `git_diff` | Get git diff | low |
-| `git_log` | Get git log | low |
-| `web_search` | Search the web | low |
-| `web_fetch` | Fetch web pages | medium |
-| `image_gen` | Generate images | low |
-| `lint` | Lint code | low |
+| `createReadFileTool` | Read file contents | read |
+| `createWriteFileTool` | Write to files | destructive |
+| `createEditFileTool` | Edit files | destructive |
+| `createApplyPatchTool` | Apply patches | destructive |
+| `createListDirectoryTool` | List directory contents | read |
+| `createShellTool` | Execute shell commands | external |
+| `createGlobFilesTool` | Find files by pattern | read |
+| `createGrepFilesTool` | Search file contents | read |
+| `createWebSearchTool` | Search the web | external |
+| `createWebFetchTool` | Fetch web pages | external |
+| `createGitStatusTool` | Get git status | read |
+| `createGitDiffTool` | Get git diff | read |
+| `createGitLogTool` | Get git log | read |
+| `createGitCommitTool` | Create git commits | write |
+| `createReadImageTool` | Read image files | read |
+| `createQuestionTool` | Ask user questions | read |
+| `createTodoWriteTool` | Write todo items | write |
 
 ## Dependencies
 
-- `@vinhnt-sdk/schema` workspace:*
+- `@vinhnt-sdk/schema` >=0.5.0
+- `@vinhnt-sdk/guard` workspace:*
+- `@vinhnt-sdk/sandbox` workspace:*
 - `@vinhnt-sdk/security` workspace:*
 - `zod` ^4.4.3
 
-## Peer Dependencies
-
-- `@vinhnt-sdk/core` workspace:* (optional)
-
 ## Usage Examples
 
-### Create Custom Tool
+### Tool Middleware Pattern
 
 ```typescript
-import { defineTool } from '@vinhnt-sdk/tools';
+import type { ToolMiddleware, ToolDefinition, ToolExecutionResult } from "@vinhnt-sdk/tools";
 
-const weatherTool = defineTool({
-  name: "weather",
-  description: "Get weather for a location",
-  parameters: {
-    type: "object",
-    properties: {
-      location: { type: "string", description: "City name" },
-    },
-    required: ["location"],
+const authMiddleware: ToolMiddleware = {
+  id: "auth",
+  async execute(tool, input, next) {
+    // Check permissions before execution
+    if (tool.risk === "destructive") {
+      const approved = await checkApproval(tool.id);
+      if (!approved) {
+        return { status: "denied", reason: "Not approved" };
+      }
+    }
+    return next(input);
   },
-  async execute(args) {
-    // Fetch weather data
-    const weather = await fetchWeather(args.location);
-    return {
-      success: true,
-      output: {
-        temperature: weather.temp,
-        condition: weather.condition,
-      },
-    };
-  },
-});
+};
 ```
 
-### Use Tool in Agent
+### Tool Hooks
 
 ```typescript
-import { AgentKernel } from '@vinhnt-sdk/core';
-import { defineTool } from '@vinhnt-sdk/tools';
+import type { ToolHook } from "@vinhnt-sdk/tools";
 
-const kernel = new AgentKernel({
-  model: yourModelProvider,
-  store: yourStore,
-  tools: [calculatorTool, weatherTool],
+const auditHook: ToolHook = {
+  id: "audit",
+  async pre({ toolId, tool, input }) {
+    await logAudit(toolId, "start", input);
+    return null; // Continue execution
+  },
+  async post({ toolId, tool, input, result }) {
+    await logAudit(toolId, "end", { input, result });
+    return null; // Don't modify result
+  },
+};
+```
+
+### ToolSaga (Compensation)
+
+```typescript
+import { ToolSaga } from "@vinhnt-sdk/tools";
+
+const saga = new ToolSaga();
+
+// Register steps with compensation
+saga.addStep({
+  tool: "create-file",
+  input: { path: "/tmp/file.txt", content: "hello" },
+  compensate: { tool: "delete-file", input: { path: "/tmp/file.txt" } },
 });
 
-const handle = kernel.createRunHandle("What's the weather in Tokyo?", {
-  sessionId: "session-1",
-  agentId: "assistant",
-  userId: "user-1",
-});
-
-const result = await handle.completed;
+// Execute all steps; compensate on failure
+const result = await saga.execute(context);
 ```
 
 ## License

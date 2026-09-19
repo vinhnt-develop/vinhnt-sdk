@@ -1,8 +1,8 @@
 # @vinhnt-sdk/schema
 
-> Version: 0.1.2-beta.0 | Status: BETA
+> Version: 0.5.0 | Status: STABLE
 
-Shared types and contracts for vinhnt-sdk — model interfaces, event types, and API contracts.
+Shared types and contracts for vinhnt-sdk — branded IDs, event types, error classes, Zod schemas, and API contracts.
 
 ## Install
 
@@ -14,180 +14,131 @@ npm install @vinhnt-sdk/schema
 pnpm add @vinhnt-sdk/schema
 ```
 
+## Features
+
+- **Branded IDs** — Type-safe identifiers (RunId, SessionId, AgentId, etc.)
+- **Error Classes** — Structured errors with codes, retryable flags, and context
+- **Event Types** — Full run lifecycle events (started, completed, tool events, etc.)
+- **Core Types** — Sessions, messages, agent configs, model interfaces
+- **Zod Schemas** — Runtime validation for all contract types
+- **OpenAI Wire Types** — Chat Completion format for API integration
+
 ## Quick Start
 
 ```typescript
 import type {
-  ModelProvider,
-  ModelRequest,
-  ModelResponse,
-  RunEvent,
-  Session,
-  Message,
-  AgentConfig,
-  AgentContext,
-  AgentRunResult,
-} from '@vinhnt-sdk/schema';
+  RunId, SessionId, AgentId,
+  RunEvent, Session, Message, AgentConfig,
+} from "@vinhnt-sdk/schema";
+import { VntError, ToolInputError, isAgentId } from "@vinhnt-sdk/schema";
 
-// Implement ModelProvider interface
-const model: ModelProvider = {
-  provider: "openai",
-  model: "gpt-4o",
-  contextLimit: 128000,
-  capabilities: {
-    chat: true,
-    completion: false,
-    vision: true,
-    audio: false,
-    functionCall: true,
-    streaming: true,
-  },
-  async generate(request: ModelRequest, signal?: AbortSignal): Promise<ModelResponse> {
-    // Implement generation
-    return {
-      id: "response-123",
-      model: "gpt-4o",
-      choices: [{ index: 0, message: { role: "assistant", content: "Hello!" }, finishReason: "stop" }],
-      usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
-    };
-  },
-  async *stream(request: ModelRequest, signal?: AbortSignal): AsyncIterable<ModelStreamEvent> {
-    // Implement streaming
-    yield { id: "event-1", model: "gpt-4o", choices: [{ index: 0, delta: { content: "Hello" }, finishReason: null }] };
-  },
-};
+// Type-safe IDs
+const runId: RunId = "run_123" as RunId;
+const sessionId: SessionId = "session_456" as SessionId;
+
+// Type guard
+if (isAgentId(id)) {
+  // id is safely typed as AgentId
+}
+
+// Structured errors
+try {
+  throw new ToolInputError("Invalid input", { toolId: "my_tool" });
+} catch (e) {
+  if (e instanceof VntError) {
+    console.log(e.code); // "tool_input_error"
+    console.log(e.retryable); // false
+  }
+}
 ```
 
 ## API Reference
 
-### Model Types
+### Branded IDs
 
 | Export | Type | Description |
 |--------|------|-------------|
-| `ModelProvider` | Interface | AI model provider contract |
-| `ModelRequest` | Interface | Model input request |
-| `ModelResponse` | Interface | Model output response |
-| `ModelStreamEvent` | Interface | Streaming event |
-| `ModelCapabilities` | Interface | Model capabilities |
-| `ModelPricing` | Interface | Token pricing |
-| `ModelRegistry` | Interface | Model registry |
+| `RunId` | Branded string | Run identifier |
+| `SessionId` | Branded string | Session identifier |
+| `AgentId` | Branded string | Agent identifier |
+| `TraceId` | Branded string | Trace identifier |
+| `RequestId` | Branded string | Request identifier |
+| `ToolCallId` | Branded string | Tool call identifier |
+| `MessageId` | Branded string | Message identifier |
+| `WorkspaceId` | Branded string | Workspace identifier |
+| `ModelId` | Branded string | Model identifier |
 
-### Agent Types
+### Error Classes
 
-| Export | Type | Description |
-|--------|------|-------------|
-| `AgentConfig` | Interface | Agent configuration |
-| `AgentContext` | Interface | Agent execution context |
-| `AgentRunResult` | Interface | Agent run result |
-| `AgentId` | Type | Agent identifier |
-
-### Session Types
-
-| Export | Type | Description |
-|--------|------|-------------|
-| `Session` | Interface | Session data |
-| `SessionId` | Type | Session identifier |
-| `Message` | Interface | Chat message |
-| `RunEvent` | Interface | Run lifecycle event |
-| `SessionStore` | Interface | Session storage contract |
-| `RunEventStore` | Interface | Event storage contract |
-
-### Tool Types
-
-| Export | Type | Description |
-|--------|------|-------------|
-| `ToolDefinitionLike` | Interface | Tool definition contract |
-| `ToolCall` | Interface | Tool call |
-| `ToolDefinition` | Interface | Tool definition |
+| Export | Description |
+|--------|-------------|
+| `VntError` | Base error for all SDK errors |
+| `AgentNotFoundError` | Agent not found in registry |
+| `AgentValidationError` | Agent configuration validation failed |
+| `AgentPermissionDenied` | Agent lacks required permission |
+| `ToolNotFoundError` | Tool not found in registry |
+| `ToolExecutionError` | Tool execution failed |
+| `ToolPermissionDenied` | Tool requires permission |
+| `RunNotFoundError` | Run not found in event store |
+| `RunAbortedError` | Run was aborted |
+| `RunTimeoutError` | Run exceeded time limit |
+| `CircuitBreakerOpenError` | Circuit breaker is open |
+| `ToolInputError` | Tool input validation failed |
+| `PermissionDeniedError` | Permission check failed |
+| `ValidationError` | Schema validation failed |
+| `TimeoutError` | Operation timed out |
+| `NetworkError` | Network request failed |
+| `RateLimitError` | API rate limit exceeded |
+| `AuthenticationError` | Authentication failed |
+| `ConfigurationError` | Configuration invalid |
+| `PluginError` | Plugin execution failed |
 
 ### Event Types
 
-| Export | Type | Description |
-|--------|------|-------------|
-| `AgentStartedEvent` | Interface | Agent started event |
-| `AgentCompletedEvent` | Interface | Agent completed event |
-| `AgentErrorEvent` | Interface | Agent error event |
-| `ToolStartEvent` | Interface | Tool start event |
-| `ToolEndEvent` | Interface | Tool end event |
+| Export | Description |
+|--------|-------------|
+| `AgentStartedEvent` | Agent run started |
+| `AgentCompletedEvent` | Agent run completed |
+| `AgentErrorEvent` | Agent run errored |
+| `ToolStartEvent` | Tool execution started |
+| `ToolEndEvent` | Tool execution completed |
+| `ModelRequestEvent` | LLM request sent |
+| `ModelResponseEvent` | LLM response received |
+| `AgentThinkingEvent` | Extended thinking started |
+| `PermissionEvent` | Permission requested |
+
+### Core Types
+
+| Export | Description |
+|--------|-------------|
+| `Session` | Session data |
+| `Message` | Chat message |
+| `AgentConfig` | Agent configuration |
+| `AgentProfile` | Agent profile |
+| `ModelProvider` | Model provider contract |
+| `ModelRequest` | Model input request |
+| `ModelResponse` | Model output response |
+| `ToolCall` | Tool invocation |
+| `ToolCallResult` | Tool execution result |
+
+### Zod Schemas
+
+```typescript
+import {
+  AgentConfigSchema, MessageSchema, SessionSchema,
+  RunStartedDataSchema, ToolCompletedDataSchema,
+} from "@vinhnt-sdk/schema";
+
+// Validate runtime data
+const result = AgentConfigSchema.safeParse(rawConfig);
+if (result.success) {
+  const config = result.data;
+}
+```
 
 ## Dependencies
 
-- `zod` ^4.4.3 - Schema validation
-
-## Peer Dependencies
-
-None
-
-## Usage Examples
-
-### Define a Model Provider
-
-```typescript
-import type { ModelProvider, ModelRequest, ModelResponse } from '@vinhnt-sdk/schema';
-
-class MyModelProvider implements ModelProvider {
-  readonly provider = "my-provider";
-  readonly model = "my-model";
-  readonly contextLimit = 4096;
-  readonly capabilities = {
-    chat: true,
-    completion: false,
-    vision: false,
-    audio: false,
-    functionCall: false,
-    streaming: false,
-  };
-
-  async generate(request: ModelRequest, signal?: AbortSignal): Promise<ModelResponse> {
-    const userMessage = request.messages.find(m => m.role === "user");
-    return {
-      id: `resp-${Date.now()}`,
-      model: this.model,
-      choices: [{
-        index: 0,
-        message: { role: "assistant", content: `Response to: ${userMessage?.content}` },
-        finishReason: "stop",
-      }],
-      usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
-    };
-  }
-
-  async *stream(request: ModelRequest, signal?: AbortSignal): AsyncIterable<ModelStreamEvent> {
-    // Implement streaming
-    yield { id: "evt-1", model: this.model, choices: [{ index: 0, delta: { content: "Hello" }, finishReason: null }] };
-  }
-}
-```
-
-### Define an Agent Config
-
-```typescript
-import type { AgentConfig } from '@vinhnt-sdk/schema';
-
-const agentConfig: AgentConfig = {
-  name: "my-agent",
-  model: "gpt-4",
-  systemPrompt: "You are a helpful assistant.",
-  maxSteps: 10,
-};
-```
-
-### Use Run Events
-
-```typescript
-import type { RunEvent, AgentStartedEvent, AgentCompletedEvent } from '@vinhnt-sdk/schema';
-
-function handleEvent(event: RunEvent) {
-  switch (event.type) {
-    case "agent.started":
-      console.log("Agent started:", (event as AgentStartedEvent).prompt);
-      break;
-    case "agent.completed":
-      console.log("Agent completed:", (event as AgentCompletedEvent).status);
-      break;
-  }
-}
-```
+- `zod` ^4.4.3
 
 ## License
 
