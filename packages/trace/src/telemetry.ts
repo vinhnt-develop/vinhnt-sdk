@@ -153,3 +153,43 @@ export function calculateContextPressure(
     shouldCompact: pressure >= compactThreshold,
   };
 }
+
+/**
+ * Telemetry provider interface — export telemetry data to external systems.
+ *
+ * Inspired by Vercel AI SDK's telemetry pattern.
+ */
+export interface TelemetryProvider {
+  exportTrace(trace: {
+    traceId: string;
+    spans: Array<{
+      spanId: string;
+      name: string;
+      startTime: number;
+      endTime?: number;
+      attributes?: Record<string, unknown>;
+    }>;
+  }): Promise<void> | void;
+  exportMetric(metric: {
+    name: string;
+    value: number;
+    unit: string;
+    attributes?: Record<string, unknown>;
+  }): Promise<void> | void;
+}
+
+/**
+ * Default telemetry provider — logs to console.
+ */
+export const ConsoleTelemetryProvider: TelemetryProvider = {
+  exportTrace(trace) {
+    if (typeof console !== "undefined") {
+      console.log("[trace]", trace);
+    }
+  },
+  exportMetric(metric) {
+    if (typeof console !== "undefined") {
+      console.log("[metric]", metric);
+    }
+  },
+};
