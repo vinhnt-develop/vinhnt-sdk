@@ -3,6 +3,237 @@
 
 window.PKG = [
 {
+  "id": "guardrails",
+  "name": "@vinhnt-sdk/guardrails",
+  "icon": "Gr",
+  "tag": "Extension",
+  "desc": "Guardrail tripwires for input/output validation.",
+  "deps": [
+    "schema",
+    "guard"
+  ],
+  "exports": [
+    {
+      "type": "function",
+      "name": "maxLengthGuardrail",
+      "desc": "Maximum input length guardrail",
+      "methods": [
+        {
+          "sig": "maxLengthGuardrail(maxChars: number, source: string): Guardrail",
+          "desc": "Maximum input length guardrail",
+          "params": [
+            {
+              "n": "maxChars",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            },
+            {
+              "n": "source",
+              "t": "string",
+              "r": false,
+              "d": "string"
+            }
+          ],
+          "ret": "Guardrail"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "blocklistGuardrail",
+      "desc": "Blocklist pattern guardrail - blocks content matching patterns",
+      "methods": [
+        {
+          "sig": "blocklistGuardrail(patterns: RegExp[], name: string): Guardrail",
+          "desc": "Blocklist pattern guardrail - blocks content matching patterns",
+          "params": [
+            {
+              "n": "patterns",
+              "t": "RegExp[]",
+              "r": true,
+              "d": "RegExp[]"
+            },
+            {
+              "n": "name",
+              "t": "string",
+              "r": false,
+              "d": "string"
+            }
+          ],
+          "ret": "Guardrail"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "secretDetectionGuardrail",
+      "desc": "Secret detection guardrail - redacts detected secrets",
+      "methods": [
+        {
+          "sig": "secretDetectionGuardrail(redactor: { redact: (text: string) => string; }): Guardrail",
+          "desc": "Secret detection guardrail - redacts detected secrets",
+          "params": [
+            {
+              "n": "redactor",
+              "t": "{ redact: (text: string) => string; }",
+              "r": true,
+              "d": "{ redact: (text: string) => string; }"
+            }
+          ],
+          "ret": "Guardrail"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "runGuardrails",
+      "desc": "Run guardrails in priority order with monotonic semantics.\nOnce a guardrail denies, subsequent guardrails cannot override.",
+      "methods": [
+        {
+          "sig": "runGuardrails(guardrails: Guardrail[], ctx: GuardrailContext): Promise<GuardrailResult>",
+          "desc": "Run guardrails in priority order with monotonic semantics.\nOnce a guardrail denies, subsequent guardrails cannot override.",
+          "params": [
+            {
+              "n": "guardrails",
+              "t": "Guardrail[]",
+              "r": true,
+              "d": "Guardrail[]"
+            },
+            {
+              "n": "ctx",
+              "t": "GuardrailContext",
+              "r": true,
+              "d": "GuardrailContext"
+            }
+          ],
+          "ret": "Promise<GuardrailResult>"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailScope",
+      "desc": "Guardrail scope - when the check runs",
+      "methods": [
+        {
+          "sig": "type GuardrailScope = GuardrailScope",
+          "desc": "Guardrail scope - when the check runs",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailPriority",
+      "desc": "Priority order - lower runs first",
+      "methods": [
+        {
+          "sig": "type GuardrailPriority = number",
+          "desc": "Priority order - lower runs first",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "Guardrail",
+      "desc": "A guardrail tripwire that checks inputs/outputs",
+      "methods": [],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "scope",
+          "type": "GuardrailScope",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "priority",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "check",
+          "type": "(ctx: GuardrailContext) => Promise<GuardrailResult>",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailContext",
+      "desc": "Context passed to guardrails",
+      "methods": [],
+      "props": [
+        {
+          "name": "direction",
+          "type": "\"input\" | \"output\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolName",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "content",
+          "type": "unknown",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailResult",
+      "desc": "Result of a guardrail check",
+      "methods": [],
+      "props": [
+        {
+          "name": "passed",
+          "type": "boolean",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "decision",
+          "type": "GuardDecision",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "modifiedContent",
+          "type": "unknown",
+          "required": false,
+          "desc": "Optional modified content (e.g., redacted)"
+        }
+      ]
+    }
+  ]
+},
+{
   "id": "knowledge",
   "name": "@vinhnt-sdk/knowledge",
   "icon": "K",
@@ -675,7 +906,7 @@ window.PKG = [
           "ret": "boolean"
         },
         {
-          "sig": "compact(messages: readonly ChatMessage[], _signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>",
+          "sig": "compact(messages: readonly ChatMessage[], _signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ...",
           "desc": "Compress middle messages (head/tail protection + naive summarization).\r\nImplements ConversationCompactor.",
           "params": [
             {
@@ -691,10 +922,10 @@ window.PKG = [
               "d": "AbortSignal | undefined"
             }
           ],
-          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>"
+          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ..."
         },
         {
-          "sig": "compress(messages: readonly ChatMessage[]): { messages: readonly ChatMessage[]; summary: CompressionSummary; }",
+          "sig": "compress(messages: readonly ChatMessage[]): { messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; summary?...",
           "desc": "Phase 2-4: Synchronous compress.\r\n- Protects headCount messages at start\r\n- Protects tailCount messages at end\r\n- Summarizes middle portion",
           "params": [
             {
@@ -704,7 +935,7 @@ window.PKG = [
               "d": "readonly ChatMessage[]"
             }
           ],
-          "ret": "{ messages: readonly ChatMessage[]; summary: CompressionSummary; }"
+          "ret": "{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; summary?..."
         },
         {
           "sig": "opts: CompressorOptions",
@@ -737,7 +968,7 @@ window.PKG = [
           ]
         },
         {
-          "sig": "compact(messages: readonly ChatMessage[], signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>",
+          "sig": "compact(messages: readonly ChatMessage[], signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ...",
           "desc": "",
           "params": [
             {
@@ -753,7 +984,7 @@ window.PKG = [
               "d": "AbortSignal | undefined"
             }
           ],
-          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>"
+          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ..."
         },
         {
           "sig": "model: ModelProvider",
@@ -773,7 +1004,7 @@ window.PKG = [
       "desc": "Build a stable+contextual {@link PromptAssembly} from the given options.",
       "methods": [
         {
-          "sig": "buildPrompt(options: PromptBuilderOptions): PromptAssembly",
+          "sig": "buildPrompt(options: PromptBuilderOptions): { stable: string; context: string; volatile: string; assembled: string; version?: string | undefined; metadata?: Reco...",
           "desc": "Build a stable+contextual {@link PromptAssembly} from the given options.",
           "params": [
             {
@@ -783,7 +1014,7 @@ window.PKG = [
               "d": "PromptBuilderOptions"
             }
           ],
-          "ret": "PromptAssembly"
+          "ret": "{ stable: string; context: string; volatile: string; assembled: string; version?: string | undefined; metadata?: Reco..."
         }
       ]
     },
@@ -1329,7 +1560,6 @@ window.PKG = [
   "tag": "Extension",
   "desc": "Language Server Protocol integration for code intelligence.",
   "deps": [
-    "core",
     "tools",
     "schema"
   ],
@@ -2788,7 +3018,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "McpClient",
-      "desc": "MCP Client — connects to MCP servers and provides tool/resource access.",
+      "desc": "MCP Client — connects to MCP servers and provides tool/resource access.\n\nMCP 2026-07-28: Stateless by default, no session tracking.",
       "methods": [
         {
           "sig": "connect(config: McpServerConfig): Promise<McpConnection>",
@@ -2893,19 +3123,44 @@ window.PKG = [
         },
         {
           "sig": "listResources(): Promise<McpResource[]>",
-          "desc": "List resources exposed by the server.",
+          "desc": "List resources exposed by the server (deprecated in 2026-07-28, prefer tools).",
           "params": [],
           "ret": "Promise<McpResource[]>"
         },
         {
           "sig": "readResource(uri: string): Promise<string>",
-          "desc": "Read a resource from the server.",
+          "desc": "Read a resource from the server (deprecated in 2026-07-28, prefer tools).",
           "params": [
             {
               "n": "uri",
               "t": "string",
               "r": true,
               "d": "string"
+            }
+          ],
+          "ret": "Promise<string>"
+        },
+        {
+          "sig": "listPrompts(): Promise<{ name: string; description?: string; arguments?: unknown[]; }[]>",
+          "desc": "List prompts exposed by the server (deprecated in 2026-07-28, prefer tools).",
+          "params": [],
+          "ret": "Promise<{ name: string; description?: string; arguments?: unknown[]; }[]>"
+        },
+        {
+          "sig": "getPrompt(name: string, args: Record<string, unknown> | undefined): Promise<string>",
+          "desc": "Get a prompt from the server (deprecated in 2026-07-28, prefer tools).",
+          "params": [
+            {
+              "n": "name",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "args",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
             }
           ],
           "ret": "Promise<string>"
@@ -2929,6 +3184,211 @@ window.PKG = [
           "type": "Record<string, unknown>",
           "required": true,
           "desc": "Server capabilities."
+        },
+        {
+          "name": "protocolVersion",
+          "type": "string",
+          "required": true,
+          "desc": "Protocol version negotiated."
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "McpToolProvider",
+      "desc": "McpToolProvider — Provides tools from an MCP server as a ToolProvider.\n\nLifecycle:\n  1. construct with config\n  2. connect() — spawns/connects to MCP server, discovers tools\n  3. register into ToolProviderRegistry\n  4. refresh() — re-discovers tools (e.g., when server notifies listChanged)\n  5. close() — disconnects from server",
+      "methods": [
+        {
+          "sig": "constructor(config: McpToolProviderConfig)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "config",
+              "t": "McpToolProviderConfig",
+              "r": true,
+              "d": "McpToolProviderConfig"
+            }
+          ]
+        },
+        {
+          "sig": "connect(): Promise<void>",
+          "desc": "Connect to the MCP server and discover tools.\nMust be called before registering into a ToolProviderRegistry.",
+          "params": [],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "getConnection(): McpConnection | null",
+          "desc": "Get the underlying MCP connection (for direct access to resources, etc.).",
+          "params": [],
+          "ret": "McpConnection | null"
+        },
+        {
+          "sig": "toolCount(): number",
+          "desc": "Get the number of discovered tools.",
+          "params": [],
+          "ret": "number"
+        },
+        {
+          "sig": "register(_registry: ToolRegistry): void",
+          "desc": "",
+          "params": [
+            {
+              "n": "_registry",
+              "t": "ToolRegistry",
+              "r": true,
+              "d": "ToolRegistry"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "unregister(_registry: ToolRegistry): void",
+          "desc": "",
+          "params": [
+            {
+              "n": "_registry",
+              "t": "ToolRegistry",
+              "r": true,
+              "d": "ToolRegistry"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "refresh(): Promise<void>",
+          "desc": "Refresh tools from the MCP server.\nRe-discovers tools and updates the internal list.",
+          "params": [],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "close(): Promise<void>",
+          "desc": "Disconnect from the MCP server.",
+          "params": [],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "id: string",
+          "desc": "id",
+          "params": []
+        },
+        {
+          "sig": "name: string",
+          "desc": "name",
+          "params": []
+        },
+        {
+          "sig": "description: string",
+          "desc": "description",
+          "params": []
+        },
+        {
+          "sig": "config: McpToolProviderConfig",
+          "desc": "config",
+          "params": []
+        },
+        {
+          "sig": "client: McpClient",
+          "desc": "client",
+          "params": []
+        },
+        {
+          "sig": "connection: McpConnection | null",
+          "desc": "connection",
+          "params": []
+        },
+        {
+          "sig": "_tools: ToolDefinition<unknown, unknown>[]",
+          "desc": "_tools",
+          "params": []
+        },
+        {
+          "sig": "get tools(): ToolDefinition<unknown, unknown>[]",
+          "desc": "",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "McpToolProviderConfig",
+      "desc": "Configuration for McpToolProvider.",
+      "methods": [],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "transport",
+          "type": "\"stdio\" | \"sse\" | \"streamable-http\"",
+          "required": true,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "protocolVersion",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "MCP protocol version (default: \"2026-07-28\")",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "command",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "args",
+          "type": "string[] | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "env",
+          "type": "Record<string, string> | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "url",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "headers",
+          "type": "Record<string, string> | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "timeoutMs",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "McpServerConfig"
+        },
+        {
+          "name": "id",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Unique provider ID. Defaults to `\"mcp:<name>\"`."
         }
       ]
     },
@@ -3055,6 +3515,12 @@ window.PKG = [
           "desc": ""
         },
         {
+          "name": "protocolVersion",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "MCP protocol version (default: \"2026-07-28\")"
+        },
+        {
           "name": "command",
           "type": "string | undefined",
           "required": false,
@@ -3124,6 +3590,12 @@ window.PKG = [
         },
         {
           "name": "annotations",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
           "type": "Record<string, unknown> | undefined",
           "required": false,
           "desc": ""
@@ -3318,6 +3790,20 @@ window.PKG = [
           "desc": ""
         }
       ]
+    },
+    {
+      "type": "type",
+      "name": "ReadResourceResult",
+      "desc": "ReadResourceResult",
+      "methods": [],
+      "props": [
+        {
+          "name": "contents",
+          "type": "readonly { readonly uri: string; readonly mimeType?: string; readonly text?: string; }[]",
+          "required": true,
+          "desc": ""
+        }
+      ]
     }
   ]
 },
@@ -3327,16 +3813,98 @@ window.PKG = [
   "icon": "Sec",
   "tag": "Extension",
   "desc": "Secret detection and redaction utilities.",
-  "deps": [],
+  "deps": [
+    "guard"
+  ],
   "exports": [
     {
       "type": "function",
+      "name": "redactSecrets",
+      "desc": "Redact secrets from text.\n\nScans the input for known secret patterns and replaces them with\nplaceholder tokens. Safe to use on log messages, error output, and\narbitrary strings.",
+      "methods": [
+        {
+          "sig": "redactSecrets(text: string): string",
+          "desc": "Redact secrets from text.\n\nScans the input for known secret patterns and replaces them with\nplaceholder tokens. Safe to use on log messages, error output, and\narbitrary strings.",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "detectSecrets",
+      "desc": "Check whether text contains suspected secrets (without modifying it).",
+      "methods": [
+        {
+          "sig": "detectSecrets(text: string): string[]",
+          "desc": "Check whether text contains suspected secrets (without modifying it).",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string[]"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createRedactingLogger",
+      "desc": "Create a redaction middleware for a logger.\n\nReturns a function that wraps log output, automatically redacting\nany detected secrets before the message is written. Strings, error\nmessages and nested object values are all scrubbed.",
+      "methods": [
+        {
+          "sig": "createRedactingLogger(originalLog: (...args: A) => void): (...args: A) => void",
+          "desc": "Create a redaction middleware for a logger.\n\nReturns a function that wraps log output, automatically redacting\nany detected secrets before the message is written. Strings, error\nmessages and nested object values are all scrubbed.",
+          "params": [
+            {
+              "n": "originalLog",
+              "t": "(...args: A) => void",
+              "r": true,
+              "d": "(...args: A) => void"
+            }
+          ],
+          "ret": "(...args: A) => void"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "redactObjectSecrets",
+      "desc": "Deep-redact secrets inside an object/array tree.\n\nSerializes the value to JSON, redacts known secret patterns, then parses\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\nare scrubbed while the structure is preserved. Falls back to the original\nvalue if it cannot be serialized (circular refs, functions, etc.).",
+      "methods": [
+        {
+          "sig": "redactObjectSecrets(value: T): T",
+          "desc": "Deep-redact secrets inside an object/array tree.\n\nSerializes the value to JSON, redacts known secret patterns, then parses\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\nare scrubbed while the structure is preserved. Falls back to the original\nvalue if it cannot be serialized (circular refs, functions, etc.).",
+          "params": [
+            {
+              "n": "value",
+              "t": "T",
+              "r": true,
+              "d": "T"
+            }
+          ],
+          "ret": "T"
+        }
+      ]
+    },
+    {
+      "type": "function",
       "name": "sanitizeForLLM",
-      "desc": "Sanitize external text before it enters the LLM context window.\n\nStrips known prompt-injection markers, unicode control characters,\nand truncates excessively long content.",
+      "desc": "Input sanitization and output validation for prompt injection protection.\nSanitize external text before it enters the LLM context window.\n\nStrips known prompt-injection markers, unicode control characters,\nand truncates excessively long content.",
       "methods": [
         {
           "sig": "sanitizeForLLM(text: string, source: string | undefined): string",
-          "desc": "Sanitize external text before it enters the LLM context window.\n\nStrips known prompt-injection markers, unicode control characters,\nand truncates excessively long content.",
+          "desc": "Input sanitization and output validation for prompt injection protection.\nSanitize external text before it enters the LLM context window.\n\nStrips known prompt-injection markers, unicode control characters,\nand truncates excessively long content.",
           "params": [
             {
               "n": "text",
@@ -3403,220 +3971,18 @@ window.PKG = [
     },
     {
       "type": "function",
-      "name": "redactSecrets",
-      "desc": "Redact secrets from text.\r\n\r\nScans the input for known secret patterns and replaces them with\r\nplaceholder tokens. Safe to use on log messages, error output, and\r\narbitrary strings.",
-      "methods": [
-        {
-          "sig": "redactSecrets(text: string): string",
-          "desc": "Redact secrets from text.\r\n\r\nScans the input for known secret patterns and replaces them with\r\nplaceholder tokens. Safe to use on log messages, error output, and\r\narbitrary strings.",
-          "params": [
-            {
-              "n": "text",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "string"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "detectSecrets",
-      "desc": "Check whether text contains suspected secrets (without modifying it).",
-      "methods": [
-        {
-          "sig": "detectSecrets(text: string): string[]",
-          "desc": "Check whether text contains suspected secrets (without modifying it).",
-          "params": [
-            {
-              "n": "text",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "string[]"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createRedactingLogger",
-      "desc": "Create a redaction middleware for a logger.\r\n\r\nReturns a function that wraps log output, automatically redacting\r\nany detected secrets before the message is written. Strings, error\r\nmessages and nested object values are all scrubbed.",
-      "methods": [
-        {
-          "sig": "createRedactingLogger(originalLog: (...args: A) => void): (...args: A) => void",
-          "desc": "Create a redaction middleware for a logger.\r\n\r\nReturns a function that wraps log output, automatically redacting\r\nany detected secrets before the message is written. Strings, error\r\nmessages and nested object values are all scrubbed.",
-          "params": [
-            {
-              "n": "originalLog",
-              "t": "(...args: A) => void",
-              "r": true,
-              "d": "(...args: A) => void"
-            }
-          ],
-          "ret": "(...args: A) => void"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "redactObjectSecrets",
-      "desc": "Deep-redact secrets inside an object/array tree.\r\n\r\nSerializes the value to JSON, redacts known secret patterns, then parses\r\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\r\nare scrubbed while the structure is preserved. Falls back to the original\r\nvalue if it cannot be serialized (circular refs, functions, etc.).",
-      "methods": [
-        {
-          "sig": "redactObjectSecrets(value: T): T",
-          "desc": "Deep-redact secrets inside an object/array tree.\r\n\r\nSerializes the value to JSON, redacts known secret patterns, then parses\r\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\r\nare scrubbed while the structure is preserved. Falls back to the original\r\nvalue if it cannot be serialized (circular refs, functions, etc.).",
-          "params": [
-            {
-              "n": "value",
-              "t": "T",
-              "r": true,
-              "d": "T"
-            }
-          ],
-          "ret": "T"
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "SecretRedactor",
-      "desc": "Secret redactor with injectable patterns.\r\nUsers can register custom patterns without forking.",
-      "methods": [
-        {
-          "sig": "constructor(config: SecretRedactorConfig | undefined)",
-          "desc": "Create instance.",
-          "params": [
-            {
-              "n": "config",
-              "t": "SecretRedactorConfig | undefined",
-              "r": false,
-              "d": "SecretRedactorConfig | undefined"
-            }
-          ]
-        },
-        {
-          "sig": "register(pattern: SecretPattern): void",
-          "desc": "Register a custom secret pattern",
-          "params": [
-            {
-              "n": "pattern",
-              "t": "SecretPattern",
-              "r": true,
-              "d": "SecretPattern"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregister(name: string): void",
-          "desc": "Remove a pattern by name",
-          "params": [
-            {
-              "n": "name",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "redact(text: string): string",
-          "desc": "Redact secrets from text",
-          "params": [
-            {
-              "n": "text",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "string"
-        },
-        {
-          "sig": "detect(text: string): string[]",
-          "desc": "Detect secrets in text",
-          "params": [
-            {
-              "n": "text",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "string[]"
-        },
-        {
-          "sig": "patterns: SecretPattern[]",
-          "desc": "patterns",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "SecretRedactorConfig",
-      "desc": "Secret redactor configuration — injectable dependency.\r\nUsers can register custom patterns without forking.",
-      "methods": [],
-      "props": [
-        {
-          "name": "patterns",
-          "type": "SecretPattern[] | undefined",
-          "required": false,
-          "desc": "Custom patterns — merged with DEFAULT_SECRET_PATTERNS"
-        },
-        {
-          "name": "overridePatterns",
-          "type": "SecretPattern[] | undefined",
-          "required": false,
-          "desc": "Override default patterns completely"
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "SecretPattern",
-      "desc": "Secret detection and redaction for logs and error messages.",
-      "methods": [],
-      "props": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "pattern",
-          "type": "RegExp",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "replacement",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
       "name": "sanitizeEnv",
-      "desc": "Build a sanitized environment: only the safe whitelist (plus any explicit\n`allowedVars`) survives; secrets are never forwarded to child processes.",
+      "desc": "Environment sanitization for sandboxed / shell child processes.\n\nOnly a safe whitelist of non-secret variables survives; credentials\n(AWS/GitHub/GitLab tokens, DATABASE_URL, private keys, …) are never\nforwarded to subprocesses.\nBuild a sanitized environment: only the safe whitelist (plus any explicit\n`allowedVars`) survives; secrets are never forwarded to child processes.",
       "methods": [
         {
-          "sig": "sanitizeEnv(source: Record<string, string | undefined>, allowedVars: string[] | undefined): Record<string, string>",
-          "desc": "Build a sanitized environment: only the safe whitelist (plus any explicit\n`allowedVars`) survives; secrets are never forwarded to child processes.",
+          "sig": "sanitizeEnv(source: Record<string, string | undefined> | undefined, allowedVars: string[] | undefined): Record<string, string>",
+          "desc": "Environment sanitization for sandboxed / shell child processes.\n\nOnly a safe whitelist of non-secret variables survives; credentials\n(AWS/GitHub/GitLab tokens, DATABASE_URL, private keys, …) are never\nforwarded to subprocesses.\nBuild a sanitized environment: only the safe whitelist (plus any explicit\n`allowedVars`) survives; secrets are never forwarded to child processes.",
           "params": [
             {
               "n": "source",
-              "t": "Record<string, string | undefined>",
+              "t": "Record<string, string | undefined> | undefined",
               "r": false,
-              "d": "Record<string, string | undefined>"
+              "d": "Record<string, string | undefined> | undefined"
             },
             {
               "n": "allowedVars",
@@ -3626,6 +3992,147 @@ window.PKG = [
             }
           ],
           "ret": "Record<string, string>"
+        }
+      ]
+    }
+  ]
+},
+{
+  "id": "test-utils",
+  "name": "@vinhnt-sdk/test-utils",
+  "icon": "Tu",
+  "tag": "Extension",
+  "desc": "Test utilities - mock factories, helpers for unit testing.",
+  "deps": [],
+  "exports": [
+    {
+      "type": "function",
+      "name": "createMockUsage",
+      "desc": "Create a mock RunUsage for testing.",
+      "methods": [
+        {
+          "sig": "createMockUsage(overrides: { inputTokens?: number; outputTokens?: number; totalTokens?: number; } | undefined): { inputTokens: number; outputTokens: number; totalTokens: number; }",
+          "desc": "Create a mock RunUsage for testing.",
+          "params": [
+            {
+              "n": "overrides",
+              "t": "{ inputTokens?: number; outputTokens?: number; totalTokens?: number; } | undefined",
+              "r": false,
+              "d": "{ inputTokens?: number; outputTokens?: number; totalTokens?: number; } | undefined"
+            }
+          ],
+          "ret": "{ inputTokens: number; outputTokens: number; totalTokens: number; }"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createMockMessage",
+      "desc": "Create a mock ChatMessage for testing.",
+      "methods": [
+        {
+          "sig": "createMockMessage(role: \"system\" | \"user\" | \"assistant\" | \"tool\", content: string | { type: string; text?: string; }[], extra: Record<string, unknown> | undefined): { [key: string]: unknown; role: string; content: string | { type: string; text?: string; }[]; }",
+          "desc": "Create a mock ChatMessage for testing.",
+          "params": [
+            {
+              "n": "role",
+              "t": "\"system\" | \"user\" | \"assistant\" | \"tool\"",
+              "r": true,
+              "d": "\"system\" | \"user\" | \"assistant\" | \"tool\""
+            },
+            {
+              "n": "content",
+              "t": "string | { type: string; text?: string; }[]",
+              "r": true,
+              "d": "string | { type: string; text?: string; }[]"
+            },
+            {
+              "n": "extra",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "{ [key: string]: unknown; role: string; content: string | { type: string; text?: string; }[]; }"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createMockAbortController",
+      "desc": "Create a mock abort controller for testing.",
+      "methods": [
+        {
+          "sig": "createMockAbortController(): AbortController",
+          "desc": "Create a mock abort controller for testing.",
+          "params": [],
+          "ret": "AbortController"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "wait",
+      "desc": "Wait for a specified number of milliseconds.",
+      "methods": [
+        {
+          "sig": "wait(ms: number): Promise<void>",
+          "desc": "Wait for a specified number of milliseconds.",
+          "params": [
+            {
+              "n": "ms",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            }
+          ],
+          "ret": "Promise<void>"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createSequence",
+      "desc": "Create a mock function that returns a sequence of values.",
+      "methods": [
+        {
+          "sig": "createSequence(values: T[]): () => T",
+          "desc": "Create a mock function that returns a sequence of values.",
+          "params": [
+            {
+              "n": "values",
+              "t": "T[]",
+              "r": true,
+              "d": "T[]"
+            }
+          ],
+          "ret": "() => T"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "assertThrows",
+      "desc": "Assert that a function throws an error with a specific message.",
+      "methods": [
+        {
+          "sig": "assertThrows(fn: () => Promise<void>, expectedMessage: string | undefined): Promise<void>",
+          "desc": "Assert that a function throws an error with a specific message.",
+          "params": [
+            {
+              "n": "fn",
+              "t": "() => Promise<void>",
+              "r": true,
+              "d": "() => Promise<void>"
+            },
+            {
+              "n": "expectedMessage",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "Promise<void>"
         }
       ]
     }
@@ -3852,6 +4359,12 @@ window.PKG = [
           "type": "string",
           "required": true,
           "desc": "Unique span ID"
+        },
+        {
+          "name": "traceId",
+          "type": "string | undefined",
+          "required": true,
+          "desc": "Trace ID this span belongs to"
         },
         {
           "name": "parentId",
@@ -4231,6 +4744,18 @@ window.PKG = [
       "desc": "Cost meter — tracks token usage and cost across operations.\r\nNamed differently from llm/TokenMeter to clarify purpose:\r\n- llm/TokenMeter: heuristic token estimation for request sizing\r\n- trace/CostMeter: actual usage tracking and cost aggregation",
       "methods": [
         {
+          "sig": "constructor(pricingTable: Record<string, ModelPricing> | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "pricingTable",
+              "t": "Record<string, ModelPricing> | undefined",
+              "r": false,
+              "d": "Record<string, ModelPricing> | undefined"
+            }
+          ]
+        },
+        {
           "sig": "record(inputTokens: number, outputTokens: number, modelId: string | undefined): UsageStats",
           "desc": "Record a token usage event",
           "params": [
@@ -4292,6 +4817,11 @@ window.PKG = [
         {
           "sig": "operations: UsageStats[]",
           "desc": "operations",
+          "params": []
+        },
+        {
+          "sig": "pricingTable: Record<string, ModelPricing>",
+          "desc": "pricingTable",
           "params": []
         }
       ]
@@ -4445,6 +4975,269 @@ window.PKG = [
         {
           "name": "metadata",
           "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "TelemetryProvider",
+      "desc": "Telemetry provider interface — export telemetry data to external systems.\r\n\r\nInspired by Vercel AI SDK's telemetry pattern.",
+      "methods": [
+        {
+          "sig": "exportTrace(trace: { traceId: string; spans: { spanId: string; name: string; startTime: number; endTime?: number; attributes?: Record<st...): void | Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "trace",
+              "t": "{ traceId: string; spans: { spanId: string; name: string; startTime: number; endTime?: number; attributes?: Record<st...",
+              "r": true,
+              "d": "{ traceId: string; spans: { spanId: string; name: string; startTime: number; endTime?: number; attributes?: Record<st..."
+            }
+          ],
+          "ret": "void | Promise<void>"
+        },
+        {
+          "sig": "exportMetric(metric: { name: string; value: number; unit: string; attributes?: Record<string, unknown>; }): void | Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "metric",
+              "t": "{ name: string; value: number; unit: string; attributes?: Record<string, unknown>; }",
+              "r": true,
+              "d": "{ name: string; value: number; unit: string; attributes?: Record<string, unknown>; }"
+            }
+          ],
+          "ret": "void | Promise<void>"
+        }
+      ],
+      "props": []
+    }
+  ]
+},
+{
+  "id": "workflow",
+  "name": "@vinhnt-sdk/workflow",
+  "icon": "W",
+  "tag": "Extension",
+  "desc": "Workflow primitives - parallel, sequential, conditional execution.",
+  "deps": [
+    "schema"
+  ],
+  "exports": [
+    {
+      "type": "function",
+      "name": "parallel",
+      "desc": "Execute multiple steps in parallel.",
+      "methods": [
+        {
+          "sig": "parallel(steps: WorkflowStep<unknown, T>[], ctx: Partial<WorkflowContext> | undefined): Promise<StepResult<T>[]>",
+          "desc": "Execute multiple steps in parallel.",
+          "params": [
+            {
+              "n": "steps",
+              "t": "WorkflowStep<unknown, T>[]",
+              "r": true,
+              "d": "WorkflowStep<unknown, T>[]"
+            },
+            {
+              "n": "ctx",
+              "t": "Partial<WorkflowContext> | undefined",
+              "r": false,
+              "d": "Partial<WorkflowContext> | undefined"
+            }
+          ],
+          "ret": "Promise<StepResult<T>[]>"
+        }
+      ],
+      "example": "```ts\nconst results = await parallel([\n  { name: \"fetch-user\", execute: async () => getUser() },\n  { name: \"fetch-posts\", execute: async () => getPosts() },\n]);\n```"
+    },
+    {
+      "type": "function",
+      "name": "sequential",
+      "desc": "Execute steps sequentially, passing output of one as input to the next.",
+      "methods": [
+        {
+          "sig": "sequential(steps: WorkflowStep<any, any>[], initialInput: TInput, ctx: Partial<WorkflowContext> | undefined): Promise<StepResult<TOutput>>",
+          "desc": "Execute steps sequentially, passing output of one as input to the next.",
+          "params": [
+            {
+              "n": "steps",
+              "t": "WorkflowStep<any, any>[]",
+              "r": true,
+              "d": "WorkflowStep<any, any>[]"
+            },
+            {
+              "n": "initialInput",
+              "t": "TInput",
+              "r": true,
+              "d": "TInput"
+            },
+            {
+              "n": "ctx",
+              "t": "Partial<WorkflowContext> | undefined",
+              "r": false,
+              "d": "Partial<WorkflowContext> | undefined"
+            }
+          ],
+          "ret": "Promise<StepResult<TOutput>>"
+        }
+      ],
+      "example": "```ts\nconst result = await sequential([\n  { name: \"validate\", execute: async (input) => validate(input) },\n  { name: \"process\", execute: async (input) => process(input) },\n  { name: \"save\", execute: async (input) => save(input) },\n], initialInput);\n```"
+    },
+    {
+      "type": "function",
+      "name": "conditional",
+      "desc": "Execute steps conditionally based on input.",
+      "methods": [
+        {
+          "sig": "conditional(input: TInput, branches: ConditionalBranch<TInput, TOutput>[], ctx: Partial<WorkflowContext> | undefined): Promise<StepResult<TOutput>>",
+          "desc": "Execute steps conditionally based on input.",
+          "params": [
+            {
+              "n": "input",
+              "t": "TInput",
+              "r": true,
+              "d": "TInput"
+            },
+            {
+              "n": "branches",
+              "t": "ConditionalBranch<TInput, TOutput>[]",
+              "r": true,
+              "d": "ConditionalBranch<TInput, TOutput>[]"
+            },
+            {
+              "n": "ctx",
+              "t": "Partial<WorkflowContext> | undefined",
+              "r": false,
+              "d": "Partial<WorkflowContext> | undefined"
+            }
+          ],
+          "ret": "Promise<StepResult<TOutput>>"
+        }
+      ],
+      "example": "```ts\nconst result = await conditional(input, [\n  {\n    condition: (input) => input.type === \"admin\",\n    steps: [adminStep],\n    name: \"admin-path\",\n  },\n  {\n    condition: () => true,\n    steps: [defaultStep],\n    name: \"default-path\",\n  },\n]);\n```"
+    },
+    {
+      "type": "type",
+      "name": "StepResult",
+      "desc": "Workflow primitives for agent orchestration.\n\nInspired by Google ADK workflow patterns.\nProvides parallel, sequential, and conditional execution.\nWorkflow step result",
+      "methods": [],
+      "props": [
+        {
+          "name": "success",
+          "type": "boolean",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "output",
+          "type": "T | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "error",
+          "type": "Error | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "durationMs",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "WorkflowContext",
+      "desc": "Workflow context passed to each step",
+      "methods": [],
+      "props": [
+        {
+          "name": "workflowId",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "stepIndex",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown>",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "signal",
+          "type": "AbortSignal | undefined",
+          "required": false,
+          "desc": "Abort signal for cancellation"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "WorkflowStep",
+      "desc": "A single workflow step",
+      "methods": [
+        {
+          "sig": "execute(input: TInput, ctx: WorkflowContext): Promise<TOutput>",
+          "desc": "",
+          "params": [
+            {
+              "n": "input",
+              "t": "TInput",
+              "r": true,
+              "d": "TInput"
+            },
+            {
+              "n": "ctx",
+              "t": "WorkflowContext",
+              "r": true,
+              "d": "WorkflowContext"
+            }
+          ],
+          "ret": "Promise<TOutput>"
+        }
+      ],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ConditionalBranch",
+      "desc": "A conditional branch",
+      "methods": [],
+      "props": [
+        {
+          "name": "condition",
+          "type": "(input: TInput) => boolean | Promise<boolean>",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "steps",
+          "type": "WorkflowStep<unknown, unknown>[]",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "name",
+          "type": "string | undefined",
           "required": false,
           "desc": ""
         }
@@ -4963,6 +5756,608 @@ window.PKG = [
           "ret": "ResolvedCredential | undefined"
         }
       ]
+    },
+    {
+      "type": "function",
+      "name": "parseJsonc",
+      "desc": "Parse a JSONC (JSON with Comments) string.\n\nSupports:\n- Single-line comments (`//`)\n- Multi-line comments (`/* *​/`)\n- Trailing commas",
+      "methods": [
+        {
+          "sig": "parseJsonc(input: string): T",
+          "desc": "Parse a JSONC (JSON with Comments) string.\n\nSupports:\n- Single-line comments (`//`)\n- Multi-line comments (`/* *​/`)\n- Trailing commas",
+          "params": [
+            {
+              "n": "input",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "T"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "parseJsoncFile",
+      "desc": "Parse a JSONC file contents. Returns undefined if the input is empty or whitespace-only.",
+      "methods": [
+        {
+          "sig": "parseJsoncFile(input: string): T | undefined",
+          "desc": "Parse a JSONC file contents. Returns undefined if the input is empty or whitespace-only.",
+          "params": [
+            {
+              "n": "input",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "T | undefined"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "FileCredentialProvider",
+      "desc": "FileCredentialProvider",
+      "methods": [
+        {
+          "sig": "constructor(options: FileCredentialProviderOptions | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "options",
+              "t": "FileCredentialProviderOptions | undefined",
+              "r": false,
+              "d": "FileCredentialProviderOptions | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "load(): CredentialsFile",
+          "desc": "Load the credentials file from disk (cached).",
+          "params": [],
+          "ret": "CredentialsFile"
+        },
+        {
+          "sig": "save(data: CredentialsFile): void",
+          "desc": "Save the credentials file to disk.",
+          "params": [
+            {
+              "n": "data",
+              "t": "CredentialsFile",
+              "r": true,
+              "d": "CredentialsFile"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "invalidateCache(): void",
+          "desc": "Invalidate cache so next read goes to disk.",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "resolve(ref: CredentialRef): Promise<ResolvedCredential | undefined>",
+          "desc": "",
+          "params": [
+            {
+              "n": "ref",
+              "t": "CredentialRef",
+              "r": true,
+              "d": "CredentialRef"
+            }
+          ],
+          "ret": "Promise<ResolvedCredential | undefined>"
+        },
+        {
+          "sig": "describe(ref: CredentialRef): Promise<CredentialInfo>",
+          "desc": "",
+          "params": [
+            {
+              "n": "ref",
+              "t": "CredentialRef",
+              "r": true,
+              "d": "CredentialRef"
+            }
+          ],
+          "ret": "Promise<CredentialInfo>"
+        },
+        {
+          "sig": "set(ref: CredentialRef, value: string): Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "ref",
+              "t": "CredentialRef",
+              "r": true,
+              "d": "CredentialRef"
+            },
+            {
+              "n": "value",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "unset(ref: CredentialRef): Promise<void>",
+          "desc": "",
+          "params": [
+            {
+              "n": "ref",
+              "t": "CredentialRef",
+              "r": true,
+              "d": "CredentialRef"
+            }
+          ],
+          "ret": "Promise<void>"
+        },
+        {
+          "sig": "list(): { ref: CredentialRef; updatedAt: string; }[]",
+          "desc": "List all stored credential references (metadata only, no values).",
+          "params": [],
+          "ret": "{ ref: CredentialRef; updatedAt: string; }[]"
+        },
+        {
+          "sig": "filePath: string",
+          "desc": "filePath",
+          "params": []
+        },
+        {
+          "sig": "encryptionKey: Buffer<ArrayBufferLike> | undefined",
+          "desc": "encryptionKey",
+          "params": []
+        },
+        {
+          "sig": "enforcePermissions: boolean",
+          "desc": "enforcePermissions",
+          "params": []
+        },
+        {
+          "sig": "cache: CredentialsFile | undefined",
+          "desc": "cache",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "FileCredentialProviderOptions",
+      "desc": "FileCredentialProviderOptions",
+      "methods": [],
+      "props": [
+        {
+          "name": "credentialsDir",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Directory containing `.credentials.json`. Default: `.vnt`"
+        },
+        {
+          "name": "filename",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Filename within credentialsDir. Default: `.credentials.json`"
+        },
+        {
+          "name": "encryptionKey",
+          "type": "string | Buffer<ArrayBufferLike> | undefined",
+          "required": false,
+          "desc": "AES-256-GCM encryption key (32 bytes). If provided, values are encrypted at rest."
+        },
+        {
+          "name": "enforcePermissions",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "Whether to enforce 0600 file permissions on Unix. Default: true"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "FileSettingsProvider",
+      "desc": "FileSettingsProvider",
+      "methods": [
+        {
+          "sig": "constructor(options: FileSettingsProviderOptions | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "options",
+              "t": "FileSettingsProviderOptions | undefined",
+              "r": false,
+              "d": "FileSettingsProviderOptions | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "loadFile(): SettingsFile",
+          "desc": "Load the settings file from disk.",
+          "params": [],
+          "ret": "SettingsFile"
+        },
+        {
+          "sig": "saveFile(data: SettingsFile): void",
+          "desc": "Save the settings file to disk.",
+          "params": [
+            {
+              "n": "data",
+              "t": "SettingsFile",
+              "r": true,
+              "d": "SettingsFile"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "resolveSection(entry: SettingsEntry<T>): T",
+          "desc": "Resolve a section from layers: defaults < base < user.",
+          "params": [
+            {
+              "n": "entry",
+              "t": "SettingsEntry<T>",
+              "r": true,
+              "d": "SettingsEntry<T>"
+            }
+          ],
+          "ret": "T"
+        },
+        {
+          "sig": "reloadFromFile(): void",
+          "desc": "Reload all sections from disk (for hot-reload).",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "scheduleReload(): void",
+          "desc": "Debounced file reload.",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "startWatcher(): void",
+          "desc": "Start file watcher for hot-reload.",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "stopWatcher(): void",
+          "desc": "Stop file watcher.",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "get(namespace: SettingsNamespace): SettingsSection<T> | undefined",
+          "desc": "",
+          "params": [
+            {
+              "n": "namespace",
+              "t": "SettingsNamespace",
+              "r": true,
+              "d": "SettingsNamespace"
+            }
+          ],
+          "ret": "SettingsSection<T> | undefined"
+        },
+        {
+          "sig": "install(namespace: SettingsNamespace, schema: SettingsSchema<T>, base: T, callbacks: { setSource: (config: T) => void; onChange?: (config: T) => void; }): () => void",
+          "desc": "",
+          "params": [
+            {
+              "n": "namespace",
+              "t": "SettingsNamespace",
+              "r": true,
+              "d": "SettingsNamespace"
+            },
+            {
+              "n": "schema",
+              "t": "SettingsSchema<T>",
+              "r": true,
+              "d": "SettingsSchema<T>"
+            },
+            {
+              "n": "base",
+              "t": "T",
+              "r": true,
+              "d": "T"
+            },
+            {
+              "n": "callbacks",
+              "t": "{ setSource: (config: T) => void; onChange?: (config: T) => void; }",
+              "r": true,
+              "d": "{ setSource: (config: T) => void; onChange?: (config: T) => void; }"
+            }
+          ],
+          "ret": "() => void"
+        },
+        {
+          "sig": "setSection(namespace: SettingsNamespace, config: T): void",
+          "desc": "",
+          "params": [
+            {
+              "n": "namespace",
+              "t": "SettingsNamespace",
+              "r": true,
+              "d": "SettingsNamespace"
+            },
+            {
+              "n": "config",
+              "t": "T",
+              "r": true,
+              "d": "T"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "list(): readonly SettingsNamespace[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly SettingsNamespace[]"
+        },
+        {
+          "sig": "invalidateCache(): void",
+          "desc": "Invalidate file cache and reload from disk.",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "dispose(): void",
+          "desc": "Dispose watcher and cleanup.",
+          "params": [],
+          "ret": "void"
+        },
+        {
+          "sig": "filePath: string",
+          "desc": "filePath",
+          "params": []
+        },
+        {
+          "sig": "watchEnabled: boolean",
+          "desc": "watchEnabled",
+          "params": []
+        },
+        {
+          "sig": "debounceMs: number",
+          "desc": "debounceMs",
+          "params": []
+        },
+        {
+          "sig": "sections: Map<string, SettingsEntry<any>>",
+          "desc": "sections",
+          "params": []
+        },
+        {
+          "sig": "watcher: FSWatcher | undefined",
+          "desc": "watcher",
+          "params": []
+        },
+        {
+          "sig": "debounceTimer: NodeJS.Timeout | undefined",
+          "desc": "debounceTimer",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "FileSettingsProviderOptions",
+      "desc": "FileSettingsProviderOptions",
+      "methods": [],
+      "props": [
+        {
+          "name": "settingsDir",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Directory containing `settings.json`. Default: `.vnt`"
+        },
+        {
+          "name": "filename",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Filename within settingsDir. Default: `settings.json`"
+        },
+        {
+          "name": "watch",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "Enable file watching for hot-reload. Default: false"
+        },
+        {
+          "name": "debounceMs",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Debounce interval for file watcher in ms. Default: 100"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ConfigMigrator",
+      "desc": "Config migrator — chains migrations to transform config between versions.\n\nUsage:\n1. Register migrations with `add()`\n2. Call `migrate(raw, targetVersion)` to upgrade\n3. Call `rollback(raw, targetVersion)` to downgrade",
+      "methods": [
+        {
+          "sig": "constructor(configType: string)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "configType",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ]
+        },
+        {
+          "sig": "add(migration: ConfigMigration): this",
+          "desc": "Register a migration. Throws if a migration for the source version already exists.",
+          "params": [
+            {
+              "n": "migration",
+              "t": "ConfigMigration",
+              "r": true,
+              "d": "ConfigMigration"
+            }
+          ],
+          "ret": "this"
+        },
+        {
+          "sig": "getLatestVersion(): number",
+          "desc": "Get the latest version supported by registered migrations.",
+          "params": [],
+          "ret": "number"
+        },
+        {
+          "sig": "getEarliestVersion(): number",
+          "desc": "Get the earliest version supported by registered migrations.",
+          "params": [],
+          "ret": "number"
+        },
+        {
+          "sig": "migrate(raw: Record<string, unknown>, targetVersion: number): Record<string, unknown>",
+          "desc": "Migrate a config object to the target version.\nApplies migrations sequentially from current → target.",
+          "params": [
+            {
+              "n": "raw",
+              "t": "Record<string, unknown>",
+              "r": true,
+              "d": "Record<string, unknown>"
+            },
+            {
+              "n": "targetVersion",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            }
+          ],
+          "ret": "Record<string, unknown>"
+        },
+        {
+          "sig": "rollback(raw: Record<string, unknown>, targetVersion: number): Record<string, unknown>",
+          "desc": "Rollback a config object to the target version.\nApplies down-migrations sequentially from current → target.",
+          "params": [
+            {
+              "n": "raw",
+              "t": "Record<string, unknown>",
+              "r": true,
+              "d": "Record<string, unknown>"
+            },
+            {
+              "n": "targetVersion",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            }
+          ],
+          "ret": "Record<string, unknown>"
+        },
+        {
+          "sig": "getVersion(raw: Record<string, unknown>): number",
+          "desc": "Get version from a raw config object. Defaults to 1 if missing.",
+          "params": [
+            {
+              "n": "raw",
+              "t": "Record<string, unknown>",
+              "r": true,
+              "d": "Record<string, unknown>"
+            }
+          ],
+          "ret": "number"
+        },
+        {
+          "sig": "list(): readonly ConfigMigration[]",
+          "desc": "List all registered migrations (sorted by from version).",
+          "params": [],
+          "ret": "readonly ConfigMigration[]"
+        },
+        {
+          "sig": "migrations: Map<number, ConfigMigration>",
+          "desc": "migrations",
+          "params": []
+        },
+        {
+          "sig": "configType: string",
+          "desc": "configType",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "defineMigration",
+      "desc": "Define a config migration.",
+      "methods": [
+        {
+          "sig": "defineMigration(migration: ConfigMigration): Readonly<ConfigMigration>",
+          "desc": "Define a config migration.",
+          "params": [
+            {
+              "n": "migration",
+              "t": "ConfigMigration",
+              "r": true,
+              "d": "ConfigMigration"
+            }
+          ],
+          "ret": "Readonly<ConfigMigration>"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ConfigMigration",
+      "desc": "Config migration framework — supports migrating configuration files\nbetween schema versions (V1 → V2 → ...).\n\nEach migration is a function that transforms a raw config object\nfrom one version to the next. Migrations run sequentially.\nA single migration step between two versions.",
+      "methods": [
+        {
+          "sig": "up(raw: Record<string, unknown>): Record<string, unknown>",
+          "desc": "Transform config from source → target version.",
+          "params": [
+            {
+              "n": "raw",
+              "t": "Record<string, unknown>",
+              "r": true,
+              "d": "Record<string, unknown>"
+            }
+          ],
+          "ret": "Record<string, unknown>"
+        },
+        {
+          "sig": "down(raw: Record<string, unknown>): Record<string, unknown>",
+          "desc": "Transform config from target → source version (rollback).",
+          "params": [
+            {
+              "n": "raw",
+              "t": "Record<string, unknown>",
+              "r": true,
+              "d": "Record<string, unknown>"
+            }
+          ],
+          "ret": "Record<string, unknown>"
+        }
+      ],
+      "props": [
+        {
+          "name": "from",
+          "type": "number",
+          "required": true,
+          "desc": "Source version (must be positive integer)."
+        },
+        {
+          "name": "to",
+          "type": "number",
+          "required": true,
+          "desc": "Target version (must be from + 1)."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "desc": "Human-readable description."
+        }
+      ]
     }
   ]
 },
@@ -4978,7 +6373,9 @@ window.PKG = [
     "permission",
     "sandbox",
     "schema",
-    "security",
+    "guard",
+    "guardrails",
+    "workflow",
     "session",
     "knowledge",
     "tools",
@@ -5163,20 +6560,20 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "setCurrentAgent(agent: AgentConfig): void",
+          "sig": "setCurrentAgent(agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): void",
           "desc": "Directly set the active agent config (bypasses registry lookup).",
           "params": [
             {
               "n": "agent",
-              "t": "AgentConfig",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "void"
         },
         {
-          "sig": "spawnAgent(params: SubAgentParams): Promise<AgentConfig>",
+          "sig": "spawnAgent(params: SubAgentParams): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "Create and register a new sub-agent from inline params.",
           "params": [
             {
@@ -5186,23 +6583,23 @@ window.PKG = [
               "d": "SubAgentParams"
             }
           ],
-          "ret": "Promise<AgentConfig>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "getCurrentAgent(): AgentConfig | undefined",
+          "sig": "getCurrentAgent(): { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "desc": "Current active agent config (if any).",
           "params": [],
-          "ret": "AgentConfig | undefined"
+          "ret": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
         },
         {
-          "sig": "setBehaviourMode(mode: AgentBehaviourMode): void",
+          "sig": "setBehaviourMode(mode: string): void",
           "desc": "Switch the current agent's behaviour mode (build/plan/custom). Resets tool cache.",
           "params": [
             {
               "n": "mode",
-              "t": "AgentBehaviourMode",
+              "t": "string",
               "r": true,
-              "d": "AgentBehaviourMode"
+              "d": "string"
             }
           ],
           "ret": "void"
@@ -5221,10 +6618,10 @@ window.PKG = [
           "ret": "void"
         },
         {
-          "sig": "getBehaviourMode(): AgentBehaviourMode",
+          "sig": "getBehaviourMode(): string",
           "desc": "Get the current agent's behaviour mode (defaults to \"build\").",
           "params": [],
-          "ret": "AgentBehaviourMode"
+          "ret": "string"
         },
         {
           "sig": "getAgentRegistry(): AgentRegistry | undefined",
@@ -5239,7 +6636,7 @@ window.PKG = [
           "ret": "RunEventStore"
         },
         {
-          "sig": "runAgent(agentId: AgentId, prompt: string, ctx: RequestContext, sessionId: string | undefined, parentRunId: RunId | undefined, signal: AbortSignal | undefined): Promise<string>",
+          "sig": "runAgent(agentId: AgentId, prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, parentRunId: RunId | undefined, signal: AbortSignal | undefined): Promise<string>",
           "desc": "Delegate a prompt to a named sub-agent. Returns the agent's response text.",
           "params": [
             {
@@ -5256,9 +6653,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5282,20 +6679,20 @@ window.PKG = [
           "ret": "Promise<string>"
         },
         {
-          "sig": "buildSystemPrompt(agent: AgentConfig | undefined): string | undefined",
+          "sig": "buildSystemPrompt(agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): string | undefined",
           "desc": "Build the system head (agent identity + configured system prompt) for a run.",
           "params": [
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "string | undefined"
         },
         {
-          "sig": "run(prompt: string, ctx: RequestContext, sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined, agentOverride: AgentConfig | undefined): RunHandle",
+          "sig": "run(prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined, agentOverride: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): RunHandle",
           "desc": "Start a new agent run. Creates a run ID, wires abort + session, and returns\r\na `RunHandle` (runId + completed promise + abort). The run loop executes\r\nasynchronously — the promise resolves when the run finishes (or fails).",
           "params": [
             {
@@ -5306,9 +6703,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5324,15 +6721,15 @@ window.PKG = [
             },
             {
               "n": "agentOverride",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "RunHandle"
         },
         {
-          "sig": "resumeRun(runId: RunId, prompt: string, ctx: RequestContext, sessionId: string | undefined, agentOverride: AgentConfig | undefined): Promise<RunHandle>",
+          "sig": "resumeRun(runId: RunId, prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, agentOverride: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): Promise<RunHandle>",
           "desc": "Resume a previously persisted run from durable storage (snapshot + messages).\r\nRestores the run's session state (history, step counter, token counts) and\r\ncontinues the run loop from where it stopped. Emits no `run.started` event\r\n(the run has already started) and does not re-inject the original prompt.",
           "params": [
             {
@@ -5349,9 +6746,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5361,9 +6758,9 @@ window.PKG = [
             },
             {
               "n": "agentOverride",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "Promise<RunHandle>"
@@ -5375,7 +6772,7 @@ window.PKG = [
           "ret": "Promise<string[]>"
         },
         {
-          "sig": "createRunHandle(prompt: string, ctx: RequestContext, sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined, agentOverride: AgentConfig | undefined): AgentRunHandle",
+          "sig": "createRunHandle(prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined, agentOverride: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): AgentRunHandle",
           "desc": "Start a new agent run with full lifecycle management.\r\nReturns an AgentRunHandle with cancel, status, and event streaming.",
           "params": [
             {
@@ -5386,9 +6783,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5404,15 +6801,15 @@ window.PKG = [
             },
             {
               "n": "agentOverride",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "AgentRunHandle"
         },
         {
-          "sig": "streamRun(prompt: string, ctx: RequestContext, sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined, agentOverride: AgentConfig | undefined): { runId: RunId; events: AsyncIterable<KnownRunEvent>; }",
+          "sig": "streamRun(prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined, agentOverride: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): { runId: RunId; events: AsyncIterable<KnownRunEvent>; }",
           "desc": "Start a new agent run and stream events as an async iterable.\r\nReturns the run ID and an async iterable of run events.",
           "params": [
             {
@@ -5423,9 +6820,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5441,9 +6838,9 @@ window.PKG = [
             },
             {
               "n": "agentOverride",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "{ runId: RunId; events: AsyncIterable<KnownRunEvent>; }"
@@ -5468,7 +6865,7 @@ window.PKG = [
           "ret": "RunContext | undefined"
         },
         {
-          "sig": "runAgentsParallel(tasks: { agentId: AgentId; prompt: string; }[], ctx: RequestContext, sessionId: string | undefined, parentRunId: RunId | undefined, signal: AbortSignal | undefined): Promise<string>",
+          "sig": "runAgentsParallel(tasks: { agentId: AgentId; prompt: string; }[], ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, parentRunId: RunId | undefined, signal: AbortSignal | undefined): Promise<string>",
           "desc": "Run multiple sub-agents concurrently. Returns combined output.",
           "params": [
             {
@@ -5479,9 +6876,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5505,7 +6902,7 @@ window.PKG = [
           "ret": "Promise<string>"
         },
         {
-          "sig": "runSafe(prompt: string, ctx: RequestContext, sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined): { ok: true; value: { completed: Promise<void>; runId: RunId; abort(): void; }; error?: never; } | { ok: false; error:...",
+          "sig": "runSafe(prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., sessionId: string | undefined, userContentParts: readonly MessageContentPart[] | undefined): { ok: true; value: { completed: Promise<void>; runId: RunId; abort(): void; }; error?: never; } | { ok: false; error:...",
           "desc": "Start a run with error-safe wrapper — returns `{ ok, value }` or `{ ok: false, error }`.",
           "params": [
             {
@@ -5516,9 +6913,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "sessionId",
@@ -5561,14 +6958,14 @@ window.PKG = [
           "ret": "ModelCaller"
         },
         {
-          "sig": "reconfigure(partial: Partial<Pick<AgentKernelConfig, \"model\" | \"maxTokens\" | \"maxSteps\" | \"stepTimeout\" | \"thinkingBudget\" | \"thinkingProm...): void",
+          "sig": "reconfigure(partial: Partial<Pick<AgentKernelConfig, \"permissions\" | \"maxSteps\" | \"maxTokens\" | \"model\" | \"stepTimeout\" | \"thinkingBudget\"...): void",
           "desc": "Hot-reload runtime-tunable settings without rebuilding the kernel.\r\nUpdates the default model, generation limits, permission rules and\r\nrisk overrides. New runs pick up the values immediately.\r\n\r\nSupports both nested format (`permissions: { ... }`) and legacy flat format\r\n(`globalPermissionRules: ...`, `permissionRiskDefaults: ...`).",
           "params": [
             {
               "n": "partial",
-              "t": "Partial<Pick<AgentKernelConfig, \"model\" | \"maxTokens\" | \"maxSteps\" | \"stepTimeout\" | \"thinkingBudget\" | \"thinkingProm...",
+              "t": "Partial<Pick<AgentKernelConfig, \"permissions\" | \"maxSteps\" | \"maxTokens\" | \"model\" | \"stepTimeout\" | \"thinkingBudget\"...",
               "r": true,
-              "d": "Partial<Pick<AgentKernelConfig, \"model\" | \"maxTokens\" | \"maxSteps\" | \"stepTimeout\" | \"thinkingBudget\" | \"thinkingProm..."
+              "d": "Partial<Pick<AgentKernelConfig, \"permissions\" | \"maxSteps\" | \"maxTokens\" | \"model\" | \"stepTimeout\" | \"thinkingBudget\"..."
             }
           ],
           "ret": "void"
@@ -5752,7 +7149,7 @@ window.PKG = [
           "ret": "Promise<{ success: string[]; failed: { id: string; error: unknown; }[]; }>"
         },
         {
-          "sig": "runLoop(prompt: string, runId: RunId, ctx: RequestContext, runAbort: AbortController, sessionId: string | undefined, userContentParts: readonly { type: string; text?: string; image?: string; mimeType?: string; }[] | undefined, agentOverride: AgentConfig | undefined, runSaga: ToolSaga | undefined, resume: boolean | undefined, systemPrompt: string | undefined): Promise<RunLoopResult>",
+          "sig": "runLoop(prompt: string, runId: RunId, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., runAbort: AbortController, sessionId: string | undefined, userContentParts: readonly { type: string; text?: string; image?: string; mimeType?: string; }[] | undefined, agentOverride: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..., runSaga: ToolSaga | undefined, resume: boolean | undefined, systemPrompt: string | undefined): Promise<RunLoopResult>",
           "desc": "",
           "params": [
             {
@@ -5769,9 +7166,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "runAbort",
@@ -5793,9 +7190,9 @@ window.PKG = [
             },
             {
               "n": "agentOverride",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             },
             {
               "n": "runSaga",
@@ -5862,7 +7259,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "emitFail(rid: RunId, c: RequestContext, reason: string, steps: number, sid: string | undefined, totalIn: number, totalOut: number, dur: number | undefined, cancelled: boolean): Promise<void>",
+          "sig": "emitFail(rid: RunId, c: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., reason: string, steps: number, sid: string | undefined, totalIn: number, totalOut: number, dur: number | undefined, cancelled: boolean): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -5873,9 +7270,9 @@ window.PKG = [
             },
             {
               "n": "c",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "reason",
@@ -6053,7 +7450,7 @@ window.PKG = [
           "params": []
         },
         {
-          "sig": "currentAgent: AgentConfig | undefined",
+          "sig": "currentAgent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "desc": "currentAgent",
           "params": []
         },
@@ -6196,20 +7593,20 @@ window.PKG = [
       "desc": "Whether a run may transition directly from `from` to `to`.",
       "methods": [
         {
-          "sig": "canTransitionRun(from: RunStatus, to: RunStatus): boolean",
+          "sig": "canTransitionRun(from: \"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\", to: \"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\"): boolean",
           "desc": "Whether a run may transition directly from `from` to `to`.",
           "params": [
             {
               "n": "from",
-              "t": "RunStatus",
+              "t": "\"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\"",
               "r": true,
-              "d": "RunStatus"
+              "d": "\"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\""
             },
             {
               "n": "to",
-              "t": "RunStatus",
+              "t": "\"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\"",
               "r": true,
-              "d": "RunStatus"
+              "d": "\"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\""
             }
           ],
           "ret": "boolean"
@@ -6832,10 +8229,24 @@ window.PKG = [
           "desc": "Error message if failed."
         },
         {
+          "name": "usage",
+          "type": "RunUsage | undefined",
+          "required": false,
+          "desc": "Usage metrics (tokens, cost, duration)."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "RunUsage",
+      "desc": "Usage metrics for a completed agent run.\n\nFollows the industry-standard nested usage pattern (OpenAI, Vercel AI SDK, Mastra, LangChain).\nAll token/cost metrics are grouped here instead of being flat on AgentRunResult.",
+      "methods": [],
+      "props": [
+        {
           "name": "totalSteps",
           "type": "number",
           "required": true,
-          "desc": "Total number of steps executed."
+          "desc": "Total number of steps (LLM calls) executed."
         },
         {
           "name": "durationMs",
@@ -6854,6 +8265,66 @@ window.PKG = [
           "type": "number | undefined",
           "required": false,
           "desc": "Output tokens used."
+        },
+        {
+          "name": "reasoningTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Reasoning/thinking tokens used."
+        },
+        {
+          "name": "cacheReadTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache read tokens (prompt caching)."
+        },
+        {
+          "name": "cacheWriteTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache write tokens (prompt caching)."
+        },
+        {
+          "name": "totalTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Total tokens (input + output + reasoning)."
+        },
+        {
+          "name": "cost",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Total cost in USD."
+        },
+        {
+          "name": "toolCallsCount",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Number of tool calls executed."
+        },
+        {
+          "name": "model",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Model used for this run."
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider used for this run."
+        },
+        {
+          "name": "stopReason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Stop reason from the LLM."
+        },
+        {
+          "name": "raw",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific raw usage data."
         }
       ]
     },
@@ -6863,7 +8334,7 @@ window.PKG = [
       "desc": "Create an {@link AgentConfig} from user parameters, applying sane defaults\n(streaming enabled, primary permission mode) and validating required fields.",
       "methods": [
         {
-          "sig": "createAgent(params: CreateAgentParams): AgentConfig",
+          "sig": "createAgent(params: CreateAgentParams): { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "desc": "Create an {@link AgentConfig} from user parameters, applying sane defaults\n(streaming enabled, primary permission mode) and validating required fields.",
           "params": [
             {
@@ -6873,7 +8344,7 @@ window.PKG = [
               "d": "CreateAgentParams"
             }
           ],
-          "ret": "AgentConfig"
+          "ret": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
         }
       ]
     },
@@ -6891,19 +8362,19 @@ window.PKG = [
         },
         {
           "name": "profile",
-          "type": "AgentProfile",
+          "type": "{ name: string; description: string; version?: string | undefined; author?: string | undefined; model?: string | unde...",
           "required": true,
           "desc": ""
         },
         {
           "name": "capabilities",
-          "type": "AgentCapabilities | undefined",
+          "type": "{ tools?: string[] | undefined; models?: string[] | undefined; maxTokens?: number | undefined; streaming?: boolean | ...",
           "required": false,
           "desc": ""
         },
         {
           "name": "permissions",
-          "type": "AgentPermissions | undefined",
+          "type": "{ mode?: string | undefined; ruleset?: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: s...",
           "required": false,
           "desc": ""
         },
@@ -6916,6 +8387,183 @@ window.PKG = [
         {
           "name": "temperature",
           "type": "number | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "agentAsTool",
+      "desc": "Create a tool that delegates to a sub-agent.\n\nThe tool runs the sub-agent in an isolated context and returns\nits output to the parent agent. The parent stays in control.",
+      "methods": [
+        {
+          "sig": "agentAsTool(options: AgentAsToolOptions): ToolDefinition<unknown, unknown>",
+          "desc": "Create a tool that delegates to a sub-agent.\n\nThe tool runs the sub-agent in an isolated context and returns\nits output to the parent agent. The parent stays in control.",
+          "params": [
+            {
+              "n": "options",
+              "t": "AgentAsToolOptions",
+              "r": true,
+              "d": "AgentAsToolOptions"
+            }
+          ],
+          "ret": "ToolDefinition<unknown, unknown>"
+        }
+      ],
+      "example": "```typescript\nconst reviewer = createAgent({\n  id: \"code-reviewer\",\n  profile: { name: \"Code Reviewer\", description: \"Reviews code for issues\" },\n  systemPrompt: \"You are a code reviewer.\",\n  capabilities: { tools: [\"read_file\", \"grep_files\"] },\n});\n\nregistry.register(reviewer);\n\nconst tool = agentAsTool({\n  agentId: \"code-reviewer\" as AgentId,\n  toolDescription: \"Delegate code review to specialist\",\n});\n\n// Register as tool for manager agent\ntoolRegistry.register(tool);\n```"
+    },
+    {
+      "type": "function",
+      "name": "createHandoffTool",
+      "desc": "Create a handoff tool — transfers control to another agent.\n\nUnlike agent-as-tool, handoff gives full control to the target agent.\nThe original agent pauses until the target agent completes or transfers back.",
+      "methods": [
+        {
+          "sig": "createHandoffTool(options: { readonly agentId: AgentId; readonly toolName?: string; readonly toolDescription: string; readonly onHandoff?: (reas...): ToolDefinition<unknown, unknown>",
+          "desc": "Create a handoff tool — transfers control to another agent.\n\nUnlike agent-as-tool, handoff gives full control to the target agent.\nThe original agent pauses until the target agent completes or transfers back.",
+          "params": [
+            {
+              "n": "options",
+              "t": "{ readonly agentId: AgentId; readonly toolName?: string; readonly toolDescription: string; readonly onHandoff?: (reas...",
+              "r": true,
+              "d": "{ readonly agentId: AgentId; readonly toolName?: string; readonly toolDescription: string; readonly onHandoff?: (reas..."
+            }
+          ],
+          "ret": "ToolDefinition<unknown, unknown>"
+        }
+      ],
+      "example": "```typescript\nconst handoffTool = createHandoffTool({\n  agentId: \"billing\" as AgentId,\n  toolDescription: \"Transfer to billing specialist\",\n  onHandoff: (reason) => console.log(\"Handing off:\", reason),\n});\n```"
+    },
+    {
+      "type": "type",
+      "name": "AgentAsToolOptions",
+      "desc": "AgentAsToolOptions",
+      "methods": [],
+      "props": [
+        {
+          "name": "agentId",
+          "type": "AgentId",
+          "required": true,
+          "desc": "The agent ID to delegate to"
+        },
+        {
+          "name": "toolName",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Tool name (default: \"delegate_to_{agentId}\")"
+        },
+        {
+          "name": "toolDescription",
+          "type": "string",
+          "required": true,
+          "desc": "Tool description for the LLM"
+        },
+        {
+          "name": "maxOutputLength",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Max output length to return to parent (default: 4096)"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createUpdatePlanTool",
+      "desc": "Create an update_plan tool that lets agents track their task progress.\n\nThe agent calls this tool to:\n1. Create a plan with multiple steps\n2. Mark steps as in_progress or completed\n3. Add explanation for each update",
+      "methods": [
+        {
+          "sig": "createUpdatePlanTool(): ToolDefinition<unknown, unknown>",
+          "desc": "Create an update_plan tool that lets agents track their task progress.\n\nThe agent calls this tool to:\n1. Create a plan with multiple steps\n2. Mark steps as in_progress or completed\n3. Add explanation for each update",
+          "params": [],
+          "ret": "ToolDefinition<unknown, unknown>"
+        }
+      ],
+      "example": "```typescript\nconst tool = createUpdatePlanTool();\ntoolRegistry.register(tool);\n\n// Agent calls:\n// update_plan({ steps: [\n  // { text: \"Read codebase\", status: \"completed\" },\n  // { text: \"Implement feature\", status: \"in_progress\" },\n  // { text: \"Write tests\", status: \"pending\" },\n// ], explanation: \"Starting implementation\" })\n```"
+    },
+    {
+      "type": "function",
+      "name": "createGetPlanTool",
+      "desc": "Create a get_plan tool — returns the current plan state.",
+      "methods": [
+        {
+          "sig": "createGetPlanTool(): ToolDefinition<unknown, unknown>",
+          "desc": "Create a get_plan tool — returns the current plan state.",
+          "params": [],
+          "ret": "ToolDefinition<unknown, unknown>"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "Plan",
+      "desc": "Plan",
+      "methods": [],
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "steps",
+          "type": "PlanStep[]",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "createdAt",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "updatedAt",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "explanation",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "PlanStep",
+      "desc": "PlanStep",
+      "methods": [],
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "status",
+          "type": "\"pending\" | \"completed\" | \"failed\" | \"in_progress\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "createdAt",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "completedAt",
+          "type": "string | undefined",
           "required": false,
           "desc": ""
         }
@@ -7469,7 +9117,7 @@ window.PKG = [
           "ret": "void"
         },
         {
-          "sig": "listSessions(limit: number, offset: number): Promise<readonly Session[]>",
+          "sig": "listSessions(limit: number, offset: number): Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri...",
           "desc": "",
           "params": [
             {
@@ -7485,10 +9133,10 @@ window.PKG = [
               "d": "number"
             }
           ],
-          "ret": "Promise<readonly Session[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri..."
         },
         {
-          "sig": "getSession(id: string): Promise<Session | null>",
+          "sig": "getSession(id: string): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7498,10 +9146,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "createSession(title: string | undefined): Promise<Session>",
+          "sig": "createSession(title: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7511,10 +9159,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "forkSession(title: string | undefined): Promise<Session | null>",
+          "sig": "forkSession(title: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7524,10 +9172,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "switchSession(id: string): Promise<Session | null>",
+          "sig": "switchSession(id: string): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7537,10 +9185,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "startRun(prompt: string, ctx: RequestContext, agent: AgentConfig | undefined, userContentParts: readonly MessageContentPart[] | undefined): Promise<Result<RunId, KernelError>>",
+          "sig": "startRun(prompt: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..., userContentParts: readonly MessageContentPart[] | undefined): Promise<Result<RunId, KernelError>>",
           "desc": "",
           "params": [
             {
@@ -7551,15 +9199,15 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             },
             {
               "n": "userContentParts",
@@ -7590,7 +9238,7 @@ window.PKG = [
           "ret": "void"
         },
         {
-          "sig": "activeSession: Session | null",
+          "sig": "activeSession: { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isActive: boo...",
           "desc": "activeSession",
           "params": []
         },
@@ -7610,7 +9258,7 @@ window.PKG = [
           "params": []
         },
         {
-          "sig": "get currentSession(): Session | null",
+          "sig": "get currentSession(): { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isActive: boo...",
           "desc": "",
           "params": []
         },
@@ -7645,7 +9293,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputToke...): Promise<void>",
+          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -7656,9 +9304,9 @@ window.PKG = [
             },
             {
               "n": "sessionUpdate",
-              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputToke...",
+              "t": "{ sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA...",
               "r": false,
-              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputToke..."
+              "d": "{ sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA..."
             }
           ],
           "ret": "Promise<void>"
@@ -7800,7 +9448,7 @@ window.PKG = [
       "desc": "SessionStore",
       "methods": [
         {
-          "sig": "createSession(title: string | undefined, parentSessionId: string | undefined): Promise<Session>",
+          "sig": "createSession(title: string | undefined, parentSessionId: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7816,10 +9464,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "forkSession(sourceSessionId: string, title: string | undefined): Promise<Session>",
+          "sig": "forkSession(sourceSessionId: string, title: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7835,10 +9483,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "getSession(id: string): Promise<Session | null>",
+          "sig": "getSession(id: string): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -7848,10 +9496,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "listSessions(limit: number | undefined, offset: number | undefined): Promise<readonly Session[]>",
+          "sig": "listSessions(limit: number | undefined, offset: number | undefined): Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri...",
           "desc": "",
           "params": [
             {
@@ -7867,10 +9515,10 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<readonly Session[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri..."
         },
         {
-          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
+          "sig": "updateSession(id: string, updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -7881,9 +9529,9 @@ window.PKG = [
             },
             {
               "n": "updates",
-              "t": "Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
+              "t": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...",
               "r": true,
-              "d": "Partial<Pick<Session, \"model\" | \"title\" | \"isActive\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
+              "d": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ..."
             }
           ],
           "ret": "Promise<void>"
@@ -7902,7 +9550,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>",
+          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "Add a message to a session.",
           "params": [
             {
@@ -7918,10 +9566,10 @@ window.PKG = [
               "d": "AddMessageOptions"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
-          "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<Message>",
+          "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "",
           "params": [
             {
@@ -7973,7 +9621,7 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
           "sig": "updateMessage(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>",
@@ -8001,7 +9649,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
+          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -8017,10 +9665,10 @@ window.PKG = [
               "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
-          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -8036,7 +9684,7 @@ window.PKG = [
               "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
           "sig": "getSessionStats(): Promise<SessionStats>",
@@ -8053,14 +9701,14 @@ window.PKG = [
       "desc": "In-memory agent store with optional file loading (load/loadMultiple/reload).",
       "methods": [
         {
-          "sig": "register(config: AgentConfig, parentId: AgentId | undefined): Promise<void>",
+          "sig": "register(config: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..., parentId: AgentId | undefined): Promise<void>",
           "desc": "",
           "params": [
             {
               "n": "config",
-              "t": "AgentConfig",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             },
             {
               "n": "parentId",
@@ -8072,7 +9720,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "get(id: AgentId): Promise<AgentConfig | null>",
+          "sig": "get(id: AgentId): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8082,16 +9730,16 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<AgentConfig | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "list(): Promise<readonly AgentConfig[]>",
+          "sig": "list(): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
-          "sig": "findByCapability(key: string, value: unknown): Promise<readonly AgentConfig[]>",
+          "sig": "findByCapability(key: string, value: unknown): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [
             {
@@ -8107,7 +9755,7 @@ window.PKG = [
               "d": "unknown"
             }
           ],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
           "sig": "unregister(id: AgentId): Promise<void>",
@@ -8123,7 +9771,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "update(id: AgentId, patch: Partial<AgentConfig>): Promise<AgentConfig | null>",
+          "sig": "update(id: AgentId, patch: Partial<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8134,15 +9782,15 @@ window.PKG = [
             },
             {
               "n": "patch",
-              "t": "Partial<AgentConfig>",
+              "t": "Partial<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
               "r": true,
-              "d": "Partial<AgentConfig>"
+              "d": "Partial<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
             }
           ],
-          "ret": "Promise<AgentConfig | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "getChildren(parentId: AgentId): Promise<readonly AgentConfig[]>",
+          "sig": "getChildren(parentId: AgentId): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [
             {
@@ -8152,10 +9800,10 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
-          "sig": "getParent(childId: AgentId): Promise<AgentConfig | null>",
+          "sig": "getParent(childId: AgentId): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8165,10 +9813,10 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<AgentConfig | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "getAncestors(childId: AgentId): Promise<readonly AgentConfig[]>",
+          "sig": "getAncestors(childId: AgentId): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [
             {
@@ -8178,10 +9826,10 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
-          "sig": "load(source: AgentSource): Promise<AgentConfig>",
+          "sig": "load(source: AgentSource): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8191,10 +9839,10 @@ window.PKG = [
               "d": "AgentSource"
             }
           ],
-          "ret": "Promise<AgentConfig>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "loadMultiple(sources: AgentSource[]): Promise<AgentConfig[]>",
+          "sig": "loadMultiple(sources: AgentSource[]): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8204,10 +9852,10 @@ window.PKG = [
               "d": "AgentSource[]"
             }
           ],
-          "ret": "Promise<AgentConfig[]>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "reload(path: string): Promise<AgentConfig>",
+          "sig": "reload(path: string): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8217,10 +9865,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<AgentConfig>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "agents: Map<string, AgentConfig>",
+          "sig": "agents: Map<string, { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: ...",
           "desc": "agents",
           "params": []
         },
@@ -8252,14 +9900,14 @@ window.PKG = [
       "desc": "Registry contract for storing and querying agent configs with parent/child hierarchy.",
       "methods": [
         {
-          "sig": "register(config: AgentConfig, parentId: AgentId | undefined): Promise<void>",
+          "sig": "register(config: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..., parentId: AgentId | undefined): Promise<void>",
           "desc": "",
           "params": [
             {
               "n": "config",
-              "t": "AgentConfig",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             },
             {
               "n": "parentId",
@@ -8271,7 +9919,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "get(id: AgentId): Promise<AgentConfig | null>",
+          "sig": "get(id: AgentId): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8281,16 +9929,16 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<AgentConfig | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "list(): Promise<readonly AgentConfig[]>",
+          "sig": "list(): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
-          "sig": "findByCapability(key: string, value: unknown): Promise<readonly AgentConfig[]>",
+          "sig": "findByCapability(key: string, value: unknown): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [
             {
@@ -8306,10 +9954,10 @@ window.PKG = [
               "d": "unknown"
             }
           ],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
-          "sig": "update(id: AgentId, patch: Partial<AgentConfig>): Promise<AgentConfig | null>",
+          "sig": "update(id: AgentId, patch: Partial<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8320,12 +9968,12 @@ window.PKG = [
             },
             {
               "n": "patch",
-              "t": "Partial<AgentConfig>",
+              "t": "Partial<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
               "r": true,
-              "d": "Partial<AgentConfig>"
+              "d": "Partial<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
             }
           ],
-          "ret": "Promise<AgentConfig | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
           "sig": "unregister(id: AgentId): Promise<void>",
@@ -8341,7 +9989,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "getChildren(parentId: AgentId): Promise<readonly AgentConfig[]>",
+          "sig": "getChildren(parentId: AgentId): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [
             {
@@ -8351,10 +9999,10 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         },
         {
-          "sig": "getParent(childId: AgentId): Promise<AgentConfig | null>",
+          "sig": "getParent(childId: AgentId): Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri...",
           "desc": "",
           "params": [
             {
@@ -8364,10 +10012,10 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<AgentConfig | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: stri..."
         },
         {
-          "sig": "getAncestors(childId: AgentId): Promise<readonly AgentConfig[]>",
+          "sig": "getAncestors(childId: AgentId): Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi...",
           "desc": "",
           "params": [
             {
@@ -8377,7 +10025,7 @@ window.PKG = [
               "d": "AgentId"
             }
           ],
-          "ret": "Promise<readonly AgentConfig[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; versi..."
         }
       ],
       "props": []
@@ -8517,7 +10165,7 @@ window.PKG = [
         },
         {
           "name": "model",
-          "type": "string",
+          "type": "ModelId",
           "required": true,
           "desc": ""
         },
@@ -8917,6 +10565,24 @@ window.PKG = [
       "desc": "In-memory {@link ApprovalStore} implementation.",
       "methods": [
         {
+          "sig": "getPendingRequests(): readonly PermissionRequest[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly PermissionRequest[]"
+        },
+        {
+          "sig": "getAlwaysAllowed(): readonly SavedApproval[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly SavedApproval[]"
+        },
+        {
+          "sig": "getAlwaysRejected(): readonly SavedApproval[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly SavedApproval[]"
+        },
+        {
           "sig": "awaitReply(request: PermissionRequest, opts: AwaitReplyOptions | undefined): Promise<PermissionReply>",
           "desc": "",
           "params": [
@@ -9087,17 +10753,17 @@ window.PKG = [
           "params": []
         },
         {
-          "sig": "requests: PermissionRequest[]",
+          "sig": "requests: any",
           "desc": "requests",
           "params": []
         },
         {
-          "sig": "savedApprovals: SavedApproval[]",
+          "sig": "savedApprovals: any",
           "desc": "savedApprovals",
           "params": []
         },
         {
-          "sig": "savedRejections: SavedApproval[]",
+          "sig": "savedRejections: any",
           "desc": "savedRejections",
           "params": []
         }
@@ -9282,7 +10948,7 @@ window.PKG = [
       "desc": "Tracks registered workspace directories, manages the single active\nworkspace, and emits lifecycle events to listeners.",
       "methods": [
         {
-          "sig": "add(root: string): boolean",
+          "sig": "add(root: string): Promise<boolean>",
           "desc": "",
           "params": [
             {
@@ -9292,7 +10958,7 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "boolean"
+          "ret": "Promise<boolean>"
         },
         {
           "sig": "remove(root: string): boolean",
@@ -9365,7 +11031,7 @@ window.PKG = [
           "ret": "() => void"
         },
         {
-          "sig": "detect(root: string): string[]",
+          "sig": "detect(root: string): Promise<string[]>",
           "desc": "",
           "params": [
             {
@@ -9375,7 +11041,7 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "string[]"
+          "ret": "Promise<string[]>"
         },
         {
           "sig": "makeWorkspaceId(root: string): WorkspaceId",
@@ -9391,7 +11057,7 @@ window.PKG = [
           "ret": "WorkspaceId"
         },
         {
-          "sig": "guessName(root: string): string",
+          "sig": "guessName(root: string): Promise<string>",
           "desc": "",
           "params": [
             {
@@ -9401,7 +11067,7 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "string"
+          "ret": "Promise<string>"
         },
         {
           "sig": "emit(event: WorkspaceEvent): void",
@@ -9554,32 +11220,32 @@ window.PKG = [
       "desc": "Lightweight trace span manager: creates child contexts, tracks span\ntiming, and wraps async work so results carry the current context.",
       "methods": [
         {
-          "sig": "constructor(baseCtx: RequestContext | undefined)",
+          "sig": "constructor(baseCtx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...)",
           "desc": "Create instance.",
           "params": [
             {
               "n": "baseCtx",
-              "t": "RequestContext | undefined",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": false,
-              "d": "RequestContext | undefined"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             }
           ]
         },
         {
-          "sig": "createChild(ctx: RequestContext | undefined): RequestContext",
+          "sig": "createChild(ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...): { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
           "desc": "",
           "params": [
             {
               "n": "ctx",
-              "t": "RequestContext | undefined",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": false,
-              "d": "RequestContext | undefined"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             }
           ],
-          "ret": "RequestContext"
+          "ret": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
         },
         {
-          "sig": "startSpan(name: string, ctx: RequestContext | undefined): void",
+          "sig": "startSpan(name: string, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...): void",
           "desc": "",
           "params": [
             {
@@ -9590,21 +11256,21 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext | undefined",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": false,
-              "d": "RequestContext | undefined"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             }
           ],
           "ret": "void"
         },
         {
-          "sig": "endSpan(): { name: string; durationMs: number; ctx: RequestContext; } | null",
+          "sig": "endSpan(): { name: string; durationMs: number; ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & ...",
           "desc": "",
           "params": [],
-          "ret": "{ name: string; durationMs: number; ctx: RequestContext; } | null"
+          "ret": "{ name: string; durationMs: number; ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & ..."
         },
         {
-          "sig": "wrap(name: string, fn: () => Promise<T>, ctx: RequestContext | undefined): Promise<Traceable<T>>",
+          "sig": "wrap(name: string, fn: () => Promise<T>, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...): Promise<Traceable<T>>",
           "desc": "",
           "params": [
             {
@@ -9621,15 +11287,15 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext | undefined",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": false,
-              "d": "RequestContext | undefined"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             }
           ],
           "ret": "Promise<Traceable<T>>"
         },
         {
-          "sig": "validate(ctx: unknown): RequestContext",
+          "sig": "validate(ctx: unknown): { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
           "desc": "",
           "params": [
             {
@@ -9639,15 +11305,15 @@ window.PKG = [
               "d": "unknown"
             }
           ],
-          "ret": "RequestContext"
+          "ret": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
         },
         {
-          "sig": "spanStack: { name: string; start: number; ctx: RequestContext; }[]",
+          "sig": "spanStack: { name: string; start: number; ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { rea...",
           "desc": "spanStack",
           "params": []
         },
         {
-          "sig": "get currentCtx(): RequestContext",
+          "sig": "get currentCtx(): { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
           "desc": "",
           "params": []
         }
@@ -9878,14 +11544,14 @@ window.PKG = [
           "ret": "Disposable"
         },
         {
-          "sig": "registerAgent(config: AgentConfig): Promise<Disposable>",
+          "sig": "registerAgent(config: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): Promise<Disposable>",
           "desc": "",
           "params": [
             {
               "n": "config",
-              "t": "AgentConfig",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "Promise<Disposable>"
@@ -10324,6 +11990,571 @@ window.PKG = [
       ]
     },
     {
+      "type": "function",
+      "name": "evaluateGuards",
+      "desc": "Evaluate multiple guards in monotonic order.\nOnce a guard denies, subsequent guards cannot override.",
+      "methods": [
+        {
+          "sig": "evaluateGuards(guards: ToolGuard[], ctx: ToolGuardContext, input: ToolGuardInput): Promise<ToolGuardDecision>",
+          "desc": "Evaluate multiple guards in monotonic order.\nOnce a guard denies, subsequent guards cannot override.",
+          "params": [
+            {
+              "n": "guards",
+              "t": "ToolGuard[]",
+              "r": true,
+              "d": "ToolGuard[]"
+            },
+            {
+              "n": "ctx",
+              "t": "ToolGuardContext",
+              "r": true,
+              "d": "ToolGuardContext"
+            },
+            {
+              "n": "input",
+              "t": "ToolGuardInput",
+              "r": true,
+              "d": "ToolGuardInput"
+            }
+          ],
+          "ret": "Promise<ToolGuardDecision>"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardDecision",
+      "desc": "Monotonic guard decision — once denied, cannot be reopened by later listeners.\nInspired by DeepSeek Harness monotonic guard pattern.",
+      "methods": [
+        {
+          "sig": "type GuardDecision = GuardDecision",
+          "desc": "Monotonic guard decision — once denied, cannot be reopened by later listeners.\nInspired by DeepSeek Harness monotonic guard pattern.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuard",
+      "desc": "Tool guard interface — intercepts tool calls before execution.\nGuards can only deny or escalate, never reopen a denied decision.",
+      "methods": [],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "check",
+          "type": "(ctx: ToolGuardContext, toolCall: ToolGuardInput) => Promise<ToolGuardDecision>",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuardContext",
+      "desc": "Context passed to tool guards",
+      "methods": [],
+      "props": [
+        {
+          "name": "toolId",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "sessionId",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "runId",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuardInput",
+      "desc": "Input provided to tool guards",
+      "methods": [],
+      "props": [
+        {
+          "name": "toolName",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "input",
+          "type": "unknown",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "risk",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuardDecision",
+      "desc": "Result of a tool guard check",
+      "methods": [],
+      "props": [
+        {
+          "name": "decision",
+          "type": "GuardDecision",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "parallel",
+      "desc": "Execute multiple steps in parallel.",
+      "methods": [
+        {
+          "sig": "parallel(steps: WorkflowStep<unknown, T>[], ctx: Partial<WorkflowContext> | undefined): Promise<StepResult<T>[]>",
+          "desc": "Execute multiple steps in parallel.",
+          "params": [
+            {
+              "n": "steps",
+              "t": "WorkflowStep<unknown, T>[]",
+              "r": true,
+              "d": "WorkflowStep<unknown, T>[]"
+            },
+            {
+              "n": "ctx",
+              "t": "Partial<WorkflowContext> | undefined",
+              "r": false,
+              "d": "Partial<WorkflowContext> | undefined"
+            }
+          ],
+          "ret": "Promise<StepResult<T>[]>"
+        }
+      ],
+      "example": "```ts\nconst results = await parallel([\n  { name: \"fetch-user\", execute: async () => getUser() },\n  { name: \"fetch-posts\", execute: async () => getPosts() },\n]);\n```"
+    },
+    {
+      "type": "function",
+      "name": "sequential",
+      "desc": "Execute steps sequentially, passing output of one as input to the next.",
+      "methods": [
+        {
+          "sig": "sequential(steps: WorkflowStep<any, any>[], initialInput: TInput, ctx: Partial<WorkflowContext> | undefined): Promise<StepResult<TOutput>>",
+          "desc": "Execute steps sequentially, passing output of one as input to the next.",
+          "params": [
+            {
+              "n": "steps",
+              "t": "WorkflowStep<any, any>[]",
+              "r": true,
+              "d": "WorkflowStep<any, any>[]"
+            },
+            {
+              "n": "initialInput",
+              "t": "TInput",
+              "r": true,
+              "d": "TInput"
+            },
+            {
+              "n": "ctx",
+              "t": "Partial<WorkflowContext> | undefined",
+              "r": false,
+              "d": "Partial<WorkflowContext> | undefined"
+            }
+          ],
+          "ret": "Promise<StepResult<TOutput>>"
+        }
+      ],
+      "example": "```ts\nconst result = await sequential([\n  { name: \"validate\", execute: async (input) => validate(input) },\n  { name: \"process\", execute: async (input) => process(input) },\n  { name: \"save\", execute: async (input) => save(input) },\n], initialInput);\n```"
+    },
+    {
+      "type": "function",
+      "name": "conditional",
+      "desc": "Execute steps conditionally based on input.",
+      "methods": [
+        {
+          "sig": "conditional(input: TInput, branches: ConditionalBranch<TInput, TOutput>[], ctx: Partial<WorkflowContext> | undefined): Promise<StepResult<TOutput>>",
+          "desc": "Execute steps conditionally based on input.",
+          "params": [
+            {
+              "n": "input",
+              "t": "TInput",
+              "r": true,
+              "d": "TInput"
+            },
+            {
+              "n": "branches",
+              "t": "ConditionalBranch<TInput, TOutput>[]",
+              "r": true,
+              "d": "ConditionalBranch<TInput, TOutput>[]"
+            },
+            {
+              "n": "ctx",
+              "t": "Partial<WorkflowContext> | undefined",
+              "r": false,
+              "d": "Partial<WorkflowContext> | undefined"
+            }
+          ],
+          "ret": "Promise<StepResult<TOutput>>"
+        }
+      ],
+      "example": "```ts\nconst result = await conditional(input, [\n  {\n    condition: (input) => input.type === \"admin\",\n    steps: [adminStep],\n    name: \"admin-path\",\n  },\n  {\n    condition: () => true,\n    steps: [defaultStep],\n    name: \"default-path\",\n  },\n]);\n```"
+    },
+    {
+      "type": "type",
+      "name": "WorkflowStep",
+      "desc": "A single workflow step",
+      "methods": [
+        {
+          "sig": "execute(input: TInput, ctx: WorkflowContext): Promise<TOutput>",
+          "desc": "",
+          "params": [
+            {
+              "n": "input",
+              "t": "TInput",
+              "r": true,
+              "d": "TInput"
+            },
+            {
+              "n": "ctx",
+              "t": "WorkflowContext",
+              "r": true,
+              "d": "WorkflowContext"
+            }
+          ],
+          "ret": "Promise<TOutput>"
+        }
+      ],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "WorkflowContext",
+      "desc": "Workflow context passed to each step",
+      "methods": [],
+      "props": [
+        {
+          "name": "workflowId",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "stepIndex",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown>",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "signal",
+          "type": "AbortSignal | undefined",
+          "required": false,
+          "desc": "Abort signal for cancellation"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "StepResult",
+      "desc": "Workflow primitives for agent orchestration.\n\nInspired by Google ADK workflow patterns.\nProvides parallel, sequential, and conditional execution.\nWorkflow step result",
+      "methods": [],
+      "props": [
+        {
+          "name": "success",
+          "type": "boolean",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "output",
+          "type": "T | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "error",
+          "type": "Error | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "durationMs",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ConditionalBranch",
+      "desc": "A conditional branch",
+      "methods": [],
+      "props": [
+        {
+          "name": "condition",
+          "type": "(input: TInput) => boolean | Promise<boolean>",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "steps",
+          "type": "WorkflowStep<unknown, unknown>[]",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "name",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "runGuardrails",
+      "desc": "Run guardrails in priority order with monotonic semantics.\nOnce a guardrail denies, subsequent guardrails cannot override.",
+      "methods": [
+        {
+          "sig": "runGuardrails(guardrails: Guardrail[], ctx: GuardrailContext): Promise<GuardrailResult>",
+          "desc": "Run guardrails in priority order with monotonic semantics.\nOnce a guardrail denies, subsequent guardrails cannot override.",
+          "params": [
+            {
+              "n": "guardrails",
+              "t": "Guardrail[]",
+              "r": true,
+              "d": "Guardrail[]"
+            },
+            {
+              "n": "ctx",
+              "t": "GuardrailContext",
+              "r": true,
+              "d": "GuardrailContext"
+            }
+          ],
+          "ret": "Promise<GuardrailResult>"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "maxLengthGuardrail",
+      "desc": "Maximum input length guardrail",
+      "methods": [
+        {
+          "sig": "maxLengthGuardrail(maxChars: number, source: string | undefined): Guardrail",
+          "desc": "Maximum input length guardrail",
+          "params": [
+            {
+              "n": "maxChars",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            },
+            {
+              "n": "source",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "Guardrail"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "blocklistGuardrail",
+      "desc": "Blocklist pattern guardrail - blocks content matching patterns",
+      "methods": [
+        {
+          "sig": "blocklistGuardrail(patterns: RegExp[], name: string | undefined): Guardrail",
+          "desc": "Blocklist pattern guardrail - blocks content matching patterns",
+          "params": [
+            {
+              "n": "patterns",
+              "t": "RegExp[]",
+              "r": true,
+              "d": "RegExp[]"
+            },
+            {
+              "n": "name",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "Guardrail"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "secretDetectionGuardrail",
+      "desc": "Secret detection guardrail - redacts detected secrets",
+      "methods": [
+        {
+          "sig": "secretDetectionGuardrail(redactor: { redact: (text: string) => string; }): Guardrail",
+          "desc": "Secret detection guardrail - redacts detected secrets",
+          "params": [
+            {
+              "n": "redactor",
+              "t": "{ redact: (text: string) => string; }",
+              "r": true,
+              "d": "{ redact: (text: string) => string; }"
+            }
+          ],
+          "ret": "Guardrail"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "Guardrail",
+      "desc": "A guardrail tripwire that checks inputs/outputs",
+      "methods": [],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "scope",
+          "type": "GuardrailScope",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "priority",
+          "type": "number",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "check",
+          "type": "(ctx: GuardrailContext) => Promise<GuardrailResult>",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailContext",
+      "desc": "Context passed to guardrails",
+      "methods": [],
+      "props": [
+        {
+          "name": "direction",
+          "type": "\"output\" | \"input\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolName",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "content",
+          "type": "unknown",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailResult",
+      "desc": "Result of a guardrail check",
+      "methods": [],
+      "props": [
+        {
+          "name": "passed",
+          "type": "boolean",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "decision",
+          "type": "GuardDecision",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "modifiedContent",
+          "type": "unknown",
+          "required": false,
+          "desc": "Optional modified content (e.g., redacted)"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardrailScope",
+      "desc": "Guardrail scope - when the check runs",
+      "methods": [
+        {
+          "sig": "type GuardrailScope = GuardrailScope",
+          "desc": "Guardrail scope - when the check runs",
+          "params": []
+        }
+      ]
+    },
+    {
       "type": "type",
       "name": "RunId",
       "desc": "A branded string identifying a run.",
@@ -10386,11 +12617,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "RunStatus",
-      "desc": "RunStatus",
+      "desc": "Inferred type of {@link RunStatusSchema}.",
       "methods": [
         {
-          "sig": "type RunStatus = RunStatus",
-          "desc": "RunStatus",
+          "sig": "type RunStatus = \"cancelled\" | \"running\" | \"paused\" | \"failed\" | \"queued\" | \"awaiting_approval\" | \"succeeded\"",
+          "desc": "Inferred type of {@link RunStatusSchema}.",
           "params": []
         }
       ]
@@ -10398,44 +12629,12 @@ window.PKG = [
     {
       "type": "type",
       "name": "RequestContext",
-      "desc": "RequestContext",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link RequestContextSchema}.",
+      "methods": [
         {
-          "name": "requestId",
-          "type": "RequestId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "traceId",
-          "type": "TraceId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "actorId",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "tenantId",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "parentRunId",
-          "type": "RunId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "overrides",
-          "type": "{ readonly provider?: string; readonly model?: string; } | undefined",
-          "required": false,
-          "desc": "Per-request overrides for provider/model selection."
+          "sig": "type RequestContext = { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"...",
+          "desc": "Inferred type of {@link RequestContextSchema}.",
+          "params": []
         }
       ]
     },
@@ -10443,67 +12642,11 @@ window.PKG = [
       "type": "type",
       "name": "AgentConfig",
       "desc": "Inferred type of {@link AgentConfigSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "id",
-          "type": "AgentId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "profile",
-          "type": "AgentProfile",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "capabilities",
-          "type": "AgentCapabilities",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "permissions",
-          "type": "AgentPermissions | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "behaviourMode",
-          "type": "AgentBehaviourMode | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "domains",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": "Domain ids this agent may use (e.g. \"coding\"). Undefined = no domain filtering (all tools)."
-        },
-        {
-          "name": "systemPrompt",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "temperature",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "providerPreferences",
-          "type": "{ readonly preferred?: string; readonly fallbacks?: readonly string[]; } | undefined",
-          "required": false,
-          "desc": "Provider preferences for this agent — used by ModelCaller to resolve provider."
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentConfig = { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; ve...",
+          "desc": "Inferred type of {@link AgentConfigSchema}.",
+          "params": []
         }
       ]
     },
@@ -10511,227 +12654,35 @@ window.PKG = [
       "type": "type",
       "name": "AgentProfile",
       "desc": "Inferred type of {@link AgentProfileSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "version",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "author",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "model",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "hidden",
-          "type": "boolean | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentProfile = { name: string; description: string; version?: string | undefined; author?: string | undefined; m...",
+          "desc": "Inferred type of {@link AgentProfileSchema}.",
+          "params": []
         }
       ]
     },
     {
       "type": "type",
       "name": "Session",
-      "desc": "Session",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link SessionSchema}.",
+      "methods": [
         {
-          "name": "id",
-          "type": "SessionId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "title",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "createdAt",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "updatedAt",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "parentSessionId",
-          "type": "SessionId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "agentId",
-          "type": "AgentId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "model",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "provider",
-          "type": "string | undefined",
-          "required": false,
-          "desc": "Provider that served this session's model calls."
-        },
-        {
-          "name": "cost",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "inputTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "outputTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "location",
-          "type": "{ directory: string; workspaceId?: WorkspaceId; } | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "isActive",
-          "type": "boolean",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type Session = { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: s...",
+          "desc": "Inferred type of {@link SessionSchema}.",
+          "params": []
         }
       ]
     },
     {
       "type": "type",
       "name": "Message",
-      "desc": "Message",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link MessageSchema}.",
+      "methods": [
         {
-          "name": "id",
-          "type": "MessageId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "sessionId",
-          "type": "SessionId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "role",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "content",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "toolCallId",
-          "type": "ToolCallId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "tokens",
-          "type": "MessageTokens | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "model",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "provider",
-          "type": "string | undefined",
-          "required": false,
-          "desc": "Provider that generated this message (attribution)."
-        },
-        {
-          "name": "cost",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "createdAt",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "admittedSeq",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Admission order for pending user inputs (RV-21). Persisted once and never changed."
-        },
-        {
-          "name": "promotedSeq",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Set to the admitted seq once the input has been drained into a run (RV-21)."
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type Message = { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: stri...",
+          "desc": "Inferred type of {@link MessageSchema}.",
+          "params": []
         }
       ]
     },
@@ -11263,6 +13214,11 @@ window.PKG = [
           "sig": "retryable: false",
           "desc": "retryable",
           "params": []
+        },
+        {
+          "sig": "details: readonly string[] | undefined",
+          "desc": "details",
+          "params": []
         }
       ]
     },
@@ -11484,6 +13440,66 @@ window.PKG = [
           "sig": "type VntErrorCtx = VntErrorCtx",
           "desc": "Options for VntError construction",
           "params": []
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "defineTool",
+      "desc": "Build a schema-first {@link Tool} from its config.",
+      "methods": [
+        {
+          "sig": "defineTool(config: ToolConfig<TInput, TOutput>): Tool<TInput, TOutput>",
+          "desc": "Build a schema-first {@link Tool} from its config.",
+          "params": [
+            {
+              "n": "config",
+              "t": "ToolConfig<TInput, TOutput>",
+              "r": true,
+              "d": "ToolConfig<TInput, TOutput>"
+            }
+          ],
+          "ret": "Tool<TInput, TOutput>"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "toolToDefinition",
+      "desc": "Convenience: build a ToolDefinition directly from a ToolConfig.",
+      "methods": [
+        {
+          "sig": "toolToDefinition(config: ToolConfig<TInput, TOutput>): ToolDefinition<TInput, TOutput>",
+          "desc": "Convenience: build a ToolDefinition directly from a ToolConfig.",
+          "params": [
+            {
+              "n": "config",
+              "t": "ToolConfig<TInput, TOutput>",
+              "r": true,
+              "d": "ToolConfig<TInput, TOutput>"
+            }
+          ],
+          "ret": "ToolDefinition<TInput, TOutput>"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "zodSchemaToNestedJsonSchema",
+      "desc": "Map a Zod schema to the codebase's `NestedJsonSchema` shape (best effort).",
+      "methods": [
+        {
+          "sig": "zodSchemaToNestedJsonSchema(schema: ZodType<unknown, unknown, $ZodTypeInternals<unknown, unknown>>): NestedJsonSchema | undefined",
+          "desc": "Map a Zod schema to the codebase's `NestedJsonSchema` shape (best effort).",
+          "params": [
+            {
+              "n": "schema",
+              "t": "ZodType<unknown, unknown, $ZodTypeInternals<unknown, unknown>>",
+              "r": true,
+              "d": "ZodType<unknown, unknown, $ZodTypeInternals<unknown, unknown>>"
+            }
+          ],
+          "ret": "NestedJsonSchema | undefined"
         }
       ]
     },
@@ -11770,1385 +13786,6 @@ window.PKG = [
       ]
     },
     {
-      "type": "class",
-      "name": "ToolProviderRegistry",
-      "desc": "ToolProviderRegistry — Manages multiple ToolProviders.\nSingle source of truth for all available tools.",
-      "methods": [
-        {
-          "sig": "registerProvider(provider: ToolProvider): void",
-          "desc": "Register a tool provider and all its tools.",
-          "params": [
-            {
-              "n": "provider",
-              "t": "ToolProvider",
-              "r": true,
-              "d": "ToolProvider"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregisterProvider(id: string): void",
-          "desc": "Unregister a tool provider and remove all its tools.",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "getProvider(id: string): ToolProvider | undefined",
-          "desc": "Get a tool provider by ID.",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "ToolProvider | undefined"
-        },
-        {
-          "sig": "listProviders(): ToolProvider[]",
-          "desc": "List all registered providers.",
-          "params": [],
-          "ret": "ToolProvider[]"
-        },
-        {
-          "sig": "getAllTools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "Get all tools from all providers.",
-          "params": [],
-          "ret": "ToolDefinition<unknown, unknown>[]"
-        },
-        {
-          "sig": "getTool(id: string): ToolDefinition<unknown, unknown> | undefined",
-          "desc": "Get a tool by ID.",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown> | undefined"
-        },
-        {
-          "sig": "hasTool(id: string): boolean",
-          "desc": "Check if a tool exists.",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "boolean"
-        },
-        {
-          "sig": "refreshProvider(id: string): Promise<void>",
-          "desc": "Refresh a specific provider (e.g., MCP tools changed).",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "Promise<void>"
-        },
-        {
-          "sig": "count(): number",
-          "desc": "Get tool count.",
-          "params": [],
-          "ret": "number"
-        },
-        {
-          "sig": "providers: any",
-          "desc": "providers",
-          "params": []
-        },
-        {
-          "sig": "tools: any",
-          "desc": "tools",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "defineTool",
-      "desc": "Build a schema-first {@link Tool} from its config.",
-      "methods": [
-        {
-          "sig": "defineTool(config: ToolConfig<TInput, TOutput>): Tool<TInput, TOutput>",
-          "desc": "Build a schema-first {@link Tool} from its config.",
-          "params": [
-            {
-              "n": "config",
-              "t": "ToolConfig<TInput, TOutput>",
-              "r": true,
-              "d": "ToolConfig<TInput, TOutput>"
-            }
-          ],
-          "ret": "Tool<TInput, TOutput>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "toolToDefinition",
-      "desc": "Convenience: build a ToolDefinition directly from a ToolConfig.",
-      "methods": [
-        {
-          "sig": "toolToDefinition(config: ToolConfig<TInput, TOutput>): ToolDefinition<TInput, TOutput>",
-          "desc": "Convenience: build a ToolDefinition directly from a ToolConfig.",
-          "params": [
-            {
-              "n": "config",
-              "t": "ToolConfig<TInput, TOutput>",
-              "r": true,
-              "d": "ToolConfig<TInput, TOutput>"
-            }
-          ],
-          "ret": "ToolDefinition<TInput, TOutput>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "zodSchemaToNestedJsonSchema",
-      "desc": "Map a Zod schema to the codebase's `NestedJsonSchema` shape (best effort).",
-      "methods": [
-        {
-          "sig": "zodSchemaToNestedJsonSchema(schema: ZodType<unknown, unknown, $ZodTypeInternals<unknown, unknown>>): NestedJsonSchema | undefined",
-          "desc": "Map a Zod schema to the codebase's `NestedJsonSchema` shape (best effort).",
-          "params": [
-            {
-              "n": "schema",
-              "t": "ZodType<unknown, unknown, $ZodTypeInternals<unknown, unknown>>",
-              "r": true,
-              "d": "ZodType<unknown, unknown, $ZodTypeInternals<unknown, unknown>>"
-            }
-          ],
-          "ret": "NestedJsonSchema | undefined"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createCodingDomain",
-      "desc": "Group the coding toolset (file/shell/search/web/image/git/lsp) under domain\n\"coding\". Pass the tool definitions the composition root has already built.",
-      "methods": [
-        {
-          "sig": "createCodingDomain(tools: readonly ToolDefinition<unknown, unknown>[]): DomainManifest",
-          "desc": "Group the coding toolset (file/shell/search/web/image/git/lsp) under domain\n\"coding\". Pass the tool definitions the composition root has already built.",
-          "params": [
-            {
-              "n": "tools",
-              "t": "readonly ToolDefinition<unknown, unknown>[]",
-              "r": true,
-              "d": "readonly ToolDefinition<unknown, unknown>[]"
-            }
-          ],
-          "ret": "DomainManifest"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "generateDiff",
-      "desc": "Generate a line-level diff between old and new content for a file.",
-      "methods": [
-        {
-          "sig": "generateDiff(filePath: string, oldContent: string, newContent: string): UnifiedDiff",
-          "desc": "Generate a line-level diff between old and new content for a file.",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "oldContent",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "newContent",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "UnifiedDiff"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createReadFileTool",
-      "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\nenforcing workspace boundaries and optionally tracking reads for the\nkernel's file-history features.",
-      "methods": [
-        {
-          "sig": "createReadFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined, maxFileSize: number | undefined): ToolDefinition<{ filePath: string; stripTrailingNewline?: boolean; }, string>",
-          "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\nenforcing workspace boundaries and optionally tracking reads for the\nkernel's file-history features.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "tracker",
-              "t": "FileReadTracker | undefined",
-              "r": false,
-              "d": "FileReadTracker | undefined"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            },
-            {
-              "n": "maxFileSize",
-              "t": "number | undefined",
-              "r": false,
-              "d": "number | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ filePath: string; stripTrailingNewline?: boolean; }, string>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createWriteFileTool",
-      "desc": "Create the `write_file` tool. Writes content to a file, creating parent\ndirectories as needed and returning a diff of the change.",
-      "methods": [
-        {
-          "sig": "createWriteFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; content: string; }, { written: string; bytes: number; diff: string; additions: num...",
-          "desc": "Create the `write_file` tool. Writes content to a file, creating parent\ndirectories as needed and returning a diff of the change.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "tracker",
-              "t": "FileReadTracker | undefined",
-              "r": false,
-              "d": "FileReadTracker | undefined"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ filePath: string; content: string; }, { written: string; bytes: number; diff: string; additions: num..."
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createEditFileTool",
-      "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
-      "methods": [
-        {
-          "sig": "createEditFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; oldString?: string | undefined; newString?: string | undefined; edits?: readonly {...",
-          "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "tracker",
-              "t": "FileReadTracker | undefined",
-              "r": false,
-              "d": "FileReadTracker | undefined"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ filePath: string; oldString?: string | undefined; newString?: string | undefined; edits?: readonly {..."
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createApplyPatchTool",
-      "desc": "Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where\neach search string must match exactly once in the target file.",
-      "methods": [
-        {
-          "sig": "createApplyPatchTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; patch: string; }, { patched: string; blocks: number; diff: string; additions: numb...",
-          "desc": "Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where\neach search string must match exactly once in the target file.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "tracker",
-              "t": "FileReadTracker | undefined",
-              "r": false,
-              "d": "FileReadTracker | undefined"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ filePath: string; patch: string; }, { patched: string; blocks: number; diff: string; additions: numb..."
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createListDirectoryTool",
-      "desc": "Create the `list_directory` tool. Lists a directory's entries\n(non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).",
-      "methods": [
-        {
-          "sig": "createListDirectoryTool(workspaceRoot: RootGetter, externalDirAccess: boolean | undefined, excludedDirs: string[] | undefined): ToolDefinition<{ dirPath: string; }, { name: string; type: string; path: string; }[]>",
-          "desc": "Create the `list_directory` tool. Lists a directory's entries\n(non-recursive), skipping `excludedDirs` (defaults to node_modules/.git).",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            },
-            {
-              "n": "excludedDirs",
-              "t": "string[] | undefined",
-              "r": false,
-              "d": "string[] | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ dirPath: string; }, { name: string; type: string; path: string; }[]>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createReadImageTool",
-      "desc": "Create the `read_image` tool that returns image content for the model to analyze.",
-      "methods": [
-        {
-          "sig": "createReadImageTool(workspaceRoot: RootGetter, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; }, { filePath: string; mimeType?: string | undefined; size: number; message: strin...",
-          "desc": "Create the `read_image` tool that returns image content for the model to analyze.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ filePath: string; }, { filePath: string; mimeType?: string | undefined; size: number; message: strin..."
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "readImageToContentParts",
-      "desc": "Read an image file into model message parts (`text` + base64 `image`),\nvalidating the file extension, magic bytes and workspace containment.\n\nWhen `workspaceRoot` is provided the path is checked against the workspace\nboundary (realpath-aware, symlink-safe) before reading.",
-      "methods": [
-        {
-          "sig": "readImageToContentParts(filePath: string, workspaceRoot: RootGetter | undefined, externalDirAccess: boolean | undefined): Promise<MessageContentPart[]>",
-          "desc": "Read an image file into model message parts (`text` + base64 `image`),\nvalidating the file extension, magic bytes and workspace containment.\n\nWhen `workspaceRoot` is provided the path is checked against the workspace\nboundary (realpath-aware, symlink-safe) before reading.",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter | undefined",
-              "r": false,
-              "d": "RootGetter | undefined"
-            },
-            {
-              "n": "externalDirAccess",
-              "t": "boolean | undefined",
-              "r": false,
-              "d": "boolean | undefined"
-            }
-          ],
-          "ret": "Promise<MessageContentPart[]>"
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "FileReadTracker",
-      "desc": "Tracks when files were read and enforces read-before-write: writes to a\nfile that was never read (or changed externally since) are denied.\n\nRecords are keyed by canonical real path and snapshotted with inode + size\n+ mtime so external replacement (delete/recreate, rename over) is caught\neven when the modification time happens to be unchanged.",
-      "methods": [
-        {
-          "sig": "trackRead(filePath: string, st: Stats): Promise<void>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "st",
-              "t": "Stats",
-              "r": true,
-              "d": "Stats"
-            }
-          ],
-          "ret": "Promise<void>"
-        },
-        {
-          "sig": "assertWasRead(filePath: string): Promise<void>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "Promise<void>"
-        },
-        {
-          "sig": "clear(filePath: string): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "reset(): void",
-          "desc": "",
-          "params": [],
-          "ret": "void"
-        },
-        {
-          "sig": "records: any",
-          "desc": "records",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "InMemoryFileHistory",
-      "desc": "In-memory {@link FileHistory} keeping an ordered version log plus undo/redo stacks.",
-      "methods": [
-        {
-          "sig": "recordVersion(version: Omit<FileVersion, \"timestamp\"> & { timestamp?: number; }): Promise<void>",
-          "desc": "",
-          "params": [
-            {
-              "n": "version",
-              "t": "Omit<FileVersion, \"timestamp\"> & { timestamp?: number; }",
-              "r": true,
-              "d": "Omit<FileVersion, \"timestamp\"> & { timestamp?: number; }"
-            }
-          ],
-          "ret": "Promise<void>"
-        },
-        {
-          "sig": "listVersions(filePath: string): Promise<readonly FileVersion[]>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "Promise<readonly FileVersion[]>"
-        },
-        {
-          "sig": "getLatestVersion(filePath: string): Promise<FileVersion | null>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "Promise<FileVersion | null>"
-        },
-        {
-          "sig": "rollbackTo(filePath: string, versionIndex: number): Promise<string>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "versionIndex",
-              "t": "number",
-              "r": true,
-              "d": "number"
-            }
-          ],
-          "ret": "Promise<string>"
-        },
-        {
-          "sig": "getAllChanges(): Promise<readonly FileVersion[]>",
-          "desc": "",
-          "params": [],
-          "ret": "Promise<readonly FileVersion[]>"
-        },
-        {
-          "sig": "undo(): Promise<UndoEntry | null>",
-          "desc": "",
-          "params": [],
-          "ret": "Promise<UndoEntry | null>"
-        },
-        {
-          "sig": "redo(): Promise<UndoEntry | null>",
-          "desc": "",
-          "params": [],
-          "ret": "Promise<UndoEntry | null>"
-        },
-        {
-          "sig": "versions: any",
-          "desc": "versions",
-          "params": []
-        },
-        {
-          "sig": "undoStack: any",
-          "desc": "undoStack",
-          "params": []
-        },
-        {
-          "sig": "redoStack: any",
-          "desc": "redoStack",
-          "params": []
-        },
-        {
-          "sig": "versionCounter: any",
-          "desc": "versionCounter",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createFileHistoryHook",
-      "desc": "Create a {@link ToolHook} that records write_file/edit_file changes into a {@link FileHistory}.",
-      "methods": [
-        {
-          "sig": "createFileHistoryHook(fileHistory: FileHistory): ToolHook",
-          "desc": "Create a {@link ToolHook} that records write_file/edit_file changes into a {@link FileHistory}.",
-          "params": [
-            {
-              "n": "fileHistory",
-              "t": "FileHistory",
-              "r": true,
-              "d": "FileHistory"
-            }
-          ],
-          "ret": "ToolHook"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createShellTool",
-      "desc": "Create the `shell` tool that executes a command in the workspace root with\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
-      "methods": [
-        {
-          "sig": "createShellTool(config: ShellToolConfig): ToolDefinition<{ command: string; timeoutMs?: number | undefined; }, ExecResult>",
-          "desc": "Create the `shell` tool that executes a command in the workspace root with\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
-          "params": [
-            {
-              "n": "config",
-              "t": "ShellToolConfig",
-              "r": true,
-              "d": "ShellToolConfig"
-            }
-          ],
-          "ret": "ToolDefinition<{ command: string; timeoutMs?: number | undefined; }, ExecResult>"
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "ToolSandbox",
-      "desc": "Executes tool definitions with a default timeout applied on top of the\ncaller's abort signal, aborting the tool when either fires.",
-      "methods": [
-        {
-          "sig": "constructor(config: SandboxConfig | undefined)",
-          "desc": "Create instance.",
-          "params": [
-            {
-              "n": "config",
-              "t": "SandboxConfig | undefined",
-              "r": false,
-              "d": "SandboxConfig | undefined"
-            }
-          ]
-        },
-        {
-          "sig": "execute(tool: ToolDefinition<unknown, unknown>, input: unknown, ctx: ToolContext): Promise<unknown>",
-          "desc": "",
-          "params": [
-            {
-              "n": "tool",
-              "t": "ToolDefinition<unknown, unknown>",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>"
-            },
-            {
-              "n": "input",
-              "t": "unknown",
-              "r": true,
-              "d": "unknown"
-            },
-            {
-              "n": "ctx",
-              "t": "ToolContext",
-              "r": true,
-              "d": "ToolContext"
-            }
-          ],
-          "ret": "Promise<unknown>"
-        },
-        {
-          "sig": "config: any",
-          "desc": "config",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "signalToToolContext",
-      "desc": "Create a minimal ToolContext from an AbortSignal (for backward compat)",
-      "methods": [
-        {
-          "sig": "signalToToolContext(signal: AbortSignal | undefined): ToolContext",
-          "desc": "Create a minimal ToolContext from an AbortSignal (for backward compat)",
-          "params": [
-            {
-              "n": "signal",
-              "t": "AbortSignal | undefined",
-              "r": false,
-              "d": "AbortSignal | undefined"
-            }
-          ],
-          "ret": "ToolContext"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createSandbox",
-      "desc": "Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`\n(`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.",
-      "methods": [
-        {
-          "sig": "createSandbox(config: SandboxConfig): ProcessSandbox",
-          "desc": "Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`\n(`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.",
-          "params": [
-            {
-              "n": "config",
-              "t": "SandboxConfig",
-              "r": true,
-              "d": "SandboxConfig"
-            }
-          ],
-          "ret": "ProcessSandbox"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createWebFetchTool",
-      "desc": "Create the `web_fetch` tool that fetches a URL and returns its content as\ntext (HTML is stripped unless `format: \"html\"`), truncated to the max size.",
-      "methods": [
-        {
-          "sig": "createWebFetchTool(config: WebFetchToolConfig | undefined): ToolDefinition<{ url: string; format?: \"markdown\" | \"text\" | \"html\" | undefined; timeout?: number | undefined; }, str...",
-          "desc": "Create the `web_fetch` tool that fetches a URL and returns its content as\ntext (HTML is stripped unless `format: \"html\"`), truncated to the max size.",
-          "params": [
-            {
-              "n": "config",
-              "t": "WebFetchToolConfig | undefined",
-              "r": false,
-              "d": "WebFetchToolConfig | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<{ url: string; format?: \"markdown\" | \"text\" | \"html\" | undefined; timeout?: number | undefined; }, str..."
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createWebSearchTool",
-      "desc": "Create the `web_search` tool backed by a {@link WebSearchProvider}.",
-      "methods": [
-        {
-          "sig": "createWebSearchTool(config: WebSearchToolConfig): ToolDefinition<{ query: string; numResults?: number | undefined; searchDepth?: \"basic\" | \"advanced\" | undefined; }, {...",
-          "desc": "Create the `web_search` tool backed by a {@link WebSearchProvider}.",
-          "params": [
-            {
-              "n": "config",
-              "t": "WebSearchToolConfig",
-              "r": true,
-              "d": "WebSearchToolConfig"
-            }
-          ],
-          "ret": "ToolDefinition<{ query: string; numResults?: number | undefined; searchDepth?: \"basic\" | \"advanced\" | undefined; }, {..."
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "TavilySearchProvider",
-      "desc": "Tavily search provider adapter — convenience only.\nUser có thể tự implement provider khác: Serper, Bing, Google...",
-      "methods": [
-        {
-          "sig": "constructor(config: { apiKey: string; defaultNumResults?: number; baseUrl?: string; })",
-          "desc": "Create instance.",
-          "params": [
-            {
-              "n": "config",
-              "t": "{ apiKey: string; defaultNumResults?: number; baseUrl?: string; }",
-              "r": true,
-              "d": "{ apiKey: string; defaultNumResults?: number; baseUrl?: string; }"
-            }
-          ]
-        },
-        {
-          "sig": "search(query: string, options: { numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined): Promise<WebSearchResponse>",
-          "desc": "",
-          "params": [
-            {
-              "n": "query",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "options",
-              "t": "{ numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined",
-              "r": false,
-              "d": "{ numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined"
-            }
-          ],
-          "ret": "Promise<WebSearchResponse>"
-        },
-        {
-          "sig": "name: string",
-          "desc": "name",
-          "params": []
-        },
-        {
-          "sig": "apiKey: any",
-          "desc": "apiKey",
-          "params": []
-        },
-        {
-          "sig": "defaultNumResults: any",
-          "desc": "defaultNumResults",
-          "params": []
-        },
-        {
-          "sig": "baseUrl: any",
-          "desc": "baseUrl",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "SerperSearchProvider",
-      "desc": "Serper (Google Search) provider adapter — convenience only.",
-      "methods": [
-        {
-          "sig": "constructor(config: { apiKey: string; defaultNumResults?: number; baseUrl?: string; })",
-          "desc": "Create instance.",
-          "params": [
-            {
-              "n": "config",
-              "t": "{ apiKey: string; defaultNumResults?: number; baseUrl?: string; }",
-              "r": true,
-              "d": "{ apiKey: string; defaultNumResults?: number; baseUrl?: string; }"
-            }
-          ]
-        },
-        {
-          "sig": "search(query: string, options: { numResults?: number; } | undefined): Promise<WebSearchResponse>",
-          "desc": "",
-          "params": [
-            {
-              "n": "query",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "options",
-              "t": "{ numResults?: number; } | undefined",
-              "r": false,
-              "d": "{ numResults?: number; } | undefined"
-            }
-          ],
-          "ret": "Promise<WebSearchResponse>"
-        },
-        {
-          "sig": "name: string",
-          "desc": "name",
-          "params": []
-        },
-        {
-          "sig": "apiKey: any",
-          "desc": "apiKey",
-          "params": []
-        },
-        {
-          "sig": "defaultNumResults: any",
-          "desc": "defaultNumResults",
-          "params": []
-        },
-        {
-          "sig": "baseUrl: any",
-          "desc": "baseUrl",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createGitStatusTool",
-      "desc": "Create the `git_status` tool (branch + `git status --short`).",
-      "methods": [
-        {
-          "sig": "createGitStatusTool(workspaceRoot: RootGetter): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `git_status` tool (branch + `git status --short`).",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createGitDiffTool",
-      "desc": "Create the `git_diff` tool (unstaged or `--staged` diff).",
-      "methods": [
-        {
-          "sig": "createGitDiffTool(workspaceRoot: RootGetter): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `git_diff` tool (unstaged or `--staged` diff).",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createGitLogTool",
-      "desc": "Create the `git_log` tool (recent commit history, optionally scoped to a path).",
-      "methods": [
-        {
-          "sig": "createGitLogTool(workspaceRoot: RootGetter): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `git_log` tool (recent commit history, optionally scoped to a path).",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createGitCommitTool",
-      "desc": "Create the `git_commit` tool that commits staged changes with a message.",
-      "methods": [
-        {
-          "sig": "createGitCommitTool(workspaceRoot: RootGetter): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `git_commit` tool that commits staged changes with a message.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createGlobFilesTool",
-      "desc": "Create the `glob` tool that finds files matching a glob pattern under the workspace root.",
-      "methods": [
-        {
-          "sig": "createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs: string[] | undefined): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `glob` tool that finds files matching a glob pattern under the workspace root.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "ignoredDirs",
-              "t": "string[] | undefined",
-              "r": false,
-              "d": "string[] | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createGrepFilesTool",
-      "desc": "Create the `grep` tool that searches file contents for a regex pattern.",
-      "methods": [
-        {
-          "sig": "createGrepFilesTool(workspaceRoot: RootGetter, ignoredDirs: string[] | undefined): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `grep` tool that searches file contents for a regex pattern.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "RootGetter",
-              "r": true,
-              "d": "RootGetter"
-            },
-            {
-              "n": "ignoredDirs",
-              "t": "string[] | undefined",
-              "r": false,
-              "d": "string[] | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createToolSearchTool",
-      "desc": "Create the `search_tools` tool that searches registered tools by query or tags.",
-      "methods": [
-        {
-          "sig": "createToolSearchTool(registry: ToolRegistry): ToolDefinition<ToolSearchInput, { results: ToolSearchResult[]; }>",
-          "desc": "Create the `search_tools` tool that searches registered tools by query or tags.",
-          "params": [
-            {
-              "n": "registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "ToolDefinition<ToolSearchInput, { results: ToolSearchResult[]; }>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createQuestionTool",
-      "desc": "Create the `question` tool that asks the user a question (with optional\npredefined options). Pass a {@link QuestionHandler} to resolve answers.",
-      "methods": [
-        {
-          "sig": "createQuestionTool(handler: QuestionHandler | undefined): ToolDefinition<QuestionInput, { answer: string; error?: string; }>",
-          "desc": "Create the `question` tool that asks the user a question (with optional\npredefined options). Pass a {@link QuestionHandler} to resolve answers.",
-          "params": [
-            {
-              "n": "handler",
-              "t": "QuestionHandler | undefined",
-              "r": false,
-              "d": "QuestionHandler | undefined"
-            }
-          ],
-          "ret": "ToolDefinition<QuestionInput, { answer: string; error?: string; }>"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "createTodoWriteTool",
-      "desc": "Create the `todowrite` tool managing a structured task list with priorities and status.",
-      "methods": [
-        {
-          "sig": "createTodoWriteTool(): ToolDefinition<unknown, unknown>",
-          "desc": "Create the `todowrite` tool managing a structured task list with priorities and status.",
-          "params": [],
-          "ret": "ToolDefinition<unknown, unknown>"
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "AgentToolProvider",
-      "desc": "AgentToolProvider — Provides agent-related tools.\n\nTools are lazily created after the kernel is initialized\nto avoid circular dependencies.",
-      "methods": [
-        {
-          "sig": "setKernel(kernel: KernelLike): void",
-          "desc": "Set the kernel instance (call after kernel is created).",
-          "params": [
-            {
-              "n": "kernel",
-              "t": "KernelLike",
-              "r": true,
-              "d": "KernelLike"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "register(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregister(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "id: \"agents\"",
-          "desc": "id",
-          "params": []
-        },
-        {
-          "sig": "name: \"Agent Tools\"",
-          "desc": "name",
-          "params": []
-        },
-        {
-          "sig": "description: \"Agent management tools: spawn, delegate, list, create\"",
-          "desc": "description",
-          "params": []
-        },
-        {
-          "sig": "kernel: any",
-          "desc": "kernel",
-          "params": []
-        },
-        {
-          "sig": "_tools: any",
-          "desc": "_tools",
-          "params": []
-        },
-        {
-          "sig": "createTools: any",
-          "desc": "createTools",
-          "params": []
-        },
-        {
-          "sig": "get tools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "SkillToolProvider",
-      "desc": "SkillToolProvider — Provides skill-related tools.\n\nThis is a metadata provider that declares skill tools exist.\nActual tool creation happens in the composition root to avoid circular dependencies.",
-      "methods": [
-        {
-          "sig": "addTools(tools: ToolDefinition<unknown, unknown>[]): void",
-          "desc": "Add tools externally (called by composition root).",
-          "params": [
-            {
-              "n": "tools",
-              "t": "ToolDefinition<unknown, unknown>[]",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>[]"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "register(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregister(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "id: \"skills\"",
-          "desc": "id",
-          "params": []
-        },
-        {
-          "sig": "name: \"Skill Tools\"",
-          "desc": "name",
-          "params": []
-        },
-        {
-          "sig": "description: \"Skill management tools: load, search, create\"",
-          "desc": "description",
-          "params": []
-        },
-        {
-          "sig": "_tools: any",
-          "desc": "_tools",
-          "params": []
-        },
-        {
-          "sig": "get tools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "ToolFileProvider",
-      "desc": "ToolFileProvider — Loads tools from .vnt/tools/ directories.\n\nSupports both workspace-local and global tools.\nTools can override built-in tools by using the same name.",
-      "methods": [
-        {
-          "sig": "constructor(id: string, name: string, tools: ToolDefinition<unknown, unknown>[])",
-          "desc": "Create instance.",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "name",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "tools",
-              "t": "ToolDefinition<unknown, unknown>[]",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>[]"
-            }
-          ]
-        },
-        {
-          "sig": "register(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregister(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "id: string",
-          "desc": "id",
-          "params": []
-        },
-        {
-          "sig": "name: string",
-          "desc": "name",
-          "params": []
-        },
-        {
-          "sig": "description: \"User-defined tools from .vnt/tools/\"",
-          "desc": "description",
-          "params": []
-        },
-        {
-          "sig": "_tools: any",
-          "desc": "_tools",
-          "params": []
-        },
-        {
-          "sig": "get tools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "ToolFileLoader",
-      "desc": "ToolFileLoader — Discovers and loads tools from .vnt/tools/ directories.\n\nFiles are verified before import (RV-48): symlinks are rejected, the file\nmust resolve back inside its source directory, and an optional SHA-256 hash\npin can be enforced so a swapped file is never executed.",
-      "methods": [
-        {
-          "sig": "loadFromDirectory(dir: string, hashes: Record<string, string> | undefined): Promise<ToolDefinition<unknown, unknown>[]>",
-          "desc": "Load tools from a single directory.",
-          "params": [
-            {
-              "n": "dir",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "hashes",
-              "t": "Record<string, string> | undefined",
-              "r": false,
-              "d": "Record<string, string> | undefined"
-            }
-          ],
-          "ret": "Promise<ToolDefinition<unknown, unknown>[]>"
-        },
-        {
-          "sig": "discover(workspaceRoot: string, hashes: Record<string, string> | undefined): Promise<ToolFileProvider>",
-          "desc": "Discover tools from workspace and global directories.\n\nDiscovery order:\n1. Workspace-local: .vnt/tools/*.ts\n2. Global: ~/.vnt/tools/*.ts\n\nWorkspace tools override global tools with the same name.",
-          "params": [
-            {
-              "n": "workspaceRoot",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "hashes",
-              "t": "Record<string, string> | undefined",
-              "r": false,
-              "d": "Record<string, string> | undefined"
-            }
-          ],
-          "ret": "Promise<ToolFileProvider>"
-        },
-        {
-          "sig": "isVerifiedFile: any",
-          "desc": "Verify a candidate tool file before importing it:\n1. Rejects symlinks outright (closes the TOCTOU window between listing and\n   import — Dirent already filters most symlinks, this is belt-and-braces).\n2. The canonical real path must resolve back INSIDE the source directory —\n   a file that escapes its directory is never executed.\n3. Optional SHA-256 hash pin: when a hash is supplied for this file, a\n   mismatch means the content changed on disk — skip, do not import.",
-          "params": []
-        },
-        {
-          "sig": "loadToolFromFile: any",
-          "desc": "Load a single tool from a file.",
-          "params": []
-        },
-        {
-          "sig": "isToolDefinition: any",
-          "desc": "Check if a value is a ToolDefinition.",
-          "params": []
-        }
-      ]
-    },
-    {
       "type": "type",
       "name": "Tool",
       "desc": "A schema-first tool: owns its validation schema and derives its definition.",
@@ -13395,6 +14032,12 @@ window.PKG = [
           "inherited": "ToolDefinitionLike"
         },
         {
+          "name": "outputSchema",
+          "type": "NestedJsonSchema | undefined",
+          "required": false,
+          "desc": "JSON Schema for tool output (MCP 2026-07-28 pattern)"
+        },
+        {
           "name": "timeoutMs",
           "type": "number | undefined",
           "required": false,
@@ -13431,64 +14074,26 @@ window.PKG = [
           "desc": "Tags for tool search (e.g. [\"file\", \"read\", \"search\"])."
         },
         {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
+          "name": "annotations",
+          "type": "ToolAnnotations | undefined",
           "required": false,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolDefinitionLike",
-      "desc": "Minimal tool definition for schema-level typing (avoids circular dep with core/tool).",
-      "methods": [],
-      "props": [
-        {
-          "name": "id",
-          "type": "string",
-          "required": true,
-          "desc": ""
+          "desc": "Tool annotations — hints about tool behavior for LLMs"
         },
         {
-          "name": "name",
+          "name": "icon",
           "type": "string | undefined",
           "required": false,
-          "desc": ""
+          "desc": "Icon identifier or emoji for UI display"
         },
         {
-          "name": "description",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "risk",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "selfApproving",
-          "type": "boolean | undefined",
+          "name": "category",
+          "type": "string | undefined",
           "required": false,
-          "desc": "If true, tool prompts its own permission via `ctx.ask` (single approval path)."
+          "desc": "Human-readable category for tool grouping"
         },
         {
-          "name": "inputSchema",
-          "type": "JsonSchema | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "type",
-          "type": "\"function\" | undefined",
-          "required": false,
-          "desc": "OpenAI tool format — for direct API passthrough (optional)."
-        },
-        {
-          "name": "function",
-          "type": "{ readonly name: string; readonly description: string; readonly parameters?: JsonSchema | undefined; readonly strict?...",
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
           "required": false,
           "desc": ""
         }
@@ -13572,7 +14177,7 @@ window.PKG = [
         },
         {
           "name": "parentContext",
-          "type": "RequestContext | undefined",
+          "type": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
           "required": false,
           "desc": "The parent run's request context (traceId/actorId/tenantId/requestId).\nLets handoff tools (delegate/spawn) propagate identity + parent-run\nlinkage to child agents instead of inventing a synthetic context."
         },
@@ -13581,1095 +14186,238 @@ window.PKG = [
           "type": "Record<string, string>",
           "required": true,
           "desc": "Environment variables for subprocess execution (shell tool)"
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolHook",
-      "desc": "Lifecycle hook that can intercept a tool call before and after execution.",
-      "methods": [
-        {
-          "sig": "pre(params: { toolId: string; tool: ToolDefinition<unknown, unknown>; input: unknown; }): Promise<{ input: unknown; } | { denied: string; } | null>",
-          "desc": "",
-          "params": [
-            {
-              "n": "params",
-              "t": "{ toolId: string; tool: ToolDefinition<unknown, unknown>; input: unknown; }",
-              "r": true,
-              "d": "{ toolId: string; tool: ToolDefinition<unknown, unknown>; input: unknown; }"
-            }
-          ],
-          "ret": "Promise<{ input: unknown; } | { denied: string; } | null>"
         },
         {
-          "sig": "post(params: { toolId: string; tool: ToolDefinition<unknown, unknown>; input: unknown; result: ToolExecutionResult; }): Promise<ToolExecutionResult | null>",
-          "desc": "",
-          "params": [
-            {
-              "n": "params",
-              "t": "{ toolId: string; tool: ToolDefinition<unknown, unknown>; input: unknown; result: ToolExecutionResult; }",
-              "r": true,
-              "d": "{ toolId: string; tool: ToolDefinition<unknown, unknown>; input: unknown; result: ToolExecutionResult; }"
-            }
-          ],
-          "ret": "Promise<ToolExecutionResult | null>"
-        }
-      ],
-      "props": [
-        {
-          "name": "id",
-          "type": "string",
-          "required": true,
-          "desc": ""
+          "name": "extensionData",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Extensible metadata bag for plugins/consumers."
         }
       ]
     },
     {
       "type": "type",
-      "name": "PermissionReply",
-      "desc": "Reply from human-in-the-loop approval",
-      "methods": [
-        {
-          "sig": "type PermissionReply = PermissionReply",
-          "desc": "Reply from human-in-the-loop approval",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolExecutionResult",
-      "desc": "Result of a tool execution.",
-      "methods": [
-        {
-          "sig": "type ToolExecutionResult = ToolExecutionResult",
-          "desc": "Result of a tool execution.",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolPermissionRule",
-      "desc": "Minimal permission rule relevant for tool filtering at the tool boundary.",
+      "name": "ToolAnnotations",
+      "desc": "Tool annotations — hint about tool behavior for LLMs (MCP 2026-07-28 pattern)",
       "methods": [],
       "props": [
         {
-          "name": "action",
-          "type": "string",
-          "required": true,
-          "desc": "Tool id or wildcard pattern (e.g. \"coding.*\", \"*\")."
-        },
-        {
-          "name": "effect",
-          "type": "\"allow\" | \"deny\" | \"ask\"",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolMaterialization",
-      "desc": "Tool set materialized for the model after filtering by permission rules.",
-      "methods": [
-        {
-          "sig": "settle(input: { name: string; args: unknown; ctx?: ToolContext; }): Promise<unknown>",
-          "desc": "Resolve one tool call: validate args and execute.",
-          "params": [
-            {
-              "n": "input",
-              "t": "{ name: string; args: unknown; ctx?: ToolContext; }",
-              "r": true,
-              "d": "{ name: string; args: unknown; ctx?: ToolContext; }"
-            }
-          ],
-          "ret": "Promise<unknown>"
-        },
-        {
-          "sig": "getTool(id: string): ToolDefinition<unknown, unknown> | undefined",
-          "desc": "Lookup a tool definition by ID from the allowed set.",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "ToolDefinition<unknown, unknown> | undefined"
-        }
-      ],
-      "props": [
-        {
-          "name": "definitions",
-          "type": "readonly ToolDefinition<unknown, unknown>[]",
-          "required": true,
-          "desc": "Provider-facing definitions the model is ALLOWED to see/invoke."
-        },
-        {
-          "name": "denied",
-          "type": "readonly ToolDefinition<unknown, unknown>[]",
-          "required": true,
-          "desc": "Tool definitions that were denied by permission rules."
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "DomainManifest",
-      "desc": "── Domain manifests (Phase 2) ────────────────────────────────────────────\nA domain is a named, swappable set of tools (e.g. \"coding\"). The agent core\ntreats domains as opaque: it only needs each tool's id (for membership) and\nthe set of domains an agent is allowed to use. This is the seam that lets\nthe same core power coding, research, data, devops — differing only by which\ndomains are mounted and which permission rules apply.\nA named group of tools exposed as a pluggable capability.",
-      "methods": [],
-      "props": [
-        {
-          "name": "id",
-          "type": "string",
-          "required": true,
-          "desc": "Domain id used in agent config `domains: [\"coding\"]`."
-        },
-        {
-          "name": "tools",
-          "type": "readonly ToolDefinition<unknown, unknown>[]",
-          "required": true,
-          "desc": "Tools belonging to this domain. Only `id`/`name` drives membership."
-        },
-        {
-          "name": "systemPrompt",
-          "type": "string | undefined",
-          "required": false,
-          "desc": "Optional domain-level system prompt (merged into the agent context)."
-        },
-        {
-          "name": "permissionDefaults",
-          "type": "readonly ToolPermissionRule[] | undefined",
-          "required": false,
-          "desc": "Domain-level permission defaults (allow/deny/ask) applied to its tools."
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "LazyToolEntry",
-      "desc": "A tool registered for lazy, on-demand construction.",
-      "methods": [],
-      "props": [
-        {
-          "name": "id",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "risk",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "factory",
-          "type": "() => Promise<ToolDefinition<unknown, unknown>>",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "instance",
-          "type": "ToolDefinition<unknown, unknown> | undefined",
-          "required": false,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ApprovalHandler",
-      "desc": "Handler contract for requesting human approval of a tool call.",
-      "methods": [
-        {
-          "sig": "requestApproval(tool: ToolDefinition<unknown, unknown>, input: unknown): Promise<boolean>",
-          "desc": "",
-          "params": [
-            {
-              "n": "tool",
-              "t": "ToolDefinition<unknown, unknown>",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>"
-            },
-            {
-              "n": "input",
-              "t": "unknown",
-              "r": true,
-              "d": "unknown"
-            }
-          ],
-          "ret": "Promise<boolean>"
-        }
-      ],
-      "props": []
-    },
-    {
-      "type": "type",
-      "name": "UnifiedDiff",
-      "desc": "Line-level unified diff with add/remove counts.",
-      "methods": [],
-      "props": [
-        {
-          "name": "diff",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "additions",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "removals",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolProvider",
-      "desc": "ToolProvider — Interface for providing tools to the kernel.\n\nBuilt-in tools (coding) use BuiltinToolProvider.\nUser tools use ToolFileProvider.\nMCP tools use McpToolProvider.\nPlugin tools use PluginToolProvider.",
-      "methods": [
-        {
-          "sig": "register(registry: ToolRegistry): void",
-          "desc": "Register all tools into the given registry.\nCalled once when the provider is registered.",
-          "params": [
-            {
-              "n": "registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregister(registry: ToolRegistry): void",
-          "desc": "Unregister all tools from the given registry.\nCalled when the provider is removed.",
-          "params": [
-            {
-              "n": "registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "refresh(): Promise<void>",
-          "desc": "Optional: refresh tools from external source (e.g., MCP).\nCalled when external tools change.",
-          "params": [],
-          "ret": "Promise<void>"
-        }
-      ],
-      "props": [
-        {
-          "name": "id",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "description",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "tools",
-          "type": "ToolDefinition<unknown, unknown>[]",
-          "required": true,
-          "desc": "Get all tools provided by this provider.\nCalled during registration to populate the registry."
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ShellToolConfig",
-      "desc": "Configuration for the {@link createShellTool} command-execution tool.",
-      "methods": [],
-      "props": [
-        {
-          "name": "workspaceRoot",
-          "type": "string | (() => string)",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "defaultTimeoutMs",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "maxTimeoutMs",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Hard cap on shell command timeout in ms (default: 300000)"
-        },
-        {
-          "name": "askPermission",
+          "name": "readOnlyHint",
           "type": "boolean | undefined",
           "required": false,
-          "desc": "If true, prompts for permission before executing shell commands (default: true)"
+          "desc": "If true, tool does not modify its environment"
         },
         {
-          "name": "sandboxScope",
-          "type": "string | undefined",
-          "required": false,
-          "desc": "Sandbox scope for command execution (default: \"process\")"
-        },
-        {
-          "name": "allowedPaths",
-          "type": "string[] | undefined",
-          "required": false,
-          "desc": "Allowed filesystem paths for the executed command (enforced in the sandbox backend)"
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "FileHistory",
-      "desc": "Versioned file history contract with undo/redo and rollback support.",
-      "methods": [
-        {
-          "sig": "recordVersion(version: Omit<FileVersion, \"timestamp\"> & { timestamp?: number; }): Promise<void>",
-          "desc": "",
-          "params": [
-            {
-              "n": "version",
-              "t": "Omit<FileVersion, \"timestamp\"> & { timestamp?: number; }",
-              "r": true,
-              "d": "Omit<FileVersion, \"timestamp\"> & { timestamp?: number; }"
-            }
-          ],
-          "ret": "Promise<void>"
-        },
-        {
-          "sig": "listVersions(filePath: string): Promise<readonly FileVersion[]>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "Promise<readonly FileVersion[]>"
-        },
-        {
-          "sig": "getLatestVersion(filePath: string): Promise<FileVersion | null>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "Promise<FileVersion | null>"
-        },
-        {
-          "sig": "rollbackTo(filePath: string, targetVersion: number): Promise<string>",
-          "desc": "",
-          "params": [
-            {
-              "n": "filePath",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "targetVersion",
-              "t": "number",
-              "r": true,
-              "d": "number"
-            }
-          ],
-          "ret": "Promise<string>"
-        },
-        {
-          "sig": "getAllChanges(): Promise<readonly FileVersion[]>",
-          "desc": "",
-          "params": [],
-          "ret": "Promise<readonly FileVersion[]>"
-        },
-        {
-          "sig": "undo(): Promise<UndoEntry | null>",
-          "desc": "",
-          "params": [],
-          "ret": "Promise<UndoEntry | null>"
-        },
-        {
-          "sig": "redo(): Promise<UndoEntry | null>",
-          "desc": "",
-          "params": [],
-          "ret": "Promise<UndoEntry | null>"
-        }
-      ],
-      "props": []
-    },
-    {
-      "type": "type",
-      "name": "FileVersion",
-      "desc": "A recorded file change (before/after content) attributed to a session and tool.",
-      "methods": [],
-      "props": [
-        {
-          "name": "filePath",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "sessionId",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "originalContent",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "newContent",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "timestamp",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "toolName",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "UndoEntry",
-      "desc": "A single undo/redo step referencing the file content swap.",
-      "methods": [],
-      "props": [
-        {
-          "name": "filePath",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "originalContent",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "newContent",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "toolName",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "timestamp",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "versionId",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "WebSearchToolConfig",
-      "desc": "Configuration for the {@link createWebSearchTool} tool.",
-      "methods": [],
-      "props": [
-        {
-          "name": "provider",
-          "type": "WebSearchProvider",
-          "required": true,
-          "desc": "Web search provider — injectable dependency.\nUser tự implement provider hoặc dùng built-in adapters."
-        },
-        {
-          "name": "defaultNumResults",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Default number of search results (default: 5)"
-        },
-        {
-          "name": "timeout",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Search timeout in ms (default: 15000)"
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "WebSearchProvider",
-      "desc": "Web search provider interface — user tự implement.\nVí dụ: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...",
-      "methods": [
-        {
-          "sig": "search(query: string, options: { numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined): Promise<WebSearchResponse>",
-          "desc": "",
-          "params": [
-            {
-              "n": "query",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "options",
-              "t": "{ numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined",
-              "r": false,
-              "d": "{ numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined"
-            }
-          ],
-          "ret": "Promise<WebSearchResponse>"
-        }
-      ],
-      "props": [
-        {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolSearchInput",
-      "desc": "Input for the `search_tools` tool.",
-      "methods": [],
-      "props": [
-        {
-          "name": "query",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "tags",
-          "type": "string[] | undefined",
-          "required": false,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolSearchResult",
-      "desc": "A found tool in `search_tools` results.",
-      "methods": [],
-      "props": [
-        {
-          "name": "id",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "tags",
-          "type": "readonly string[]",
-          "required": true,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "QuestionInput",
-      "desc": "Input for the `question` tool.",
-      "methods": [],
-      "props": [
-        {
-          "name": "header",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "question",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "options",
-          "type": "{ label: string; description?: string | undefined; }[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "multiple",
+          "name": "destructiveHint",
           "type": "boolean | undefined",
           "required": false,
-          "desc": ""
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "QuestionHandler",
-      "desc": "Resolver that returns the user's answer for a {@link QuestionInput}.",
-      "methods": [
-        {
-          "sig": "type QuestionHandler = QuestionHandler",
-          "desc": "Resolver that returns the user's answer for a {@link QuestionInput}.",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "class",
-      "name": "BuiltinToolProvider",
-      "desc": "BuiltinToolProvider — Provides all built-in coding tools.\r\n\r\nThese tools are always available and can be overridden\r\nby user tools in .vnt/tools/ or ~/.vnt/tools/.",
-      "methods": [
-        {
-          "sig": "constructor(config: BuiltinToolConfig)",
-          "desc": "Create instance.",
-          "params": [
-            {
-              "n": "config",
-              "t": "BuiltinToolConfig",
-              "r": true,
-              "d": "BuiltinToolConfig"
-            }
-          ]
+          "desc": "If true, tool may perform destructive actions (delete, overwrite)"
         },
         {
-          "sig": "createTools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": [],
-          "ret": "ToolDefinition<unknown, unknown>[]"
-        },
-        {
-          "sig": "createWebSearchTool(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": [],
-          "ret": "ToolDefinition<unknown, unknown>[]"
-        },
-        {
-          "sig": "register(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "unregister(_registry: ToolRegistry): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "_registry",
-              "t": "ToolRegistry",
-              "r": true,
-              "d": "ToolRegistry"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "id: \"builtin\"",
-          "desc": "id",
-          "params": []
-        },
-        {
-          "sig": "name: \"Built-in Tools\"",
-          "desc": "name",
-          "params": []
-        },
-        {
-          "sig": "description: \"Core coding tools: file operations, shell, search, git, web\"",
-          "desc": "description",
-          "params": []
-        },
-        {
-          "sig": "_tools: ToolDefinition<unknown, unknown>[] | null",
-          "desc": "_tools",
-          "params": []
-        },
-        {
-          "sig": "config: BuiltinToolConfig",
-          "desc": "config",
-          "params": []
-        },
-        {
-          "sig": "get tools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "BuiltinToolConfig",
-      "desc": "Configuration for {@link BuiltinToolProvider}.",
-      "methods": [],
-      "props": [
-        {
-          "name": "workspaceRoot",
-          "type": "string | (() => string)",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "shell",
-          "type": "ShellToolConfig",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "webSearchProvider",
-          "type": "WebSearchProvider | undefined",
+          "name": "openWorldHint",
+          "type": "boolean | undefined",
           "required": false,
-          "desc": "Web search provider — injectable dependency"
+          "desc": "If true, tool performs network access"
         },
         {
-          "name": "webSearchApiKey",
-          "type": "string | (() => string) | undefined",
+          "name": "requiresApproval",
+          "type": "boolean | undefined",
           "required": false,
-          "desc": ""
+          "desc": "If true, tool requires human approval before execution"
         }
       ]
     },
     {
-      "type": "class",
-      "name": "ToolRuntime",
-      "desc": "Runtime that registers tool definitions and executes them through the\r\npermission gate (deny/approve) and lifecycle hooks, isolated in a sandbox.",
+      "type": "function",
+      "name": "createReadFileTool",
+      "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\nenforcing workspace boundaries and optionally tracking reads for the\nkernel's file-history features.",
       "methods": [
         {
-          "sig": "constructor(config: ToolRuntimeConfig | undefined)",
-          "desc": "Create instance.",
+          "sig": "createReadFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined, maxFileSize: number | undefined): ToolDefinition<{ filePath: string; stripTrailingNewline?: boolean; }, string>",
+          "desc": "Create the `read_file` tool. Reads a file relative to the workspace root,\nenforcing workspace boundaries and optionally tracking reads for the\nkernel's file-history features.",
           "params": [
             {
-              "n": "config",
-              "t": "ToolRuntimeConfig | undefined",
+              "n": "workspaceRoot",
+              "t": "RootGetter",
+              "r": true,
+              "d": "RootGetter"
+            },
+            {
+              "n": "tracker",
+              "t": "FileReadTracker | undefined",
               "r": false,
-              "d": "ToolRuntimeConfig | undefined"
-            }
-          ]
-        },
-        {
-          "sig": "setApprovalHandler(handler: ApprovalHandler): void",
-          "desc": "Set or replace the approval handler at runtime",
-          "params": [
-            {
-              "n": "handler",
-              "t": "ApprovalHandler",
-              "r": true,
-              "d": "ApprovalHandler"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "register(tool: ToolDefinition<unknown, unknown>): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "tool",
-              "t": "ToolDefinition<unknown, unknown>",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "getTools(): readonly ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": [],
-          "ret": "readonly ToolDefinition<unknown, unknown>[]"
-        },
-        {
-          "sig": "addHook(hook: ToolHook): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "hook",
-              "t": "ToolHook",
-              "r": true,
-              "d": "ToolHook"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "removeHook(id: string): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "id",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "addDynamicRule(rule: DynamicRule): void",
-          "desc": "Register a dynamic rule from an \"always allow\" approval",
-          "params": [
-            {
-              "n": "rule",
-              "t": "DynamicRule",
-              "r": true,
-              "d": "DynamicRule"
-            }
-          ],
-          "ret": "void"
-        },
-        {
-          "sig": "getPermissionGate(): PermissionGate | undefined",
-          "desc": "Expose permission gate for wiring approval handlers",
-          "params": [],
-          "ret": "PermissionGate | undefined"
-        },
-        {
-          "sig": "execute(toolId: string, input: unknown, ctx: ToolContext | undefined): Promise<ToolExecutionResult>",
-          "desc": "",
-          "params": [
-            {
-              "n": "toolId",
-              "t": "string",
-              "r": true,
-              "d": "string"
+              "d": "FileReadTracker | undefined"
             },
             {
-              "n": "input",
-              "t": "unknown",
-              "r": true,
-              "d": "unknown"
-            },
-            {
-              "n": "ctx",
-              "t": "ToolContext | undefined",
+              "n": "externalDirAccess",
+              "t": "boolean | undefined",
               "r": false,
-              "d": "ToolContext | undefined"
+              "d": "boolean | undefined"
+            },
+            {
+              "n": "maxFileSize",
+              "t": "number | undefined",
+              "r": false,
+              "d": "number | undefined"
             }
           ],
-          "ret": "Promise<ToolExecutionResult>"
-        },
-        {
-          "sig": "registry: ToolRegistry",
-          "desc": "registry",
-          "params": []
-        },
-        {
-          "sig": "permissionGate: PermissionGate | undefined",
-          "desc": "permissionGate",
-          "params": []
-        },
-        {
-          "sig": "approvalHandler: ApprovalHandler | undefined",
-          "desc": "approvalHandler",
-          "params": []
-        },
-        {
-          "sig": "sandbox: ToolSandbox",
-          "desc": "sandbox",
-          "params": []
-        },
-        {
-          "sig": "hooks: ToolHook[]",
-          "desc": "hooks",
-          "params": []
-        }
-      ]
-    },
-    {
-      "type": "type",
-      "name": "ToolRuntimeConfig",
-      "desc": "Configuration for {@link ToolRuntime}.\r\n`permissionGate` enforces tool policy — REQUIRED for execution (fail-closed:\r\nwithout a gate, every execution is denied), `approvalHandler` drives\r\ninteractive approvals, and `sandbox` executes tools (defaults to an\r\nin-process {@link ToolSandbox}).",
-      "methods": [],
-      "props": [
-        {
-          "name": "permissionGate",
-          "type": "PermissionGate | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "approvalHandler",
-          "type": "ApprovalHandler | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "sandbox",
-          "type": "ToolSandbox | undefined",
-          "required": false,
-          "desc": ""
+          "ret": "ToolDefinition<{ filePath: string; stripTrailingNewline?: boolean; }, string>"
         }
       ]
     },
     {
       "type": "function",
-      "name": "createKernelTools",
-      "desc": "Adapt a {@link ToolRuntime} into kernel-consumable {@link ToolDefinition}s.\nEach runtime tool is wrapped so successful results are returned directly,\n`denied` results throw {@link ToolPermissionDenied}, and errors propagate.",
+      "name": "createWriteFileTool",
+      "desc": "Create the `write_file` tool. Writes content to a file, creating parent\ndirectories as needed and returning a diff of the change.",
       "methods": [
         {
-          "sig": "createKernelTools(rt: ToolRuntime): ToolDefinition<unknown, unknown>[]",
-          "desc": "Adapt a {@link ToolRuntime} into kernel-consumable {@link ToolDefinition}s.\nEach runtime tool is wrapped so successful results are returned directly,\n`denied` results throw {@link ToolPermissionDenied}, and errors propagate.",
+          "sig": "createWriteFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; content: string; }, { written: string; bytes: number; diff: string; additions: num...",
+          "desc": "Create the `write_file` tool. Writes content to a file, creating parent\ndirectories as needed and returning a diff of the change.",
           "params": [
             {
-              "n": "rt",
-              "t": "ToolRuntime",
+              "n": "workspaceRoot",
+              "t": "RootGetter",
               "r": true,
-              "d": "ToolRuntime"
+              "d": "RootGetter"
+            },
+            {
+              "n": "tracker",
+              "t": "FileReadTracker | undefined",
+              "r": false,
+              "d": "FileReadTracker | undefined"
+            },
+            {
+              "n": "externalDirAccess",
+              "t": "boolean | undefined",
+              "r": false,
+              "d": "boolean | undefined"
             }
           ],
-          "ret": "ToolDefinition<unknown, unknown>[]"
+          "ret": "ToolDefinition<{ filePath: string; content: string; }, { written: string; bytes: number; diff: string; additions: num..."
         }
       ]
     },
     {
       "type": "function",
-      "name": "createPluginToolHook",
-      "desc": "Create a ToolHook that bridges PluginManager lifecycle hooks into the ToolRuntime pipeline",
+      "name": "createEditFileTool",
+      "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
       "methods": [
         {
-          "sig": "createPluginToolHook(pm: PluginManager): ToolHook",
-          "desc": "Create a ToolHook that bridges PluginManager lifecycle hooks into the ToolRuntime pipeline",
+          "sig": "createEditFileTool(workspaceRoot: RootGetter, tracker: FileReadTracker | undefined, externalDirAccess: boolean | undefined): ToolDefinition<{ filePath: string; oldString?: string | undefined; newString?: string | undefined; edits?: readonly {...",
+          "desc": "Create the `edit_file` tool. Applies exact/fuzzy search-and-replace edits\n(one hunk or a multi-hunk `edits[]` array) to an existing file.",
           "params": [
             {
-              "n": "pm",
-              "t": "PluginManager",
+              "n": "workspaceRoot",
+              "t": "RootGetter",
               "r": true,
-              "d": "PluginManager"
+              "d": "RootGetter"
+            },
+            {
+              "n": "tracker",
+              "t": "FileReadTracker | undefined",
+              "r": false,
+              "d": "FileReadTracker | undefined"
+            },
+            {
+              "n": "externalDirAccess",
+              "t": "boolean | undefined",
+              "r": false,
+              "d": "boolean | undefined"
             }
           ],
-          "ret": "ToolHook"
+          "ret": "ToolDefinition<{ filePath: string; oldString?: string | undefined; newString?: string | undefined; edits?: readonly {..."
         }
       ]
     },
     {
       "type": "function",
-      "name": "createToolProviderRegistry",
-      "desc": "Create a ToolProviderRegistry with all built-in providers.\r\n\r\nThis is the main entry point for setting up the tool system.\r\nIt creates:\r\n1. BuiltinToolProvider (coding tools)\r\n2. User tools from .vnt/tools/ (if any)",
+      "name": "createShellTool",
+      "desc": "Create the `shell` tool that executes a command in the workspace root with\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
       "methods": [
         {
-          "sig": "createToolProviderRegistry(config: { workspaceRoot: string; shell: { workspaceRoot: string | (() => string); defaultTimeoutMs: number; maxTimeoutMs?: nu...): Promise<ToolProviderRegistry>",
-          "desc": "Create a ToolProviderRegistry with all built-in providers.\r\n\r\nThis is the main entry point for setting up the tool system.\r\nIt creates:\r\n1. BuiltinToolProvider (coding tools)\r\n2. User tools from .vnt/tools/ (if any)",
+          "sig": "createShellTool(config: ShellToolConfig): ToolDefinition<{ command: string; timeoutMs?: number | undefined; }, ExecResult>",
+          "desc": "Create the `shell` tool that executes a command in the workspace root with\ntimeout, tree-scoped kill-on-abort, and optional permission prompting.",
           "params": [
             {
               "n": "config",
-              "t": "{ workspaceRoot: string; shell: { workspaceRoot: string | (() => string); defaultTimeoutMs: number; maxTimeoutMs?: nu...",
+              "t": "ShellToolConfig",
               "r": true,
-              "d": "{ workspaceRoot: string; shell: { workspaceRoot: string | (() => string); defaultTimeoutMs: number; maxTimeoutMs?: nu..."
+              "d": "ShellToolConfig"
             }
           ],
-          "ret": "Promise<ToolProviderRegistry>"
+          "ret": "ToolDefinition<{ command: string; timeoutMs?: number | undefined; }, ExecResult>"
         }
       ]
     },
     {
       "type": "function",
-      "name": "createToolProvider",
-      "desc": "Create a custom ToolProvider from a list of tools.",
+      "name": "createGlobFilesTool",
+      "desc": "Create the `glob` tool that finds files matching a glob pattern under the workspace root.",
       "methods": [
         {
-          "sig": "createToolProvider(id: string, name: string, tools: ToolDefinition<unknown, unknown>[]): ToolProvider",
-          "desc": "Create a custom ToolProvider from a list of tools.",
+          "sig": "createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs: string[] | undefined): ToolDefinition<unknown, unknown>",
+          "desc": "Create the `glob` tool that finds files matching a glob pattern under the workspace root.",
           "params": [
             {
-              "n": "id",
-              "t": "string",
+              "n": "workspaceRoot",
+              "t": "RootGetter",
               "r": true,
-              "d": "string"
+              "d": "RootGetter"
             },
             {
-              "n": "name",
-              "t": "string",
-              "r": true,
-              "d": "string"
-            },
-            {
-              "n": "tools",
-              "t": "ToolDefinition<unknown, unknown>[]",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>[]"
+              "n": "ignoredDirs",
+              "t": "string[] | undefined",
+              "r": false,
+              "d": "string[] | undefined"
             }
           ],
-          "ret": "ToolProvider"
+          "ret": "ToolDefinition<unknown, unknown>"
         }
       ]
     },
     {
       "type": "function",
-      "name": "registerProviderTools",
-      "desc": "Register tools from a ToolProviderRegistry into an AgentKernel.",
+      "name": "createGrepFilesTool",
+      "desc": "Create the `grep` tool that searches file contents for a regex pattern.",
       "methods": [
         {
-          "sig": "registerProviderTools(kernel: AgentKernel, registry: ToolProviderRegistry): void",
-          "desc": "Register tools from a ToolProviderRegistry into an AgentKernel.",
+          "sig": "createGrepFilesTool(workspaceRoot: RootGetter, ignoredDirs: string[] | undefined): ToolDefinition<unknown, unknown>",
+          "desc": "Create the `grep` tool that searches file contents for a regex pattern.",
           "params": [
             {
-              "n": "kernel",
-              "t": "AgentKernel",
+              "n": "workspaceRoot",
+              "t": "RootGetter",
               "r": true,
-              "d": "AgentKernel"
+              "d": "RootGetter"
             },
             {
-              "n": "registry",
-              "t": "ToolProviderRegistry",
-              "r": true,
-              "d": "ToolProviderRegistry"
+              "n": "ignoredDirs",
+              "t": "string[] | undefined",
+              "r": false,
+              "d": "string[] | undefined"
             }
           ],
-          "ret": "void"
+          "ret": "ToolDefinition<unknown, unknown>"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createWebSearchTool",
+      "desc": "Create the `web_search` tool backed by a {@link WebSearchProvider}.",
+      "methods": [
+        {
+          "sig": "createWebSearchTool(config: WebSearchToolConfig): ToolDefinition<{ query: string; numResults?: number | undefined; searchDepth?: \"basic\" | \"advanced\" | undefined; }, {...",
+          "desc": "Create the `web_search` tool backed by a {@link WebSearchProvider}.",
+          "params": [
+            {
+              "n": "config",
+              "t": "WebSearchToolConfig",
+              "r": true,
+              "d": "WebSearchToolConfig"
+            }
+          ],
+          "ret": "ToolDefinition<{ query: string; numResults?: number | undefined; searchDepth?: \"basic\" | \"advanced\" | undefined; }, {..."
         }
       ]
     },
@@ -14824,7 +14572,7 @@ window.PKG = [
           "ret": "boolean"
         },
         {
-          "sig": "compact(messages: readonly ChatMessage[], _signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>",
+          "sig": "compact(messages: readonly ChatMessage[], _signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ...",
           "desc": "Compress middle messages (head/tail protection + naive summarization).\nImplements ConversationCompactor.",
           "params": [
             {
@@ -14840,10 +14588,10 @@ window.PKG = [
               "d": "AbortSignal | undefined"
             }
           ],
-          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>"
+          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ..."
         },
         {
-          "sig": "compress(messages: readonly ChatMessage[]): { messages: readonly ChatMessage[]; summary: CompressionSummary; }",
+          "sig": "compress(messages: readonly ChatMessage[]): { messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; summary?...",
           "desc": "Phase 2-4: Synchronous compress.\n- Protects headCount messages at start\n- Protects tailCount messages at end\n- Summarizes middle portion",
           "params": [
             {
@@ -14853,7 +14601,7 @@ window.PKG = [
               "d": "readonly ChatMessage[]"
             }
           ],
-          "ret": "{ messages: readonly ChatMessage[]; summary: CompressionSummary; }"
+          "ret": "{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; summary?..."
         },
         {
           "sig": "opts: any",
@@ -16252,11 +16000,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "CircuitState",
-      "desc": "Current circuit breaker state — strict union, state machine core.",
+      "desc": "Current circuit breaker state — open for extension (custom states).",
       "methods": [
         {
           "sig": "type CircuitState = CircuitState",
-          "desc": "Current circuit breaker state — strict union, state machine core.",
+          "desc": "Current circuit breaker state — open for extension (custom states).",
           "params": []
         }
       ]
@@ -16308,6 +16056,148 @@ window.PKG = [
           "type": "number | undefined",
           "required": false,
           "desc": "Maximum delay for backoff in ms. Default: 30000"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "GuardDecision",
+      "desc": "Monotonic guard decision — once denied, cannot be reopened by later listeners.\r\nInspired by DeepSeek Harness monotonic guard pattern.",
+      "methods": [
+        {
+          "sig": "type GuardDecision = GuardDecision",
+          "desc": "Monotonic guard decision — once denied, cannot be reopened by later listeners.\r\nInspired by DeepSeek Harness monotonic guard pattern.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuard",
+      "desc": "Tool guard interface — intercepts tool calls before execution.\r\nGuards can only deny or escalate, never reopen a denied decision.",
+      "methods": [],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "check",
+          "type": "(ctx: ToolGuardContext, toolCall: ToolGuardInput) => Promise<ToolGuardDecision>",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuardContext",
+      "desc": "Context passed to tool guards",
+      "methods": [],
+      "props": [
+        {
+          "name": "toolId",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "sessionId",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "runId",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuardInput",
+      "desc": "Input provided to tool guards",
+      "methods": [],
+      "props": [
+        {
+          "name": "toolName",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "input",
+          "type": "unknown",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "risk",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolGuardDecision",
+      "desc": "Result of a tool guard check",
+      "methods": [],
+      "props": [
+        {
+          "name": "decision",
+          "type": "GuardDecision",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "reason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "evaluateGuards",
+      "desc": "Evaluate multiple guards in monotonic order.\r\nOnce a guard denies, subsequent guards cannot override.",
+      "methods": [
+        {
+          "sig": "evaluateGuards(guards: ToolGuard[], ctx: ToolGuardContext, input: ToolGuardInput): Promise<ToolGuardDecision>",
+          "desc": "Evaluate multiple guards in monotonic order.\r\nOnce a guard denies, subsequent guards cannot override.",
+          "params": [
+            {
+              "n": "guards",
+              "t": "ToolGuard[]",
+              "r": true,
+              "d": "ToolGuard[]"
+            },
+            {
+              "n": "ctx",
+              "t": "ToolGuardContext",
+              "r": true,
+              "d": "ToolGuardContext"
+            },
+            {
+              "n": "input",
+              "t": "ToolGuardInput",
+              "r": true,
+              "d": "ToolGuardInput"
+            }
+          ],
+          "ret": "Promise<ToolGuardDecision>"
         }
       ]
     },
@@ -16549,6 +16439,306 @@ window.PKG = [
             }
           ],
           "ret": "Promise<T>"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "redactSecrets",
+      "desc": "Redact secrets from text.\r\n\r\nScans the input for known secret patterns and replaces them with\r\nplaceholder tokens. Safe to use on log messages, error output, and\r\narbitrary strings.",
+      "methods": [
+        {
+          "sig": "redactSecrets(text: string): string",
+          "desc": "Redact secrets from text.\r\n\r\nScans the input for known secret patterns and replaces them with\r\nplaceholder tokens. Safe to use on log messages, error output, and\r\narbitrary strings.",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "detectSecrets",
+      "desc": "Check whether text contains suspected secrets (without modifying it).",
+      "methods": [
+        {
+          "sig": "detectSecrets(text: string): string[]",
+          "desc": "Check whether text contains suspected secrets (without modifying it).",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string[]"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "createRedactingLogger",
+      "desc": "Create a redaction middleware for a logger.\r\n\r\nReturns a function that wraps log output, automatically redacting\r\nany detected secrets before the message is written. Strings, error\r\nmessages and nested object values are all scrubbed.",
+      "methods": [
+        {
+          "sig": "createRedactingLogger(originalLog: (...args: A) => void): (...args: A) => void",
+          "desc": "Create a redaction middleware for a logger.\r\n\r\nReturns a function that wraps log output, automatically redacting\r\nany detected secrets before the message is written. Strings, error\r\nmessages and nested object values are all scrubbed.",
+          "params": [
+            {
+              "n": "originalLog",
+              "t": "(...args: A) => void",
+              "r": true,
+              "d": "(...args: A) => void"
+            }
+          ],
+          "ret": "(...args: A) => void"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "redactObjectSecrets",
+      "desc": "Deep-redact secrets inside an object/array tree.\r\n\r\nSerializes the value to JSON, redacts known secret patterns, then parses\r\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\r\nare scrubbed while the structure is preserved. Falls back to the original\r\nvalue if it cannot be serialized (circular refs, functions, etc.).",
+      "methods": [
+        {
+          "sig": "redactObjectSecrets(value: T): T",
+          "desc": "Deep-redact secrets inside an object/array tree.\r\n\r\nSerializes the value to JSON, redacts known secret patterns, then parses\r\nit back so nested secrets (e.g. `{ apiKey: \"sk-...\" }` inside tool args)\r\nare scrubbed while the structure is preserved. Falls back to the original\r\nvalue if it cannot be serialized (circular refs, functions, etc.).",
+          "params": [
+            {
+              "n": "value",
+              "t": "T",
+              "r": true,
+              "d": "T"
+            }
+          ],
+          "ret": "T"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "SecretRedactor",
+      "desc": "Secret redactor with injectable patterns.\r\nUsers can register custom patterns without forking.",
+      "methods": [
+        {
+          "sig": "constructor(config: SecretRedactorConfig | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "config",
+              "t": "SecretRedactorConfig | undefined",
+              "r": false,
+              "d": "SecretRedactorConfig | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "register(pattern: SecretPattern): void",
+          "desc": "Register a custom secret pattern",
+          "params": [
+            {
+              "n": "pattern",
+              "t": "SecretPattern",
+              "r": true,
+              "d": "SecretPattern"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "unregister(name: string): void",
+          "desc": "Remove a pattern by name",
+          "params": [
+            {
+              "n": "name",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "void"
+        },
+        {
+          "sig": "redact(text: string): string",
+          "desc": "Redact secrets from text",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string"
+        },
+        {
+          "sig": "detect(text: string): string[]",
+          "desc": "Detect secrets in text",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string[]"
+        },
+        {
+          "sig": "patterns: SecretPattern[]",
+          "desc": "patterns",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "SecretRedactorConfig",
+      "desc": "Secret redactor configuration — injectable dependency.\r\nUsers can register custom patterns without forking.",
+      "methods": [],
+      "props": [
+        {
+          "name": "patterns",
+          "type": "SecretPattern[] | undefined",
+          "required": false,
+          "desc": "Custom patterns — merged with DEFAULT_SECRET_PATTERNS"
+        },
+        {
+          "name": "overridePatterns",
+          "type": "SecretPattern[] | undefined",
+          "required": false,
+          "desc": "Override default patterns completely"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "SecretPattern",
+      "desc": "Secret detection and redaction for logs and error messages.",
+      "methods": [],
+      "props": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "pattern",
+          "type": "RegExp",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "replacement",
+          "type": "string",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "sanitizeForLLM",
+      "desc": "Sanitize external text before it enters the LLM context window.\n\nStrips known prompt-injection markers, unicode control characters,\nand truncates excessively long content.",
+      "methods": [
+        {
+          "sig": "sanitizeForLLM(text: string, source: string | undefined): string",
+          "desc": "Sanitize external text before it enters the LLM context window.\n\nStrips known prompt-injection markers, unicode control characters,\nand truncates excessively long content.",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "source",
+              "t": "string | undefined",
+              "r": false,
+              "d": "string | undefined"
+            }
+          ],
+          "ret": "string"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "validateToolOutput",
+      "desc": "Validate and post-process tool output before it enters context.\n\n- Injects a canary token so downstream consumers can detect if output\n  was tampered with after sanitization.\n- Strips injection patterns.",
+      "methods": [
+        {
+          "sig": "validateToolOutput(output: string, toolName: string): string",
+          "desc": "Validate and post-process tool output before it enters context.\n\n- Injects a canary token so downstream consumers can detect if output\n  was tampered with after sanitization.\n- Strips injection patterns.",
+          "params": [
+            {
+              "n": "output",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "detectInjectionPatterns",
+      "desc": "Check whether a string contains suspected prompt injection patterns.\n\nUseful for logging / audit without modifying the text.",
+      "methods": [
+        {
+          "sig": "detectInjectionPatterns(text: string): string[]",
+          "desc": "Check whether a string contains suspected prompt injection patterns.\n\nUseful for logging / audit without modifying the text.",
+          "params": [
+            {
+              "n": "text",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "string[]"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "sanitizeEnv",
+      "desc": "Build a sanitized environment: only the safe whitelist (plus any explicit\n`allowedVars`) survives; secrets are never forwarded to child processes.",
+      "methods": [
+        {
+          "sig": "sanitizeEnv(source: Record<string, string | undefined>, allowedVars: string[] | undefined): Record<string, string>",
+          "desc": "Build a sanitized environment: only the safe whitelist (plus any explicit\n`allowedVars`) survives; secrets are never forwarded to child processes.",
+          "params": [
+            {
+              "n": "source",
+              "t": "Record<string, string | undefined>",
+              "r": false,
+              "d": "Record<string, string | undefined>"
+            },
+            {
+              "n": "allowedVars",
+              "t": "string[] | undefined",
+              "r": false,
+              "d": "string[] | undefined"
+            }
+          ],
+          "ret": "Record<string, string>"
         }
       ]
     }
@@ -16993,6 +17183,16 @@ window.PKG = [
               "d": "\"DUPLICATE_ADAPTER\" | \"EMPTY_PROVIDERS\" | \"CONFLICT\""
             }
           ]
+        },
+        {
+          "sig": "code: string",
+          "desc": "code",
+          "params": []
+        },
+        {
+          "sig": "retryable: false",
+          "desc": "retryable",
+          "params": []
         }
       ]
     },
@@ -17277,7 +17477,7 @@ window.PKG = [
           "ret": "ModelProvider"
         },
         {
-          "sig": "callModelStream(messages: ChatMessage[], step: number, runId: RunId, ctx: RequestContext, signal: AbortSignal, agentMaxTokens: number | undefined, disableTools: boolean | undefined): Promise<ModelResponse>",
+          "sig": "callModelStream(messages: ChatMessage[], step: number, runId: RunId, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., signal: AbortSignal, agentMaxTokens: number | undefined, disableTools: boolean | undefined): Promise<ModelResponse>",
           "desc": "",
           "params": [
             {
@@ -17300,9 +17500,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "signal",
@@ -17326,7 +17526,7 @@ window.PKG = [
           "ret": "Promise<ModelResponse>"
         },
         {
-          "sig": "doThinkingStep(messages: ChatMessage[], step: number, runId: RunId, ctx: RequestContext, signal: AbortSignal): Promise<void>",
+          "sig": "doThinkingStep(messages: ChatMessage[], step: number, runId: RunId, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., signal: AbortSignal): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -17349,9 +17549,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "signal",
@@ -17651,17 +17851,17 @@ window.PKG = [
     {
       "type": "function",
       "name": "matchPermission",
-      "desc": "Evaluate a list of permission rules against a tool action and context.\r\nUses last-match-wins semantics: later rules override earlier ones.\r\n\r\nIf no rule matches, returns \"ask\" by default (safe default).",
+      "desc": "Evaluate a list of permission rules against a tool action and context.\nUses last-match-wins semantics: later rules override earlier ones.\n\nIf no rule matches, returns \"ask\" by default (safe default).",
       "methods": [
         {
-          "sig": "matchPermission(rules: readonly AnyRule[], action: string, context: string | undefined): { effect: PermissionEffect; matchedRule?: AnyRule; }",
-          "desc": "Evaluate a list of permission rules against a tool action and context.\r\nUses last-match-wins semantics: later rules override earlier ones.\r\n\r\nIf no rule matches, returns \"ask\" by default (safe default).",
+          "sig": "matchPermission(rules: readonly PermissionRule[], action: string, context: string | undefined): { effect: PermissionEffect; matchedRule?: AnyRule; }",
+          "desc": "Evaluate a list of permission rules against a tool action and context.\nUses last-match-wins semantics: later rules override earlier ones.\n\nIf no rule matches, returns \"ask\" by default (safe default).",
           "params": [
             {
               "n": "rules",
-              "t": "readonly AnyRule[]",
+              "t": "readonly PermissionRule[]",
               "r": true,
-              "d": "readonly AnyRule[]"
+              "d": "readonly PermissionRule[]"
             },
             {
               "n": "action",
@@ -17683,11 +17883,11 @@ window.PKG = [
     {
       "type": "function",
       "name": "buildPermissionRules",
-      "desc": "Build a lookup-friendly permission set from raw config rules.\r\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
+      "desc": "Build a lookup-friendly permission set from raw config rules.\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
       "methods": [
         {
           "sig": "buildPermissionRules(config: Record<string, string | Record<string, string>>): PermissionRule[]",
-          "desc": "Build a lookup-friendly permission set from raw config rules.\r\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
+          "desc": "Build a lookup-friendly permission set from raw config rules.\nHandles flat syntax (`edit: deny`) and nested syntax (`bash: { \"*\": \"ask\", \"git diff\": \"allow\" }`).",
           "params": [
             {
               "n": "config",
@@ -17706,17 +17906,17 @@ window.PKG = [
       "desc": "Normalize a permissions shorthand into a full {@link AgentRuleset}.",
       "methods": [
         {
-          "sig": "normalizePermissions(p: AgentPermissions | undefined): AgentRuleset",
+          "sig": "normalizePermissions(p: { mode?: string | undefined; ruleset?: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: s...): { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
           "desc": "Normalize a permissions shorthand into a full {@link AgentRuleset}.",
           "params": [
             {
               "n": "p",
-              "t": "AgentPermissions | undefined",
+              "t": "{ mode?: string | undefined; ruleset?: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: s...",
               "r": true,
-              "d": "AgentPermissions | undefined"
+              "d": "{ mode?: string | undefined; ruleset?: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: s..."
             }
           ],
-          "ret": "AgentRuleset"
+          "ret": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
         }
       ]
     },
@@ -17726,23 +17926,23 @@ window.PKG = [
       "desc": "Merge a child ruleset over its parent (child deny rules override parent allows).",
       "methods": [
         {
-          "sig": "mergeRulesets(child: AgentRuleset, parent: AgentRuleset): AgentRuleset",
+          "sig": "mergeRulesets(child: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..., parent: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...): { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
           "desc": "Merge a child ruleset over its parent (child deny rules override parent allows).",
           "params": [
             {
               "n": "child",
-              "t": "AgentRuleset",
+              "t": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
               "r": true,
-              "d": "AgentRuleset"
+              "d": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
             },
             {
               "n": "parent",
-              "t": "AgentRuleset",
+              "t": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
               "r": true,
-              "d": "AgentRuleset"
+              "d": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
             }
           ],
-          "ret": "AgentRuleset"
+          "ret": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
         }
       ]
     },
@@ -17752,40 +17952,40 @@ window.PKG = [
       "desc": "Compute the effective ruleset for an agent, merging ancestor permissions.",
       "methods": [
         {
-          "sig": "resolveEffectivePermissions(agent: AgentConfig, ancestors: AgentConfig[] | undefined): AgentRuleset",
+          "sig": "resolveEffectivePermissions(agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..., ancestors: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
           "desc": "Compute the effective ruleset for an agent, merging ancestor permissions.",
           "params": [
             {
               "n": "agent",
-              "t": "AgentConfig",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             },
             {
               "n": "ancestors",
-              "t": "AgentConfig[] | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig[] | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
-          "ret": "AgentRuleset"
+          "ret": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
         }
       ]
     },
     {
       "type": "function",
       "name": "evaluatePermission",
-      "desc": "Evaluate a resource against a ruleset.\r\n\r\nSemantics (matching OpenCode's findLast):\r\n- Rules are evaluated in order; last matching rule wins.\r\n- \"deny\" blocks access.\r\n- \"ask\" triggers human-in-the-loop.\r\n- \"allow\" permits access.\r\n- If no rule matches, the default is \"ask\" (safe default).\r\n\r\nWhen `paramPattern` is set on a rule, the rule only matches if\r\nthe JSON-stringified tool args also match the paramPattern glob.",
+      "desc": "Evaluate a resource against a ruleset.\n\nSemantics (matching OpenCode's findLast):\n- Rules are evaluated in order; last matching rule wins.\n- \"deny\" blocks access.\n- \"ask\" triggers human-in-the-loop.\n- \"allow\" permits access.\n- If no rule matches, the default is \"ask\" (safe default).\n\nWhen `paramPattern` is set on a rule, the rule only matches if\nthe JSON-stringified tool args also match the paramPattern glob.",
       "methods": [
         {
-          "sig": "evaluatePermission(ruleset: AgentRuleset | undefined, resource: string, args: Record<string, unknown> | undefined): PermissionResult",
-          "desc": "Evaluate a resource against a ruleset.\r\n\r\nSemantics (matching OpenCode's findLast):\r\n- Rules are evaluated in order; last matching rule wins.\r\n- \"deny\" blocks access.\r\n- \"ask\" triggers human-in-the-loop.\r\n- \"allow\" permits access.\r\n- If no rule matches, the default is \"ask\" (safe default).\r\n\r\nWhen `paramPattern` is set on a rule, the rule only matches if\r\nthe JSON-stringified tool args also match the paramPattern glob.",
+          "sig": "evaluatePermission(ruleset: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..., resource: string, args: Record<string, unknown> | undefined): PermissionResult",
+          "desc": "Evaluate a resource against a ruleset.\n\nSemantics (matching OpenCode's findLast):\n- Rules are evaluated in order; last matching rule wins.\n- \"deny\" blocks access.\n- \"ask\" triggers human-in-the-loop.\n- \"allow\" permits access.\n- If no rule matches, the default is \"ask\" (safe default).\n\nWhen `paramPattern` is set on a rule, the rule only matches if\nthe JSON-stringified tool args also match the paramPattern glob.",
           "params": [
             {
               "n": "ruleset",
-              "t": "AgentRuleset | undefined",
+              "t": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
               "r": true,
-              "d": "AgentRuleset | undefined"
+              "d": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
             },
             {
               "n": "resource",
@@ -17810,14 +18010,14 @@ window.PKG = [
       "desc": "Return whether the given risk level is allowed by the ruleset.",
       "methods": [
         {
-          "sig": "checkRiskAllowed(ruleset: AgentRuleset | undefined, risk: string): boolean",
+          "sig": "checkRiskAllowed(ruleset: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..., risk: string): boolean",
           "desc": "Return whether the given risk level is allowed by the ruleset.",
           "params": [
             {
               "n": "ruleset",
-              "t": "AgentRuleset | undefined",
+              "t": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un...",
               "r": true,
-              "d": "AgentRuleset | undefined"
+              "d": "{ rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | un..."
             },
             {
               "n": "risk",
@@ -17847,6 +18047,24 @@ window.PKG = [
       "name": "InMemoryApprovalStore",
       "desc": "In-memory {@link ApprovalStore} implementation.",
       "methods": [
+        {
+          "sig": "getPendingRequests(): readonly PermissionRequest[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly PermissionRequest[]"
+        },
+        {
+          "sig": "getAlwaysAllowed(): readonly SavedApproval[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly SavedApproval[]"
+        },
+        {
+          "sig": "getAlwaysRejected(): readonly SavedApproval[]",
+          "desc": "",
+          "params": [],
+          "ret": "readonly SavedApproval[]"
+        },
         {
           "sig": "awaitReply(request: PermissionRequest, opts: AwaitReplyOptions | undefined): Promise<PermissionReply>",
           "desc": "",
@@ -18335,6 +18553,12 @@ window.PKG = [
           "desc": ""
         },
         {
+          "name": "paramPattern",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
           "name": "metadata",
           "type": "Record<string, unknown> | undefined",
           "required": false,
@@ -18556,14 +18780,14 @@ window.PKG = [
           "ret": "Disposable"
         },
         {
-          "sig": "registerAgent(config: AgentConfig): Promise<Disposable>",
+          "sig": "registerAgent(config: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): Promise<Disposable>",
           "desc": "",
           "params": [
             {
               "n": "config",
-              "t": "AgentConfig",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "Promise<Disposable>"
@@ -19007,6 +19231,12 @@ window.PKG = [
           "inherited": "ToolDefinitionLike"
         },
         {
+          "name": "outputSchema",
+          "type": "NestedJsonSchema | undefined",
+          "required": false,
+          "desc": "JSON Schema for tool output (MCP 2026-07-28 pattern)"
+        },
+        {
           "name": "timeoutMs",
           "type": "number | undefined",
           "required": false,
@@ -19041,6 +19271,24 @@ window.PKG = [
           "type": "readonly string[] | undefined",
           "required": false,
           "desc": "Tags for tool search (e.g. [\"file\", \"read\", \"search\"])."
+        },
+        {
+          "name": "annotations",
+          "type": "ToolAnnotations | undefined",
+          "required": false,
+          "desc": "Tool annotations — hints about tool behavior for LLMs"
+        },
+        {
+          "name": "icon",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Icon identifier or emoji for UI display"
+        },
+        {
+          "name": "category",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Human-readable category for tool grouping"
         },
         {
           "name": "metadata",
@@ -19331,7 +19579,7 @@ window.PKG = [
   "desc": "OpenAI-compatible provider with streaming, retry, presets for DeepSeek, Anthropic, Ollama.",
   "deps": [
     "schema",
-    "security",
+    "guard",
     "config"
   ],
   "exports": [
@@ -19465,7 +19713,7 @@ window.PKG = [
           "params": []
         },
         {
-          "sig": "model: string",
+          "sig": "model: ModelId",
           "desc": "model",
           "params": []
         },
@@ -19543,7 +19791,7 @@ window.PKG = [
           "name": "defaultModel",
           "type": "string",
           "required": true,
-          "desc": "Default model identifier sent in the request body."
+          "desc": "Default model identifier sent in the request body (REQUIRED - must be non-empty)."
         },
         {
           "name": "providerName",
@@ -20998,6 +21246,2318 @@ window.PKG = [
   ]
 },
 {
+  "id": "provider-spec",
+  "name": "@vinhnt-sdk/provider-spec",
+  "icon": "Ps",
+  "tag": "Core",
+  "desc": "Provider specification - LanguageModelV1, RunUsage, Tool, ChatMessage, ContentBlock, errors.",
+  "deps": [],
+  "exports": [
+    {
+      "type": "function",
+      "name": "resolveDynamicArgument",
+      "desc": "Resolve a DynamicArgument to its static value.",
+      "methods": [
+        {
+          "sig": "resolveDynamicArgument(arg: DynamicArgument<T, TContext>, context: TContext): T | Promise<T>",
+          "desc": "Resolve a DynamicArgument to its static value.",
+          "params": [
+            {
+              "n": "arg",
+              "t": "DynamicArgument<T, TContext>",
+              "r": true,
+              "d": "DynamicArgument<T, TContext>"
+            },
+            {
+              "n": "context",
+              "t": "TContext",
+              "r": true,
+              "d": "TContext"
+            }
+          ],
+          "ret": "T | Promise<T>"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LanguageModelV1",
+      "desc": "Language model interface that providers must implement.",
+      "methods": [
+        {
+          "sig": "doGenerate(options: LanguageModelV1CallOptions): Promise<LanguageModelV1GenerateResult>",
+          "desc": "Generate a complete response (non-streaming).",
+          "params": [
+            {
+              "n": "options",
+              "t": "LanguageModelV1CallOptions",
+              "r": true,
+              "d": "LanguageModelV1CallOptions"
+            }
+          ],
+          "ret": "Promise<LanguageModelV1GenerateResult>"
+        },
+        {
+          "sig": "doStream(options: LanguageModelV1CallOptions): Promise<LanguageModelV1StreamResult>",
+          "desc": "Generate a streaming response.",
+          "params": [
+            {
+              "n": "options",
+              "t": "LanguageModelV1CallOptions",
+              "r": true,
+              "d": "LanguageModelV1CallOptions"
+            }
+          ],
+          "ret": "Promise<LanguageModelV1StreamResult>"
+        }
+      ],
+      "props": [
+        {
+          "name": "specificationVersion",
+          "type": "\"v1\"",
+          "required": true,
+          "desc": "Specification version."
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": "Provider identifier."
+        },
+        {
+          "name": "modelId",
+          "type": "string",
+          "required": true,
+          "desc": "Model identifier."
+        },
+        {
+          "name": "supportedUrls",
+          "type": "Promise<Record<string, RegExp[]>> | undefined",
+          "required": false,
+          "desc": "Supported URL patterns for download."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LanguageModelV1CallOptions",
+      "desc": "Options for a language model call.",
+      "methods": [],
+      "props": [
+        {
+          "name": "messages",
+          "type": "readonly ChatMessage[]",
+          "required": true,
+          "desc": "The prompt messages."
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "required": true,
+          "desc": "The model ID to use."
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": "The provider ID."
+        },
+        {
+          "name": "tools",
+          "type": "readonly Tool[] | undefined",
+          "required": false,
+          "desc": "Tools available for the model to call."
+        },
+        {
+          "name": "toolChoice",
+          "type": "\"auto\" | \"none\" | \"required\" | { type: \"tool\"; toolName: string; } | undefined",
+          "required": false,
+          "desc": "Tool choice strategy."
+        },
+        {
+          "name": "temperature",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Temperature (0-2)."
+        },
+        {
+          "name": "maxOutputTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Maximum output tokens."
+        },
+        {
+          "name": "topP",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Top-p sampling."
+        },
+        {
+          "name": "stopSequences",
+          "type": "string[] | undefined",
+          "required": false,
+          "desc": "Stop sequences."
+        },
+        {
+          "name": "frequencyPenalty",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Frequency penalty."
+        },
+        {
+          "name": "presencePenalty",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Presence penalty."
+        },
+        {
+          "name": "seed",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Random seed for reproducibility."
+        },
+        {
+          "name": "abortSignal",
+          "type": "AbortSignal | undefined",
+          "required": false,
+          "desc": "Abort signal for cancellation."
+        },
+        {
+          "name": "providerOptions",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific options."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LanguageModelV1GenerateResult",
+      "desc": "Result of a non-streaming language model call.",
+      "methods": [],
+      "props": [
+        {
+          "name": "content",
+          "type": "readonly ContentBlock[]",
+          "required": true,
+          "desc": "The generated content blocks."
+        },
+        {
+          "name": "finishReason",
+          "type": "FinishReason",
+          "required": true,
+          "desc": "The finish reason."
+        },
+        {
+          "name": "usage",
+          "type": "LanguageModelUsage",
+          "required": true,
+          "desc": "Token usage."
+        },
+        {
+          "name": "warnings",
+          "type": "readonly string[] | undefined",
+          "required": false,
+          "desc": "Warnings from the model."
+        },
+        {
+          "name": "providerMetadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LanguageModelV1StreamResult",
+      "desc": "Result of a streaming language model call.",
+      "methods": [],
+      "props": [
+        {
+          "name": "stream",
+          "type": "AsyncIterable<LanguageModelStreamPart>",
+          "required": true,
+          "desc": "The stream of content blocks."
+        },
+        {
+          "name": "providerMetadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LanguageModelStreamPart",
+      "desc": "A part of a language model stream.",
+      "methods": [
+        {
+          "sig": "type LanguageModelStreamPart = LanguageModelStreamPart",
+          "desc": "A part of a language model stream.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "FinishReason",
+      "desc": "Finish reason from the model.",
+      "methods": [
+        {
+          "sig": "type FinishReason = FinishReason",
+          "desc": "Finish reason from the model.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ProviderV1",
+      "desc": "Provider interface that provider packages must implement.",
+      "methods": [
+        {
+          "sig": "languageModel(modelId: string): LanguageModelV1",
+          "desc": "Create a language model instance.",
+          "params": [
+            {
+              "n": "modelId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "LanguageModelV1"
+        },
+        {
+          "sig": "embeddingModel(modelId: string): unknown",
+          "desc": "Create an embedding model instance (optional).",
+          "params": [
+            {
+              "n": "modelId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "unknown"
+        },
+        {
+          "sig": "imageModel(modelId: string): unknown",
+          "desc": "Create an image model instance (optional).",
+          "params": [
+            {
+              "n": "modelId",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "unknown"
+        }
+      ],
+      "props": [
+        {
+          "name": "provider",
+          "type": "string",
+          "required": true,
+          "desc": "Provider identifier (e.g., \"openai\", \"anthropic\")."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "LanguageModelUsage",
+      "desc": "Usage types for language model calls.\n\nFollows the industry-standard nested usage pattern (OpenAI, Vercel AI SDK, Mastra).\nDetailed token usage from a language model call.\n\nStructure follows Vercel AI SDK's LanguageModelV4Usage pattern.",
+      "methods": [],
+      "props": [
+        {
+          "name": "inputTokens",
+          "type": "{ readonly total: number | undefined; readonly noCache: number | undefined; readonly cacheRead: number | undefined; r...",
+          "required": true,
+          "desc": "Input (prompt) tokens."
+        },
+        {
+          "name": "outputTokens",
+          "type": "{ readonly total: number | undefined; readonly text: number | undefined; readonly reasoning: number | undefined; }",
+          "required": true,
+          "desc": "Output (completion) tokens."
+        },
+        {
+          "name": "totalTokens",
+          "type": "number | undefined",
+          "required": true,
+          "desc": "Total tokens (input + output)."
+        },
+        {
+          "name": "raw",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific raw usage data."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "RunUsage",
+      "desc": "User-facing usage metrics (flattened for convenience).\n\nThis is what agent run results expose to consumers.",
+      "methods": [],
+      "props": [
+        {
+          "name": "totalSteps",
+          "type": "number",
+          "required": true,
+          "desc": "Total number of steps (LLM calls) executed."
+        },
+        {
+          "name": "durationMs",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Total duration in milliseconds."
+        },
+        {
+          "name": "inputTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Input tokens used."
+        },
+        {
+          "name": "outputTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Output tokens used."
+        },
+        {
+          "name": "reasoningTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Reasoning/thinking tokens used."
+        },
+        {
+          "name": "cacheReadTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache read tokens (prompt caching)."
+        },
+        {
+          "name": "cacheWriteTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Cache write tokens (prompt caching)."
+        },
+        {
+          "name": "totalTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Total tokens (input + output + reasoning)."
+        },
+        {
+          "name": "cost",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Total cost in USD."
+        },
+        {
+          "name": "toolCallsCount",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Number of tool calls executed."
+        },
+        {
+          "name": "model",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Model used for this run."
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider used for this run."
+        },
+        {
+          "name": "stopReason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Stop reason from the LLM."
+        },
+        {
+          "name": "raw",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific raw usage data."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "UsageAggregator",
+      "desc": "Type for usage aggregation functions.",
+      "methods": [
+        {
+          "sig": "type UsageAggregator = UsageAggregator",
+          "desc": "Type for usage aggregation functions.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "addRunUsage",
+      "desc": "Aggregates two RunUsage objects (for multi-step runs).",
+      "methods": [
+        {
+          "sig": "addRunUsage(a: RunUsage, b: RunUsage): RunUsage",
+          "desc": "Aggregates two RunUsage objects (for multi-step runs).",
+          "params": [
+            {
+              "n": "a",
+              "t": "RunUsage",
+              "r": true,
+              "d": "RunUsage"
+            },
+            {
+              "n": "b",
+              "t": "RunUsage",
+              "r": true,
+              "d": "RunUsage"
+            }
+          ],
+          "ret": "RunUsage"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "Tool",
+      "desc": "A tool that can be called by the agent.\n\nTools use discriminated union on `type` field (Anthropic pattern).",
+      "methods": [
+        {
+          "sig": "type Tool = Tool<TInput, TOutput, TContext>",
+          "desc": "A tool that can be called by the agent.\n\nTools use discriminated union on `type` field (Anthropic pattern).",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "FunctionTool",
+      "desc": "A user-defined function tool with type-safe input/output.",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"function\"",
+          "required": true,
+          "desc": "Tool type discriminator."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": "Unique tool name."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "desc": "Description shown to the LLM."
+        },
+        {
+          "name": "inputSchema",
+          "type": "Record<string, unknown>",
+          "required": true,
+          "desc": "JSON Schema for input validation."
+        },
+        {
+          "name": "outputSchema",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "JSON Schema for output validation (optional)."
+        },
+        {
+          "name": "execute",
+          "type": "ToolExecuteFunction<TInput, TOutput, TContext>",
+          "required": true,
+          "desc": "Execute the tool."
+        },
+        {
+          "name": "riskLevel",
+          "type": "\"none\" | \"read\" | \"write\" | \"destructive\" | \"external\" | undefined",
+          "required": false,
+          "desc": "Risk level for permission checking."
+        },
+        {
+          "name": "isEnabled",
+          "type": "boolean | ((context: TContext) => boolean | Promise<boolean>) | undefined",
+          "required": false,
+          "desc": "Whether this tool is enabled."
+        },
+        {
+          "name": "requiresApproval",
+          "type": "boolean | ((input: TInput, context: TContext) => boolean | Promise<boolean>) | undefined",
+          "required": false,
+          "desc": "Whether this tool requires approval."
+        },
+        {
+          "name": "timeoutMs",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Timeout in milliseconds."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "DynamicTool",
+      "desc": "A tool defined at runtime with unknown types.",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"dynamic\"",
+          "required": true,
+          "desc": "Tool type discriminator."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": "Unique tool name."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "desc": "Description shown to the LLM."
+        },
+        {
+          "name": "inputSchema",
+          "type": "Record<string, unknown>",
+          "required": true,
+          "desc": "JSON Schema for input validation."
+        },
+        {
+          "name": "execute",
+          "type": "ToolExecuteFunction<TInput, TOutput, TContext>",
+          "required": true,
+          "desc": "Execute the tool."
+        },
+        {
+          "name": "riskLevel",
+          "type": "\"none\" | \"read\" | \"write\" | \"destructive\" | \"external\" | undefined",
+          "required": false,
+          "desc": "Risk level for permission checking."
+        },
+        {
+          "name": "isEnabled",
+          "type": "boolean | ((context: TContext) => boolean | Promise<boolean>) | undefined",
+          "required": false,
+          "desc": "Whether this tool is enabled."
+        },
+        {
+          "name": "timeoutMs",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Timeout in milliseconds."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolContext",
+      "desc": "Tool specification types.\n\nTools are the primary way agents interact with the outside world.\nThis defines the contract for tool definitions and execution.\nContext passed to tool execution.",
+      "methods": [],
+      "props": [
+        {
+          "name": "runContext",
+          "type": "TContext",
+          "required": true,
+          "desc": "The run context from the agent."
+        },
+        {
+          "name": "abortSignal",
+          "type": "AbortSignal | undefined",
+          "required": false,
+          "desc": "Abort signal for cancellation."
+        },
+        {
+          "name": "toolCallId",
+          "type": "string",
+          "required": true,
+          "desc": "Tool call ID."
+        },
+        {
+          "name": "toolName",
+          "type": "string",
+          "required": true,
+          "desc": "Tool name."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolExecuteFunction",
+      "desc": "Function to execute a tool.",
+      "methods": [
+        {
+          "sig": "type ToolExecuteFunction = ToolExecuteFunction<TInput, TOutput, TContext>",
+          "desc": "Function to execute a tool.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "tool",
+      "desc": "Helper to create a type-safe tool (type-level identity function).",
+      "methods": [
+        {
+          "sig": "tool(t: FunctionTool<TInput, TOutput, TContext>): FunctionTool<TInput, TOutput, TContext>",
+          "desc": "Helper to create a type-safe tool (type-level identity function).",
+          "params": [
+            {
+              "n": "t",
+              "t": "FunctionTool<TInput, TOutput, TContext>",
+              "r": true,
+              "d": "FunctionTool<TInput, TOutput, TContext>"
+            }
+          ],
+          "ret": "FunctionTool<TInput, TOutput, TContext>"
+        }
+      ],
+      "example": "```typescript\nconst weatherTool = tool({\n  name: \"get_weather\",\n  description: \"Get weather for a location\",\n  inputSchema: { type: \"object\", properties: { location: { type: \"string\" } } },\n  execute: async (input) => fetchWeather(input.location),\n});\n```"
+    },
+    {
+      "type": "type",
+      "name": "ChatMessage",
+      "desc": "Union of all chat message types.",
+      "methods": [
+        {
+          "sig": "type ChatMessage = ChatMessage",
+          "desc": "Union of all chat message types.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "SystemMessage",
+      "desc": "System message.",
+      "methods": [],
+      "props": [
+        {
+          "name": "content",
+          "type": "string | readonly ContentPart[]",
+          "required": true,
+          "desc": "Message content.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "role",
+          "type": "\"system\"",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "UserMessage",
+      "desc": "User message.",
+      "methods": [],
+      "props": [
+        {
+          "name": "content",
+          "type": "string | readonly ContentPart[]",
+          "required": true,
+          "desc": "Message content.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "role",
+          "type": "\"user\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "name",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Optional user name."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "AssistantMessage",
+      "desc": "Assistant message.",
+      "methods": [],
+      "props": [
+        {
+          "name": "content",
+          "type": "string | readonly ContentPart[]",
+          "required": true,
+          "desc": "Message content.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "role",
+          "type": "\"assistant\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolCalls",
+          "type": "readonly ToolCallPart[] | undefined",
+          "required": false,
+          "desc": "Tool calls made by the assistant."
+        },
+        {
+          "name": "finishReason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Finish reason."
+        },
+        {
+          "name": "model",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Model used."
+        },
+        {
+          "name": "provider",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Provider used."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolMessage",
+      "desc": "Tool message (result of a tool call).",
+      "methods": [],
+      "props": [
+        {
+          "name": "content",
+          "type": "string | readonly ContentPart[]",
+          "required": true,
+          "desc": "Message content.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "role",
+          "type": "\"tool\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolCallId",
+          "type": "string",
+          "required": true,
+          "desc": "ID of the tool call this is responding to."
+        },
+        {
+          "name": "toolName",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Name of the tool."
+        },
+        {
+          "name": "status",
+          "type": "\"success\" | \"error\" | undefined",
+          "required": false,
+          "desc": "Whether the tool call succeeded."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "DeveloperMessage",
+      "desc": "Developer message (for multi-agent systems).",
+      "methods": [],
+      "props": [
+        {
+          "name": "content",
+          "type": "string | readonly ContentPart[]",
+          "required": true,
+          "desc": "Message content.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata.",
+          "inherited": "BaseMessage"
+        },
+        {
+          "name": "role",
+          "type": "\"developer\"",
+          "required": true,
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ContentPart",
+      "desc": "Content part (for multi-modal messages).",
+      "methods": [
+        {
+          "sig": "type ContentPart = ContentPart",
+          "desc": "Content part (for multi-modal messages).",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolCallPart",
+      "desc": "Tool call part within an assistant message.",
+      "methods": [],
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "desc": "Tool call ID."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": "Tool name."
+        },
+        {
+          "name": "input",
+          "type": "string | Record<string, unknown>",
+          "required": true,
+          "desc": "Tool input as JSON string or parsed object."
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isSystemMessage",
+      "desc": "Type guard for system messages.",
+      "methods": [
+        {
+          "sig": "isSystemMessage(message: ChatMessage): boolean",
+          "desc": "Type guard for system messages.",
+          "params": [
+            {
+              "n": "message",
+              "t": "ChatMessage",
+              "r": true,
+              "d": "ChatMessage"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isUserMessage",
+      "desc": "Type guard for user messages.",
+      "methods": [
+        {
+          "sig": "isUserMessage(message: ChatMessage): boolean",
+          "desc": "Type guard for user messages.",
+          "params": [
+            {
+              "n": "message",
+              "t": "ChatMessage",
+              "r": true,
+              "d": "ChatMessage"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isAssistantMessage",
+      "desc": "Type guard for assistant messages.",
+      "methods": [
+        {
+          "sig": "isAssistantMessage(message: ChatMessage): boolean",
+          "desc": "Type guard for assistant messages.",
+          "params": [
+            {
+              "n": "message",
+              "t": "ChatMessage",
+              "r": true,
+              "d": "ChatMessage"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isToolMessage",
+      "desc": "Type guard for tool messages.",
+      "methods": [
+        {
+          "sig": "isToolMessage(message: ChatMessage): boolean",
+          "desc": "Type guard for tool messages.",
+          "params": [
+            {
+              "n": "message",
+              "t": "ChatMessage",
+              "r": true,
+              "d": "ChatMessage"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isDeveloperMessage",
+      "desc": "Type guard for developer messages.",
+      "methods": [
+        {
+          "sig": "isDeveloperMessage(message: ChatMessage): boolean",
+          "desc": "Type guard for developer messages.",
+          "params": [
+            {
+              "n": "message",
+              "t": "ChatMessage",
+              "r": true,
+              "d": "ChatMessage"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ContentBlock",
+      "desc": "Union of all content block types.\n\nUses discriminated union pattern for exhaustive type narrowing.",
+      "methods": [
+        {
+          "sig": "type ContentBlock = ContentBlock",
+          "desc": "Union of all content block types.\n\nUses discriminated union pattern for exhaustive type narrowing.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "TextContentBlock",
+      "desc": "Content block types.\n\nUses discriminated union on `type` field (Anthropic pattern).\nEvery polymorphic content type has a `type` discriminator.\nText content block.",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"text\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "desc": "The text content."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolUseContentBlock",
+      "desc": "Tool use content block (assistant wants to call a tool).",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"tool_use\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "desc": "Tool call ID."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "desc": "Tool name."
+        },
+        {
+          "name": "input",
+          "type": "string | Record<string, unknown>",
+          "required": true,
+          "desc": "Tool input (parsed or raw JSON string)."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolResultContentBlock",
+      "desc": "Tool result content block (result of a tool call).",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"tool_result\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "toolUseId",
+          "type": "string",
+          "required": true,
+          "desc": "ID of the tool call this is responding to."
+        },
+        {
+          "name": "content",
+          "type": "string | ContentBlock[]",
+          "required": true,
+          "desc": "Tool result content."
+        },
+        {
+          "name": "isError",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "Whether the tool call had an error."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ThinkingContentBlock",
+      "desc": "Thinking/reasoning content block.",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"thinking\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "thinking",
+          "type": "string",
+          "required": true,
+          "desc": "The thinking content."
+        },
+        {
+          "name": "signature",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Signature for verification (Anthropic)."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ImageContentBlock",
+      "desc": "Image content block.",
+      "methods": [],
+      "props": [
+        {
+          "name": "type",
+          "type": "\"image\"",
+          "required": true,
+          "desc": ""
+        },
+        {
+          "name": "source",
+          "type": "{ readonly type: \"base64\"; readonly data: string; readonly mediaType: string; } | { readonly type: \"url\"; readonly ur...",
+          "required": true,
+          "desc": "Image source."
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Provider-specific metadata."
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isTextContentBlock",
+      "desc": "Type guard for text content blocks.",
+      "methods": [
+        {
+          "sig": "isTextContentBlock(block: ContentBlock): boolean",
+          "desc": "Type guard for text content blocks.",
+          "params": [
+            {
+              "n": "block",
+              "t": "ContentBlock",
+              "r": true,
+              "d": "ContentBlock"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isToolUseContentBlock",
+      "desc": "Type guard for tool use content blocks.",
+      "methods": [
+        {
+          "sig": "isToolUseContentBlock(block: ContentBlock): boolean",
+          "desc": "Type guard for tool use content blocks.",
+          "params": [
+            {
+              "n": "block",
+              "t": "ContentBlock",
+              "r": true,
+              "d": "ContentBlock"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isToolResultContentBlock",
+      "desc": "Type guard for tool result content blocks.",
+      "methods": [
+        {
+          "sig": "isToolResultContentBlock(block: ContentBlock): boolean",
+          "desc": "Type guard for tool result content blocks.",
+          "params": [
+            {
+              "n": "block",
+              "t": "ContentBlock",
+              "r": true,
+              "d": "ContentBlock"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isThinkingContentBlock",
+      "desc": "Type guard for thinking content blocks.",
+      "methods": [
+        {
+          "sig": "isThinkingContentBlock(block: ContentBlock): boolean",
+          "desc": "Type guard for thinking content blocks.",
+          "params": [
+            {
+              "n": "block",
+              "t": "ContentBlock",
+              "r": true,
+              "d": "ContentBlock"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isImageContentBlock",
+      "desc": "Type guard for image content blocks.",
+      "methods": [
+        {
+          "sig": "isImageContentBlock(block: ContentBlock): boolean",
+          "desc": "Type guard for image content blocks.",
+          "params": [
+            {
+              "n": "block",
+              "t": "ContentBlock",
+              "r": true,
+              "d": "ContentBlock"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "extractText",
+      "desc": "Extract text from content blocks.",
+      "methods": [
+        {
+          "sig": "extractText(blocks: readonly ContentBlock[]): string",
+          "desc": "Extract text from content blocks.",
+          "params": [
+            {
+              "n": "blocks",
+              "t": "readonly ContentBlock[]",
+              "r": true,
+              "d": "readonly ContentBlock[]"
+            }
+          ],
+          "ret": "string"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "extractToolCalls",
+      "desc": "Extract tool calls from content blocks.",
+      "methods": [
+        {
+          "sig": "extractToolCalls(blocks: readonly ContentBlock[]): ToolUseContentBlock[]",
+          "desc": "Extract tool calls from content blocks.",
+          "params": [
+            {
+              "n": "blocks",
+              "t": "readonly ContentBlock[]",
+              "r": true,
+              "d": "readonly ContentBlock[]"
+            }
+          ],
+          "ret": "ToolUseContentBlock[]"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "SdkError",
+      "desc": "Base error class for all vinhnt-sdk errors.",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { domain: ErrorDomain; category: ErrorCategory; isRetryable?: boolean; details?: Record<string, unknown>; cause?: Err...)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ domain: ErrorDomain; category: ErrorCategory; isRetryable?: boolean; details?: Record<string, unknown>; cause?: Err...",
+              "r": true,
+              "d": "{ domain: ErrorDomain; category: ErrorCategory; isRetryable?: boolean; details?: Record<string, unknown>; cause?: Err..."
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "Type-safe error checking (works across module boundaries).",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "code: string",
+          "desc": "Machine-readable error code.",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "Error domain.",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "Error category.",
+          "params": []
+        },
+        {
+          "sig": "isRetryable: boolean",
+          "desc": "Whether this error is retryable.",
+          "params": []
+        },
+        {
+          "sig": "details: Record<string, unknown> | undefined",
+          "desc": "Additional error details.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ErrorDomain",
+      "desc": "Error types for vinhnt-sdk.\n\nFollows Mastra's error taxonomy pattern: Domain + Category + machine-readable ID.\nAll errors have `isInstance()` static method for cross-module type checking.\nError domain — which subsystem caused the error.",
+      "methods": [
+        {
+          "sig": "type ErrorDomain = ErrorDomain",
+          "desc": "Error types for vinhnt-sdk.\n\nFollows Mastra's error taxonomy pattern: Domain + Category + machine-readable ID.\nAll errors have `isInstance()` static method for cross-module type checking.\nError domain — which subsystem caused the error.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ErrorCategory",
+      "desc": "Error category — who is responsible.",
+      "methods": [
+        {
+          "sig": "type ErrorCategory = ErrorCategory",
+          "desc": "Error category — who is responsible.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "LlmError",
+      "desc": "LLM-related errors (API failures, rate limits, timeouts).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "rateLimit(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create a rate limit error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "timeout(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create a timeout error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "network(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create a network error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "notFound(model: string): LlmError",
+          "desc": "Create a model not found error.",
+          "params": [
+            {
+              "n": "model",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "invalidResponse(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create an invalid response error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ToolError",
+      "desc": "Tool-related errors (execution failures, timeouts, not found).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "notFound(toolName: string): ToolError",
+          "desc": "Create a tool not found error.",
+          "params": [
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "ToolError"
+        },
+        {
+          "sig": "timeout(toolName: string, timeoutMs: number): ToolError",
+          "desc": "Create a tool timeout error.",
+          "params": [
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "timeoutMs",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            }
+          ],
+          "ret": "ToolError"
+        },
+        {
+          "sig": "execution(toolName: string, message: string, cause: Error | undefined): ToolError",
+          "desc": "Create a tool execution error.",
+          "params": [
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "cause",
+              "t": "Error | undefined",
+              "r": false,
+              "d": "Error | undefined"
+            }
+          ],
+          "ret": "ToolError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ValidationError",
+      "desc": "Validation errors (schema validation, input validation).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "schema(message: string, details: Record<string, unknown> | undefined): ValidationError",
+          "desc": "Create a schema validation error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "ValidationError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ConfigError",
+      "desc": "Configuration errors (missing config, invalid config).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "missing(key: string): ConfigError",
+          "desc": "Create a missing config error.",
+          "params": [
+            {
+              "n": "key",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "ConfigError"
+        },
+        {
+          "sig": "invalid(key: string, reason: string): ConfigError",
+          "desc": "Create an invalid config error.",
+          "params": [
+            {
+              "n": "key",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "reason",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "ConfigError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "SdkError",
+      "desc": "Base error class for all vinhnt-sdk errors.",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { domain: ErrorDomain; category: ErrorCategory; isRetryable?: boolean; details?: Record<string, unknown>; cause?: Err...)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ domain: ErrorDomain; category: ErrorCategory; isRetryable?: boolean; details?: Record<string, unknown>; cause?: Err...",
+              "r": true,
+              "d": "{ domain: ErrorDomain; category: ErrorCategory; isRetryable?: boolean; details?: Record<string, unknown>; cause?: Err..."
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "Type-safe error checking (works across module boundaries).",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "code: string",
+          "desc": "Machine-readable error code.",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "Error domain.",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "Error category.",
+          "params": []
+        },
+        {
+          "sig": "isRetryable: boolean",
+          "desc": "Whether this error is retryable.",
+          "params": []
+        },
+        {
+          "sig": "details: Record<string, unknown> | undefined",
+          "desc": "Additional error details.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "LlmError",
+      "desc": "LLM-related errors (API failures, rate limits, timeouts).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "rateLimit(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create a rate limit error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "timeout(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create a timeout error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "network(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create a network error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "notFound(model: string): LlmError",
+          "desc": "Create a model not found error.",
+          "params": [
+            {
+              "n": "model",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "LlmError"
+        },
+        {
+          "sig": "invalidResponse(message: string, details: Record<string, unknown> | undefined): LlmError",
+          "desc": "Create an invalid response error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "LlmError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ToolError",
+      "desc": "Tool-related errors (execution failures, timeouts, not found).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ isRetryable?: boolean; details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "notFound(toolName: string): ToolError",
+          "desc": "Create a tool not found error.",
+          "params": [
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "ToolError"
+        },
+        {
+          "sig": "timeout(toolName: string, timeoutMs: number): ToolError",
+          "desc": "Create a tool timeout error.",
+          "params": [
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "timeoutMs",
+              "t": "number",
+              "r": true,
+              "d": "number"
+            }
+          ],
+          "ret": "ToolError"
+        },
+        {
+          "sig": "execution(toolName: string, message: string, cause: Error | undefined): ToolError",
+          "desc": "Create a tool execution error.",
+          "params": [
+            {
+              "n": "toolName",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "cause",
+              "t": "Error | undefined",
+              "r": false,
+              "d": "Error | undefined"
+            }
+          ],
+          "ret": "ToolError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ValidationError",
+      "desc": "Validation errors (schema validation, input validation).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "schema(message: string, details: Record<string, unknown> | undefined): ValidationError",
+          "desc": "Create a schema validation error.",
+          "params": [
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "details",
+              "t": "Record<string, unknown> | undefined",
+              "r": false,
+              "d": "Record<string, unknown> | undefined"
+            }
+          ],
+          "ret": "ValidationError"
+        }
+      ]
+    },
+    {
+      "type": "class",
+      "name": "ConfigError",
+      "desc": "Configuration errors (missing config, invalid config).",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { details?: Record<string, unknown>; cause?: Error; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ details?: Record<string, unknown>; cause?: Error; } | undefined",
+              "r": false,
+              "d": "{ details?: Record<string, unknown>; cause?: Error; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
+          "sig": "missing(key: string): ConfigError",
+          "desc": "Create a missing config error.",
+          "params": [
+            {
+              "n": "key",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "ConfigError"
+        },
+        {
+          "sig": "invalid(key: string, reason: string): ConfigError",
+          "desc": "Create an invalid config error.",
+          "params": [
+            {
+              "n": "key",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "reason",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            }
+          ],
+          "ret": "ConfigError"
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "DynamicArgument",
+      "desc": "Allow static OR per-request dynamic values.\n\nInspired by Mastra's `DynamicArgument` pattern.",
+      "methods": [
+        {
+          "sig": "type DynamicArgument = DynamicArgument<T, TContext>",
+          "desc": "Allow static OR per-request dynamic values.\n\nInspired by Mastra's `DynamicArgument` pattern.",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "RunConfig",
+      "desc": "Global run configuration.\n\nApplied to all agents unless overridden by AgentConfig.",
+      "methods": [],
+      "props": [
+        {
+          "name": "model",
+          "type": "string | LanguageModelV1 | undefined",
+          "required": false,
+          "desc": "Model to use for all agents."
+        },
+        {
+          "name": "maxSteps",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Maximum steps per run."
+        },
+        {
+          "name": "temperature",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Temperature (0-2)."
+        },
+        {
+          "name": "maxOutputTokens",
+          "type": "number | undefined",
+          "required": false,
+          "desc": "Maximum output tokens."
+        },
+        {
+          "name": "abortSignal",
+          "type": "AbortSignal | undefined",
+          "required": false,
+          "desc": "Abort signal for cancellation."
+        },
+        {
+          "name": "telemetry",
+          "type": "{ readonly isEnabled?: boolean; readonly functionId?: string; } | undefined",
+          "required": false,
+          "desc": "Telemetry configuration."
+        }
+      ]
+    }
+  ]
+},
+{
   "id": "sandbox",
   "name": "@vinhnt-sdk/sandbox",
   "icon": "Sa",
@@ -21005,7 +23565,7 @@ window.PKG = [
   "desc": "Sandbox execution - process isolation, command parsing, timeout.",
   "deps": [
     "schema",
-    "security"
+    "guard"
   ],
   "exports": [
     {
@@ -21662,6 +24222,18 @@ window.PKG = [
       ]
     },
     {
+      "type": "type",
+      "name": "ModelId",
+      "desc": "A branded string identifying a model (non-empty).",
+      "methods": [
+        {
+          "sig": "type ModelId = ModelId",
+          "desc": "A branded string identifying a model (non-empty).",
+          "params": []
+        }
+      ]
+    },
+    {
       "type": "function",
       "name": "isAgentId",
       "desc": "Type guard: is `v` a valid AgentId?",
@@ -21823,6 +24395,46 @@ window.PKG = [
     },
     {
       "type": "function",
+      "name": "isWorkspaceId",
+      "desc": "Type guard: is `v` a valid WorkspaceId?",
+      "methods": [
+        {
+          "sig": "isWorkspaceId(v: unknown): boolean",
+          "desc": "Type guard: is `v` a valid WorkspaceId?",
+          "params": [
+            {
+              "n": "v",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isModelId",
+      "desc": "Type guard: is `v` a valid ModelId (non-empty string)?",
+      "methods": [
+        {
+          "sig": "isModelId(v: unknown): boolean",
+          "desc": "Type guard: is `v` a valid ModelId (non-empty string)?",
+          "params": [
+            {
+              "n": "v",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
       "name": "assertAgentId",
       "desc": "Assert `v` is a valid AgentId, throwing a TypeError otherwise.",
       "methods": [
@@ -21902,6 +24514,46 @@ window.PKG = [
       ]
     },
     {
+      "type": "function",
+      "name": "assertWorkspaceId",
+      "desc": "Assert `v` is a valid WorkspaceId, throwing a TypeError otherwise.",
+      "methods": [
+        {
+          "sig": "assertWorkspaceId(v: unknown): void",
+          "desc": "Assert `v` is a valid WorkspaceId, throwing a TypeError otherwise.",
+          "params": [
+            {
+              "n": "v",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "void"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "assertModelId",
+      "desc": "Assert `v` is a valid ModelId, throwing a TypeError otherwise.",
+      "methods": [
+        {
+          "sig": "assertModelId(v: unknown): void",
+          "desc": "Assert `v` is a valid ModelId, throwing a TypeError otherwise.",
+          "params": [
+            {
+              "n": "v",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "void"
+        }
+      ]
+    },
+    {
       "type": "type",
       "name": "RunEvent",
       "desc": "RunEvent",
@@ -21941,6 +24593,12 @@ window.PKG = [
           "name": "traceId",
           "type": "TraceId",
           "required": true,
+          "desc": ""
+        },
+        {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
           "desc": ""
         },
         {
@@ -22008,6 +24666,12 @@ window.PKG = [
         {
           "name": "agentId",
           "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
           "required": false,
           "desc": ""
         }
@@ -22123,6 +24787,18 @@ window.PKG = [
           "name": "compressedCount",
           "type": "number",
           "required": true,
+          "desc": ""
+        },
+        {
+          "name": "summary",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
+          "name": "removedMessageIds",
+          "type": "string[] | undefined",
+          "required": false,
           "desc": ""
         }
       ]
@@ -22480,6 +25156,12 @@ window.PKG = [
           "desc": ""
         },
         {
+          "name": "stopReason",
+          "type": "string | undefined",
+          "required": false,
+          "desc": ""
+        },
+        {
           "name": "provider",
           "type": "string | undefined",
           "required": false,
@@ -22750,6 +25432,12 @@ window.PKG = [
           "type": "RunId | undefined",
           "required": false,
           "desc": ""
+        },
+        {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": ""
         }
       ]
     },
@@ -22782,6 +25470,13 @@ window.PKG = [
         },
         {
           "name": "runId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
+          "name": "parentRunId",
           "type": "RunId | undefined",
           "required": false,
           "desc": "",
@@ -22842,6 +25537,13 @@ window.PKG = [
           "inherited": "AgentEventBase"
         },
         {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
           "name": "model",
           "type": "string",
           "required": true,
@@ -22890,6 +25592,13 @@ window.PKG = [
         },
         {
           "name": "runId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
+          "name": "parentRunId",
           "type": "RunId | undefined",
           "required": false,
           "desc": "",
@@ -22956,6 +25665,13 @@ window.PKG = [
           "inherited": "AgentEventBase"
         },
         {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
           "name": "tool",
           "type": "string",
           "required": true,
@@ -22998,6 +25714,13 @@ window.PKG = [
         },
         {
           "name": "runId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
+          "name": "parentRunId",
           "type": "RunId | undefined",
           "required": false,
           "desc": "",
@@ -23058,6 +25781,13 @@ window.PKG = [
           "inherited": "AgentEventBase"
         },
         {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
           "name": "content",
           "type": "string",
           "required": true,
@@ -23094,6 +25824,13 @@ window.PKG = [
         },
         {
           "name": "runId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
+          "name": "parentRunId",
           "type": "RunId | undefined",
           "required": false,
           "desc": "",
@@ -23160,6 +25897,13 @@ window.PKG = [
           "inherited": "AgentEventBase"
         },
         {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
           "name": "error",
           "type": "string",
           "required": true,
@@ -23208,6 +25952,13 @@ window.PKG = [
           "inherited": "AgentEventBase"
         },
         {
+          "name": "parentRunId",
+          "type": "RunId | undefined",
+          "required": false,
+          "desc": "",
+          "inherited": "AgentEventBase"
+        },
+        {
           "name": "tool",
           "type": "string",
           "required": true,
@@ -23230,10 +25981,10 @@ window.PKG = [
     {
       "type": "class",
       "name": "VntError",
-      "desc": "Base error for all VNT Agent errors.\nCarries correlation IDs so every throw is traceable.",
+      "desc": "Base error for all VNT Agent errors.\nCarries correlation IDs so every throw is traceable.\n\nFollows Mastra's error taxonomy pattern: Domain + Category + machine-readable ID.",
       "methods": [
         {
-          "sig": "constructor(message: string, ctx: VntErrorCtx | undefined)",
+          "sig": "constructor(message: string, ctx: (VntErrorCtx & { domain?: ErrorDomain; category?: ErrorCategory; }) | undefined)",
           "desc": "Create instance.",
           "params": [
             {
@@ -23244,11 +25995,24 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "VntErrorCtx | undefined",
+              "t": "(VntErrorCtx & { domain?: ErrorDomain; category?: ErrorCategory; }) | undefined",
               "r": false,
-              "d": "VntErrorCtx | undefined"
+              "d": "(VntErrorCtx & { domain?: ErrorDomain; category?: ErrorCategory; }) | undefined"
             }
           ]
+        },
+        {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "Type-safe error checking (works across module boundaries).",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
         },
         {
           "sig": "requestId: RequestId | undefined",
@@ -23268,6 +26032,16 @@ window.PKG = [
         {
           "sig": "retryable: boolean",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain | undefined",
+          "desc": "Error domain — which subsystem caused the error.",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory | undefined",
+          "desc": "Error category — who is responsible.",
           "params": []
         }
       ]
@@ -23598,6 +26372,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"KERNEL_ERROR\"",
           "desc": "code",
           "params": []
@@ -23605,6 +26392,16 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23627,6 +26424,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"KERNEL_CIRCUIT_OPEN\"",
           "desc": "code",
           "params": []
@@ -23634,6 +26444,16 @@ window.PKG = [
         {
           "sig": "retryable: true",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23662,6 +26482,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"TOOL_INPUT_ERROR\"",
           "desc": "code",
           "params": []
@@ -23669,6 +26502,16 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23697,6 +26540,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"PERMISSION_DENIED\"",
           "desc": "code",
           "params": []
@@ -23704,6 +26560,16 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23732,6 +26598,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"VALIDATION_ERROR\"",
           "desc": "code",
           "params": []
@@ -23739,6 +26618,21 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
+          "params": []
+        },
+        {
+          "sig": "details: readonly string[] | undefined",
+          "desc": "details",
           "params": []
         }
       ]
@@ -23767,6 +26661,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"TIMEOUT\"",
           "desc": "code",
           "params": []
@@ -23774,6 +26681,16 @@ window.PKG = [
         {
           "sig": "retryable: true",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23802,6 +26719,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"NETWORK_ERROR\"",
           "desc": "code",
           "params": []
@@ -23809,6 +26739,16 @@ window.PKG = [
         {
           "sig": "retryable: true",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23837,6 +26777,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"RATE_LIMIT\"",
           "desc": "code",
           "params": []
@@ -23844,6 +26797,16 @@ window.PKG = [
         {
           "sig": "retryable: true",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         },
         {
@@ -23871,6 +26834,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"AUTHENTICATION_ERROR\"",
           "desc": "code",
           "params": []
@@ -23878,6 +26854,16 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23900,6 +26886,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"CONFIGURATION_ERROR\"",
           "desc": "code",
           "params": []
@@ -23907,6 +26906,16 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23941,6 +26950,19 @@ window.PKG = [
           ]
         },
         {
+          "sig": "isInstance(error: unknown): boolean",
+          "desc": "",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        },
+        {
           "sig": "code: \"PLUGIN_ERROR\"",
           "desc": "code",
           "params": []
@@ -23948,6 +26970,16 @@ window.PKG = [
         {
           "sig": "retryable: false",
           "desc": "retryable",
+          "params": []
+        },
+        {
+          "sig": "domain: ErrorDomain",
+          "desc": "domain",
+          "params": []
+        },
+        {
+          "sig": "category: ErrorCategory",
+          "desc": "category",
           "params": []
         }
       ]
@@ -23967,11 +26999,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "RunStatus",
-      "desc": "RunStatus",
+      "desc": "Inferred type of {@link RunStatusSchema}.",
       "methods": [
         {
-          "sig": "type RunStatus = RunStatus",
-          "desc": "RunStatus",
+          "sig": "type RunStatus = \"succeeded\" | \"failed\" | \"cancelled\" | \"queued\" | \"running\" | \"awaiting_approval\" | \"paused\"",
+          "desc": "Inferred type of {@link RunStatusSchema}.",
           "params": []
         }
       ]
@@ -23979,44 +27011,12 @@ window.PKG = [
     {
       "type": "type",
       "name": "RequestContext",
-      "desc": "RequestContext",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link RequestContextSchema}.",
+      "methods": [
         {
-          "name": "requestId",
-          "type": "RequestId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "traceId",
-          "type": "TraceId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "actorId",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "tenantId",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "parentRunId",
-          "type": "RunId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "overrides",
-          "type": "{ readonly provider?: string; readonly model?: string; } | undefined",
-          "required": false,
-          "desc": "Per-request overrides for provider/model selection."
+          "sig": "type RequestContext = { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"...",
+          "desc": "Inferred type of {@link RequestContextSchema}.",
+          "params": []
         }
       ]
     },
@@ -24035,204 +27035,36 @@ window.PKG = [
     {
       "type": "type",
       "name": "Session",
-      "desc": "Session",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link SessionSchema}.",
+      "methods": [
         {
-          "name": "id",
-          "type": "SessionId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "title",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "createdAt",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "updatedAt",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "parentSessionId",
-          "type": "SessionId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "agentId",
-          "type": "AgentId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "model",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "provider",
-          "type": "string | undefined",
-          "required": false,
-          "desc": "Provider that served this session's model calls."
-        },
-        {
-          "name": "cost",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "inputTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "outputTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "location",
-          "type": "{ directory: string; workspaceId?: WorkspaceId; } | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "isActive",
-          "type": "boolean",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type Session = { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: s...",
+          "desc": "Inferred type of {@link SessionSchema}.",
+          "params": []
         }
       ]
     },
     {
       "type": "type",
       "name": "Message",
-      "desc": "Message",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link MessageSchema}.",
+      "methods": [
         {
-          "name": "id",
-          "type": "MessageId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "sessionId",
-          "type": "SessionId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "role",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "content",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "toolCallId",
-          "type": "ToolCallId | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "tokens",
-          "type": "MessageTokens | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "model",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "provider",
-          "type": "string | undefined",
-          "required": false,
-          "desc": "Provider that generated this message (attribution)."
-        },
-        {
-          "name": "cost",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "createdAt",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "admittedSeq",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Admission order for pending user inputs (RV-21). Persisted once and never changed."
-        },
-        {
-          "name": "promotedSeq",
-          "type": "number | undefined",
-          "required": false,
-          "desc": "Set to the admitted seq once the input has been drained into a run (RV-21)."
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type Message = { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: stri...",
+          "desc": "Inferred type of {@link MessageSchema}.",
+          "params": []
         }
       ]
     },
     {
       "type": "type",
       "name": "MessageTokens",
-      "desc": "MessageTokens",
-      "methods": [],
-      "props": [
+      "desc": "Inferred type of {@link MessageTokensSchema}.",
+      "methods": [
         {
-          "name": "input",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "output",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "reasoning",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type MessageTokens = { input: number; output: number; reasoning?: number | undefined; }",
+          "desc": "Inferred type of {@link MessageTokensSchema}.",
+          "params": []
         }
       ]
     },
@@ -24290,49 +27122,11 @@ window.PKG = [
       "type": "type",
       "name": "AgentProfile",
       "desc": "Inferred type of {@link AgentProfileSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "name",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "version",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "author",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "model",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "hidden",
-          "type": "boolean | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentProfile = { name: string; description: string; version?: string | undefined; author?: string | undefined; m...",
+          "desc": "Inferred type of {@link AgentProfileSchema}.",
+          "params": []
         }
       ]
     },
@@ -24340,67 +27134,11 @@ window.PKG = [
       "type": "type",
       "name": "AgentConfig",
       "desc": "Inferred type of {@link AgentConfigSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "id",
-          "type": "AgentId",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "profile",
-          "type": "AgentProfile",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "capabilities",
-          "type": "AgentCapabilities",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "permissions",
-          "type": "AgentPermissions | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "behaviourMode",
-          "type": "AgentBehaviourMode | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "domains",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": "Domain ids this agent may use (e.g. \"coding\"). Undefined = no domain filtering (all tools)."
-        },
-        {
-          "name": "systemPrompt",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "temperature",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "providerPreferences",
-          "type": "{ readonly preferred?: string; readonly fallbacks?: readonly string[]; } | undefined",
-          "required": false,
-          "desc": "Provider preferences for this agent — used by ModelCaller to resolve provider."
-        },
-        {
-          "name": "metadata",
-          "type": "Record<string, unknown> | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentConfig = { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; ve...",
+          "desc": "Inferred type of {@link AgentConfigSchema}.",
+          "params": []
         }
       ]
     },
@@ -24408,60 +27146,22 @@ window.PKG = [
       "type": "type",
       "name": "AgentPermissions",
       "desc": "Inferred type of {@link AgentPermissionsSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "mode",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "ruleset",
-          "type": "AgentRuleset | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "allowedTools",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "deniedTools",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "allowedRisks",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "maxSteps",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "maxTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentPermissions = { mode?: string | undefined; ruleset?: { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: stri...",
+          "desc": "Inferred type of {@link AgentPermissionsSchema}.",
+          "params": []
         }
       ]
     },
     {
       "type": "type",
       "name": "AgentMode",
-      "desc": "Agent mode — open string for extensibility.",
+      "desc": "Inferred type of {@link AgentModeSchema}.",
       "methods": [
         {
           "sig": "type AgentMode = string",
-          "desc": "Agent mode — open string for extensibility.",
+          "desc": "Inferred type of {@link AgentModeSchema}.",
           "params": []
         }
       ]
@@ -24469,11 +27169,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "AgentBehaviourMode",
-      "desc": "Behaviour mode: determines which tools the agent can use. Build = full access, Plan = read-only.",
+      "desc": "Inferred type of {@link AgentBehaviourModeSchema}.",
       "methods": [
         {
-          "sig": "type AgentBehaviourMode = AgentBehaviourMode",
-          "desc": "Behaviour mode: determines which tools the agent can use. Build = full access, Plan = read-only.",
+          "sig": "type AgentBehaviourMode = string",
+          "desc": "Inferred type of {@link AgentBehaviourModeSchema}.",
           "params": []
         }
       ]
@@ -24482,37 +27182,11 @@ window.PKG = [
       "type": "type",
       "name": "AgentCapabilities",
       "desc": "Inferred type of {@link AgentCapabilitiesSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "tools",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "models",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "maxTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "streaming",
-          "type": "boolean | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "thinking",
-          "type": "boolean | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentCapabilities = { tools?: string[] | undefined; models?: string[] | undefined; maxTokens?: number | undefined; st...",
+          "desc": "Inferred type of {@link AgentCapabilitiesSchema}.",
+          "params": []
         }
       ]
     },
@@ -24520,31 +27194,11 @@ window.PKG = [
       "type": "type",
       "name": "AgentRule",
       "desc": "Inferred type of {@link AgentRuleSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "effect",
-          "type": "\"allow\" | \"deny\" | \"ask\"",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "target",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "paramPattern",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "reason",
-          "type": "string | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentRule = { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: s...",
+          "desc": "Inferred type of {@link AgentRuleSchema}.",
+          "params": []
         }
       ]
     },
@@ -24552,37 +27206,11 @@ window.PKG = [
       "type": "type",
       "name": "AgentRuleset",
       "desc": "Inferred type of {@link AgentRulesetSchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "rules",
-          "type": "readonly AgentRule[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "allowedRisks",
-          "type": "readonly string[] | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "maxSteps",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "maxTokens",
-          "type": "number | undefined",
-          "required": false,
-          "desc": ""
-        },
-        {
-          "name": "inheritFromParent",
-          "type": "boolean | undefined",
-          "required": false,
-          "desc": ""
+          "sig": "type AgentRuleset = { rules?: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; ...",
+          "desc": "Inferred type of {@link AgentRulesetSchema}.",
+          "params": []
         }
       ]
     },
@@ -24858,25 +27486,11 @@ window.PKG = [
       "type": "type",
       "name": "CompressionSummary",
       "desc": "Inferred type of {@link CompressionSummarySchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "originalMessageCount",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "compressedMessageCount",
-          "type": "number",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "summary",
-          "type": "string | undefined",
-          "required": true,
-          "desc": ""
+          "sig": "type CompressionSummary = { originalMessageCount: number; compressedMessageCount: number; summary?: string | undefined; }",
+          "desc": "Inferred type of {@link CompressionSummarySchema}.",
+          "params": []
         }
       ]
     },
@@ -24960,7 +27574,7 @@ window.PKG = [
       "desc": "Abstract conversation compactor: compresses a transcript and reports the result.",
       "methods": [
         {
-          "sig": "compact(messages: readonly ChatMessage[], signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>",
+          "sig": "compact(messages: readonly ChatMessage[], signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ...",
           "desc": "",
           "params": [
             {
@@ -24976,7 +27590,7 @@ window.PKG = [
               "d": "AbortSignal | undefined"
             }
           ],
-          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>"
+          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ..."
         }
       ],
       "props": []
@@ -25047,7 +27661,7 @@ window.PKG = [
         },
         {
           "name": "model",
-          "type": "string",
+          "type": "ModelId",
           "required": true,
           "desc": ""
         },
@@ -25075,43 +27689,11 @@ window.PKG = [
       "type": "type",
       "name": "PromptAssembly",
       "desc": "Inferred type of {@link PromptAssemblySchema}.",
-      "methods": [],
-      "props": [
+      "methods": [
         {
-          "name": "stable",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "context",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "volatile",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "assembled",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "version",
-          "type": "string",
-          "required": true,
-          "desc": ""
-        },
-        {
-          "name": "metadata",
-          "type": "Readonly<Record<string, unknown>>",
-          "required": true,
-          "desc": ""
+          "sig": "type PromptAssembly = { stable: string; context: string; volatile: string; assembled: string; version?: string | undefi...",
+          "desc": "Inferred type of {@link PromptAssemblySchema}.",
+          "params": []
         }
       ]
     },
@@ -25121,7 +27703,7 @@ window.PKG = [
       "desc": "SessionStore",
       "methods": [
         {
-          "sig": "createSession(title: string | undefined, parentSessionId: string | undefined): Promise<Session>",
+          "sig": "createSession(title: string | undefined, parentSessionId: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -25137,10 +27719,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "forkSession(sourceSessionId: string, title: string | undefined): Promise<Session>",
+          "sig": "forkSession(sourceSessionId: string, title: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -25156,10 +27738,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "getSession(id: string): Promise<Session | null>",
+          "sig": "getSession(id: string): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -25169,10 +27751,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "listSessions(limit: number | undefined, offset: number | undefined): Promise<readonly Session[]>",
+          "sig": "listSessions(limit: number | undefined, offset: number | undefined): Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri...",
           "desc": "",
           "params": [
             {
@@ -25188,10 +27770,10 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<readonly Session[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri..."
         },
         {
-          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
+          "sig": "updateSession(id: string, updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -25202,9 +27784,9 @@ window.PKG = [
             },
             {
               "n": "updates",
-              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
+              "t": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...",
               "r": true,
-              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
+              "d": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ..."
             }
           ],
           "ret": "Promise<void>"
@@ -25223,7 +27805,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>",
+          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "Add a message to a session.",
           "params": [
             {
@@ -25239,10 +27821,10 @@ window.PKG = [
               "d": "AddMessageOptions"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
-          "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<Message>",
+          "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "",
           "params": [
             {
@@ -25294,7 +27876,7 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
           "sig": "updateMessage(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>",
@@ -25322,7 +27904,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
+          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -25338,10 +27920,10 @@ window.PKG = [
               "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
-          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -25357,7 +27939,7 @@ window.PKG = [
               "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
           "sig": "getSessionStats(): Promise<SessionStats>",
@@ -26129,7 +28711,7 @@ window.PKG = [
       "desc": "SessionUpdates",
       "methods": [
         {
-          "sig": "type SessionUpdates = Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"out...",
+          "sig": "type SessionUpdates = Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string;...",
           "desc": "SessionUpdates",
           "params": []
         }
@@ -26154,7 +28736,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...): Promise<void>",
+          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -26165,9 +28747,9 @@ window.PKG = [
             },
             {
               "n": "sessionUpdate",
-              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...",
+              "t": "{ sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA...",
               "r": false,
-              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke..."
+              "d": "{ sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA..."
             }
           ],
           "ret": "Promise<void>"
@@ -26905,7 +29487,7 @@ window.PKG = [
         },
         {
           "name": "scope",
-          "type": "\"global\" | \"session\" | \"agent\" | undefined",
+          "type": "\"session\" | \"global\" | \"agent\" | undefined",
           "required": false,
           "desc": ""
         },
@@ -27456,7 +30038,7 @@ window.PKG = [
       "props": [
         {
           "name": "role",
-          "type": "\"system\" | \"user\" | \"assistant\" | \"tool\" | \"developer\"",
+          "type": "\"tool\" | \"user\" | \"system\" | \"assistant\" | \"developer\"",
           "required": true,
           "desc": ""
         },
@@ -27871,6 +30453,168 @@ window.PKG = [
       ]
     },
     {
+      "type": "class",
+      "name": "SdkError",
+      "desc": "Base error class for all vinhnt-sdk errors.\nProvides a stable machine-routable `code` field for programmatic error handling.",
+      "methods": [
+        {
+          "sig": "constructor(code: string, message: string, options: { retryable?: boolean; cause?: unknown; } | undefined)",
+          "desc": "Create instance.",
+          "params": [
+            {
+              "n": "code",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "message",
+              "t": "string",
+              "r": true,
+              "d": "string"
+            },
+            {
+              "n": "options",
+              "t": "{ retryable?: boolean; cause?: unknown; } | undefined",
+              "r": false,
+              "d": "{ retryable?: boolean; cause?: unknown; } | undefined"
+            }
+          ]
+        },
+        {
+          "sig": "code: string",
+          "desc": "code",
+          "params": []
+        },
+        {
+          "sig": "retryable: boolean",
+          "desc": "retryable",
+          "params": []
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isSdkError",
+      "desc": "Type guard for SdkError.",
+      "methods": [
+        {
+          "sig": "isSdkError(value: unknown): boolean",
+          "desc": "Type guard for SdkError.",
+          "params": [
+            {
+              "n": "value",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "errorChain",
+      "desc": "Render the full error cause chain, including AggregateError members.\nHandles circular references and hostile values safely.",
+      "methods": [
+        {
+          "sig": "errorChain(value: unknown): string",
+          "desc": "Render the full error cause chain, including AggregateError members.\nHandles circular references and hostile values safely.",
+          "params": [
+            {
+              "n": "value",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "string"
+        }
+      ],
+      "example": "```typescript\ntry { ... } catch (err) {\n  console.error(errorChain(err));\n}\n```"
+    },
+    {
+      "type": "function",
+      "name": "isContextWindowExceededError",
+      "desc": "Check if an error indicates context window exceeded.\nWorks across OpenAI, Anthropic, DeepSeek, and other providers.",
+      "methods": [
+        {
+          "sig": "isContextWindowExceededError(detail: { message?: string; code?: string; }): boolean",
+          "desc": "Check if an error indicates context window exceeded.\nWorks across OpenAI, Anthropic, DeepSeek, and other providers.",
+          "params": [
+            {
+              "n": "detail",
+              "t": "{ message?: string; code?: string; }",
+              "r": true,
+              "d": "{ message?: string; code?: string; }"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isQuotaExceededError",
+      "desc": "Check if an error indicates quota/rate limit exceeded.",
+      "methods": [
+        {
+          "sig": "isQuotaExceededError(detail: { message?: string; code?: string; status?: number; }): boolean",
+          "desc": "Check if an error indicates quota/rate limit exceeded.",
+          "params": [
+            {
+              "n": "detail",
+              "t": "{ message?: string; code?: string; status?: number; }",
+              "r": true,
+              "d": "{ message?: string; code?: string; status?: number; }"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "isAuthError",
+      "desc": "Check if an error indicates authentication failure.",
+      "methods": [
+        {
+          "sig": "isAuthError(detail: { message?: string; code?: string; status?: number; }): boolean",
+          "desc": "Check if an error indicates authentication failure.",
+          "params": [
+            {
+              "n": "detail",
+              "t": "{ message?: string; code?: string; status?: number; }",
+              "r": true,
+              "d": "{ message?: string; code?: string; status?: number; }"
+            }
+          ],
+          "ret": "boolean"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "classifyError",
+      "desc": "Classify an error into a canonical category.",
+      "methods": [
+        {
+          "sig": "classifyError(error: unknown): { category: \"unknown\" | \"auth\" | \"network\" | \"context_window\" | \"quota\"; retryable: boolean; }",
+          "desc": "Classify an error into a canonical category.",
+          "params": [
+            {
+              "n": "error",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            }
+          ],
+          "ret": "{ category: \"unknown\" | \"auth\" | \"network\" | \"context_window\" | \"quota\"; retryable: boolean; }"
+        }
+      ]
+    },
+    {
       "type": "function",
       "name": "versionedSchema",
       "desc": "Build a {@link VersionedSchema} from options.",
@@ -27983,46 +30727,6 @@ window.PKG = [
             }
           ],
           "ret": "boolean"
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "parseRunEvent",
-      "desc": "Parse unknown data as a KnownRunEvent. Throws ZodError on mismatch.\nInferred type of {@link parseRunEventSchema}.",
-      "methods": [
-        {
-          "sig": "parseRunEvent(data: unknown): { id: string; runId: string & { readonly __brand: \"RunId\"; }; sequence: number; occurredAt: string; traceId: string &...",
-          "desc": "Parse unknown data as a KnownRunEvent. Throws ZodError on mismatch.\nInferred type of {@link parseRunEventSchema}.",
-          "params": [
-            {
-              "n": "data",
-              "t": "unknown",
-              "r": true,
-              "d": "unknown"
-            }
-          ],
-          "ret": "{ id: string; runId: string & { readonly __brand: \"RunId\"; }; sequence: number; occurredAt: string; traceId: string &..."
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "safeParseRunEvent",
-      "desc": "Safe parse — returns { success, data } or { success, error }\nInferred type of {@link safeParseRunEventSchema}.",
-      "methods": [
-        {
-          "sig": "safeParseRunEvent(data: unknown): ZodSafeParseResult<{ id: string; runId: string & { readonly __brand: \"RunId\"; }; sequence: number; occurredAt: string...",
-          "desc": "Safe parse — returns { success, data } or { success, error }\nInferred type of {@link safeParseRunEventSchema}.",
-          "params": [
-            {
-              "n": "data",
-              "t": "unknown",
-              "r": true,
-              "d": "unknown"
-            }
-          ],
-          "ret": "ZodSafeParseResult<{ id: string; runId: string & { readonly __brand: \"RunId\"; }; sequence: number; occurredAt: string..."
         }
       ]
     },
@@ -28221,7 +30925,7 @@ window.PKG = [
       "desc": "SessionUpdates",
       "methods": [
         {
-          "sig": "type SessionUpdates = Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"out...",
+          "sig": "type SessionUpdates = Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string;...",
           "desc": "SessionUpdates",
           "params": []
         }
@@ -28246,7 +30950,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...): Promise<void>",
+          "sig": "appendTransactional(event: RunEvent<unknown>, sessionUpdate: { sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -28257,9 +30961,9 @@ window.PKG = [
             },
             {
               "n": "sessionUpdate",
-              "t": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke...",
+              "t": "{ sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA...",
               "r": false,
-              "d": "{ sessionId: string; updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputToke..."
+              "d": "{ sessionId: string; updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdA..."
             }
           ],
           "ret": "Promise<void>"
@@ -28401,7 +31105,7 @@ window.PKG = [
       "desc": "SessionStore",
       "methods": [
         {
-          "sig": "createSession(title: string | undefined, parentSessionId: string | undefined): Promise<Session>",
+          "sig": "createSession(title: string | undefined, parentSessionId: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -28417,10 +31121,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "forkSession(sourceSessionId: string, title: string | undefined): Promise<Session>",
+          "sig": "forkSession(sourceSessionId: string, title: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -28436,10 +31140,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "getSession(id: string): Promise<Session | null>",
+          "sig": "getSession(id: string): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -28449,10 +31153,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "listSessions(limit: number | undefined, offset: number | undefined): Promise<readonly Session[]>",
+          "sig": "listSessions(limit: number | undefined, offset: number | undefined): Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri...",
           "desc": "",
           "params": [
             {
@@ -28468,10 +31172,10 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<readonly Session[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri..."
         },
         {
-          "sig": "updateSession(id: string, updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
+          "sig": "updateSession(id: string, updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -28482,9 +31186,9 @@ window.PKG = [
             },
             {
               "n": "updates",
-              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
+              "t": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...",
               "r": true,
-              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
+              "d": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ..."
             }
           ],
           "ret": "Promise<void>"
@@ -28503,7 +31207,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<Message>",
+          "sig": "addMessage(sessionId: string, message: AddMessageOptions): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "Add a message to a session.",
           "params": [
             {
@@ -28519,10 +31223,10 @@ window.PKG = [
               "d": "AddMessageOptions"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
-          "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<Message>",
+          "sig": "addMessage(sessionId: string, role: string, content: string, toolCallId: string | undefined, tokens: { input: number; output: number; reasoning?: number; } | undefined, model: string | undefined, cost: number | undefined, admittedSeq: number | undefined): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "",
           "params": [
             {
@@ -28574,7 +31278,7 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
           "sig": "updateMessage(sessionId: string, messageId: string, updates: MessageSeqUpdates): Promise<void>",
@@ -28602,7 +31306,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
+          "sig": "listMessages(sessionId: string, options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -28618,10 +31322,10 @@ window.PKG = [
               "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
-          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(query: string, options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -28637,7 +31341,7 @@ window.PKG = [
               "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
           "sig": "getSessionStats(): Promise<SessionStats>",
@@ -28889,7 +31593,7 @@ window.PKG = [
       "desc": "No-op {@link SessionStore} used for testing.",
       "methods": [
         {
-          "sig": "createSession(_title: string | undefined, _parentSessionId: string | undefined): Promise<Session>",
+          "sig": "createSession(_title: string | undefined, _parentSessionId: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -28905,10 +31609,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "forkSession(_sourceSessionId: string, _title: string | undefined): Promise<Session>",
+          "sig": "forkSession(_sourceSessionId: string, _title: string | undefined): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -28924,10 +31628,10 @@ window.PKG = [
               "d": "string | undefined"
             }
           ],
-          "ret": "Promise<Session>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "getSession(_id: string): Promise<Session | null>",
+          "sig": "getSession(_id: string): Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct...",
           "desc": "",
           "params": [
             {
@@ -28937,10 +31641,10 @@ window.PKG = [
               "d": "string"
             }
           ],
-          "ret": "Promise<Session | null>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; isAct..."
         },
         {
-          "sig": "listSessions(_limit: number | undefined, _offset: number | undefined): Promise<readonly Session[]>",
+          "sig": "listSessions(_limit: number | undefined, _offset: number | undefined): Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri...",
           "desc": "",
           "params": [
             {
@@ -28956,10 +31660,10 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<readonly Session[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: stri..."
         },
         {
-          "sig": "updateSession(_id: string, _updates: Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...): Promise<void>",
+          "sig": "updateSession(_id: string, _updates: Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -28970,9 +31674,9 @@ window.PKG = [
             },
             {
               "n": "_updates",
-              "t": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati...",
+              "t": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ...",
               "r": true,
-              "d": "Partial<Pick<Session, \"title\" | \"isActive\" | \"model\" | \"provider\" | \"cost\" | \"inputTokens\" | \"outputTokens\" | \"locati..."
+              "d": "Partial<Pick<{ id: string & { readonly __brand: \"SessionId\"; }; title: string; createdAt: string; updatedAt: string; ..."
             }
           ],
           "ret": "Promise<void>"
@@ -28991,7 +31695,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "addMessage(_sessionId: string, _roleOrMessage: string | { role: string; content: string; toolCallId?: string; tokens?: { input: number; output: number; reasoning?: ..., _content: string | undefined, _toolCallId: string | undefined, _tokens: { input: number; output: number; reasoning?: number; } | undefined, _model: string | undefined, _cost: number | undefined, _admittedSeq: number | undefined): Promise<Message>",
+          "sig": "addMessage(_sessionId: string, _roleOrMessage: string | { role: string; content: string; toolCallId?: string; tokens?: { input: number; output: number; reasoning?: ..., _content: string | undefined, _toolCallId: string | undefined, _tokens: { input: number; output: number; reasoning?: number; } | undefined, _model: string | undefined, _cost: number | undefined, _admittedSeq: number | undefined): Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI...",
           "desc": "",
           "params": [
             {
@@ -29043,7 +31747,7 @@ window.PKG = [
               "d": "number | undefined"
             }
           ],
-          "ret": "Promise<Message>"
+          "ret": "Promise<{ id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string; sessionI..."
         },
         {
           "sig": "updateMessage(_sessionId: string, _messageId: string, _updates: { admittedSeq?: number; promotedSeq?: number; }): Promise<void>",
@@ -29071,7 +31775,7 @@ window.PKG = [
           "ret": "Promise<void>"
         },
         {
-          "sig": "listMessages(_sessionId: string, _options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly Message[]>",
+          "sig": "listMessages(_sessionId: string, _options: { limit?: number; offset?: number; role?: string; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -29087,10 +31791,10 @@ window.PKG = [
               "d": "{ limit?: number; offset?: number; role?: string; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
-          "sig": "searchMessages(_query: string, _options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly Message[]>",
+          "sig": "searchMessages(_query: string, _options: { sessionId?: string; limit?: number; } | undefined): Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;...",
           "desc": "",
           "params": [
             {
@@ -29106,7 +31810,7 @@ window.PKG = [
               "d": "{ sessionId?: string; limit?: number; } | undefined"
             }
           ],
-          "ret": "Promise<readonly Message[]>"
+          "ret": "Promise<readonly { id: string & { readonly __brand: \"MessageId\"; }; role: string; content: string; createdAt: string;..."
         },
         {
           "sig": "getSessionStats(): Promise<SessionStats>",
@@ -29888,7 +32592,7 @@ window.PKG = [
       "desc": "Abstract conversation compactor: compresses a transcript and reports the result.",
       "methods": [
         {
-          "sig": "compact(messages: readonly ChatMessage[], signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>",
+          "sig": "compact(messages: readonly ChatMessage[], signal: AbortSignal | undefined): Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ...",
           "desc": "",
           "params": [
             {
@@ -29904,7 +32608,7 @@ window.PKG = [
               "d": "AbortSignal | undefined"
             }
           ],
-          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: CompressionSummary; }>"
+          "ret": "Promise<{ messages: readonly ChatMessage[]; summary: { originalMessageCount: number; compressedMessageCount: number; ..."
         }
       ],
       "props": []
@@ -29939,6 +32643,7 @@ window.PKG = [
   "desc": "Step execution: tool lifecycle, timeouts, permission gating, doom-loop, circuit breaker.",
   "deps": [
     "event",
+    "guard",
     "llm",
     "permission",
     "schema",
@@ -30005,26 +32710,26 @@ window.PKG = [
           "ret": "void"
         },
         {
-          "sig": "setCurrentAgent(agent: AgentConfig | undefined): void",
+          "sig": "setCurrentAgent(agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): void",
           "desc": "Swap the current agent reference for per-run agent scoping",
           "params": [
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "void"
         },
         {
-          "sig": "getCurrentAgent(): AgentConfig | undefined",
+          "sig": "getCurrentAgent(): { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "desc": "Get the current agent reference (used by kernel to save prev before swap)",
           "params": [],
-          "ret": "AgentConfig | undefined"
+          "ret": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
         },
         {
-          "sig": "agentFor(runId: RunId): AgentConfig | undefined",
+          "sig": "agentFor(runId: RunId): { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "desc": "Resolve the agent that owns the given run, falling back to the instance default.",
           "params": [
             {
@@ -30034,7 +32739,7 @@ window.PKG = [
               "d": "RunId"
             }
           ],
-          "ret": "AgentConfig | undefined"
+          "ret": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
         },
         {
           "sig": "sagaFor(runId: RunId): ToolSaga",
@@ -30069,7 +32774,7 @@ window.PKG = [
           "ret": "Promise<PromiseSettledResult<T>[]>"
         },
         {
-          "sig": "executeToolCalls(toolCalls: ToolExecutionPlan[], messages: ChatMessage[], step: number, runId: RunId, ctx: RequestContext, runAbort: AbortController, sessionId: string | undefined, runModel: ModelProvider): Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number; }; to...",
+          "sig": "executeToolCalls(toolCalls: ToolExecutionPlan[], messages: ChatMessage[], step: number, runId: RunId, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., runAbort: AbortController, sessionId: string | undefined, runModel: ModelProvider): Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number; }; to...",
           "desc": "Execute a batch of tool calls for the current step.\r\nHandles permission gating, approval dialogs, plugin hooks, doom-loop\r\ndetection, external-path checks, concurrent execution with configurable\r\nconcurrency, self-correction on failure, and saga compensation recording.",
           "params": [
             {
@@ -30098,9 +32803,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "runAbort",
@@ -30124,7 +32829,7 @@ window.PKG = [
           "ret": "Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number; }; to..."
         },
         {
-          "sig": "buildToolContext(tc: ToolExecutionPlan, runId: RunId, sessionId: string | undefined, ctx: RequestContext, runAbort: AbortController, tool: ToolDefinition<unknown, unknown>, compensationRef: { current: (() => Promise<void>) | null; }, metadataRef: MetadataRef): Promise<ToolContext>",
+          "sig": "buildToolContext(tc: ToolExecutionPlan, runId: RunId, sessionId: string | undefined, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., runAbort: AbortController, tool: ToolDefinition<unknown, unknown>, compensationRef: { current: (() => Promise<void>) | null; }, metadataRef: MetadataRef): Promise<ToolContext>",
           "desc": "",
           "params": [
             {
@@ -30147,9 +32852,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "runAbort",
@@ -30179,7 +32884,7 @@ window.PKG = [
           "ret": "Promise<ToolContext>"
         },
         {
-          "sig": "handleApproval(permResult: PermissionCheckResult, tc: ToolExecutionPlan, toolCtx: ToolContext, runId: RunId, ctx: RequestContext, _sessionId: string | undefined, messages: ChatMessage[], selfApproving: boolean | undefined): Promise<boolean>",
+          "sig": "handleApproval(permResult: PermissionCheckResult, tc: ToolExecutionPlan, toolCtx: ToolContext, runId: RunId, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., _sessionId: string | undefined, messages: ChatMessage[], selfApproving: boolean | undefined): Promise<boolean>",
           "desc": "",
           "params": [
             {
@@ -30208,9 +32913,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "_sessionId",
@@ -30234,7 +32939,7 @@ window.PKG = [
           "ret": "Promise<boolean>"
         },
         {
-          "sig": "runSelfCorrection(tc: ToolExecutionPlan, messages: ChatMessage[], recentCalls: RecentCall[], step: number, runId: RunId, ctx: RequestContext, runAbort: AbortController, toolCtx: ToolContext, errorMsg: string, runModel: ModelProvider, selfCorrectTokens: { input: number; output: number; }): Promise<void>",
+          "sig": "runSelfCorrection(tc: ToolExecutionPlan, messages: ChatMessage[], recentCalls: RecentCall[], step: number, runId: RunId, ctx: { requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..., runAbort: AbortController, toolCtx: ToolContext, errorMsg: string, runModel: ModelProvider, selfCorrectTokens: { input: number; output: number; }): Promise<void>",
           "desc": "",
           "params": [
             {
@@ -30269,9 +32974,9 @@ window.PKG = [
             },
             {
               "n": "ctx",
-              "t": "RequestContext",
+              "t": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
               "r": true,
-              "d": "RequestContext"
+              "d": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId..."
             },
             {
               "n": "runAbort",
@@ -30375,7 +33080,7 @@ window.PKG = [
         },
         {
           "name": "currentAgent",
-          "type": "AgentConfig | undefined",
+          "type": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "required": true,
           "desc": ""
         },
@@ -30387,7 +33092,7 @@ window.PKG = [
         },
         {
           "name": "agentForRun",
-          "type": "((runId: RunId) => AgentConfig | undefined) | undefined",
+          "type": "((runId: RunId) => { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; ver...",
           "required": false,
           "desc": "Resolve the active agent for a run — used to keep parallel runs isolated."
         },
@@ -30782,7 +33487,7 @@ window.PKG = [
           "ret": "void"
         },
         {
-          "sig": "checkTool(name: string, risk: string, args: Record<string, unknown> | undefined, agent: AgentConfig | undefined): PermissionCheckResult",
+          "sig": "checkTool(name: string, risk: string, args: Record<string, unknown> | undefined, agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): PermissionCheckResult",
           "desc": "Evaluate whether a tool call is allowed.\r\n4-phase gate: global rules → agent permissions → dynamic rules → risk defaults.\r\nReturns { allowed, reason, needsApproval }.",
           "params": [
             {
@@ -30805,15 +33510,15 @@ window.PKG = [
             },
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "PermissionCheckResult"
         },
         {
-          "sig": "checkMaxTokens(inputTokens: number, outputTokens: number, agent: AgentConfig | undefined): boolean",
+          "sig": "checkMaxTokens(inputTokens: number, outputTokens: number, agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): boolean",
           "desc": "Check whether combined token count stays within agent's maxTokens limit.",
           "params": [
             {
@@ -30830,15 +33535,15 @@ window.PKG = [
             },
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "boolean"
         },
         {
-          "sig": "checkMaxSteps(step: number, agent: AgentConfig | undefined): boolean",
+          "sig": "checkMaxSteps(step: number, agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...): boolean",
           "desc": "Check whether step count is within agent's maxSteps limit.",
           "params": [
             {
@@ -30849,9 +33554,9 @@ window.PKG = [
             },
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": false,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             }
           ],
           "ret": "boolean"
@@ -31048,7 +33753,7 @@ window.PKG = [
           "ret": "void"
         },
         {
-          "sig": "globalPermissionRules: AgentRule[] | undefined",
+          "sig": "globalPermissionRules: { effect: \"allow\" | \"deny\" | \"ask\"; target: string; paramPattern?: string | undefined; reason?: string | undefined; }...",
           "desc": "globalPermissionRules",
           "params": []
         },
@@ -31144,7 +33849,7 @@ window.PKG = [
       "desc": "Create a fresh per-run context.",
       "methods": [
         {
-          "sig": "createRunContext(runId: RunId, agent: AgentConfig | undefined, saga: ToolSaga): RunContext",
+          "sig": "createRunContext(runId: RunId, agent: { id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..., saga: ToolSaga): RunContext",
           "desc": "Create a fresh per-run context.",
           "params": [
             {
@@ -31155,9 +33860,9 @@ window.PKG = [
             },
             {
               "n": "agent",
-              "t": "AgentConfig | undefined",
+              "t": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
               "r": true,
-              "d": "AgentConfig | undefined"
+              "d": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und..."
             },
             {
               "n": "saga",
@@ -31184,7 +33889,7 @@ window.PKG = [
         },
         {
           "name": "agent",
-          "type": "AgentConfig | undefined",
+          "type": "{ id: string & { readonly __brand: \"AgentId\"; }; profile: { name: string; description: string; version?: string | und...",
           "required": true,
           "desc": "Agent actively executing this run (may change during sub-agent traversal)."
         },
@@ -31316,44 +34021,6 @@ window.PKG = [
           "ret": "Promise<T>"
         },
         {
-          "sig": "sleepAbortable(ms: number, signal: AbortSignal | undefined): Promise<void>",
-          "desc": "",
-          "params": [
-            {
-              "n": "ms",
-              "t": "number",
-              "r": true,
-              "d": "number"
-            },
-            {
-              "n": "signal",
-              "t": "AbortSignal | undefined",
-              "r": false,
-              "d": "AbortSignal | undefined"
-            }
-          ],
-          "ret": "Promise<void>"
-        },
-        {
-          "sig": "onSuccess(): void",
-          "desc": "",
-          "params": [],
-          "ret": "void"
-        },
-        {
-          "sig": "onFailure(err: unknown): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "err",
-              "t": "unknown",
-              "r": true,
-              "d": "unknown"
-            }
-          ],
-          "ret": "void"
-        },
-        {
           "sig": "reset(): void",
           "desc": "",
           "params": [],
@@ -31361,33 +34028,48 @@ window.PKG = [
         },
         {
           "sig": "getOptions(): Readonly<Required<CircuitBreakerOptions>>",
-          "desc": "Get the current configuration options.",
+          "desc": "",
           "params": [],
           "ret": "Readonly<Required<CircuitBreakerOptions>>"
         },
         {
-          "sig": "state: CircuitState",
+          "sig": "state: any",
           "desc": "state",
           "params": []
         },
         {
-          "sig": "failureCount: number",
+          "sig": "failureCount: any",
           "desc": "failureCount",
           "params": []
         },
         {
-          "sig": "lastFailureTime: number",
+          "sig": "lastFailureTime: any",
           "desc": "lastFailureTime",
           "params": []
         },
         {
-          "sig": "halfOpenSuccesses: number",
+          "sig": "halfOpenSuccesses: any",
           "desc": "halfOpenSuccesses",
           "params": []
         },
         {
-          "sig": "options: Required<CircuitBreakerOptions>",
+          "sig": "options: any",
           "desc": "options",
+          "params": []
+        },
+        {
+          "sig": "sleepAbortable: any",
+          "desc": "sleepAbortable",
+          "params": []
+        },
+        {
+          "sig": "onSuccess: any",
+          "desc": "onSuccess",
+          "params": []
+        },
+        {
+          "sig": "onFailure: any",
+          "desc": "onFailure",
           "params": []
         }
       ]
@@ -31419,11 +34101,11 @@ window.PKG = [
     {
       "type": "type",
       "name": "CircuitState",
-      "desc": "Current circuit breaker state.",
+      "desc": "Current circuit breaker state — open for extension (custom states).",
       "methods": [
         {
           "sig": "type CircuitState = CircuitState",
-          "desc": "Current circuit breaker state.",
+          "desc": "Current circuit breaker state — open for extension (custom states).",
           "params": []
         }
       ]
@@ -31739,6 +34421,7 @@ window.PKG = [
   "tag": "Core",
   "desc": "Built-in tools: file, shell, git, web, search, registries.",
   "deps": [
+    "guard",
     "sandbox",
     "schema",
     "security"
@@ -32135,6 +34818,12 @@ window.PKG = [
           "inherited": "ToolDefinitionLike"
         },
         {
+          "name": "outputSchema",
+          "type": "NestedJsonSchema | undefined",
+          "required": false,
+          "desc": "JSON Schema for tool output (MCP 2026-07-28 pattern)"
+        },
+        {
           "name": "timeoutMs",
           "type": "number | undefined",
           "required": false,
@@ -32171,6 +34860,24 @@ window.PKG = [
           "desc": "Tags for tool search (e.g. [\"file\", \"read\", \"search\"])."
         },
         {
+          "name": "annotations",
+          "type": "ToolAnnotations | undefined",
+          "required": false,
+          "desc": "Tool annotations — hints about tool behavior for LLMs"
+        },
+        {
+          "name": "icon",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Icon identifier or emoji for UI display"
+        },
+        {
+          "name": "category",
+          "type": "string | undefined",
+          "required": false,
+          "desc": "Human-readable category for tool grouping"
+        },
+        {
           "name": "metadata",
           "type": "Record<string, unknown> | undefined",
           "required": false,
@@ -32187,6 +34894,38 @@ window.PKG = [
           "sig": "type ToolRisk = string",
           "desc": "Tool risk level — open string for extensibility.",
           "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolAnnotations",
+      "desc": "Tool annotations — hint about tool behavior for LLMs (MCP 2026-07-28 pattern)",
+      "methods": [],
+      "props": [
+        {
+          "name": "readOnlyHint",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "If true, tool does not modify its environment"
+        },
+        {
+          "name": "destructiveHint",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "If true, tool may perform destructive actions (delete, overwrite)"
+        },
+        {
+          "name": "openWorldHint",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "If true, tool performs network access"
+        },
+        {
+          "name": "requiresApproval",
+          "type": "boolean | undefined",
+          "required": false,
+          "desc": "If true, tool requires human approval before execution"
         }
       ]
     },
@@ -32524,7 +35263,7 @@ window.PKG = [
         },
         {
           "name": "parentContext",
-          "type": "RequestContext | undefined",
+          "type": "{ requestId: string & { readonly __brand: \"RequestId\"; }; traceId: string & { readonly __brand: \"TraceId\"; }; actorId...",
           "required": false,
           "desc": "The parent run's request context (traceId/actorId/tenantId/requestId).\nLets handoff tools (delegate/spawn) propagate identity + parent-run\nlinkage to child agents instead of inventing a synthetic context."
         },
@@ -32533,6 +35272,12 @@ window.PKG = [
           "type": "Record<string, string>",
           "required": true,
           "desc": "Environment variables for subprocess execution (shell tool)"
+        },
+        {
+          "name": "extensionData",
+          "type": "Record<string, unknown> | undefined",
+          "required": false,
+          "desc": "Extensible metadata bag for plugins/consumers."
         }
       ]
     },
@@ -32598,6 +35343,46 @@ window.PKG = [
           "sig": "type ToolExecutionResult = ToolExecutionResult",
           "desc": "Result of a tool execution.",
           "params": []
+        }
+      ]
+    },
+    {
+      "type": "type",
+      "name": "ToolMiddleware",
+      "desc": "Tool middleware — wraps tool execution with cross-cutting concerns.\n\nInspired by Mastra's tool middleware pattern.",
+      "methods": [
+        {
+          "sig": "execute(tool: ToolDefinition<unknown, unknown>, input: unknown, next: (input: unknown) => Promise<ToolExecutionResult>): Promise<ToolExecutionResult>",
+          "desc": "",
+          "params": [
+            {
+              "n": "tool",
+              "t": "ToolDefinition<unknown, unknown>",
+              "r": true,
+              "d": "ToolDefinition<unknown, unknown>"
+            },
+            {
+              "n": "input",
+              "t": "unknown",
+              "r": true,
+              "d": "unknown"
+            },
+            {
+              "n": "next",
+              "t": "(input: unknown) => Promise<ToolExecutionResult>",
+              "r": true,
+              "d": "(input: unknown) => Promise<ToolExecutionResult>"
+            }
+          ],
+          "ret": "Promise<ToolExecutionResult>"
+        }
+      ],
+      "props": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "desc": ""
         }
       ]
     },
@@ -34514,7 +37299,7 @@ window.PKG = [
     {
       "type": "class",
       "name": "TavilySearchProvider",
-      "desc": "Tavily search provider adapter — convenience only.\r\nUser có thể tự implement provider khác: Serper, Bing, Google...",
+      "desc": "Tavily search provider adapter — convenience only.\r\nImplement other providers: Serper, Bing, Google...",
       "methods": [
         {
           "sig": "constructor(config: { apiKey: string; defaultNumResults?: number; baseUrl?: string; })",
@@ -34637,7 +37422,7 @@ window.PKG = [
           "name": "provider",
           "type": "WebSearchProvider",
           "required": true,
-          "desc": "Web search provider — injectable dependency.\r\nUser tự implement provider hoặc dùng built-in adapters."
+          "desc": "Web search provider — injectable dependency.\r\nImplement your own provider or use built-in adapters."
         },
         {
           "name": "defaultNumResults",
@@ -34656,7 +37441,7 @@ window.PKG = [
     {
       "type": "type",
       "name": "WebSearchProvider",
-      "desc": "Web search provider interface — user tự implement.\r\nVí dụ: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...",
+      "desc": "Web search provider interface — implement your own.\r\nExamples: Tavily, Serper, Bing, Google Custom Search, DuckDuckGo...",
       "methods": [
         {
           "sig": "search(query: string, options: { numResults?: number; searchDepth?: \"basic\" | \"advanced\"; } | undefined): Promise<WebSearchResponse>",
@@ -34899,26 +37684,20 @@ window.PKG = [
     {
       "type": "class",
       "name": "AgentToolProvider",
-      "desc": "AgentToolProvider — Provides agent-related tools.\r\n\r\nTools are lazily created after the kernel is initialized\r\nto avoid circular dependencies.",
+      "desc": "AgentToolProvider — Provides agent-related tools.\r\n\r\nTools are added externally via addTools() to avoid circular dependencies\r\nwith",
       "methods": [
         {
-          "sig": "setKernel(kernel: KernelLike): void",
-          "desc": "Set the kernel instance (call after kernel is created).",
+          "sig": "addTools(tools: ToolDefinition<unknown, unknown>[]): void",
+          "desc": "Add agent tools externally (called by composition root after kernel is created).",
           "params": [
             {
-              "n": "kernel",
-              "t": "KernelLike",
+              "n": "tools",
+              "t": "ToolDefinition<unknown, unknown>[]",
               "r": true,
-              "d": "KernelLike"
+              "d": "ToolDefinition<unknown, unknown>[]"
             }
           ],
           "ret": "void"
-        },
-        {
-          "sig": "createTools(): ToolDefinition<unknown, unknown>[]",
-          "desc": "",
-          "params": [],
-          "ret": "ToolDefinition<unknown, unknown>[]"
         },
         {
           "sig": "register(_registry: ToolRegistry): void",
@@ -34962,11 +37741,6 @@ window.PKG = [
           "params": []
         },
         {
-          "sig": "kernel: KernelLike | null",
-          "desc": "kernel",
-          "params": []
-        },
-        {
           "sig": "_tools: ToolDefinition<unknown, unknown>[]",
           "desc": "_tools",
           "params": []
@@ -34977,27 +37751,6 @@ window.PKG = [
           "params": []
         }
       ]
-    },
-    {
-      "type": "type",
-      "name": "KernelLike",
-      "desc": "Minimal kernel interface for tool registration.\r\nAvoids circular dependency with",
-      "methods": [
-        {
-          "sig": "registerTool(tool: ToolDefinition<unknown, unknown>): void",
-          "desc": "",
-          "params": [
-            {
-              "n": "tool",
-              "t": "ToolDefinition<unknown, unknown>",
-              "r": true,
-              "d": "ToolDefinition<unknown, unknown>"
-            }
-          ],
-          "ret": "void"
-        }
-      ],
-      "props": []
     },
     {
       "type": "class",

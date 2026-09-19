@@ -18,6 +18,7 @@ const PKG_META = {
   "core":                    { icon: "C",   tag: "Core",      desc: "Core agent kernel - lifecycle, tool execution, permissions, LLM interactions." },
   "plugin":                  { icon: "P",   tag: "Core",      desc: "Plugin system with definePlugin, lifecycle hooks, and registry." },
   "provider-openai-compatible": { icon: "O",  tag: "Core",   desc: "OpenAI-compatible provider with streaming, retry, presets for DeepSeek, Anthropic, Ollama." },
+  "provider-spec":           { icon: "Ps",  tag: "Core",      desc: "Provider specification - LanguageModelV1, RunUsage, Tool, ChatMessage, ContentBlock, errors." },
   "step-executor":           { icon: "S",   tag: "Core",      desc: "Step execution: tool lifecycle, timeouts, permission gating, doom-loop, circuit breaker." },
   "session":                 { icon: "Se",  tag: "Core",      desc: "Session persistence, conversation compaction, title generation." },
   "event":                   { icon: "E",   tag: "Core",      desc: "Event bus, definitions, migration, global event system." },
@@ -28,11 +29,14 @@ const PKG_META = {
   "config":                  { icon: "Co",  tag: "Core",      desc: "Configuration layer - credential references, settings, env resolution." },
   "llm":                     { icon: "L",   tag: "Core",      desc: "LLM adapter abstraction, registry, retry, token metering, model caller." },
   "guard":                   { icon: "G",   tag: "Core",      desc: "Guard plugins - circuit breaker, loop detection, tool timeout." },
+  "guardrails":              { icon: "Gr",  tag: "Extension",  desc: "Guardrail tripwires for input/output validation." },
   "sandbox":                 { icon: "Sa",  tag: "Core",      desc: "Sandbox execution - process isolation, command parsing, timeout." },
   "lsp":                     { icon: "Lv",  tag: "Extension",  desc: "Language Server Protocol integration for code intelligence." },
   "mcp":                     { icon: "Mc",  tag: "Extension",  desc: "Model Context Protocol client/server for tool integration." },
   "trace":                   { icon: "Tr",  tag: "Extension",  desc: "Observability - OpenTelemetry spans, timeline, telemetry." },
   "tools":                   { icon: "T",   tag: "Core",      desc: "Built-in tools: file, shell, git, web, search, registries." },
+  "workflow":                { icon: "W",   tag: "Extension",  desc: "Workflow primitives - parallel, sequential, conditional execution." },
+  "test-utils":              { icon: "Tu",  tag: "Extension",  desc: "Test utilities - mock factories, helpers for unit testing." },
 };
 
 // ── Helpers ──
