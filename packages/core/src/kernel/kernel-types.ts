@@ -212,6 +212,43 @@ export interface AgentRunHandle {
 }
 
 /**
+ * Usage metrics for a completed agent run.
+ *
+ * Follows the industry-standard nested usage pattern (OpenAI, Vercel AI SDK, Mastra, LangChain).
+ * All token/cost metrics are grouped here instead of being flat on AgentRunResult.
+ */
+export interface RunUsage {
+  /** Total number of steps (LLM calls) executed. */
+  readonly totalSteps: number;
+  /** Total duration in milliseconds. */
+  readonly durationMs?: number;
+  /** Input tokens used. */
+  readonly inputTokens?: number;
+  /** Output tokens used. */
+  readonly outputTokens?: number;
+  /** Reasoning/thinking tokens used. */
+  readonly reasoningTokens?: number;
+  /** Cache read tokens (prompt caching). */
+  readonly cacheReadTokens?: number;
+  /** Cache write tokens (prompt caching). */
+  readonly cacheWriteTokens?: number;
+  /** Total tokens (input + output + reasoning). */
+  readonly totalTokens?: number;
+  /** Total cost in USD. */
+  readonly cost?: number;
+  /** Number of tool calls executed. */
+  readonly toolCallsCount?: number;
+  /** Model used for this run. */
+  readonly model?: string;
+  /** Provider used for this run. */
+  readonly provider?: string;
+  /** Stop reason from the LLM. */
+  readonly stopReason?: string;
+  /** Provider-specific raw usage data. */
+  readonly raw?: Record<string, unknown>;
+}
+
+/**
  * Result of a completed agent run.
  */
 export interface AgentRunResult {
@@ -223,14 +260,8 @@ export interface AgentRunResult {
   readonly output?: string;
   /** Error message if failed. */
   readonly error?: string;
-  /** Total number of steps executed. */
-  readonly totalSteps: number;
-  /** Total duration in milliseconds. */
-  readonly durationMs?: number;
-  /** Input tokens used. */
-  readonly inputTokens?: number;
-  /** Output tokens used. */
-  readonly outputTokens?: number;
+  /** Usage metrics (tokens, cost, duration). */
+  readonly usage?: RunUsage;
 }
 
 /**

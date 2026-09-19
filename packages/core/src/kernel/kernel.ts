@@ -732,7 +732,7 @@ this.stepExecutor = new StepExecutor({
         eventHandlers.forEach(h => h(startEvent));
 
         // Run the loop — it reports its terminal status through the return value.
-        const { totalSteps, status: runStatus } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
+        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
 
         completed = true;
         result = {
@@ -743,7 +743,12 @@ this.stepExecutor = new StepExecutor({
           status: cancelled || runStatus === "cancelled"
             ? "cancelled"
             : runStatus === "failed" ? "failed" : "succeeded",
-          totalSteps, // totalSteps from the run loop
+          usage: {
+            totalSteps,
+            ...(totalInputTokens !== undefined ? { inputTokens: totalInputTokens } : {}),
+            ...(totalOutputTokens !== undefined ? { outputTokens: totalOutputTokens } : {}),
+            ...(loopDurationMs !== undefined ? { durationMs: loopDurationMs } : {}),
+          },
         };
 
         // Emit agent.completed event
@@ -762,7 +767,7 @@ this.stepExecutor = new StepExecutor({
           runId,
           status: "failed",
           error: err instanceof Error ? err.message : String(err),
-          totalSteps: 0,
+          usage: { totalSteps: 0 },
         };
 
         // Emit agent.error event

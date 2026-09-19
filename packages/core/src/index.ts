@@ -10,7 +10,7 @@ export { AgentKernel, KernelError } from "./kernel/kernel.js";
 export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
 export { RunStateMachine } from "@vinhnt-sdk/step-executor";
 
-export type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult } from "./kernel/kernel-types.js";
+export type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult, RunUsage } from "./kernel/kernel-types.js";
 
 // === Agent system ===
 
