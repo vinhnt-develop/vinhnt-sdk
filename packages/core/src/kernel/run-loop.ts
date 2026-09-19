@@ -66,6 +66,25 @@ export interface RunLoopInput {
   emitFail: (runId: RunId, ctx: RequestContext, reason: string, steps: number, sessionId?: string, totalInputTokens?: number, totalOutputTokens?: number, durationMs?: number, cancelled?: boolean) => Promise<void>;
   /** If true, resuming from durable storage — skip run.started event and user prompt injection. */
   resume?: boolean;
+  /**
+   * Optional callback invoked before each step. Allows dynamic model/tool selection.
+   *
+   * Inspired by Vercel AI SDK's `prepareStep` pattern.
+   *
+   * @example
+   * ```typescript
+   * prepareStep: async ({ step, model, messages }) => {
+   *   // Use a cheaper model for early steps
+   *   if (step < 3) return { model: fastModel };
+   *   return {}; // use defaults
+   * }
+   * ```
+   */
+  prepareStep?: (params: {
+    step: number;
+    model: ModelProvider;
+    messages: readonly ChatMessage[];
+  }) => Promise<{ model?: ModelProvider } | void>;
 }
 
 export type RunLoopStatus = "succeeded" | "failed" | "cancelled";
@@ -73,6 +92,9 @@ export type RunLoopStatus = "succeeded" | "failed" | "cancelled";
 export interface RunLoopResult {
   readonly totalSteps: number;
   readonly status: RunLoopStatus;
+  readonly totalInputTokens?: number;
+  readonly totalOutputTokens?: number;
+  readonly durationMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,6 +202,7 @@ async function maybeCompact(
     await emitEvent?.("context.compressed", {
       originalCount: compacted.summary.originalMessageCount,
       compressedCount: compacted.summary.compressedMessageCount,
+      ...(compacted.summary.summary ? { summary: compacted.summary.summary } : {}),
     });
     await deps.pluginManager?.fireHook("onContextCompressed", {
       originalCount: compacted.summary.originalMessageCount,
@@ -539,7 +562,7 @@ export async function runLoop(
     setState(runId, "cancelled");
     if (runSessionState) runSessionState.isRunning = false;
     await saveFinalSnapshot("cancelled");
-    return { totalSteps: steps, status: "cancelled" };
+    return { totalSteps: steps, status: "cancelled", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
   };
 
   try {
@@ -639,6 +662,21 @@ export async function runLoop(
       await emitEvt("step.started", { step });
       await deps.pluginManager?.fireHook("onStepStarted", { step });
 
+      // Invoke prepareStep callback if provided (Vercel AI SDK pattern)
+      let stepModel = runModel;
+      if (input.prepareStep) {
+        try {
+          const prepareResult = await input.prepareStep({ step, model: runModel, messages });
+          if (prepareResult?.model) {
+            stepModel = prepareResult.model;
+          }
+        } catch (err) {
+          if (typeof console !== "undefined") {
+            console.warn("[run-loop] prepareStep failed, using default model:", err instanceof Error ? err.message : String(err));
+          }
+        }
+      }
+
       const compactResult = await maybeCompact(
         messages,
         {
@@ -667,7 +705,7 @@ export async function runLoop(
       const stepResult = await processStep(deps, {
         messages, step, runId, ctx, runAbort,
         ...(sessionId !== undefined ? { sessionId } : {}),
-        runModel,
+        runModel: stepModel,
         ...(runSessionState !== undefined ? { runSessionState } : {}),
         totalInputTokens, totalOutputTokens, finalOutput,
         ...(onLastStep ? { disableTools: true } : {}),
@@ -708,7 +746,7 @@ export async function runLoop(
             await emitFail(runId, ctx, reason, step, sessionId, totalInputTokens, totalOutputTokens);
             await deps.saga.rollbackAll();
             setState(runId, "failed");
-            return { totalSteps: step + 1, status: "failed" };
+            return { totalSteps: step + 1, status: "failed", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
           }
         }
 
@@ -763,6 +801,7 @@ export async function runLoop(
               status: "succeeded", output: finalOutput, totalSteps: step + 1,
               durationMs: Date.now() - startTime,
               stopCondition: stopReason,
+              stopReason,
               ...(totalInputTokens > 0 ? { inputTokens: totalInputTokens } : {}),
               ...(totalOutputTokens > 0 ? { outputTokens: totalOutputTokens } : {}),
             },
@@ -775,7 +814,7 @@ export async function runLoop(
             runSessionState.isRunning = false;
           }
           await saveFinalSnapshot("succeeded");
-          return { totalSteps: step + 1, status: "succeeded" };
+          return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
         }
       }
     }
@@ -811,13 +850,13 @@ export async function runLoop(
         }
         setState(runId, "completed");
         await saveFinalSnapshot("succeeded");
-        return { totalSteps: step + 1, status: "succeeded" };
+        return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs };
       }
       if (runAbort.signal.aborted) return cancelRun(step + 1);
       await emitFail(runId, ctx, `Exceeded max steps (${runMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
       await deps.saga.rollbackAll();
       setState(runId, "failed");
-      return { totalSteps: step, status: "failed" };
+      return { totalSteps: step, status: "failed", totalInputTokens, totalOutputTokens, durationMs };
     } else {
       if (runAbort.signal.aborted) return cancelRun(step + 1);
       await emitCompleted({
@@ -826,6 +865,7 @@ export async function runLoop(
         data: {
           status: "succeeded", output: finalOutput, totalSteps: step + 1,
           durationMs,
+          stopReason: "end_turn",
           ...(totalInputTokens > 0 ? { inputTokens: totalInputTokens } : {}),
           ...(totalOutputTokens > 0 ? { outputTokens: totalOutputTokens } : {}),
         },
@@ -857,7 +897,7 @@ export async function runLoop(
     }
 
     await saveFinalSnapshot("succeeded");
-    return { totalSteps: step + 1, status: "succeeded" };
+    return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
   } catch (err: unknown) {
     // A cancellation that surfaced as an abort (e.g. the model call rejecting
     // with AbortError, or the step-start guard) must converge on the single
@@ -872,7 +912,7 @@ export async function runLoop(
     await emitFail(runId, ctx, errorMsg, step, sessionId, totalInputTokens, totalOutputTokens, failDurationMs);
     setState(runId, "failed");
     if (runSessionState) runSessionState.isRunning = false;
-    return { totalSteps: step + 1, status: "failed" };
+    return { totalSteps: step + 1, status: "failed", totalInputTokens, totalOutputTokens, durationMs: failDurationMs };
   } finally {
     deps.saga.clear();
     deps.stateMachine.cleanupRun(runId, sessionId);
