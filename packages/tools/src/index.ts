@@ -21,7 +21,7 @@ export { ToolRegistry } from "./registry.js";
 // === Context ===
 
 export type { ToolContext, PermissionReply } from "./context.js";
-export type { ToolHook, ToolExecutionResult } from "./types.js";
+export type { ToolHook, ToolExecutionResult, ToolMiddleware } from "./types.js";
 
 // === JSON Schema ===
 
