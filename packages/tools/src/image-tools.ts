@@ -3,8 +3,8 @@ import { extname, resolve } from "node:path";
 import type { MessageContentPart } from "@vinhnt-sdk/schema";
 import { ValidationError } from "@vinhnt-sdk/schema";
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
-import type { ToolContext } from "@vinhnt-sdk/tools";
+import { defineTool } from "./index.js";
+import type { ToolContext } from "./index.js";
 import { ensurePathAccess, isWithinWorkspace, resolveRoot, type RootGetter } from "./file-tools.js";
 
 const ReadImageSchema = z.object({

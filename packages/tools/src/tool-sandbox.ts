@@ -1,4 +1,4 @@
-import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
+import type { ToolDefinition, ToolContext } from "./index.js";
 import { createSandbox as baseCreateSandbox, createHostSandbox, createProcessSandbox, type SandboxConfig, type ProcessSandbox } from "@vinhnt-sdk/sandbox";
 
 /**

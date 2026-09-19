@@ -17,7 +17,7 @@ import { buildToolContext, type MetadataRef } from "./tool-context-builder.js";
 import { handleApproval as handleApprovalFn } from "./approval-handler.js";
 import { handleToolError as handleToolErrorFn } from "./tool-error-router.js";
 import { runSelfCorrection as runSelfCorrectionFn } from "./self-correction.js";
-import { redactObjectSecrets } from "@vinhnt-sdk/security";
+import { redactObjectSecrets } from "@vinhnt-sdk/guard";
 import { processToolResults } from "./tool-result-processor.js";
 import { checkExternalPaths, PATH_AWARE_TOOLS } from "./path-policy.js";
 

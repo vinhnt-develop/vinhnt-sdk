@@ -5,7 +5,7 @@
  */
 
 import { VntError } from "@vinhnt-sdk/schema";
-import { redactSecrets } from "@vinhnt-sdk/security";
+import { redactSecrets } from "@vinhnt-sdk/guard";
 
 /** HTTP statuses that are safe to retry (transient). */
 export const RETRYABLE_STATUSES = new Set([408, 409, 425, 500, 502, 503, 504]);

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
-import type { ToolRegistry } from "@vinhnt-sdk/tools";
+import { defineTool } from "./index.js";
+import type { ToolRegistry } from "./index.js";
 
 const ToolSearchSchema = z.object({
   query: z.string().min(1),

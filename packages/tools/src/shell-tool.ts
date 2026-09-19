@@ -3,8 +3,8 @@ import type { ToolContext } from "./context.js";
 import { commandPattern } from "./arity.js";
 import { killProcessTree, treeKillSpawnOptions, parseCommand, type SandboxScope } from "@vinhnt-sdk/sandbox";
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
-import { detectInjectionPatterns, sanitizeEnv } from "@vinhnt-sdk/security";
+import { defineTool } from "./index.js";
+import { detectInjectionPatterns, sanitizeEnv } from "@vinhnt-sdk/guard";
 import { createSandbox } from "./tool-sandbox.js";
 
 const ExecuteCommandSchema = z.object({

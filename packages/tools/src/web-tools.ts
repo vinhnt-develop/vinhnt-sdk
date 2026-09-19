@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
-import { sanitizeForLLM } from "@vinhnt-sdk/security";
+import { defineTool } from "./index.js";
+import { sanitizeForLLM } from "@vinhnt-sdk/guard";
 import { NetworkError } from "@vinhnt-sdk/schema";
 
 const WebFetchSchema = z.object({

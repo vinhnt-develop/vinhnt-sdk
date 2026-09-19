@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { ToolHook } from "@vinhnt-sdk/tools";
+import type { ToolHook } from "./index.js";
 import type { FileHistory } from "./file-history.js";
 
 /** Create a {@link ToolHook} that records write_file/edit_file changes into a {@link FileHistory}. */

@@ -1,5 +1,5 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
-import { sanitizeEnv } from "@vinhnt-sdk/security";
+import { sanitizeEnv } from "@vinhnt-sdk/guard";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";

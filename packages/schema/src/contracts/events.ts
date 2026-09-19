@@ -11,6 +11,7 @@ export interface RunEvent<TData = unknown> {
   readonly type: string;
   readonly occurredAt: string;
   readonly traceId: TraceId;
+  readonly parentRunId?: RunId;
   readonly data: TData;
   /** If false, event is emitted live but not persisted to the event store (e.g. streaming tokens) */
   readonly persist?: boolean;
@@ -31,6 +32,7 @@ export interface AgentEventBase {
   readonly timestamp: string;
   readonly traceId?: TraceId;
   readonly runId?: RunId;
+  readonly parentRunId?: RunId;
 }
 
 /**
@@ -167,7 +169,7 @@ export type AgentEvent =
 // ---------------------------------------------------------------------------
 // Data payloads (reusable by consumers)
 // ---------------------------------------------------------------------------
-export interface RunStartedData { readonly prompt: string; readonly model: string; readonly provider: string; readonly agentName?: string; readonly agentId?: string }
+export interface RunStartedData { readonly prompt: string; readonly model: string; readonly provider: string; readonly agentName?: string; readonly agentId?: string; readonly parentRunId?: RunId }
 export interface StepStartedData { readonly turn: number; readonly step: number }
 export interface TokenStreamedData { readonly content: string; readonly step: number }
 export interface ThinkingStartedData { readonly step: number }

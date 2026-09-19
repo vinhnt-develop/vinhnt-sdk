@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
+import { defineTool } from "./index.js";
 
 /** Input for the `question` tool. */
 export interface QuestionInput {

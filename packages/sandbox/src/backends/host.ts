@@ -3,7 +3,7 @@ import type { SandboxConfig, SandboxResult, ProcessSandbox, ProcessSandboxExecut
 import { parseCommand } from "../shell-parser.js";
 import { treeKillSpawnOptions } from "../kill-tree.js";
 import { withTimeoutAndAbort } from "../timeout.js";
-import { sanitizeEnv } from "@vinhnt-sdk/security";
+import { sanitizeEnv } from "@vinhnt-sdk/guard";
 
 class HostSandbox implements ProcessSandbox {
   readonly scope = "host" as const;

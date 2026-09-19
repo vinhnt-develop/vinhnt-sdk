@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
+import { defineTool } from "./index.js";
 
 interface TodoItem {
   id: string;

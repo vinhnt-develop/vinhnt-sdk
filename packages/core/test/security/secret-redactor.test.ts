@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { redactSecrets, detectSecrets, createRedactingLogger, redactObjectSecrets } from "@vinhnt-sdk/security";
+import { redactSecrets, detectSecrets, createRedactingLogger, redactObjectSecrets } from "@vinhnt-sdk/guard";
 
 describe("SecretRedactor", () => {
   describe("redactSecrets", () => {

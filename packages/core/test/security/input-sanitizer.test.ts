@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "@vinhnt-sdk/security";
+import { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "@vinhnt-sdk/guard";
 
 describe("InputSanitizer", () => {
   describe("sanitizeForLLM", () => {

@@ -9,12 +9,15 @@
  */
 
 /** Span status */
-export type SpanStatus = "ok" | "error" | "cancelled";
+export type SpanStatus = "ok" | "error" | "cancelled" | "timeout" | (string & {});
+export const KNOWN_SPAN_STATUSES: readonly SpanStatus[] = ["ok", "error", "cancelled", "timeout"];
 
 /** A single trace span */
 export interface Span {
   /** Unique span ID */
   readonly id: string;
+  /** Trace ID this span belongs to */
+  readonly traceId: string | undefined;
   /** Parent span ID (undefined for root spans) */
   readonly parentId: string | undefined;
   /** Span name (e.g., "llm.call", "tool.execute", "step") */
@@ -75,6 +78,7 @@ export function createSpan(
 ): Span {
   return {
     id: generateSpanId(),
+    traceId,
     parentId,
     name,
     kind,

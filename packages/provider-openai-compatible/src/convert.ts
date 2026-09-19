@@ -19,7 +19,7 @@ import type {
   Logprobs,
   OpenAIErrorResponse,
 } from "@vinhnt-sdk/schema";
-import { redactSecrets } from "@vinhnt-sdk/security";
+import { redactSecrets } from "@vinhnt-sdk/guard";
 import { getTextContent } from "@vinhnt-sdk/schema";
 import type {
   VntError,

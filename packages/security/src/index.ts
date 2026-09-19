@@ -1,21 +1,9 @@
 /**
- * Security utilities for vinhnt-sdk.
+ * @vinhnt-sdk/security — DEPRECATED
  *
- * @deprecated Use @vinhnt-sdk/guard instead. This package re-exports from guard.
- *
- * @module security
- * @packageDocumentation
+ * This package is deprecated. Use @vinhnt-sdk/guard instead.
+ * All exports are re-exported from @vinhnt-sdk/guard for backward compatibility.
  */
-
+export { redactSecrets, detectSecrets, createRedactingLogger, redactObjectSecrets } from "@vinhnt-sdk/guard";
 export { sanitizeForLLM, validateToolOutput, detectInjectionPatterns } from "@vinhnt-sdk/guard";
-export {
-  redactSecrets,
-  detectSecrets,
-  createRedactingLogger,
-  redactObjectSecrets,
-  SecretRedactor,
-  defaultSecretRedactor,
-  DEFAULT_SECRET_PATTERNS,
-} from "@vinhnt-sdk/guard";
-export type { SecretRedactorConfig, SecretPattern } from "@vinhnt-sdk/guard";
 export { sanitizeEnv } from "@vinhnt-sdk/guard";

@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/guardrails",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Guardrail tripwires for agent inputs/outputs - pattern-based safety",
   "license": "MIT",
   "type": "module",
@@ -14,22 +14,41 @@
     },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "LICENSE", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
     "directory": "packages/guardrails"
   },
   "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/guardrails",
-  "bugs": { "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues" },
-  "keywords": ["vnt", "guardrails", "safety", "input-validation", "output-validation"],
-  "publishConfig": { "access": "public" },
+  "bugs": {
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues"
+  },
+  "keywords": [
+    "vnt",
+    "guardrails",
+    "safety",
+    "input-validation",
+    "output-validation"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint .",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@vinhnt-sdk/schema": "workspace:*",

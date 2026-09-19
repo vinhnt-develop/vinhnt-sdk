@@ -1,5 +1,5 @@
-import type { CompressionSummary } from "@vinhnt-sdk/schema";
-import type { ChatMessage } from "@vinhnt-sdk/schema";
+import type { CompressionSummary } from "./prompt.js";
+import type { ChatMessage } from "./model.js";
 
 /**
  * Prefix marking a persisted summary marker message in a SessionStore. When a

@@ -533,6 +533,7 @@ export async function runLoop(
   // run cancelled at any moment reports `cancelled` exactly once — never a
   // silent `succeeded` or a confusing `failed`.
   const cancelRun = async (steps: number): Promise<RunLoopResult> => {
+    await emitEvt("turn.end", { turn: steps, reason: "aborted" });
     await emitFail(runId, ctx, "Run cancelled", steps, sessionId, totalInputTokens, totalOutputTokens, Date.now() - startTime, true);
     await deps.saga.rollbackAll();
     setState(runId, "cancelled");
@@ -609,6 +610,8 @@ export async function runLoop(
     const startedStep = runSessionState?.step ?? 0;
 
     for (step = startedStep; step < runMaxSteps; step++) {
+      await emitEvt("turn.started", { turn: step });
+
       if (runAbort.signal.aborted) {
         return cancelRun(step);
       }
@@ -685,6 +688,7 @@ export async function runLoop(
 
       if (stepResult.completed) {
         finalOutput = stepResult.finalOutput;
+        await emitEvt("turn.end", { turn: step, reason: "completed" });
         break;
       }
 
@@ -751,6 +755,7 @@ export async function runLoop(
 
         if (stopReason) {
           if (runAbort.signal.aborted) return cancelRun(step + 1);
+          await emitEvt("turn.end", { turn: step, reason: "completed" });
           await emitCompleted({
             id: crypto.randomUUID(), runId, type: "run.completed",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
@@ -778,6 +783,7 @@ export async function runLoop(
     const durationMs = Date.now() - startTime;
     if (step >= runMaxSteps) {
       if (runAbort.signal.aborted) return cancelRun(step + 1);
+      await emitEvt("turn.end", { turn: step, reason: "max_tokens" });
       if (finalOutput) {
         await emitCompleted({
           id: crypto.randomUUID(), runId, type: "run.completed",

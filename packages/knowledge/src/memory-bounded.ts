@@ -39,11 +39,11 @@ export class BoundedMemory {
       tier: "long-term",
       tags: ["profile", "bounded"],
     });
-    return { key: "_profile", value: this.profile, tier: "stable", charLimit: this.limits.profileLimit };
+    return { key: "_profile", value: this.profile, tier: "long-term", charLimit: this.limits.profileLimit };
   }
 
   getProfile(): MemoryEntry {
-    return { key: "_profile", value: this.profile, tier: "stable", charLimit: this.limits.profileLimit };
+    return { key: "_profile", value: this.profile, tier: "long-term", charLimit: this.limits.profileLimit };
   }
 
   async setWorkingFact(key: string, value: string): Promise<MemoryEntry> {
@@ -70,7 +70,7 @@ export class BoundedMemory {
 
   getAllBounded(): MemoryEntry[] {
     return [
-      { key: "_profile", value: this.profile, tier: "stable", charLimit: this.limits.profileLimit },
+      { key: "_profile", value: this.profile, tier: "long-term", charLimit: this.limits.profileLimit },
       { key: "_working", value: this.working, tier: "volatile", charLimit: this.limits.workingLimit },
     ];
   }

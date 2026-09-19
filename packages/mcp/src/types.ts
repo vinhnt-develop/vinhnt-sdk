@@ -67,7 +67,8 @@ export interface ReadResourceResult {
 
 // ── MCP Transport ──
 
-export type McpTransportType = "stdio" | "sse" | "streamable-http";
+export type McpTransportType = "stdio" | "sse" | "streamable-http" | (string & {});
+export const KNOWN_MCP_TRANSPORT_TYPES: readonly McpTransportType[] = ["stdio", "sse", "streamable-http"];
 
 export interface McpTransport {
   request(req: JsonRpcRequest): Promise<JsonRpcResponse>;

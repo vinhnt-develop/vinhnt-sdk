@@ -1,4 +1,5 @@
-import type { RunEvent, Session, Message, SessionStats } from "@vinhnt-sdk/schema";
+import type { RunEvent } from "../contracts/events.js";
+import type { Session, Message, SessionStats } from "./session.js";
 
 export interface RunEventSnapshot {
   readonly runId: string;

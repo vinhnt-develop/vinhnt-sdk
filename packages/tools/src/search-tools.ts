@@ -1,8 +1,8 @@
 import { readdir, readFile, lstat } from "node:fs/promises";
 import { join, relative } from "node:path";
-import type { ToolDefinition } from "@vinhnt-sdk/tools";
+import type { ToolDefinition } from "./index.js";
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
+import { defineTool } from "./index.js";
 
 const GlobFilesSchema = z.object({
   pattern: z.string().min(1),

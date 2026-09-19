@@ -1,8 +1,8 @@
 import { execFile } from "node:child_process";
-import type { ToolDefinition } from "@vinhnt-sdk/tools";
+import type { ToolDefinition } from "./index.js";
 import { z } from "zod";
-import { defineTool } from "@vinhnt-sdk/tools";
-import { sanitizeEnv } from "@vinhnt-sdk/security";
+import { defineTool } from "./index.js";
+import { sanitizeEnv } from "@vinhnt-sdk/guard";
 
 const GitStatusSchema = z.object({});
 const GitDiffSchema = z.object({

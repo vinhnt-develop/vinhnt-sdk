@@ -1,4 +1,4 @@
-import type { ToolProvider, ToolDefinition, ToolRegistry } from "@vinhnt-sdk/tools";
+import type { ToolProvider, ToolDefinition, ToolRegistry } from "./index.js";
 
 /**
  * AgentToolProvider — Provides agent-related tools.

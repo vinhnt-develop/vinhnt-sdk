@@ -139,8 +139,9 @@ export class LspClient {
     this.sendNotification("exit", null);
 
     const proc = this.process;
+    const signal: NodeJS.Signals = process.platform === "win32" ? "SIGTERM" : "SIGKILL";
     const killTimer = setTimeout(() => {
-      proc.kill("SIGKILL");
+      proc.kill(signal);
     }, 3000);
 
     return new Promise((resolve) => {
@@ -153,7 +154,7 @@ export class LspClient {
       });
       // Force kill if still alive
       setTimeout(() => {
-        try { proc.kill("SIGKILL"); } catch { /* */ }
+        try { proc.kill(signal); } catch { /* */ }
         resolve();
       }, 3000);
     });

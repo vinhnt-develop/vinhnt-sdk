@@ -1,10 +1,10 @@
 import { readFile, writeFile, readdir, stat, mkdir, realpath, rename, rm } from "node:fs/promises";
 import { join, relative, resolve, sep, dirname, basename } from "node:path";
-import type { ToolContext } from "@vinhnt-sdk/tools";
+import type { ToolContext } from "./index.js";
 import type { FileReadTracker } from "./read-tracker.js";
-import { generateDiff, defineTool } from "@vinhnt-sdk/tools";
+import { generateDiff, defineTool } from "./index.js";
 import { z } from "zod";
-import { sanitizeForLLM } from "@vinhnt-sdk/security";
+import { sanitizeForLLM } from "@vinhnt-sdk/guard";
 import { ValidationError, ToolPermissionDenied } from "@vinhnt-sdk/schema";
 
 const filePathField = z.string().min(1);

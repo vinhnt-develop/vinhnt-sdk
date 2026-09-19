@@ -30,7 +30,31 @@ export type TimelineEventType =
   | "token.compressed"
   | "context.compressed"
   | "permission.asked"
-  | "permission.decided";
+  | "permission.decided"
+  | (string & {});
+export const KNOWN_TIMELINE_EVENT_TYPES: readonly TimelineEventType[] = [
+  "run.started",
+  "run.completed",
+  "run.failed",
+  "step.started",
+  "step.completed",
+  "step.failed",
+  "turn.started",
+  "turn.ended",
+  "tool.invoked",
+  "tool.completed",
+  "tool.failed",
+  "tool.cancelled",
+  "approval.asked",
+  "approval.decided",
+  "llm.retry",
+  "llm.retry_started",
+  "assistant.chunk",
+  "token.compressed",
+  "context.compressed",
+  "permission.asked",
+  "permission.decided",
+];
 
 /** A single timeline event */
 export interface TimelineEvent {

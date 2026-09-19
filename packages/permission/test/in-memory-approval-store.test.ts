@@ -45,9 +45,9 @@ describe("InMemoryApprovalStore", () => {
     store.resolveRequest("req-2", replyFor(false));
     await Promise.all([p1, p2]);
 
-    expect(store.requests).toHaveLength(2);
-    expect(store.requests[0]!.id).toBe("req-1");
-    expect(store.requests[1]!.id).toBe("req-2");
+    expect(store.getPendingRequests()).toHaveLength(2);
+    expect(store.getPendingRequests()[0]!.id).toBe("req-1");
+    expect(store.getPendingRequests()[1]!.id).toBe("req-2");
   });
 
   it("resolveRequest is no-op for unknown requestId", () => {
@@ -107,7 +107,7 @@ describe("InMemoryApprovalStore", () => {
   it("saveApproval stores persistent approval", () => {
     const store = new InMemoryApprovalStore();
     store.saveApproval({ resource: "*.ts", action: "edit", agentId: "agent-1" });
-    expect(store.savedApprovals).toHaveLength(1);
+    expect(store.getAlwaysAllowed()).toHaveLength(1);
   });
 
   it("checkApproval checks saved approvals without agentId", () => {

@@ -22,6 +22,7 @@
  */
 
 import type { LlmAdapter, ProviderInfo, RetryPolicy } from "./adapter.js";
+import { VntError } from "@vinhnt-sdk/schema";
 
 // ── Registration Handle ──
 
@@ -36,12 +37,16 @@ export interface AdapterRegistrationHandle {
 // ── Registration Errors ──
 
 /** Error thrown when adapter registration fails. */
-export class AdapterRegistrationError extends Error {
+export class AdapterRegistrationError extends VntError {
+  public override readonly code: string;
+  public override readonly retryable = false;
+
   constructor(
     message: string,
-    public readonly code: "DUPLICATE_ADAPTER" | "EMPTY_PROVIDERS" | "CONFLICT",
+    code: "DUPLICATE_ADAPTER" | "EMPTY_PROVIDERS" | "CONFLICT",
   ) {
-    super(message);
+    super(message, { code });
+    this.code = code;
     this.name = "AdapterRegistrationError";
   }
 }

@@ -33,9 +33,21 @@ export interface ApprovalStore {
 /** In-memory {@link ApprovalStore} implementation. */
 export class InMemoryApprovalStore implements ApprovalStore {
   private pending = new Map<string, (reply: PermissionReply) => void>();
-  readonly requests: PermissionRequest[] = [];
-  readonly savedApprovals: SavedApproval[] = [];
-  readonly savedRejections: SavedApproval[] = [];
+  private requests: PermissionRequest[] = [];
+  private savedApprovals: SavedApproval[] = [];
+  private savedRejections: SavedApproval[] = [];
+
+  getPendingRequests(): readonly PermissionRequest[] {
+    return this.requests;
+  }
+
+  getAlwaysAllowed(): readonly SavedApproval[] {
+    return this.savedApprovals;
+  }
+
+  getAlwaysRejected(): readonly SavedApproval[] {
+    return this.savedRejections;
+  }
 
   awaitReply(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<PermissionReply> {
     this.requests.push(request);

@@ -54,10 +54,14 @@ export class PermissionDeniedError extends VntError {
 export class ValidationError extends VntError {
   public override readonly code = "VALIDATION_ERROR";
   public override readonly retryable = false;
+  public readonly details?: readonly string[];
 
   constructor(message: string, details?: readonly string[]) {
     super(message);
     this.name = "ValidationError";
+    if (details !== undefined) {
+      this.details = details;
+    }
   }
 }
 
