@@ -243,6 +243,7 @@ export class ModelCaller {
     }
 
     let content = "";
+    let thinkingContent = ""; // Aggregate thinking tokens into one event
     const toolCalls: { id: string; name: string; args: unknown }[] = [];
 
     if (!model.stream) {
@@ -299,13 +300,9 @@ export class ModelCaller {
           await this.deps.pluginManager?.fireHook("onTokenStreamed", { content: event.content, step });
           break;
         case "thinking":
-          // RV-44: DeepSeek reasoner chain-of-thought — surface as
-          // thinking.content like doThinkingStep, never dropped.
-          await this.deps.emitEvent({
-            id: crypto.randomUUID(), runId, type: "thinking.content",
-            occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-            data: { content: event.content, step },
-          } as never, false);
+          // RV-44: DeepSeek reasoner chain-of-thought — aggregate tokens
+          // into one completed event (not per-token).
+          thinkingContent += event.content;
           break;
         case "tool_call":
           toolCalls.push({ id: event.id, name: event.name, args: event.args });
@@ -330,6 +327,15 @@ export class ModelCaller {
     // assembled tool calls as a successful response.
     if (signal?.aborted) {
       throw new DOMException("Aborted", "AbortError");
+    }
+
+    // Emit aggregated thinking content as one completed event
+    if (thinkingContent) {
+      await this.deps.emitEvent({
+        id: crypto.randomUUID(), runId, type: "thinking.completed",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: { content: thinkingContent, step },
+      } as never, false);
     }
 
     let source: "api" | "local" = "api";
