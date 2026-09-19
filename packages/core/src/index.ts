@@ -17,6 +17,16 @@ export type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult } fro
 export { createAgent } from "./agent/agent-factory.js";
 export type { CreateAgentParams } from "./agent/agent-factory.js";
 
+// === Agent-as-Tool ===
+
+export { agentAsTool, createHandoffTool } from "./kernel/agent-as-tool.js";
+export type { AgentAsToolOptions } from "./kernel/agent-as-tool.js";
+
+// === Plan tracking ===
+
+export { createUpdatePlanTool, createGetPlanTool } from "./tools/update-plan.js";
+export type { Plan, PlanStep } from "./tools/update-plan.js";
+
 // === Event bus ===
 
 export { InMemoryEventBus } from "@vinhnt-sdk/event";

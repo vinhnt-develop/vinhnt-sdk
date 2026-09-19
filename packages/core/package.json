@@ -1,6 +1,6 @@
 ﻿{
     "name":  "@vinhnt-sdk/core",
-    "version":  "0.4.0",
+    "version":  "0.5.0",
     "description":  "Core agent engine for VNT Agent â€” kernel, tools, sessions, plugins, permissions, and knowledge",
     "license":  "MIT",
     "type":  "module",
