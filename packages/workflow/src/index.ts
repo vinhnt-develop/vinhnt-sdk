@@ -86,14 +86,14 @@ export async function parallel<T>(
  * ```
  */
 export async function sequential<TInput, TOutput>(
-  steps: WorkflowStep<any, any>[],
+  steps: WorkflowStep<unknown, unknown>[],
   initialInput: TInput,
   ctx?: Partial<WorkflowContext>,
 ): Promise<StepResult<TOutput>> {
   const workflowId = ctx?.workflowId ?? `sequential-${Date.now()}`;
   const metadata = ctx?.metadata ?? {};
 
-  let currentInput: any = initialInput;
+  let currentInput: unknown = initialInput;
   let totalDuration = 0;
 
   for (let i = 0; i < steps.length; i++) {
@@ -134,7 +134,7 @@ export async function sequential<TInput, TOutput>(
 /** A conditional branch */
 export interface ConditionalBranch<TInput = unknown, TOutput = unknown> {
   readonly condition: (input: TInput) => boolean | Promise<boolean>;
-  readonly steps: WorkflowStep[];
+  readonly steps: WorkflowStep<unknown, unknown>[];
   readonly name?: string;
 }
 
@@ -171,7 +171,7 @@ export async function conditional<TInput, TOutput>(
 
     const shouldRun = await branch.condition(input);
     if (shouldRun) {
-      let currentInput: any = input;
+      let currentInput: unknown = input;
       let totalDuration = 0;
 
       for (let j = 0; j < branch.steps.length; j++) {

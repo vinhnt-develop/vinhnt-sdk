@@ -47,6 +47,10 @@ export interface ModelCallerDeps {
   modelForRun(runId: RunId): ModelProvider | undefined;
   setModelForRun(runId: RunId, model: ModelProvider): void;
   getAvailableTools(runId: RunId): readonly ToolDefinition[];
+  /** Sampling temperature (0-2). Applied to every request unless overridden. */
+  readonly temperature?: number;
+  /** Nucleus sampling threshold (0-1). Applied to every request unless overridden. */
+  readonly topP?: number;
   /** OpenAI: tool_choice — controls tool calling behavior. */
   readonly toolChoice?: ToolChoice;
   /** OpenAI: parallel_tool_calls — whether to allow parallel tool calls. */
@@ -165,6 +169,9 @@ export class ModelCaller {
       ...(resolvedModel ? { model: resolvedModel } : {}),
       ...(thinkingBudget !== undefined ? { thinkingBudget } : {}),
       ...(this.deps.thinkingPrompt ? { thinkingPrompt: this.deps.thinkingPrompt } : {}),
+      // LLM generation settings
+      ...(this.deps.temperature !== undefined ? { temperature: this.deps.temperature } : {}),
+      ...(this.deps.topP !== undefined ? { topP: this.deps.topP } : {}),
       // OpenAI fields passthrough
       ...(this.deps.toolChoice !== undefined ? { toolChoice: this.deps.toolChoice } : {}),
       ...(this.deps.parallelToolCalls !== undefined ? { parallelToolCalls: this.deps.parallelToolCalls } : {}),

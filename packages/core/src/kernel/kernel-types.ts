@@ -1,4 +1,4 @@
-import type { RunId, AgentEvent } from "@vinhnt-sdk/schema";
+import type { RunId, AgentEvent, ToolChoice, ResponseFormat } from "@vinhnt-sdk/schema";
 import type { ModelProvider, ModelRegistry } from "../model.js";
 import type { SessionRuntimeState } from "@vinhnt-sdk/session";
 import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
@@ -10,6 +10,7 @@ import type { ContextRegistry } from "../system-context/types.js";
 import type { ApprovalStore } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
 import type { CircuitBreaker, CircuitBreakerOptions, TerminationPolicy } from "@vinhnt-sdk/step-executor";
+import type { z } from "zod";
 
 /** Sandbox configuration for shell command execution. */
 export interface KernelSandboxConfig {
@@ -56,6 +57,43 @@ export interface HookConfig {
 }
 
 /**
+ * Model settings — controls sampling, tool behavior, and output format.
+ *
+ * Grouped into a single object to avoid namespace pollution at the kernel config level.
+ * Follows the industry-standard nested pattern (OpenAI Agents SDK, Mastra, Google ADK).
+ *
+ * @example
+ * ```ts
+ * const kernel = new AgentKernel({
+ *   model: openaiProvider,
+ *   store: eventStore,
+ *   modelSettings: {
+ *     temperature: 0.7,
+ *     topP: 0.9,
+ *     toolChoice: 'auto',
+ *     parallelToolCalls: true,
+ *   },
+ * });
+ * ```
+ */
+export interface ModelSettings {
+  /** Sampling temperature (0-2). Higher = more random, lower = more deterministic. */
+  readonly temperature?: number;
+  /** Nucleus sampling threshold (0-1). Alternative to temperature. */
+  readonly topP?: number;
+  /** Penalizes tokens based on frequency in output (-2 to 2). */
+  readonly frequencyPenalty?: number;
+  /** Penalizes tokens based on presence in output (-2 to 2). */
+  readonly presencePenalty?: number;
+  /** Controls tool calling behavior. 'auto' = model decides, 'required' = must call, 'none' = no tools. */
+  readonly toolChoice?: ToolChoice;
+  /** Allow the model to call multiple tools in parallel. Default: true. */
+  readonly parallelToolCalls?: boolean;
+  /** Response format constraint (e.g., JSON mode). */
+  readonly responseFormat?: ResponseFormat;
+}
+
+/**
  * Configuration for AgentKernel — the core agent orchestration engine.
  *
  * @example
@@ -77,7 +115,7 @@ export interface AgentKernelConfig {
   readonly tools?: readonly ToolDefinition[];
   /** ToolProviderRegistry — single source of truth for all tools. */
   readonly toolProviderRegistry?: ToolProviderRegistry;
-  /** Maximum number of steps (LLM calls) per run. Default: 30. */
+  /** Maximum number of steps (LLM calls) per run. Default: 25. */
   readonly maxSteps?: number;
   /** Maximum tool calls per step. Default: 10. */
   readonly maxToolCallsPerStep?: number;
@@ -140,6 +178,39 @@ export interface AgentKernelConfig {
   /** Termination policy for advanced stop conditions. */
   readonly termination?: TerminationPolicy;
 
+  // ─── Model Settings (nested) ─────────────────────────────────────────
+  /** Model settings — temperature, topP, toolChoice, etc. */
+  readonly modelSettings?: ModelSettings;
+
+  /**
+   * Structured output type — controls what the agent returns.
+   *
+   * - `'text'` (default): Returns plain text string.
+   * - A Zod object schema: Returns validated, typed output.
+   *
+   * When a Zod schema is provided, the kernel:
+   * 1. Converts it to JSON Schema and sends via `response_format`
+   * 2. Validates the model's JSON response against the schema
+   * 3. Returns the typed output (or throws on validation failure)
+   *
+   * @example
+   * ```ts
+   * const kernel = new AgentKernel({
+   *   model: provider,
+   *   store: eventStore,
+   *   outputType: z.object({
+   *     name: z.string(),
+   *     date: z.string(),
+   *     participants: z.array(z.string()),
+   *   }),
+   * });
+   *
+   * const result = await kernel.run('Extract event from "Meeting with Alice on March 5"');
+   * // result.output is typed as { name: string; date: string; participants: string[] }
+   * ```
+   */
+  readonly outputType?: 'text' | z.ZodTypeAny;
+
   /** Sandbox configuration for shell execution. */
   readonly sandbox?: KernelSandboxConfig;
   /** Permission configuration for tool execution. */
@@ -148,6 +219,10 @@ export interface AgentKernelConfig {
   readonly modelRouting?: ModelRoutingConfig;
   /** Hook configuration for plugin system. */
   readonly hooks?: HookConfig;
+  /** Input guardrails — run before model calls. */
+  readonly inputGuardrails?: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
+  /** Output guardrails — run after model responses. */
+  readonly outputGuardrails?: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
   /** Enterprise managed configuration. */
   readonly managedConfig?: Record<string, unknown>;
   /** Logger for kernel events. */
@@ -258,6 +333,8 @@ export interface AgentRunResult {
   readonly status: "succeeded" | "failed" | "cancelled";
   /** Output text if successful. */
   readonly output?: string;
+  /** Validated structured output (when outputType is Zod schema). */
+  readonly structuredOutput?: unknown;
   /** Error message if failed. */
   readonly error?: string;
   /** Usage metrics (tokens, cost, duration). */

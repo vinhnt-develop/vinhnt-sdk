@@ -11,7 +11,7 @@ export type { StepExecutorPluginHooks } from "./hooks.js";
 // === Step Executor ===
 
 export { StepExecutor } from "./step-executor.js";
-export type { StepExecutorDeps, ToolExecutionPlan } from "./step-executor.js";
+export type { StepExecutorDeps, ToolExecutionPlan, HandoffSignal } from "./step-executor.js";
 
 // === Kernel Utils (public subset) ===
 

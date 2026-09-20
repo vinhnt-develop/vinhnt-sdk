@@ -11,7 +11,9 @@ export type KernelErrorCode =
   | "session_store_failed"
   | "internal_error"
   | "timeout"
-  | "model_unavailable";
+  | "model_unavailable"
+  | "guardrail_denied"
+  | "validation_error";
 
 /** Kernel-level failure with a typed {@link KernelErrorCode}. */
 export class KernelError extends VntError {

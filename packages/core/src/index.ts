@@ -10,7 +10,9 @@ export { AgentKernel, KernelError } from "./kernel/kernel.js";
 export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
 export { RunStateMachine } from "@vinhnt-sdk/step-executor";
 
-export type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult, RunUsage } from "./kernel/kernel-types.js";
+export type { AgentKernelConfig, ModelSettings, RunHandle, AgentRunHandle, AgentRunResult, RunUsage } from "./kernel/kernel-types.js";
+export { AgentRunContext } from "./kernel/run-context.js";
+export type { ApprovalRecord } from "./kernel/run-context.js";
 
 // === Agent system ===
 
@@ -21,6 +23,11 @@ export type { CreateAgentParams } from "./agent/agent-factory.js";
 
 export { agentAsTool, createHandoffTool } from "./kernel/agent-as-tool.js";
 export type { AgentAsToolOptions } from "./kernel/agent-as-tool.js";
+
+// === Handoff ===
+
+export { createHandoff, isHandoff, HANDOFF_SYMBOL, HandoffTracker } from "./kernel/handoff.js";
+export type { Handoff, HandoffToolOptions, HandoffRecord } from "./kernel/handoff.js";
 
 // === Plan tracking ===
 

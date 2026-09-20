@@ -7,6 +7,7 @@ import { restoreRunFromStore, findActiveSessionIds } from "@vinhnt-sdk/session";
 import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { AgentRegistry } from "../agent/agent-registry.js";
 import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt-sdk/tools";
+import { zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "@vinhnt-sdk/session";
 import type { ContextRegistry } from "../system-context/types.js";
@@ -22,6 +23,17 @@ import { DEFAULT_MAX_STEPS, DEFAULT_MAX_TOOL_CALLS_PER_STEP, DOOM_LOOP_THRESHOLD
 
 /** Default thinking prompt for reasoning steps. Exported for user override. */
 export const DEFAULT_THINKING_PROMPT = "Analyze the user's request and the conversation context. Think step by step about what needs to be done. Output your reasoning.";
+
+/** Default maximum tokens per LLM response. */
+export const DEFAULT_MAX_TOKENS = 4096;
+/** Default per-step timeout in ms. */
+export const DEFAULT_STEP_TIMEOUT = 120_000;
+/** Default maximum self-correction attempts per step. */
+export const DEFAULT_MAX_SELF_CORRECT_ATTEMPTS = 3;
+/** Default maximum sub-agent nesting depth. */
+export const DEFAULT_MAX_SUB_AGENT_DEPTH = 3;
+/** Default compaction threshold ratio (0-1). */
+export const DEFAULT_COMPACTION_THRESHOLD = 0.75;
 
 import { RunStateMachine } from "@vinhnt-sdk/step-executor";
 import type { RunState } from "@vinhnt-sdk/step-executor";
@@ -104,6 +116,9 @@ export class AgentKernel {
   private compactionThreshold: number | undefined;
   private readonly termination: TerminationPolicy | undefined;
   private circuitBreaker: CircuitBreaker;
+  private readonly inputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
+  private readonly outputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
+  private readonly outputType: 'text' | import("zod").ZodTypeAny;
   private readonly sessionDeps: KernelSessionDeps;
   private readonly subAgentDeps: SubAgentRunnerDeps;
   private readonly runSessionStates = new Map<RunId, SessionRuntimeState | undefined>();
@@ -149,8 +164,8 @@ export class AgentKernel {
     this.systemContext = normalized.systemContext;
     this.thinkingBudget = normalized.thinkingBudget ?? 0;
     this.selfCorrectOnFailure = normalized.selfCorrectOnFailure ?? false;
-    this.maxSelfCorrectAttempts = normalized.maxSelfCorrectAttempts ?? 3;
-    this.maxSubAgentDepth = normalized.maxSubAgentDepth ?? 3;
+    this.maxSelfCorrectAttempts = normalized.maxSelfCorrectAttempts ?? DEFAULT_MAX_SELF_CORRECT_ATTEMPTS;
+    this.maxSubAgentDepth = normalized.maxSubAgentDepth ?? DEFAULT_MAX_SUB_AGENT_DEPTH;
     this.sessionStore = normalized.sessionStore;
     this.agentRegistry = normalized.agentRegistry;
     this.pluginManager = normalized.pluginManager;
@@ -159,7 +174,7 @@ export class AgentKernel {
     this.toolRegistry = normalized.toolRegistry;
     this.toolProviderRegistry = normalized.toolProviderRegistry;
     this.sessionTitleGenerator = normalized.sessionTitleGenerator;
-    this.stepTimeout = normalized.stepTimeout ?? 120_000;
+    this.stepTimeout = normalized.stepTimeout ?? DEFAULT_STEP_TIMEOUT;
     this.doomLoopThreshold = normalized.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
     this.compactionThreshold = normalized.compactionThreshold;
     this.termination = normalized.termination;
@@ -179,8 +194,25 @@ export class AgentKernel {
         : normalized.circuitBreakerOptions?.maxBackoffMs !== undefined
           ? { maxBackoffMs: normalized.circuitBreakerOptions.maxBackoffMs }
           : {}),
-      ...normalized.circuitBreakerOptions,
     });
+    this.inputGuardrails = normalized.inputGuardrails ?? [];
+    this.outputGuardrails = normalized.outputGuardrails ?? [];
+    this.outputType = normalized.outputType ?? 'text';
+
+    // Derive responseFormat from outputType if it's a Zod schema
+    let effectiveResponseFormat = normalized.modelSettings?.responseFormat;
+    if (this.outputType !== 'text' && !effectiveResponseFormat) {
+      const jsonSchema = zodSchemaToNestedJsonSchema(this.outputType);
+      if (jsonSchema) {
+        effectiveResponseFormat = {
+          type: "json_schema",
+          jsonSchema: { name: "structured_output", schema: jsonSchema, strict: true },
+        };
+      } else {
+        // Fallback: basic json_object format
+        effectiveResponseFormat = { type: "json_object" };
+      }
+    }
     this.saga = new ToolSaga();
     this.stateMachine = new RunStateMachine();
     this.permissionGate = new PermissionGate({
@@ -203,7 +235,7 @@ export class AgentKernel {
     if (normalized.permissions?.topLevelPermissionRules) {
       this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);
     }
-    this.maxTokens = normalized.maxTokens ?? 4096;
+    this.maxTokens = normalized.maxTokens ?? DEFAULT_MAX_TOKENS;
     const maxTokens = this.maxTokens;
     const thinkingPrompt = normalized.thinkingPrompt ?? DEFAULT_THINKING_PROMPT;
     // P1-N: wire the redacting logger into the kernel so every log line that
@@ -223,6 +255,9 @@ export class AgentKernel {
       maxTokens,
       thinkingBudget: this.thinkingBudget,
       thinkingPrompt,
+      // LLM generation settings (from nested modelSettings)
+      ...(normalized.modelSettings?.temperature !== undefined ? { temperature: normalized.modelSettings.temperature } : {}),
+      ...(normalized.modelSettings?.topP !== undefined ? { topP: normalized.modelSettings.topP } : {}),
       // Core's PluginManager structurally satisfies the model-caller hook
       // contract (named generic fireHook — castable, matches by design).
       pluginManager: normalized.pluginManager as import("@vinhnt-sdk/llm").ModelCallerPluginHooks | undefined,
@@ -231,6 +266,11 @@ export class AgentKernel {
       modelForRun: (runId) => this.stateMachine.getModelForRun(runId),
       setModelForRun: (runId, model) => this.stateMachine.setModelForRun(runId, model),
       getAvailableTools: (runId) => this.getAvailableTools(runId),
+      ...(normalized.modelSettings?.toolChoice !== undefined ? { toolChoice: normalized.modelSettings.toolChoice } : {}),
+      ...(normalized.modelSettings?.parallelToolCalls !== undefined ? { parallelToolCalls: normalized.modelSettings.parallelToolCalls } : {}),
+      ...(normalized.modelSettings?.presencePenalty !== undefined ? { presencePenalty: normalized.modelSettings.presencePenalty } : {}),
+      ...(normalized.modelSettings?.frequencyPenalty !== undefined ? { frequencyPenalty: normalized.modelSettings.frequencyPenalty } : {}),
+      ...(effectiveResponseFormat !== undefined ? { responseFormat: effectiveResponseFormat } : {}),
     });
 
     // Validate default model has non-empty model string (fail-closed)
@@ -732,7 +772,7 @@ this.stepExecutor = new StepExecutor({
         eventHandlers.forEach(h => h(startEvent));
 
         // Run the loop — it reports its terminal status through the return value.
-        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
+        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs, structuredOutput } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
 
         completed = true;
         result = {
@@ -743,6 +783,7 @@ this.stepExecutor = new StepExecutor({
           status: cancelled || runStatus === "cancelled"
             ? "cancelled"
             : runStatus === "failed" ? "failed" : "succeeded",
+          ...(structuredOutput !== undefined ? { structuredOutput } : {}),
           usage: {
             totalSteps,
             ...(totalInputTokens !== undefined ? { inputTokens: totalInputTokens } : {}),
@@ -1144,6 +1185,9 @@ this.stepExecutor = new StepExecutor({
       ...(this.termination ? { termination: this.termination } : {}),
       ...(judgeModel ? { judgeModel } : {}),
       ...(currentAgent ? { currentAgent } : {}),
+      ...(this.inputGuardrails.length > 0 ? { inputGuardrails: this.inputGuardrails } : {}),
+      ...(this.outputGuardrails.length > 0 ? { outputGuardrails: this.outputGuardrails } : {}),
+      ...(this.outputType !== 'text' ? { outputType: this.outputType } : {}),
       addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
       beforeRun: async () => {
         const parentRunId = this.stateMachine.runIdStack.at(-2);
@@ -1170,6 +1214,41 @@ this.stepExecutor = new StepExecutor({
         emitFail: (rid, c, reason, steps, sid, totalIn, totalOut, dur, cancelled) =>
           this.emitFail(rid, c, reason, steps, sid, totalIn, totalOut, dur, cancelled),
       });
+
+      // Handle handoff — swap agent and continue the run
+      if (result.handoff && this.agentRegistry) {
+        const targetAgentId = result.handoff.targetAgentId as AgentId;
+        const targetAgent = await this.agentRegistry.get(targetAgentId);
+
+        if (targetAgent) {
+          // Swap the active agent for this run
+          const rc = this.runContexts.get(runId);
+          if (rc) {
+            rc.agent = targetAgent;
+            rc.depth++;
+          }
+
+          // Update the step executor's current agent
+          this.stepExecutor.setCurrentAgent(targetAgent);
+
+          // Rebuild system prompt for new agent
+          const newSystemPrompt = this.buildSystemPrompt(targetAgent);
+
+          // Resolve model for new agent
+          this.modelCaller.resolveAgentModel(targetAgent as { profile: { model?: string } }, runId);
+          const newRunModel = this.modelCaller.getActiveModel(runId);
+
+          // Continue the run with the new agent
+          return this.runLoop(
+            result.handoff.summary ?? prompt, runId, ctx, runAbort,
+            sessionId, userContentParts, targetAgent, runSaga, resume, newSystemPrompt,
+          );
+        } else {
+          // Target agent not found — log warning and continue with current agent
+          console.warn(`[kernel] Handoff target agent "${targetAgentId}" not found — continuing with current agent`);
+        }
+      }
+
       return result;
     } finally {
       // Drop this run's context and saga — parallel runs each own their own.

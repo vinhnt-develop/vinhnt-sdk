@@ -21,6 +21,20 @@ import { redactObjectSecrets } from "@vinhnt-sdk/guard";
 import { processToolResults } from "./tool-result-processor.js";
 import { checkExternalPaths, PATH_AWARE_TOOLS } from "./path-policy.js";
 
+/**
+ * Handoff signal — returned by a tool to transfer control to another agent.
+ * Detected by the step-executor and forwarded to the run-loop.
+ */
+export interface HandoffSignal {
+  readonly type: "handoff";
+  readonly targetAgentId: AgentId;
+  readonly reason: string;
+  readonly summary?: string | undefined;
+  readonly context?: Record<string, unknown> | undefined;
+}
+
+import type { AgentId } from "@vinhnt-sdk/schema";
+
 async function safeEmit(store: StepExecutorDeps["store"], event: Omit<KnownRunEvent, "sequence">): Promise<void> {
   try { await store.emitEvent(event); } catch (err) { console.warn("[safeEmit] Failed to emit event:", err); }
 }
@@ -139,7 +153,7 @@ export class StepExecutor {
     runAbort: AbortController,
     sessionId: string | undefined,
     runModel: ModelProvider,
-  ): Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number }; toolResults: ToolCallOutcome[] }> {
+  ): Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number }; toolResults: ToolCallOutcome[]; handoff?: HandoffSignal }> {
     const selfCorrectTokens = { input: 0, output: 0 };
     let toolCallCount = 0;
     const recentCalls: RecentCall[] = [];
@@ -357,6 +371,24 @@ export class StepExecutor {
         break;
       }
 
+      // Detect handoff in tool results — if found, stop processing and signal run-loop
+      const handoffResult = this.detectHandoff(results);
+      if (handoffResult) {
+        // Add a tool message indicating the handoff (for conversation history)
+        messages.push({
+          role: "tool",
+          toolCallId: handoffResult.tc.toolId,
+          content: `Handoff initiated: transferring control to agent "${handoffResult.signal.targetAgentId}". Reason: ${handoffResult.signal.reason}`,
+        });
+        return {
+          toolCallCount: toolCallCount + 1,
+          recentCalls,
+          selfCorrectTokens,
+          toolResults,
+          handoff: handoffResult.signal,
+        };
+      }
+
       const processed = await processToolResults(results, doomThreshold, messages, sessionId, { model: runModel.model }, toolCallCount, recentCalls, toolResults, {
         addSessionMessage: this.deps.addSessionMessage,
       });
@@ -383,6 +415,36 @@ export class StepExecutor {
       currentAgent: this.agentFor(runId),
       toolRisk: tool.risk,
     });
+  }
+
+  /**
+   * Detect if any tool result contains a handoff signal.
+   * Returns the first handoff found, or undefined if none.
+   */
+  private detectHandoff(
+    results: PromiseSettledResult<{ tc: ToolExecutionPlan; result: string; reason?: string; output?: unknown }>[],
+  ): { tc: ToolExecutionPlan; signal: HandoffSignal } | undefined {
+    for (const settled of results) {
+      if (settled.status !== "fulfilled") continue;
+      const r = settled.value;
+      if (r.result !== "success" || !r.output) continue;
+
+      // Check for HANDOFF_SYMBOL on the output object
+      const output = r.output as Record<string, unknown>;
+      if (output && typeof output === "object" && output["__@vinhnt-sdk/core/handoff"] === true) {
+        return {
+          tc: r.tc,
+          signal: {
+            type: "handoff",
+            targetAgentId: output.targetAgentId as AgentId,
+            reason: output.reason as string,
+            summary: output.summary as string | undefined,
+            context: output.context as Record<string, unknown> | undefined,
+          },
+        };
+      }
+    }
+    return undefined;
   }
 
   private async handleApproval(

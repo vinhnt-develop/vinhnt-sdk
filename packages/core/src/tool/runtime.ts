@@ -1,10 +1,11 @@
 import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
 import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
 import { ToolRegistry } from "@vinhnt-sdk/tools";
-import { ToolSandbox, signalToToolContext } from "@vinhnt-sdk/tools";
+import { ToolSandbox } from "@vinhnt-sdk/tools";
 import type { PermissionGate} from "@vinhnt-sdk/step-executor";
 import { type DynamicRule } from "@vinhnt-sdk/step-executor";
 import type { ApprovalHandler } from "@vinhnt-sdk/tools";
+import type { AgentRunContext } from "../kernel/run-context.js";
 
 /**
  * Result of executing a tool through {@link ToolRuntime}.
@@ -91,11 +92,29 @@ export class ToolRuntime {
     return this.permissionGate;
   }
 
-  async execute(toolId: string, input: unknown, ctx?: ToolContext): Promise<ToolExecutionResult> {
+  /**
+   * Execute a tool by ID.
+   *
+   * @param toolId - Registered tool identifier.
+   * @param input - Tool input (will be validated against the tool's schema).
+   * @param runContext - Optional AgentRunContext for DI (provides signal, approvals, etc.).
+   * @param toolContext - Legacy ToolContext (for backward compatibility).
+   */
+  async execute(
+    toolId: string,
+    input: unknown,
+    runContext?: AgentRunContext,
+    toolContext?: ToolContext,
+  ): Promise<ToolExecutionResult> {
     const tool = this.registry.get(toolId);
     if (!tool) {
       return { status: "error", error: `Tool "${toolId}" not found` };
     }
+
+    // Build ToolContext from RunContext (preferred) or use legacy toolContext
+    const ctx: ToolContext = runContext
+      ? this.buildToolContext(runContext, toolId)
+      : toolContext ?? this.buildFallbackContext();
 
     // RV-41: fail-closed — the permission gate is required for execution. A
     // runtime without a gate must deny, never silently execute ungated tools.
@@ -132,9 +151,12 @@ export class ToolRuntime {
     // Execute via sandbox
     let result: ToolExecutionResult;
     try {
-      const toolCtx = ctx ?? signalToToolContext();
-      const output = await this.sandbox.execute(tool, currentInput, toolCtx);
+      const output = await this.sandbox.execute(tool, currentInput, ctx);
       result = { status: "success", output };
+      // Track usage
+      if (runContext) {
+        runContext.usage.toolCalls++;
+      }
     } catch (err) {
       if (err instanceof ToolPermissionDenied) {
         result = { status: "denied", reason: err.message };
@@ -155,5 +177,51 @@ export class ToolRuntime {
     }
 
     return result;
+  }
+
+  /**
+   * Build a ToolContext from AgentRunContext — wires ask() to the approval handler.
+   */
+  private buildToolContext(runContext: AgentRunContext, toolId: string): ToolContext {
+    return {
+      sessionId: runContext.sessionId,
+      runId: runContext.runId,
+      agentId: runContext.agentId,
+      agentName: runContext.agentName,
+      signal: runContext.signal,
+      env: runContext.env,
+      extensionData: runContext.extensionData,
+      ask: async (input) => {
+        if (!this.approvalHandler) return "reject";
+        const approved = await this.approvalHandler.requestApproval(
+          { id: toolId, risk: "unknown" } as any,
+          input,
+        );
+        if (!approved) return "reject";
+        // Store approval in RunContext
+        const callId = input.resource ?? toolId;
+        runContext.setApproval(toolId, callId, "once");
+        return "once";
+      },
+      metadata: () => {},
+      setCompensation: (action) => runContext.setCompensation(action),
+    };
+  }
+
+  /**
+   * Fallback context when no RunContext is provided (backward compatibility).
+   */
+  private buildFallbackContext(): ToolContext {
+    return {
+      sessionId: "unknown",
+      runId: "unknown",
+      agentId: "unknown",
+      agentName: "unknown",
+      signal: AbortSignal.timeout(120_000),
+      env: {},
+      ask: async () => "reject",
+      metadata: () => {},
+      setCompensation: () => {},
+    };
   }
 }

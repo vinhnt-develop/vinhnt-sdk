@@ -16,7 +16,7 @@ export function createKernelTools(rt: ToolRuntime): ToolDefinition[] {
     risk: t.risk,
     inputSchema: t.inputSchema,
     async execute(input: unknown, ctx: ToolContext) {
-      const result = await rt.execute(t.id, input, ctx);
+      const result = await rt.execute(t.id, input, undefined, ctx);
       if (result.status === "success") return result.output;
       if (result.status === "denied") throw new ToolPermissionDenied(t.id, result.reason ?? "Permission denied");
       throw new Error(result.error);

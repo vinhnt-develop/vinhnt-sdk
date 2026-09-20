@@ -15,6 +15,36 @@ import type { CircuitBreaker, CircuitBreakerOpenError } from "@vinhnt-sdk/step-e
 import type { RunStateMachine } from "@vinhnt-sdk/step-executor";
 import { evaluateStopConditions, buildJudgeMessages, parseJudgeVerdict } from "@vinhnt-sdk/step-executor";
 import type { StopCondition, StepVerificationContext, TerminationPolicy, ToolCallOutcome } from "@vinhnt-sdk/step-executor";
+import type { Guardrail, GuardrailResult } from "@vinhnt-sdk/guardrails";
+import { runGuardrails } from "@vinhnt-sdk/guardrails";
+import type { z } from "zod";
+import type { ResponseFormat } from "@vinhnt-sdk/schema";
+import { zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
+
+/**
+ * Convert a Zod schema to ResponseFormat for structured output.
+ * Uses the existing zodSchemaToNestedJsonSchema utility from @vinhnt-sdk/tools.
+ */
+function zodToResponseFormat(schema: z.ZodTypeAny, name: string): ResponseFormat {
+  const jsonSchema = zodSchemaToNestedJsonSchema(schema);
+  if (jsonSchema) {
+    return {
+      type: "json_schema",
+      jsonSchema: { name, schema: jsonSchema, strict: true },
+    };
+  }
+  // Fallback: basic json_object format
+  return { type: "json_object" };
+}
+
+/**
+ * Validate structured output against a Zod schema.
+ * Returns parsed output or throws on validation failure.
+ */
+function validateStructuredOutput(schema: z.ZodTypeAny, output: string): unknown {
+  const parsed = JSON.parse(output);
+  return schema.parse(parsed);
+}
 
 export interface RunLoopDeps {
   readonly modelCaller: ModelCaller;
@@ -37,6 +67,12 @@ export interface RunLoopDeps {
   readonly compactionThreshold?: number;
   readonly currentAgent?: AgentConfig;
   readonly termination?: TerminationPolicy;
+  /** Input guardrails — run before model calls. */
+  readonly inputGuardrails?: readonly Guardrail[];
+  /** Output guardrails — run after model responses. */
+  readonly outputGuardrails?: readonly Guardrail[];
+  /** Structured output type — 'text' or Zod schema. */
+  readonly outputType?: 'text' | z.ZodTypeAny;
   /** Optional judge model for `llm-judge` stop conditions (defaults to the active run model). */
   readonly judgeModel?: ModelProvider;
   /** Await once before the loop starts, e.g. re-queuing persisted pending inputs (RV-21). */
@@ -95,6 +131,15 @@ export interface RunLoopResult {
   readonly totalInputTokens?: number;
   readonly totalOutputTokens?: number;
   readonly durationMs?: number;
+  /** Validated structured output (when outputType is Zod schema). */
+  readonly structuredOutput?: unknown;
+  /** If set, a handoff was detected — kernel should transfer control. */
+  readonly handoff?: {
+    readonly targetAgentId: string;
+    readonly reason: string;
+    readonly summary?: string | undefined;
+    readonly context?: Record<string, unknown> | undefined;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +329,8 @@ interface StepInput {
   totalOutputTokens: number;
   finalOutput: string;
   disableTools?: boolean;
+  validatedOutput?: unknown;
+  outputType?: 'text' | z.ZodTypeAny;
 }
 
 interface StepOutput {
@@ -298,6 +345,16 @@ interface StepOutput {
   lastStepToolOutcomes: readonly ToolCallOutcome[];
   /** If set, the step itself failed (e.g. step timeout) without failing the run. */
   stepFailed?: { reason: string; error?: string };
+  /** If set, a handoff was detected — transfer control to target agent. */
+  handoff?: {
+    targetAgentId: string;
+    reason: string;
+    summary?: string | undefined;
+    context?: Record<string, unknown> | undefined;
+  };
+  /** Validated structured output (when outputType is Zod schema). */
+  structuredOutput?: unknown;
+  outputType?: 'text' | z.ZodTypeAny;
 }
 
 async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOutput> {
@@ -320,6 +377,30 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     }
 
     let messages = input.messages;
+
+    // Run input guardrails before model call
+    if (deps.inputGuardrails && deps.inputGuardrails.length > 0) {
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+      const inputContent = lastUserMsg?.content ?? "";
+      const guardrailResult = await runGuardrails([...deps.inputGuardrails], {
+        direction: "input",
+        content: inputContent,
+        metadata: { runId, step: input.step, agentId: deps.currentAgent?.id },
+      });
+      if (!guardrailResult.passed) {
+        // Input guardrail denied — halt the run
+        throw new KernelError("guardrail_denied", `Input guardrail denied: ${guardrailResult.reason ?? "unknown reason"}`);
+      }
+      // If guardrail modified content, update the message
+      if (guardrailResult.modifiedContent !== undefined && lastUserMsg) {
+        const modifiedText = typeof guardrailResult.modifiedContent === "string"
+          ? guardrailResult.modifiedContent
+          : JSON.stringify(guardrailResult.modifiedContent);
+        messages = messages.map((m) =>
+          m === lastUserMsg ? { ...m, content: modifiedText } : m,
+        );
+      }
+    }
 
     if (deps.thinkingBudget > 0) {
       await deps.modelCaller.doThinkingStep(messages, input.step, runId, ctx, stepTimeoutController.signal);
@@ -385,11 +466,44 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       input.totalOutputTokens += runModel.countTokens(response.content);
     }
 
+    // Run output guardrails after model response
+    let finalContent = response.content;
+    if (deps.outputGuardrails && deps.outputGuardrails.length > 0) {
+      const guardrailResult = await runGuardrails([...deps.outputGuardrails], {
+        direction: "output",
+        content: response.content,
+        metadata: { runId, step: input.step, agentId: deps.currentAgent?.id, toolCalls: response.toolCalls?.map((tc) => tc.name) },
+      });
+      if (!guardrailResult.passed) {
+        // Output guardrail denied — halt the run
+        throw new KernelError("guardrail_denied", `Output guardrail denied: ${guardrailResult.reason ?? "unknown reason"}`);
+      }
+      // If guardrail modified content, use the modified version
+      if (guardrailResult.modifiedContent !== undefined) {
+        finalContent = typeof guardrailResult.modifiedContent === "string"
+          ? guardrailResult.modifiedContent
+          : JSON.stringify(guardrailResult.modifiedContent);
+      }
+    }
+
+    // Validate structured output if outputType is Zod schema
+    let validatedOutput: unknown = undefined;
+    if (deps.outputType && deps.outputType !== 'text') {
+      try {
+        validatedOutput = validateStructuredOutput(deps.outputType, finalContent);
+        // Use the validated (parsed) output as the final content
+        finalContent = JSON.stringify(validatedOutput);
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        throw new KernelError("validation_error", `Structured output validation failed: ${errMsg}`);
+      }
+    }
+
     const toolCalls = response.toolCalls ?? [];
 
     messages.push({
       role: "assistant",
-      content: response.content,
+      content: finalContent,
       ...(toolCalls.length > 0 ? {
         toolCalls: toolCalls.map((tc) => ({
           id: tc.id,
@@ -402,7 +516,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     const asstTokens = { input: input.totalInputTokens, output: input.totalOutputTokens };
     const asstModel = runModel.model;
     const msgCost = deps.modelCaller.calculateCost(asstTokens.input, asstTokens.output, runModel);
-    await deps.addSessionMessage(sessionId, "assistant", response.content, {
+    await deps.addSessionMessage(sessionId, "assistant", finalContent, {
       tokens: asstTokens,
       ...(asstModel ? { model: asstModel } : {}),
       ...(msgCost !== undefined ? { cost: msgCost } : {}),
@@ -419,13 +533,39 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         completed: true,
         toolCallCount: 0,
         lastStepToolOutcomes: [],
+        ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
       };
     }
 
-    const { toolCallCount, selfCorrectTokens, toolResults } = await deps.stepExecutor.executeToolCalls(
+    const { toolCallCount, selfCorrectTokens, toolResults, handoff } = await deps.stepExecutor.executeToolCalls(
       toolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
       messages, input.step, runId, ctx, stepTimeoutController, sessionId, runModel,
     );
+
+    // Handle handoff — transfer control to target agent
+    if (handoff) {
+      const currentAgentId = deps.currentAgent?.id ?? "unknown";
+      // Note: handoff event is emitted in the main runLoop after processStep returns
+
+      // Signal to kernel to swap active agent (kernel handles the swap)
+      return {
+        messages,
+        step: input.step,
+        runId,
+        totalInputTokens: input.totalInputTokens,
+        totalOutputTokens: input.totalOutputTokens,
+        finalOutput: input.finalOutput,
+        completed: false,
+        toolCallCount,
+        lastStepToolOutcomes: toolResults,
+        handoff: {
+          targetAgentId: handoff.targetAgentId,
+          reason: handoff.reason,
+          summary: handoff.summary,
+          context: handoff.context,
+        },
+      };
+    }
 
     if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
       // Step timed out during tool execution — surface an error for any tool call
@@ -485,6 +625,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       completed: false,
       toolCallCount,
       lastStepToolOutcomes: toolResults,
+      ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
     };
   } finally {
     clearTimeout(stepTimer);
@@ -508,6 +649,8 @@ export async function runLoop(
   let messages: ChatMessage[] = [];
   let step = 0;
   let finalOutput = "";
+  let structuredOutput: unknown = undefined;
+  let handoffResult: { targetAgentId: string; reason: string; summary?: string | undefined; context?: Record<string, unknown> | undefined } | undefined;
   let contextEpochActive = false;
   // Real system head (identity + agent systemPrompt) sent as a proper `system`
   // message at the head of the conversation instead of being flattened into the
@@ -715,6 +858,9 @@ export async function runLoop(
       totalInputTokens = stepResult.totalInputTokens;
       totalOutputTokens = stepResult.totalOutputTokens;
       finalOutput = stepResult.finalOutput;
+      if (stepResult.structuredOutput !== undefined) {
+        structuredOutput = stepResult.structuredOutput;
+      }
 
       if (stepResult.stepFailed) {
         await emitEvt("step.failed", { step, reason: stepResult.stepFailed.reason, ...(stepResult.stepFailed.error ? { error: stepResult.stepFailed.error } : {}) });
@@ -722,6 +868,23 @@ export async function runLoop(
       } else {
         await emitEvt("step.completed", { step, toolCallCount: stepResult.toolCallCount });
         await deps.pluginManager?.fireHook("onStepCompleted", { step, toolCallCount: stepResult.toolCallCount });
+      }
+
+      // Handle handoff — transfer control to target agent
+      if (stepResult.handoff) {
+        // Emit handoff event
+        const currentAgentId = deps.currentAgent?.id ?? "unknown";
+        await emitEvt("agent.handoff", {
+          fromAgentId: currentAgentId,
+          toAgentId: stepResult.handoff.targetAgentId,
+          reason: stepResult.handoff.reason,
+          summary: stepResult.handoff.summary,
+        });
+
+        // Break out of the loop — kernel will handle agent swap
+        finalOutput = `Handoff to agent "${stepResult.handoff.targetAgentId}": ${stepResult.handoff.reason}`;
+        handoffResult = stepResult.handoff;
+        break;
       }
 
       if (stepResult.completed) {
@@ -813,8 +976,15 @@ export async function runLoop(
             runSessionState.step = step + 1;
             runSessionState.isRunning = false;
           }
-          await saveFinalSnapshot("succeeded");
-          return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
+      await saveFinalSnapshot("succeeded");
+      return {
+        totalSteps: step + 1,
+        status: "succeeded",
+        totalInputTokens,
+        totalOutputTokens,
+        durationMs: Date.now() - startTime,
+        ...(structuredOutput !== undefined ? { structuredOutput } : {}),
+      };
         }
       }
     }
@@ -850,7 +1020,7 @@ export async function runLoop(
         }
         setState(runId, "completed");
         await saveFinalSnapshot("succeeded");
-        return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs };
+        return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs, ...(handoffResult ? { handoff: handoffResult } : {}) };
       }
       if (runAbort.signal.aborted) return cancelRun(step + 1);
       await emitFail(runId, ctx, `Exceeded max steps (${runMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
