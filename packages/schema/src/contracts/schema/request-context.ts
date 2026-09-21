@@ -11,6 +11,8 @@ export const RequestContextSchema = z.object({
   overrides: z.object({
     provider: z.string().optional(),
     model: z.string().optional(),
+    /** Per-run workspace root override. When set, tools operate within this directory. */
+    workspaceRoot: z.string().optional(),
   }).optional(),
 });
 

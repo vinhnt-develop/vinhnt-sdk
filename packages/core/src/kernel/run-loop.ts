@@ -73,6 +73,8 @@ export interface RunLoopDeps {
   readonly outputGuardrails?: readonly Guardrail[];
   /** Structured output type — 'text' or Zod schema. */
   readonly outputType?: 'text' | z.ZodTypeAny;
+  /** Per-run workspace root override. Tools operate within this directory. */
+  readonly workspaceRoot?: string;
   /** Optional judge model for `llm-judge` stop conditions (defaults to the active run model). */
   readonly judgeModel?: ModelProvider;
   /** Await once before the loop starts, e.g. re-queuing persisted pending inputs (RV-21). */
@@ -331,6 +333,7 @@ interface StepInput {
   disableTools?: boolean;
   validatedOutput?: unknown;
   outputType?: 'text' | z.ZodTypeAny;
+  workspaceRoot?: string;
 }
 
 interface StepOutput {

@@ -190,6 +190,7 @@ export class ToolRuntime {
       agentName: runContext.agentName,
       signal: runContext.signal,
       env: runContext.env,
+      ...(runContext.workspaceRoot !== undefined ? { workspaceRoot: runContext.workspaceRoot } : {}),
       extensionData: runContext.extensionData,
       ask: async (input) => {
         if (!this.approvalHandler) return "reject";

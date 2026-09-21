@@ -22,6 +22,13 @@ export interface ToolContext {
   readonly env: Record<string, string>;
 
   /**
+   * The active workspace root for this run.
+   * Tools should resolve file paths relative to this directory.
+   * Falls back to AgentKernelConfig.workspaceRoot if not set per-run.
+   */
+  readonly workspaceRoot?: string;
+
+  /**
    * Request human approval for a permission-bound operation.
    * Returns the user's decision: "once" (allow once), "always" (approve forever), or "reject".
    * When reply is "always", savePatterns are persisted as allow rules for future requests.

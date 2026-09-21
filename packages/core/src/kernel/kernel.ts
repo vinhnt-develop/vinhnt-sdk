@@ -119,6 +119,7 @@ export class AgentKernel {
   private readonly inputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
   private readonly outputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
   private readonly outputType: 'text' | import("zod").ZodTypeAny;
+  private readonly workspaceRoot: string | undefined;
   private readonly sessionDeps: KernelSessionDeps;
   private readonly subAgentDeps: SubAgentRunnerDeps;
   private readonly runSessionStates = new Map<RunId, SessionRuntimeState | undefined>();
@@ -198,6 +199,7 @@ export class AgentKernel {
     this.inputGuardrails = normalized.inputGuardrails ?? [];
     this.outputGuardrails = normalized.outputGuardrails ?? [];
     this.outputType = normalized.outputType ?? 'text';
+    this.workspaceRoot = normalized.workspaceRoot;
 
     // Derive responseFormat from outputType if it's a Zod schema
     let effectiveResponseFormat = normalized.modelSettings?.responseFormat;
@@ -468,6 +470,14 @@ this.stepExecutor = new StepExecutor({
       this.cachedToolsAgentId = agentId;
     }
     return result;
+  }
+
+  /**
+   * Resolve workspace root for a run. Per-run override (ctx.overrides.workspaceRoot)
+   * takes precedence over kernel-level default (AgentKernelConfig.workspaceRoot).
+   */
+  private resolveWorkspaceRoot(ctx: RequestContext): string | undefined {
+    return ctx.overrides?.workspaceRoot ?? this.workspaceRoot;
   }
 
   private findTool(name: string, runId?: RunId): ToolDefinition | undefined {
@@ -1164,6 +1174,9 @@ this.stepExecutor = new StepExecutor({
     // default config (exposed via getCircuitBreaker()) for new runs.
     const runCircuitBreaker = new CircuitBreaker(this.circuitBreaker.getOptions());
 
+    // Per-run workspace root: ctx.overrides.workspaceRoot takes precedence over kernel config
+    const resolvedWorkspaceRoot = ctx.overrides?.workspaceRoot ?? this.workspaceRoot;
+
     const orchestratorDeps: RunLoopDeps = {
       modelCaller: this.modelCaller,
       permissionGate: this.permissionGate,
@@ -1188,6 +1201,7 @@ this.stepExecutor = new StepExecutor({
       ...(this.inputGuardrails.length > 0 ? { inputGuardrails: this.inputGuardrails } : {}),
       ...(this.outputGuardrails.length > 0 ? { outputGuardrails: this.outputGuardrails } : {}),
       ...(this.outputType !== 'text' ? { outputType: this.outputType } : {}),
+      ...(resolvedWorkspaceRoot !== undefined ? { workspaceRoot: resolvedWorkspaceRoot } : {}),
       addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
       beforeRun: async () => {
         const parentRunId = this.stateMachine.runIdStack.at(-2);

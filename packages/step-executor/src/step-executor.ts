@@ -197,7 +197,8 @@ export class StepExecutor {
         }
 
         if (this.deps.externalDirectoryAccess !== true && this.deps.workspaceRoot) {
-          const externalPath = checkExternalPaths(tc.toolName, tc.args, this.deps.workspaceRoot);
+          const perRunRoot = ctx.overrides?.workspaceRoot ?? this.deps.workspaceRoot;
+          const externalPath = checkExternalPaths(tc.toolName, tc.args, perRunRoot);
           if (externalPath) {
             await safeEmit(this.deps.store, {
               id: crypto.randomUUID(), runId, type: "tool.failed",
@@ -346,7 +347,7 @@ export class StepExecutor {
             permissionGate: this.deps.permissionGate,
             selfCorrectOnFailure: this.deps.selfCorrectOnFailure,
             ...(this.deps.externalDirectoryAccess !== undefined ? { externalDirectoryAccess: this.deps.externalDirectoryAccess } : {}),
-            ...(this.deps.workspaceRoot !== undefined ? { workspaceRoot: this.deps.workspaceRoot } : {}),
+            ...(this.deps.workspaceRoot !== undefined ? { workspaceRoot: ctx.overrides?.workspaceRoot ?? this.deps.workspaceRoot } : {}),
             findTool: this.deps.findTool,
             currentAgent: this.agentFor(runId),
             runSelfCorrection: (tc, messages, recentCalls, step, runId, ctx, runAbort, toolCtx, errorMsg, runModel) =>

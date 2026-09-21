@@ -96,6 +96,12 @@ export class AgentRunContext<TContext = unknown> {
   /** Environment variables (for subprocess execution). */
   readonly env: Record<string, string>;
 
+  /**
+   * The active workspace root for this run.
+   * Tools should resolve file paths relative to this directory.
+   */
+  readonly workspaceRoot?: string;
+
   /** Tool approval decisions (toolName+callId → decision). */
   readonly approvals: Map<string, ApprovalRecord>;
 
@@ -117,6 +123,7 @@ export class AgentRunContext<TContext = unknown> {
       agentId: string;
       agentName: string;
       env?: Record<string, string>;
+      workspaceRoot?: string;
     },
   ) {
     this.context = context;
@@ -126,6 +133,9 @@ export class AgentRunContext<TContext = unknown> {
     this.agentId = options.agentId;
     this.agentName = options.agentName;
     this.env = options.env ?? {};
+    if (options.workspaceRoot !== undefined) {
+      this.workspaceRoot = options.workspaceRoot;
+    }
     this.approvals = new Map();
     this.compensations = [];
     this.extensionData = {};
@@ -190,14 +200,26 @@ export class AgentRunContext<TContext = unknown> {
    * Fork context for a sub-agent run (scoped toolInput, shared approvals).
    */
   forkForSubagent(options: { agentId: string; agentName: string }): AgentRunContext<TContext> {
-    const child = new AgentRunContext<TContext>(this.context, {
+    const childOptions: {
+      signal: AbortSignal;
+      sessionId: string;
+      runId: string;
+      agentId: string;
+      agentName: string;
+      env: Record<string, string>;
+      workspaceRoot?: string;
+    } = {
       signal: this.signal,
       sessionId: this.sessionId,
       runId: this.runId,
       agentId: options.agentId,
       agentName: options.agentName,
       env: this.env,
-    });
+    };
+    if (this.workspaceRoot !== undefined) {
+      childOptions.workspaceRoot = this.workspaceRoot;
+    }
+    const child = new AgentRunContext<TContext>(this.context, childOptions);
     // Share approvals and extension data by reference
     child.approvals.clear();
     this.approvals.forEach((v, k) => child.approvals.set(k, v));
@@ -216,6 +238,7 @@ export class AgentRunContext<TContext = unknown> {
       agentName: this.agentName,
       signal: this.signal,
       env: this.env,
+      ...(this.workspaceRoot !== undefined ? { workspaceRoot: this.workspaceRoot } : {}),
       extensionData: this.extensionData,
       ask: async (input) => {
         // Delegate to approval handler (will be set by kernel)
