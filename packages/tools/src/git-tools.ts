@@ -3,6 +3,8 @@ import type { ToolDefinition } from "./index.js";
 import { z } from "zod";
 import { defineTool } from "./index.js";
 import { sanitizeEnv } from "@vinhnt-sdk/guard";
+import type { RootGetter } from "./root-resolver.js";
+import { resolveRoot } from "./root-resolver.js";
 
 const GitStatusSchema = z.object({});
 const GitDiffSchema = z.object({
@@ -16,18 +18,17 @@ const GitCommitSchema = z.object({
   message: z.string().min(1),
 });
 
-type RootGetter = string | (() => string);
-
-function resolveRoot(r: RootGetter): string {
-  return typeof r === "function" ? r() : r;
-}
-
 function gitAsync(args: string[], cwd: string, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = execFile("git", args, { cwd, encoding: "utf-8" as const, maxBuffer: 5 * 1024 * 1024, env: sanitizeEnv() },
-      (err, stdout) => {
+      (err, stdout, stderr) => {
         if (err && (err as NodeJS.ErrnoException).code === "ENOENT") {
           reject(new Error("git not found"));
+          return;
+        }
+        if (err) {
+          const message = stderr?.trim() || err.message;
+          reject(new Error(message));
           return;
         }
         resolve(stdout ?? "");

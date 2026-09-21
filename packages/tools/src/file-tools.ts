@@ -85,13 +85,9 @@ const LIST_DIRECTORY_SCHEMA = {
   },
 };
 
-type RootGetter = string | (() => string);
-
-function resolveRoot(r: RootGetter): string {
-  return typeof r === "function" ? r() : r;
-}
-
-export { resolveRoot, type RootGetter };
+export { resolveRoot, type RootGetter } from "./root-resolver.js";
+import type { RootGetter } from "./root-resolver.js";
+import { resolveRoot } from "./root-resolver.js";
 
 const DEFAULT_MAX_FILE_SIZE = 1_048_576;
 

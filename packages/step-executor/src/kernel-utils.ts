@@ -1,5 +1,10 @@
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 import type { RunId } from "@vinhnt-sdk/schema";
+import { DEFAULT_DOOM_LOOP_THRESHOLD } from "@vinhnt-sdk/guard";
+
+// Re-export canonical implementations from guard to avoid duplication.
+export type { RecentCall } from "@vinhnt-sdk/guard";
+export { hashArgs, detectDoomLoop, DEFAULT_DOOM_LOOP_THRESHOLD } from "@vinhnt-sdk/guard";
 
 /** Race a promise against an abort signal — rejects with RunAbortedError if aborted. @internal */
 export function raceWithAbort<T>(promise: Promise<T>, signal: AbortSignal, runId: RunId): Promise<T> {
@@ -69,7 +74,7 @@ export const DEFAULT_MAX_STEPS = 25;
 /** Default cap on tool calls per step. */
 export const DEFAULT_MAX_TOOL_CALLS_PER_STEP = 20;
 /** Consecutive identical calls that trigger doom-loop detection. */
-export const DOOM_LOOP_THRESHOLD = 3;
+export const DOOM_LOOP_THRESHOLD = DEFAULT_DOOM_LOOP_THRESHOLD;
 
 /** System prompt guiding the model to correct a failed tool call. @internal */
 export const SELF_CORRECT_PROMPT = `A tool call just failed. Analyze the error and try a corrected approach.
@@ -79,52 +84,6 @@ Guidelines:
 - If the tool is unavailable, suggest an alternative tool.
 - If the problem is permanent (e.g., invalid request), explain to the user.
 - Do NOT repeat the same failing call.`;
-
-/** A recorded tool invocation used for doom-loop detection. @internal */
-export interface RecentCall {
-  id: string;
-  args: unknown;
-  /** Canonical hash of `args` — precomputed once for O(1) doom-loop comparison */
-  argsKey?: string;
-}
-
-/**
- * Stable, order-independent hash of an arbitrary tool-arguments value.
- * Object key order is normalized so `{a:1,b:2}` and `{b:2,a:1}` hash the same,
- * and the hash is computed once per call (vs. repeated JSON.stringify in a
- * doom-loop scan). Collisions are possible but astronomically unlikely for the
- * small arg payloads agents produce.
- * @internal
- */
-export function hashArgs(value: unknown): string {
-  return fnv1a(canonicalJson(value)).toString(36);
-}
-
-function canonicalJson(value: unknown): string {
-  if (value === null) return "null";
-  if (typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).sort();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`).join(",")}}`;
-}
-
-function fnv1a(str: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-/** Detect whether the same tool+args repeated the last `threshold` calls. @internal */
-export function detectDoomLoop(recentCalls: RecentCall[], name: string, args: unknown, threshold = DOOM_LOOP_THRESHOLD): boolean {
-  if (recentCalls.length < threshold) return false;
-  const last = recentCalls.slice(-threshold);
-  const argsKey = hashArgs(args);
-  return last.every((c) => c.id === name && (c.argsKey ?? hashArgs(c.args)) === argsKey);
-}
 
 /**
  * Derive the owning domain from a namespaced tool id:

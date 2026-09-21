@@ -67,9 +67,13 @@ export type { SagaEntry, CompensationAction } from "./saga.js";
 export {
   createReadFileTool, createWriteFileTool, createEditFileTool,
   createApplyPatchTool, createListDirectoryTool,
-  ensurePathAccess, resolveRoot, DEFAULT_EXCLUDED_DIRS,
+  ensurePathAccess, DEFAULT_EXCLUDED_DIRS,
 } from "./file-tools.js";
-export type { RootGetter } from "./file-tools.js";
+
+// === Root resolver (shared by file, git, search tools) ===
+
+export { resolveRoot } from "./root-resolver.js";
+export type { RootGetter } from "./root-resolver.js";
 
 // === Image tools ===
 

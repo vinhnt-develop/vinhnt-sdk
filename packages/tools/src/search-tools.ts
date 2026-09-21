@@ -3,6 +3,8 @@ import { join, relative } from "node:path";
 import type { ToolDefinition } from "./index.js";
 import { z } from "zod";
 import { defineTool } from "./index.js";
+import type { RootGetter } from "./root-resolver.js";
+import { resolveRoot } from "./root-resolver.js";
 
 const GlobFilesSchema = z.object({
   pattern: z.string().min(1),
@@ -13,12 +15,6 @@ const GrepFilesSchema = z.object({
   include: z.string().optional(),
   maxResults: z.number().positive().optional(),
 });
-
-type RootGetter = string | (() => string);
-
-function resolveRoot(r: RootGetter): string {
-  return typeof r === "function" ? r() : r;
-}
 
 /**
  * Default ignored directories for search — convenience only.

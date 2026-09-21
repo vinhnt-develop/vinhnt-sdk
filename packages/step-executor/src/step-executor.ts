@@ -410,11 +410,13 @@ export class StepExecutor {
     compensationRef: { current: (() => Promise<void>) | null },
     metadataRef: MetadataRef,
   ): Promise<ToolContext> {
+    const resolvedWorkspaceRoot = ctx.overrides?.workspaceRoot ?? this.deps.workspaceRoot;
     return buildToolContext(tc, runId, sessionId, ctx, runAbort, compensationRef, metadataRef, {
       pluginManager: this.deps.pluginManager,
       permissionGate: this.deps.permissionGate,
       currentAgent: this.agentFor(runId),
       toolRisk: tool.risk,
+      workspaceRoot: resolvedWorkspaceRoot,
     });
   }
 

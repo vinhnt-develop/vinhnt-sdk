@@ -13,6 +13,8 @@ export interface ToolContextBuilderDeps {
   readonly currentAgent: AgentConfig | undefined;
   /** Tool risk used to evaluate the tool's own `ctx.ask` against the gate. */
   readonly toolRisk: ToolRisk;
+  /** Resolved workspace root for this run (per-run override or kernel default). */
+  readonly workspaceRoot: string | undefined;
 }
 
 /** Mutable ref through which tools attach observability metadata. */
@@ -45,6 +47,7 @@ export async function buildToolContext(
     signal: runAbort.signal,
     env: shellEnv,
     parentContext: ctx,
+    ...(deps.workspaceRoot !== undefined ? { workspaceRoot: deps.workspaceRoot } : {}),
     // P1-H: single approval path — gate decide first (saved patterns / rules),
     // then prompt via the approval store passing savePatterns for "always".
     ask: async (askInput) => {

@@ -10,14 +10,13 @@ interface TodoItem {
   updatedAt: number;
 }
 
-const store = new Map<string, TodoItem>();
-let nextId = 1;
-
 /** Create the `todowrite` tool managing a structured task list with priorities and status. */
 export function createTodoWriteTool() {
-  // The todo tool intentionally keeps loose runtime validation (returns
-  // `{ error }` results instead of throwing), so its schema is untyped and
-  // validation happens inside execute below.
+  // Each call creates an isolated store — no global state leakage between
+  // concurrent agent runs or sessions.
+  const store = new Map<string, TodoItem>();
+  let nextId = 1;
+
   return defineTool<unknown, unknown>({
     name: "todowrite",
     description: "Manage a structured task list with priorities and status. Use this to track progress, organize multi-step work, and surface status to the user. Actions: create, list, update, complete, delete.",

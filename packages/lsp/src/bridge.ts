@@ -1,13 +1,8 @@
-import type { ToolHook } from "@vinhnt-sdk/tools";
+import type { ToolHook, RootGetter } from "@vinhnt-sdk/tools";
+import { resolveRoot } from "@vinhnt-sdk/tools";
 import type { LspPool } from "./pool.js";
 import { formatDiagnostics } from "./diagnostics.js";
 import { uriFromPath } from "./file-sync.js";
-
-type RootGetter = string | (() => string);
-
-function resolveRoot(r: RootGetter): string {
-  return typeof r === "function" ? r() : r;
-}
 
 const LSP_AWARE_TOOLS = new Set(["read_file", "write_file", "edit_file"]);
 

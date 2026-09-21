@@ -19,7 +19,6 @@ const SENSITIVE_ENV_PREFIXES = [
 ] as const;
 
 const SENSITIVE_ENV_KEYS = new Set([
-  "HOME",
   "USER",
   "USERNAME",
   "PASSWORD",
@@ -39,6 +38,7 @@ const SENSITIVE_ENV_KEYS = new Set([
 const SAFE_ENV_WHITELIST = new Set([
   "PATH",
   "PATHEXT",
+  "HOME",
   "SYSTEMDRIVE",
   "SYSTEMROOT",
   "SystemRoot",

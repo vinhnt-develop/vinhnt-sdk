@@ -187,8 +187,11 @@ export function createRedactingLogger<A extends unknown[]>(
     const redacted = args.map((arg) => {
       if (typeof arg === "string") return redactSecrets(arg);
       if (arg instanceof Error) {
-        arg.message = redactSecrets(arg.message);
-        return arg;
+        const redactedError = new Error(redactSecrets(arg.message));
+        if (arg.stack !== undefined) {
+          redactedError.stack = arg.stack;
+        }
+        return redactedError;
       }
       if (arg !== null && typeof arg === "object") return redactObjectSecrets(arg);
       return arg;
