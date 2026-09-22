@@ -51,6 +51,6 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/guard": "0.4.3"
+    "@vinhnt-sdk/guard": "workspace:*"
   }
 }

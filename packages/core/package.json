@@ -53,18 +53,18 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@vinhnt-sdk/event": "0.4.2",
-    "@vinhnt-sdk/llm": "0.5.2",
-    "@vinhnt-sdk/permission": "0.4.2",
-    "@vinhnt-sdk/sandbox": "0.4.2",
+    "@vinhnt-sdk/event": "workspace:*",
+    "@vinhnt-sdk/llm": "workspace:*",
+    "@vinhnt-sdk/permission": "workspace:*",
+    "@vinhnt-sdk/sandbox": "workspace:*",
     "@vinhnt-sdk/schema": ">=0.5.0",
-    "@vinhnt-sdk/guard": "0.4.3",
-    "@vinhnt-sdk/guardrails": "0.4.2",
-    "@vinhnt-sdk/workflow": "0.4.2",
-    "@vinhnt-sdk/session": "0.4.2",
-    "@vinhnt-sdk/knowledge": "0.4.2",
-    "@vinhnt-sdk/tools": "0.4.4",
-    "@vinhnt-sdk/step-executor": "0.4.5",
+    "@vinhnt-sdk/guard": "workspace:*",
+    "@vinhnt-sdk/guardrails": "workspace:*",
+    "@vinhnt-sdk/workflow": "workspace:*",
+    "@vinhnt-sdk/session": "workspace:*",
+    "@vinhnt-sdk/knowledge": "workspace:*",
+    "@vinhnt-sdk/tools": "workspace:*",
+    "@vinhnt-sdk/step-executor": "workspace:*",
     "zod": "^4.4.3"
   }
 }

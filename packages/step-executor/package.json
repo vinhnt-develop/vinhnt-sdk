@@ -53,12 +53,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/event": "0.4.2",
-    "@vinhnt-sdk/guard": "0.4.3",
-    "@vinhnt-sdk/llm": "0.5.2",
-    "@vinhnt-sdk/permission": "0.4.2",
+    "@vinhnt-sdk/event": "workspace:*",
+    "@vinhnt-sdk/guard": "workspace:*",
+    "@vinhnt-sdk/llm": "workspace:*",
+    "@vinhnt-sdk/permission": "workspace:*",
     "@vinhnt-sdk/schema": ">=0.5.0",
-    "@vinhnt-sdk/session": "0.4.2",
-    "@vinhnt-sdk/tools": "0.4.4"
+    "@vinhnt-sdk/session": "workspace:*",
+    "@vinhnt-sdk/tools": "workspace:*"
   }
 }
