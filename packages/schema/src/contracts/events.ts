@@ -2,6 +2,46 @@ import type { RunId, TraceId, RequestId } from "./branded.js";
 import type { AgentStepType } from "../types/agent-step.js";
 
 // ---------------------------------------------------------------------------
+// Snapshot types (for LLM request/response capture)
+// ---------------------------------------------------------------------------
+
+/**
+ * Simplified message representation for LLM request snapshots.
+ * Uses strict role enum (state machine core).
+ */
+export interface LlmSnapshotMessage {
+  readonly role: "system" | "user" | "assistant" | "developer" | "tool";
+  readonly content: string;
+  readonly toolCalls?: ReadonlyArray<{
+    readonly id: string;
+    readonly name: string;
+    readonly args: unknown;
+  }>;
+  readonly toolCallId?: string;
+}
+
+/**
+ * Tool definition snapshot for LLM request debugging.
+ */
+export interface LlmSnapshotToolDef {
+  readonly name: string;
+  readonly description?: string;
+  readonly parameters?: Record<string, unknown>;
+  readonly risk?: string;
+}
+
+/**
+ * User-selected resources for a specific LLM request.
+ * Empty arrays or undefined = send all (backward compatible default).
+ */
+export interface LlmSnapshotSelection {
+  readonly tools?: string[];
+  readonly knowledge?: string[];
+  readonly plugins?: string[];
+  readonly metadata?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
 // Base metadata (shared by all events)
 // ---------------------------------------------------------------------------
 export interface RunEvent<TData = unknown> {
@@ -213,8 +253,43 @@ export interface LlmRequestData {
   readonly frequencyPenalty?: number;
   readonly presencePenalty?: number;
   readonly systemPromptLength?: number;
+  readonly systemPrompt?: string;
   readonly messageCount?: number;
   readonly toolCount?: number;
+  // ─── Snapshot additions ─────────────────────────────────────────
+  /** Full messages array sent to LLM. */
+  readonly messages?: ReadonlyArray<LlmSnapshotMessage>;
+  /** Tool definitions with schemas. */
+  readonly tools?: ReadonlyArray<LlmSnapshotToolDef>;
+  /** User-selected resources from composer. */
+  readonly selection?: LlmSnapshotSelection;
+  /** Agent identity at time of request. */
+  readonly agent?: { readonly id?: string; readonly name?: string };
+}
+
+/**
+ * Data payload for the `llm.response` event.
+ * Captures the full model response as a unified snapshot.
+ */
+export interface LlmResponseData {
+  readonly content: string;
+  readonly toolCalls?: ReadonlyArray<{
+    readonly id: string;
+    readonly name: string;
+    readonly args: unknown;
+  }>;
+  readonly finishReason?: string;
+  readonly usage: {
+    readonly inputTokens: number;
+    readonly outputTokens: number;
+    readonly reasoningTokens?: number;
+    readonly cacheReadTokens?: number;
+    readonly cacheWriteTokens?: number;
+  };
+  readonly durationMs: number;
+  readonly model?: string;
+  readonly provider?: string;
+  readonly metadata?: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -250,4 +325,5 @@ export type KnownRunEvent =
   | (RunEvent<ApprovalDecidedData> & { readonly type: "approval.decided" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
   | (RunEvent<RequestContextData> & { readonly type: "request.context" })
-  | (RunEvent<LlmRequestData> & { readonly type: "llm.request" });
+  | (RunEvent<LlmRequestData> & { readonly type: "llm.request" })
+  | (RunEvent<LlmResponseData> & { readonly type: "llm.response" });

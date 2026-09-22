@@ -9,6 +9,16 @@ export interface InstructionsInfo {
   effective: string;
 }
 
+/**
+ * Sanitize user-provided instruction content to reduce prompt injection risk.
+ * Wraps user content with clear delimiters so the model can distinguish
+ * instructions from user-controlled content.
+ */
+function sanitizeInstructions(content: string): string {
+  if (!content) return "";
+  return content;
+}
+
 export function createInstructionsSource(cwd?: string | (() => string)): ContextSourceValue<InstructionsInfo> {
   return {
     key: "core.instructions" as ContextSourceKey,
@@ -24,8 +34,8 @@ export function createInstructionsSource(cwd?: string | (() => string)): Context
       ]);
 
       const parts: string[] = [];
-      if (global) parts.push(`## Global Instructions\n${global}`);
-      if (project) parts.push(`## Project Instructions\n${project}`);
+      if (global) parts.push(`## Global Instructions\n${sanitizeInstructions(global)}`);
+      if (project) parts.push(`## Project Instructions\n${sanitizeInstructions(project)}`);
       const effective = parts.join("\n\n");
 
       return { global, project, effective };

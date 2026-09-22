@@ -83,7 +83,23 @@ export type { Logger, LogLevel } from "./logger.js";
 export type { PluginManifest, PluginContext, PluginHooks, Plugin, Disposable } from "./plugin.js";
 export { createDisposable } from "./plugin.js";
 
-export type { ContextSourceValue, ContextSourceKey } from "./system-context/types.js";
+export type { ContextSourceValue, ContextSourceKey, ContextSnapshot, SystemContext, ReconcileResult, ContextRegistry } from "./system-context/types.js";
+export { createContextRegistry } from "./system-context/registry.js";
+export { createSystemPromptSource } from "./system-context/prompts/system-prompt-source.js";
+export { createDateSource } from "./system-context/sources/date-source.js";
+export { createWorkspaceSource } from "./system-context/sources/workspace-source.js";
+export { createInstructionsSource } from "./system-context/sources/instructions-source.js";
+export { createAgentSource } from "./system-context/sources/agent-source.js";
+export { createSkillGuidanceSource } from "./system-context/sources/skill-guidance-source.js";
+export { createToolContextSource } from "./system-context/sources/tool-context-source.js";
+export { createCustomSource } from "./system-context/sources/custom-source.js";
+export { PromptRegistry, defaultPromptRegistry, selectPrompt } from "./system-context/prompts/index.js";
+export type { PromptRegistryConfig, PromptVariant } from "./system-context/prompts/index.js";
+export type { WorkspaceInfo } from "./system-context/sources/workspace-source.js";
+export type { InstructionsInfo } from "./system-context/sources/instructions-source.js";
+export type { AgentContextInfo } from "./system-context/sources/agent-source.js";
+export type { SkillGuidanceInfo } from "./system-context/sources/skill-guidance-source.js";
+export type { ToolContextInfo } from "./system-context/sources/tool-context-source.js";
 
 // === Guard system ===
 

@@ -1,7 +1,7 @@
 {
   "name": "@vinhnt-sdk/knowledge",
   "version": "0.4.2",
-  "description": "Memory and knowledge management for VNT Agent â€” bounded memory, context compression, learning engine",
+  "description": "Memory and knowledge management for VNT Agent - bounded memory, context compression, learning engine",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -54,7 +54,7 @@
     "@vinhnt-sdk/schema": ">=0.5.0"
   },
   "peerDependencies": {
-    "@vinhnt-sdk/tools": "workspace:*"
+    "@vinhnt-sdk/tools": "0.4.4"
   },
   "peerDependenciesMeta": {
     "@vinhnt-sdk/tools": {

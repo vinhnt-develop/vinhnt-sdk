@@ -1,7 +1,7 @@
 {
   "name": "@vinhnt-sdk/step-executor",
   "version": "0.4.5",
-  "description": "Step execution kernel for VNT Agent â€” tool lifecycle, timeouts, permission gating, doom-loop detection, self-correction and run state",
+  "description": "Step execution kernel for VNT Agent - tool lifecycle, timeouts, permission gating, doom-loop detection, self-correction and run state",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -53,12 +53,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/event": "workspace:*",
-    "@vinhnt-sdk/guard": "workspace:*",
-    "@vinhnt-sdk/llm": "workspace:*",
-    "@vinhnt-sdk/permission": "workspace:*",
+    "@vinhnt-sdk/event": "0.4.2",
+    "@vinhnt-sdk/guard": "0.4.3",
+    "@vinhnt-sdk/llm": "0.5.2",
+    "@vinhnt-sdk/permission": "0.4.2",
     "@vinhnt-sdk/schema": ">=0.5.0",
-    "@vinhnt-sdk/session": "workspace:*",
-    "@vinhnt-sdk/tools": "workspace:*"
+    "@vinhnt-sdk/session": "0.4.2",
+    "@vinhnt-sdk/tools": "0.4.4"
   }
 }

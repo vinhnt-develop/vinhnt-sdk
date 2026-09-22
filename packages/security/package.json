@@ -1,7 +1,7 @@
 {
   "name": "@vinhnt-sdk/security",
   "version": "0.4.2",
-  "description": "Security utilities for VNT Agent â€” prompt injection protection and secret redaction",
+  "description": "Security utilities for VNT Agent - prompt injection protection and secret redaction",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -51,6 +51,6 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/guard": "workspace:*"
+    "@vinhnt-sdk/guard": "0.4.3"
   }
 }

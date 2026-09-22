@@ -37,7 +37,7 @@
     "diagnostics",
     "code-analysis"
   ],
-  "description": "LSP client pool and tools for VNT Agent â€” auto-detect, connect, and query language servers",
+  "description": "LSP client pool and tools for VNT Agent - auto-detect, connect, and query language servers",
   "publishConfig": {
     "access": "public"
   },
@@ -51,7 +51,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@vinhnt-sdk/tools": "workspace:*",
+    "@vinhnt-sdk/tools": "0.4.4",
     "@vinhnt-sdk/schema": ">=0.5.0",
     "zod": "^4.4.3"
   }

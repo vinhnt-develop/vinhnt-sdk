@@ -24,6 +24,9 @@ export type {
   TurnStartedData, TurnEndedData,
   LlmRetryData, LlmRetryStartedData,
   ApprovalAskedData, ApprovalDecidedData,
+  // Snapshot types
+  LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
+  LlmResponseData,
 } from "./events.js";
 
 export type {

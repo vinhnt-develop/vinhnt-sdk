@@ -2,6 +2,56 @@ import { z } from "zod";
 import { isRunId, isTraceId } from "../branded.js";
 import { RequestContextSchema } from "./request-context.js";
 
+/* ── Snapshot sub-schemas ── */
+
+/**
+ * Simplified message representation for LLM request snapshots.
+ *
+ * Captures the essential fields needed to reconstruct what the LLM saw.
+ * Uses strict role enum (state machine core — not open).
+ */
+export const LlmSnapshotMessageSchema = z.object({
+  role: z.enum(["system", "user", "assistant", "developer", "tool"]),
+  content: z.string(),
+  toolCalls: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    args: z.unknown(),
+  })).optional(),
+  toolCallId: z.string().optional(),
+});
+/** Inferred type of {@link LlmSnapshotMessageSchema}. */
+export type LlmSnapshotMessage = z.infer<typeof LlmSnapshotMessageSchema>;
+
+/**
+ * Tool definition snapshot for LLM request debugging.
+ *
+ * Captures the tool schema as sent to the LLM (not the full ToolDefinition).
+ */
+export const LlmSnapshotToolDefSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  parameters: z.record(z.string(), z.unknown()).optional(),
+  risk: z.string().optional(),
+});
+/** Inferred type of {@link LlmSnapshotToolDefSchema}. */
+export type LlmSnapshotToolDef = z.infer<typeof LlmSnapshotToolDefSchema>;
+
+/**
+ * User-selected resources for a specific LLM request.
+ *
+ * Captures what the user chose in the composer (tools, knowledge, plugins).
+ * Empty arrays or undefined = send all (backward compatible default).
+ */
+export const LlmSnapshotSelectionSchema = z.object({
+  tools: z.array(z.string()).optional(),
+  knowledge: z.array(z.string()).optional(),
+  plugins: z.array(z.string()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+/** Inferred type of {@link LlmSnapshotSelectionSchema}. */
+export type LlmSnapshotSelection = z.infer<typeof LlmSnapshotSelectionSchema>;
+
 /* ── Data payload schemas ── */
 
 /** Data payload for the `run.started` event. */
@@ -269,8 +319,22 @@ export const LlmRequestDataSchema = z.object({
   frequencyPenalty: z.number().optional(),
   presencePenalty: z.number().optional(),
   systemPromptLength: z.number().optional(),
+  systemPrompt: z.string().optional(),
   messageCount: z.number().optional(),
   toolCount: z.number().optional(),
+
+  // ─── Snapshot additions ─────────────────────────────────────────
+  /** Full messages array sent to LLM. Only captured when snapshot enabled. */
+  messages: z.array(LlmSnapshotMessageSchema).optional(),
+  /** Tool definitions with schemas. Only captured when snapshot enabled. */
+  tools: z.array(LlmSnapshotToolDefSchema).optional(),
+  /** User-selected resources from composer. */
+  selection: LlmSnapshotSelectionSchema.optional(),
+  /** Agent identity at time of request. */
+  agent: z.object({
+    id: z.string().optional(),
+    name: z.string().optional(),
+  }).optional(),
 });
 /** Inferred type of {@link LlmRequestDataSchema}. */
 export type LlmRequestData = z.infer<typeof LlmRequestDataSchema>;
@@ -312,6 +376,38 @@ export const RunCompletedDataSchema = z.object({
 });
 /** Inferred type of {@link RunCompletedDataSchema}. */
 export type RunCompletedData = z.infer<typeof RunCompletedDataSchema>;
+
+/** Data payload for the `llm.response` event. */
+export const LlmResponseDataSchema = z.object({
+  /** Full assistant response text. */
+  content: z.string(),
+  /** Tool calls requested by the model. */
+  toolCalls: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    args: z.unknown(),
+  })).optional(),
+  /** Why the model stopped generating. */
+  finishReason: z.string().optional(),
+  /** Token usage breakdown. */
+  usage: z.object({
+    inputTokens: z.number(),
+    outputTokens: z.number(),
+    reasoningTokens: z.number().optional(),
+    cacheReadTokens: z.number().optional(),
+    cacheWriteTokens: z.number().optional(),
+  }),
+  /** Duration of the model call in milliseconds. */
+  durationMs: z.number(),
+  /** Model that actually responded (may differ from request). */
+  model: z.string().optional(),
+  /** Provider that handled the request. */
+  provider: z.string().optional(),
+  /** Extensible metadata. */
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+/** Inferred type of {@link LlmResponseDataSchema}. */
+export type LlmResponseData = z.infer<typeof LlmResponseDataSchema>;
 
 /* ── Event wrapper schema factory ── */
 
@@ -480,6 +576,11 @@ export const LlmRequestEventSchema = eventSchema(LlmRequestDataSchema, z.literal
 /** Inferred type of {@link LlmRequestEventSchema}. */
 export type LlmRequestEvent = z.infer<typeof LlmRequestEventSchema>;
 
+/** Zod schema for the `llm.response` event. */
+export const LlmResponseEventSchema = eventSchema(LlmResponseDataSchema, z.literal("llm.response"));
+/** Inferred type of {@link LlmResponseEventSchema}. */
+export type LlmResponseEvent = z.infer<typeof LlmResponseEventSchema>;
+
 /* ── Discriminated union ── */
 
 /** Zod schema for the KnownRun event. */
@@ -513,6 +614,7 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   RequestHeaderEventSchema,
   RequestContextEventSchema,
   LlmRequestEventSchema,
+  LlmResponseEventSchema,
 ]);
 /** Inferred type of {@link KnownRunEventSchema}. */
 export type KnownRunEvent = z.infer<typeof KnownRunEventSchema>;

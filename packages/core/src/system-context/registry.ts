@@ -67,7 +67,7 @@ export function createContextRegistry(): ContextRegistry {
       return {
         type: "updated",
         update: updates.join("\n\n"),
-        snapshot: { key: "" as ContextSourceKey, value: null, rendered: updates.join("\n\n") },
+        snapshot: { key: "core.updates" as ContextSourceKey, value: { updates }, rendered: updates.join("\n\n") },
       };
     },
   };

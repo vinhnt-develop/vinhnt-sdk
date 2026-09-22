@@ -61,6 +61,9 @@ export type {
   TurnStartedData, TurnEndedData,
   LlmRetryData, LlmRetryStartedData,
   ApprovalAskedData, ApprovalDecidedData,
+  // Snapshot types
+  LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
+  LlmResponseData,
 } from "./contracts/index.js";
 
 /**
@@ -267,6 +270,9 @@ export {
   TurnStartedDataSchema, TurnEndedDataSchema,
   LlmRetryDataSchema, LlmRetryStartedDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
+  // Snapshot schemas
+  LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,
+  LlmRequestDataSchema, LlmResponseDataSchema,
 } from "./contracts/schema/index.js";
 
 /**

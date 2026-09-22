@@ -235,8 +235,24 @@ export class ModelCaller {
           ...(request.frequencyPenalty != null ? { frequencyPenalty: request.frequencyPenalty } : {}),
           ...(request.presencePenalty != null ? { presencePenalty: request.presencePenalty } : {}),
           systemPromptLength: messages[0]?.content ? getTextContent(messages[0].content).length : undefined,
+          systemPrompt: messages[0]?.role === "system" ? getTextContent(messages[0].content) : undefined,
           messageCount: messages.length,
           ...(request.tools?.length ? { toolCount: request.tools.length } : {}),
+          // ─── Snapshot additions ─────────────────────────────────
+          messages: messages.map(m => ({
+            role: m.role,
+            content: getTextContent(m.content),
+            ...(m.toolCalls?.length ? { toolCalls: m.toolCalls } : {}),
+            ...(m.toolCallId ? { toolCallId: m.toolCallId } : {}),
+          })),
+          tools: request.tools?.map(t => ({
+            name: t.function?.name ?? t.name ?? t.id,
+            description: t.description,
+            parameters: (t.function?.parameters ?? t.inputSchema) as Record<string, unknown>,
+            ...(t.risk ? { risk: t.risk } : {}),
+          })),
+          ...(ctx.overrides?.selection ? { selection: ctx.overrides.selection } : {}),
+          ...(ctx.overrides?.agent ? { agent: ctx.overrides.agent } : {}),
         },
       } as Omit<KnownRunEvent, "sequence">);
     }
@@ -285,6 +301,30 @@ export class ModelCaller {
       await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, provider: model.provider, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
       const p = model?.pricing;
       this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
+
+      // Emit llm.response with full response snapshot
+      if (runId) {
+        await this.deps.emitEvent({
+          id: crypto.randomUUID(), runId, type: "llm.response" as const,
+          occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
+          data: {
+            content: effectiveRes.content ?? "",
+            toolCalls: effectiveRes.toolCalls,
+            finishReason: effectiveRes.finishReason,
+            usage: {
+              inputTokens,
+              outputTokens,
+              ...(reasoningTokens > 0 ? { reasoningTokens } : {}),
+              ...(cacheReadTokens > 0 ? { cacheReadTokens } : {}),
+              ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}),
+            },
+            durationMs,
+            model: modelName,
+            provider: model.provider,
+          },
+        } as Omit<KnownRunEvent, "sequence">);
+      }
+
       // RV-42: surface the authoritative usage on the response when the provider
       // did not already report it, so the run loop can budget without countTokens.
       return effectiveRes.usage
@@ -375,6 +415,29 @@ export class ModelCaller {
     await this.deps.emitEvent(emitMC(runId, ctx.traceId, { inputTokens, outputTokens, cost, model: modelName, provider: model.provider, durationMs, step }) as unknown as Omit<KnownRunEvent, "sequence">);
     const p = model?.pricing;
     this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
+
+    // Emit llm.response with full response snapshot
+    if (runId) {
+      await this.deps.emitEvent({
+        id: crypto.randomUUID(), runId, type: "llm.response" as const,
+        occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
+        data: {
+          content: effectiveRes.content ?? "",
+          toolCalls: effectiveRes.toolCalls,
+          finishReason: effectiveRes.finishReason,
+          usage: {
+            inputTokens,
+            outputTokens,
+            ...(reasoningTokens > 0 ? { reasoningTokens } : {}),
+            ...(cacheReadTokens > 0 ? { cacheReadTokens } : {}),
+            ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}),
+          },
+          durationMs,
+          model: modelName,
+          provider: model.provider,
+        },
+      } as Omit<KnownRunEvent, "sequence">);
+    }
 
     // RV-42: a hook may have replaced the response without usage — surface the
     // authoritative usage so downstream token budgeting is not a no-op.
