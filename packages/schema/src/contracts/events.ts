@@ -28,6 +28,8 @@ export interface LlmSnapshotToolDef {
   readonly description?: string;
   readonly parameters?: Record<string, unknown>;
   readonly risk?: string;
+  /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). Not sent to the LLM. */
+  readonly metadata?: Record<string, unknown>;
 }
 
 /**

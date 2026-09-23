@@ -10,8 +10,8 @@ export { defineTool, toolToDefinition, zodSchemaToNestedJsonSchema } from "./def
 export { commandPattern, prefix } from "./arity.js";
 
 export type { ToolDefinitionLike } from "@vinhnt-sdk/schema";
-export type { ToolDefinition, ToolRisk, ToolAnnotations } from "./definitions.js";
-export { KNOWN_TOOL_RISKS } from "./definitions.js";
+export type { ToolDefinition, ToolRisk, ToolSource, ToolAnnotations } from "./definitions.js";
+export { KNOWN_TOOL_RISKS, KNOWN_TOOL_SOURCES } from "./definitions.js";
 
 // === Registry ===
 

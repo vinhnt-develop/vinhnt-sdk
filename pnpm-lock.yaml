@@ -131,8 +131,8 @@ importers:
         specifier: workspace:*
         version: link:../config
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: ^0.5.6
+        version: 0.5.6
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -152,8 +152,8 @@ importers:
   packages/mcp:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: ^0.5.6
+        version: 0.5.6
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -254,8 +254,8 @@ importers:
         specifier: workspace:*
         version: link:../sandbox
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: ^0.5.6
+        version: 0.5.6
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -971,6 +971,10 @@ packages:
 
   '@vinhnt-sdk/schema@0.5.3':
     resolution: {integrity: sha512-gaE0cbK03gndnMdzHblW9OoxMt4nTh/iZ646gfuHFObkcI14vUIJNg4c51T9ZMlE5jma74FgwmAZxiCVmcwMUA==}
+    engines: {node: '>=20'}
+
+  '@vinhnt-sdk/schema@0.5.6':
+    resolution: {integrity: sha512-jRKaz8CmJh3DIecXsoYAuOg5m4ljkjoWidOG867mXophmTvbzpuWN4UAGqm93xiWOEWbAspnEKuU52HjbQiw3Q==}
     engines: {node: '>=20'}
 
   '@vinhnt-sdk/security@0.4.2':
@@ -2296,7 +2300,7 @@ snapshots:
       '@vinhnt-sdk/llm': 0.5.2
       '@vinhnt-sdk/permission': 0.4.2
       '@vinhnt-sdk/sandbox': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.3
+      '@vinhnt-sdk/schema': 0.5.6
       '@vinhnt-sdk/session': 0.4.2
       '@vinhnt-sdk/step-executor': 0.4.5
       '@vinhnt-sdk/tools': 0.4.4
@@ -2314,7 +2318,7 @@ snapshots:
 
   '@vinhnt-sdk/guard@0.4.3':
     dependencies:
-      '@vinhnt-sdk/schema': 0.5.3
+      '@vinhnt-sdk/schema': 0.5.6
 
   '@vinhnt-sdk/guardrails@0.4.2':
     dependencies:
@@ -2330,13 +2334,13 @@ snapshots:
   '@vinhnt-sdk/llm@0.5.0':
     dependencies:
       '@vinhnt-sdk/config': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.3
+      '@vinhnt-sdk/schema': 0.5.6
       '@vinhnt-sdk/tools': 0.4.2
 
   '@vinhnt-sdk/llm@0.5.2':
     dependencies:
       '@vinhnt-sdk/config': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.3
+      '@vinhnt-sdk/schema': 0.5.6
       '@vinhnt-sdk/tools': 0.4.4
 
   '@vinhnt-sdk/permission@0.4.2':
@@ -2356,6 +2360,10 @@ snapshots:
     dependencies:
       zod: 4.4.3
 
+  '@vinhnt-sdk/schema@0.5.6':
+    dependencies:
+      zod: 4.4.3
+
   '@vinhnt-sdk/security@0.4.2':
     dependencies:
       '@vinhnt-sdk/guard': 0.4.2
@@ -2370,7 +2378,7 @@ snapshots:
       '@vinhnt-sdk/guard': 0.4.3
       '@vinhnt-sdk/llm': 0.5.0
       '@vinhnt-sdk/permission': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.3
+      '@vinhnt-sdk/schema': 0.5.6
       '@vinhnt-sdk/session': 0.4.2
       '@vinhnt-sdk/tools': 0.4.4
 
@@ -2386,7 +2394,7 @@ snapshots:
     dependencies:
       '@vinhnt-sdk/guard': 0.4.3
       '@vinhnt-sdk/sandbox': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.3
+      '@vinhnt-sdk/schema': 0.5.6
       zod: 4.4.3
 
   '@vinhnt-sdk/workflow@0.4.2':

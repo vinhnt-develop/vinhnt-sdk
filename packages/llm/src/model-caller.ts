@@ -250,6 +250,7 @@ export class ModelCaller {
             description: t.description,
             parameters: (t.function?.parameters ?? t.inputSchema) as Record<string, unknown>,
             ...(t.risk ? { risk: t.risk } : {}),
+            ...(t.metadata ? { metadata: t.metadata } : {}),
           })),
           ...(ctx.overrides?.selection ? { selection: ctx.overrides.selection } : {}),
           ...(ctx.overrides?.agent ? { agent: ctx.overrides.agent } : {}),

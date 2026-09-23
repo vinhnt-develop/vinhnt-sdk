@@ -46,6 +46,7 @@ export function mapMcpTool(
     description: mcpTool.description ?? `MCP tool: ${mcpTool.name}`,
     risk: "external",
     inputSchema: mcpTool.inputSchema as unknown as ToolDefinition["inputSchema"],
+    metadata: { source: "mcp" },
     async execute(args: unknown, ctx) {
       ctx?.metadata({ title: id, metadata: { server: serverName, mcp: true } });
 

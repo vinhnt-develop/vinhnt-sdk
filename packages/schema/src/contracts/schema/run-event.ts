@@ -33,6 +33,8 @@ export const LlmSnapshotToolDefSchema = z.object({
   description: z.string().optional(),
   parameters: z.record(z.string(), z.unknown()).optional(),
   risk: z.string().optional(),
+  /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). Not sent to the LLM. */
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 /** Inferred type of {@link LlmSnapshotToolDefSchema}. */
 export type LlmSnapshotToolDef = z.infer<typeof LlmSnapshotToolDefSchema>;

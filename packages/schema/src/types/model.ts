@@ -239,6 +239,8 @@ export interface ToolDefinitionLike {
   readonly inputSchema?: JsonSchema | undefined;
   /** OpenAI tool format — for direct API passthrough (optional). */
   readonly type?: "function";
+  /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). Not sent to the LLM. */
+  readonly metadata?: Record<string, unknown> | undefined;
   readonly function?: {
     readonly name: string;
     readonly description: string;

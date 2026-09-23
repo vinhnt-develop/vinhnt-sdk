@@ -10,6 +10,15 @@ export const KNOWN_TOOL_RISKS = ["read", "write", "destructive", "external"] as 
 /** Tool risk level — open string for extensibility. */
 export type ToolRisk = string;
 
+/**
+ * Known tool provenance sources (app-set via `metadata.source`, not sent to the LLM).
+ * Open string — apps may register custom values.
+ */
+export const KNOWN_TOOL_SOURCES = ["system", "custom", "mcp"] as const;
+
+/** Tool source/provenance — open string for extensibility. */
+export type ToolSource = string;
+
 /** Tool annotations — hint about tool behavior for LLMs (MCP 2026-07-28 pattern) */
 export interface ToolAnnotations {
   /** If true, tool does not modify its environment */
