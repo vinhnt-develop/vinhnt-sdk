@@ -59,12 +59,20 @@ export type {
   StepCompletedData, StepFailedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
   TurnStartedData, TurnEndedData,
-  LlmRetryData, LlmRetryStartedData,
+  LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,
 } from "./contracts/index.js";
+
+/**
+ * Stable RespondToModel tool-failure envelope (P1-4).
+ */
+export {
+  formatToolFailure, isToolFailureEnvelope, TOOL_FAILURE_HINTS,
+} from "./contracts/index.js";
+export type { ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from "./contracts/index.js";
 
 /**
  * Agent event types for all agent lifecycle events.
@@ -268,7 +276,7 @@ export {
   ModelCostDataSchema, PermissionRequestedDataSchema, PermissionRepliedDataSchema,
   ContextCompressedDataSchema,
   TurnStartedDataSchema, TurnEndedDataSchema,
-  LlmRetryDataSchema, LlmRetryStartedDataSchema,
+  LlmRetryDataSchema, LlmRetryStartedDataSchema, LlmFailoverDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
   // Snapshot schemas
   LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,

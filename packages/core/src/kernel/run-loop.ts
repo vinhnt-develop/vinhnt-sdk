@@ -77,6 +77,12 @@ export interface RunLoopDeps {
   readonly workspaceRoot?: string;
   /** Optional judge model for `llm-judge` stop conditions (defaults to the active run model). */
   readonly judgeModel?: ModelProvider;
+  /** Fallback model ids to try when the primary model fails (P1-2 failover). */
+  readonly failoverModels?: readonly string[];
+  /** Model registry used to resolve failover model ids. */
+  readonly modelRegistry?: import("../model.js").ModelRegistry;
+  /** Unified context budget (P1-1). */
+  readonly contextBudget?: import("../context/context-budget.js").ContextBudget;
   /** Await once before the loop starts, e.g. re-queuing persisted pending inputs (RV-21). */
   readonly beforeRun?: (runId: RunId) => Promise<void> | void;
   /** Called with the texts drained from the input queue after a step drains it (RV-21). */
@@ -340,6 +346,8 @@ interface StepInput {
   claimRepairAttempts?: number;
   /** Force tool_choice=required on the next model call (set after claim repair). */
   forceToolChoice?: boolean;
+  /** Emit a run event (wired from RunLoopInput.emitEvent — used by failover). */
+  emitEvent?: (event: { id: string; runId: RunId; type: string; occurredAt: string; traceId: string; data: Record<string, unknown> }, persist?: boolean) => Promise<void>;
 }
 
 interface StepOutput {
@@ -467,26 +475,105 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           stepFailed: { reason: "timeout", error: `Model call timed out after ${deps.stepTimeout}ms` },
         };
       }
-      const circuitErr = err as { constructor?: typeof CircuitBreakerOpenError };
-      if (circuitErr?.constructor?.name === "CircuitBreakerOpenError") {
-        throw new KernelError("model_unavailable", (err as Error).message, err as Error);
-      }
-      const errMsg = err instanceof Error ? err.message : String(err);
-      if (isContextOverflowError(errMsg) && deps.compactor && input.step > 0) {
-        const compactor = deps.compactor;
-        messages = await compactOnOverflow(messages, compactor, input.step, stepTimeoutController.signal, sessionId, deps.addSessionMessage);
-        runSessionState?.resetMessages(messages);
-        response = await deps.circuitBreaker.call(() =>
-          deps.modelCaller.callModelStream(
-            messages, input.step, runId, ctx, stepTimeoutController.signal,
-            deps.currentAgent?.permissions?.maxTokens,
-            input.disableTools,
-            input.forceToolChoice ? "required" : undefined,
-          ),
-          stepTimeoutController.signal,
-        );
+
+      // P1-2: failover to secondary model on non-retryable / circuit-open failures.
+      // Skip when user aborted — cancel must not resurrect a different model.
+      // Context overflow goes to the compactor path below (not a failover candidate).
+      const canFailover =
+        !runAbort.signal.aborted &&
+        !stepTimeoutController.signal.aborted &&
+        (deps.failoverModels?.length ?? 0) > 0 &&
+        deps.modelRegistry !== undefined &&
+        !isContextOverflowError(err instanceof Error ? err.message : String(err));
+
+      if (canFailover) {
+        const fromModel = deps.modelCaller.getActiveModel(runId);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const circuitOpen = (err as { constructor?: { name?: string } })?.constructor?.name === "CircuitBreakerOpenError";
+        const reason = circuitOpen ? "circuit_open" : errMsg.slice(0, 200);
+        let failoverResponse: ModelResponse | undefined;
+
+        for (const failoverId of deps.failoverModels!) {
+          const alt = deps.modelRegistry!.get(failoverId);
+          if (!alt) continue;
+          if (alt.model === fromModel.model && alt.provider === fromModel.provider) continue;
+
+          try {
+            deps.modelCaller.setModelForRun(runId, alt);
+
+            await input.emitEvent?.({
+              id: `evt-failover-${runId}-${input.step}-${failoverId}`,
+              runId,
+              type: "llm.failover",
+              occurredAt: new Date().toISOString(),
+              traceId: ctx.traceId,
+              data: {
+                fromProvider: fromModel.provider,
+                fromModel: fromModel.model,
+                toProvider: alt.provider,
+                toModel: alt.model,
+                reason,
+              },
+            });
+
+            failoverResponse = await deps.circuitBreaker.call(() =>
+              deps.modelCaller.callModelStream(
+                messages, input.step, runId, ctx, stepTimeoutController.signal,
+                deps.currentAgent?.permissions?.maxTokens,
+                input.disableTools,
+                input.forceToolChoice ? "required" : undefined,
+              ), stepTimeoutController.signal);
+            break;
+          } catch {
+            if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
+              return {
+                messages,
+                step: input.step,
+                runId,
+                totalInputTokens: input.totalInputTokens,
+                totalOutputTokens: input.totalOutputTokens,
+                finalOutput: input.finalOutput,
+                completed: false,
+                toolCallCount: 0,
+                lastStepToolOutcomes: [],
+                stepFailed: { reason: "timeout", error: `Model call timed out after ${deps.stepTimeout}ms` },
+              };
+            }
+            // try next failover candidate
+          }
+        }
+
+        if (failoverResponse) {
+          response = failoverResponse;
+        } else if (circuitOpen) {
+          throw new KernelError("model_unavailable", errMsg, err as Error);
+        } else {
+          throw err;
+        }
       } else {
-        throw err;
+        const circuitErr = err as { constructor?: typeof CircuitBreakerOpenError };
+        if (circuitErr?.constructor?.name === "CircuitBreakerOpenError") {
+          throw new KernelError("model_unavailable", (err as Error).message, err as Error);
+        }
+
+        // Context-overflow compaction path (original behavior).
+        const errMsg = err instanceof Error ? err.message : String(err);
+        if (isContextOverflowError(errMsg) && deps.compactor && input.step > 0) {
+          const compactor = deps.compactor;
+          messages = await compactOnOverflow(messages, compactor, input.step, stepTimeoutController.signal, sessionId, deps.addSessionMessage);
+          runSessionState?.resetMessages(messages);
+          response = await deps.circuitBreaker.call(() =>
+            deps.modelCaller.callModelStream(
+              messages, input.step, runId, ctx, stepTimeoutController.signal,
+              deps.currentAgent?.permissions?.maxTokens,
+              input.disableTools,
+              input.forceToolChoice ? "required" : undefined,
+            ),
+            stepTimeoutController.signal,
+          );
+        } else {
+          throw err;
+        }
       }
     }
 
@@ -567,8 +654,10 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     });
 
     const asstTokens = { input: input.totalInputTokens, output: input.totalOutputTokens };
-    const asstModel = runModel.model;
-    const msgCost = deps.modelCaller.calculateCost(asstTokens.input, asstTokens.output, runModel);
+    // After failover the active model may differ from the loop's runModel — re-read it.
+    const activeAfter = deps.modelCaller.getActiveModel(runId);
+    const asstModel = activeAfter.model ?? runModel.model;
+    const msgCost = deps.modelCaller.calculateCost(asstTokens.input, asstTokens.output, activeAfter);
     await deps.addSessionMessage(sessionId, "assistant", finalContent, {
       tokens: asstTokens,
       ...(asstModel ? { model: asstModel } : {}),
@@ -991,6 +1080,7 @@ export async function runLoop(
         toolCallRepairAttempts,
         claimRepairAttempts,
         forceToolChoice: forceToolChoiceNext,
+        emitEvent,
       });
 
       messages = stepResult.messages;

@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/step-executor",
-  "version": "0.4.10",
+  "version": "0.5.0",
   "description": "Step execution kernel for VNT Agent - tool lifecycle, timeouts, permission gating, doom-loop detection, self-correction and run state",
   "license": "MIT",
   "type": "module",

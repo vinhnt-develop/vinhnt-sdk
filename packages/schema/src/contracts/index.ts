@@ -22,7 +22,7 @@ export type {
   StepCompletedData, StepFailedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
   TurnStartedData, TurnEndedData,
-  LlmRetryData, LlmRetryStartedData,
+  LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
@@ -52,8 +52,9 @@ export {
   PermissionDeniedError, ValidationError, TimeoutError,
   NetworkError, RateLimitError, AuthenticationError,
   ConfigurationError, PluginError,
+  formatToolFailure, isToolFailureEnvelope, TOOL_FAILURE_HINTS,
 } from "./errors/index.js";
-export type { VntErrorCtx } from "./errors/index.js";
+export type { VntErrorCtx, ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from "./errors/index.js";
 
 // ── API transport schemas (WS, Webview, HTTP contracts) ──
 export {

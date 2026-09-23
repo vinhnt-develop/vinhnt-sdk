@@ -269,6 +269,17 @@ export const LlmRetryStartedDataSchema = z.object({
 /** Inferred type of {@link LlmRetryStartedDataSchema}. */
 export type LlmRetryStartedData = z.infer<typeof LlmRetryStartedDataSchema>;
 
+/** Data payload for the `llm.failover` event. */
+export const LlmFailoverDataSchema = z.object({
+  fromProvider: z.string(),
+  fromModel: z.string(),
+  toProvider: z.string(),
+  toModel: z.string(),
+  reason: z.string(),
+});
+/** Inferred type of {@link LlmFailoverDataSchema}. */
+export type LlmFailoverData = z.infer<typeof LlmFailoverDataSchema>;
+
 /** Data payload for the `approval.asked` event. */
 export const ApprovalAskedDataSchema = z.object({
   requestId: z.string(),
@@ -583,6 +594,11 @@ export type LlmRetryEvent = z.infer<typeof LlmRetryEventSchema>;
 export const LlmRetryStartedEventSchema = eventSchema(LlmRetryStartedDataSchema, z.literal("llm.retry_started"));
 /** Inferred type of {@link LlmRetryStartedEventSchema}. */
 export type LlmRetryStartedEvent = z.infer<typeof LlmRetryStartedEventSchema>;
+
+/** Zod schema for the `llm.failover` event. */
+export const LlmFailoverEventSchema = eventSchema(LlmFailoverDataSchema, z.literal("llm.failover"));
+/** Inferred type of {@link LlmFailoverEventSchema}. */
+export type LlmFailoverEvent = z.infer<typeof LlmFailoverEventSchema>;
 
 /** Zod schema for the `approval.asked` event. */
 export const ApprovalAskedEventSchema = eventSchema(ApprovalAskedDataSchema, z.literal("approval.asked"));

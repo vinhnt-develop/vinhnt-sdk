@@ -50,10 +50,14 @@ const CANARY_PREFIX = "[CANARY:";
  *
  * @param text   - Raw text from external source (file, web, tool output)
  * @param source - Human-readable label for logging (e.g. "web_fetch", "read_file")
+ * @param maxChars - Optional override for truncation limit (default: 128_000).
+ *                   Pass `ContextBudget.sanitizeLimitChars` to coordinate with kernel config.
  * @returns Sanitized text safe for LLM context
  */
-export function sanitizeForLLM(text: string, source?: string): string {
+export function sanitizeForLLM(text: string, source?: string, maxChars?: number): string {
   if (!text) return "";
+
+  const limit = maxChars !== undefined && maxChars > 0 ? maxChars : MAX_SANITIZE_LENGTH;
 
   let clean = text;
 
@@ -66,9 +70,9 @@ export function sanitizeForLLM(text: string, source?: string): string {
   clean = clean.replace(/\n{4,}/g, "\n\n\n");
 
   // 3. Truncate if too long
-  if (clean.length > MAX_SANITIZE_LENGTH) {
-    const truncated = clean.slice(0, MAX_SANITIZE_LENGTH);
-    clean = truncated + `\n\n[truncated by ${source ?? "sanitizer"}: exceeds ${MAX_SANITIZE_LENGTH} chars]`;
+  if (clean.length > limit) {
+    const truncated = clean.slice(0, limit);
+    clean = truncated + `\n\n[truncated by ${source ?? "sanitizer"}: exceeds ${limit} chars]`;
   }
 
   return clean;
@@ -85,10 +89,10 @@ export function sanitizeForLLM(text: string, source?: string): string {
  * @param toolName - Name of the tool that produced the output
  * @returns Sanitized output with canary token
  */
-export function validateToolOutput(output: string, toolName: string): string {
+export function validateToolOutput(output: string, toolName: string, maxChars?: number): string {
   if (!output) return "";
 
-  const sanitized = sanitizeForLLM(output, toolName);
+  const sanitized = sanitizeForLLM(output, toolName, maxChars);
   const canaryId = generateCanaryId(toolName);
 
   return `${CANARY_PREFIX}${canaryId}]${sanitized}`;

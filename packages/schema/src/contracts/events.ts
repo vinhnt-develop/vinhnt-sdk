@@ -264,6 +264,7 @@ export interface TurnStartedData { readonly turn: number }
 export interface TurnEndedData { readonly turn: number; readonly reason: "completed" | "aborted" | "blocked" | "error" | "max_tokens" | "interrupted" }
 export interface LlmRetryData { readonly attempt: number; readonly delayMs: number; readonly reason: string; readonly provider?: string }
 export interface LlmRetryStartedData { readonly attempt: number }
+export interface LlmFailoverData { readonly fromProvider: string; readonly fromModel: string; readonly toProvider: string; readonly toModel: string; readonly reason: string }
 export interface ApprovalAskedData { readonly requestId: RequestId; readonly toolName: string; readonly resource: string; readonly reason: string }
 export interface ApprovalDecidedData { readonly requestId: RequestId; readonly decision: "allow" | "deny" | "unavailable" }
 export interface ToolCancelledData { readonly toolId: string; readonly toolName: string; readonly callId?: string }
@@ -373,6 +374,7 @@ export type KnownRunEvent =
   | (RunEvent<TurnEndedData> & { readonly type: "turn.end" })
   | (RunEvent<LlmRetryData> & { readonly type: "llm.retry" })
   | (RunEvent<LlmRetryStartedData> & { readonly type: "llm.retry_started" })
+  | (RunEvent<LlmFailoverData> & { readonly type: "llm.failover" })
   | (RunEvent<ApprovalAskedData> & { readonly type: "approval.asked" })
   | (RunEvent<ApprovalDecidedData> & { readonly type: "approval.decided" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })

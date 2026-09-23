@@ -9,3 +9,5 @@ export {
   NetworkError, RateLimitError, AuthenticationError,
   ConfigurationError, PluginError,
 } from "./common-errors.js";
+export { formatToolFailure, isToolFailureEnvelope, TOOL_FAILURE_HINTS } from "./respond-to-model.js";
+export type { ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from "./respond-to-model.js";

@@ -69,7 +69,11 @@ export function agentAsTool(options: AgentAsToolOptions): ToolDefinition {
         ? `${input.prompt}\n\nAdditional context:\n${input.context}`
         : input.prompt;
 
-      return `[DELEGATE:${agentId}] ${fullPrompt}`;
+      let result = `[DELEGATE:${agentId}] ${fullPrompt}`;
+      if (maxOutputLength > 0 && result.length > maxOutputLength) {
+        result = result.slice(0, maxOutputLength) + "\n... [subagent output truncated]";
+      }
+      return result;
     },
   }).toDefinition();
 }

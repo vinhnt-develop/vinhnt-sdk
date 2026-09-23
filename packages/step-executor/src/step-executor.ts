@@ -61,6 +61,8 @@ export interface StepExecutorDeps {
   readonly workspaceRoot?: string;
   readonly findTool: (name: string, runId?: RunId) => ToolDefinition | undefined;
   readonly hasTool: (name: string) => boolean;
+  /** P1-7: scrub secrets from tool outputs before persist/send (default true). */
+  readonly redactToolOutputs?: boolean;
 }
 
 /** One planned tool invocation within a step. */
@@ -392,6 +394,7 @@ export class StepExecutor {
 
       const processed = await processToolResults(results, doomThreshold, messages, sessionId, { model: runModel.model }, toolCallCount, recentCalls, toolResults, {
         addSessionMessage: this.deps.addSessionMessage,
+        ...(this.deps.redactToolOutputs !== undefined ? { redactToolOutputs: this.deps.redactToolOutputs } : {}),
       });
       toolCallCount = processed.toolCallCount;
       recentCalls.length = 0;

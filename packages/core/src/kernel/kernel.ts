@@ -7,6 +7,7 @@ import { restoreRunFromStore, findActiveSessionIds } from "@vinhnt-sdk/session";
 import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { AgentRegistry } from "../agent/agent-registry.js";
 import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt-sdk/tools";
+import type { ModelRegistry } from "../model.js";
 import { zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "@vinhnt-sdk/session";
@@ -102,6 +103,9 @@ export class AgentKernel {
   private sessionState: SessionRuntimeState | undefined;
   private readonly toolRegistry: ToolRegistry | undefined;
   private readonly toolProviderRegistry: ToolProviderRegistry | undefined;
+  private readonly modelRegistry: ModelRegistry | undefined;
+  private readonly modelRouting: import("./kernel-types.js").ModelRoutingConfig | undefined;
+  private readonly contextBudget: import("../context/context-budget.js").ContextBudget | undefined;
   private readonly sessionTitleGenerator: ((prompt: string) => Promise<string>) | undefined;
   private saga: ToolSaga;
   private readonly runSagas = new Map<RunId, ToolSaga>();
@@ -174,6 +178,17 @@ export class AgentKernel {
     this.sessionState = normalized.sessionState;
     this.toolRegistry = normalized.toolRegistry;
     this.toolProviderRegistry = normalized.toolProviderRegistry;
+    this.modelRegistry = normalized.modelRegistry;
+    this.modelRouting = normalized.modelRouting;
+    this.contextBudget = normalized.contextBudget
+      ? (Object.freeze({
+          maxContextTokens: normalized.contextBudget.maxContextTokens ?? 128_000,
+          maxToolOutputChars: normalized.contextBudget.maxToolOutputChars ?? 500,
+          maxSubagentOutputChars: normalized.contextBudget.maxSubagentOutputChars ?? 4096,
+          sanitizeLimitChars: normalized.contextBudget.sanitizeLimitChars ?? 128_000,
+          compactionThreshold: normalized.contextBudget.compactionThreshold ?? 0.75,
+        }) as import("../context/context-budget.js").ContextBudget)
+      : undefined;
     this.sessionTitleGenerator = normalized.sessionTitleGenerator;
     this.stepTimeout = normalized.stepTimeout ?? DEFAULT_STEP_TIMEOUT;
     this.doomLoopThreshold = normalized.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
@@ -300,6 +315,7 @@ this.stepExecutor = new StepExecutor({
       sagaForRun: (runId) => this.runContexts.get(runId)?.saga ?? this.saga,
       findTool: (name, runId) => self.findTool(name, runId),
       hasTool: (name) => self.hasTool(name),
+      ...(normalized.redactToolOutputs !== undefined ? { redactToolOutputs: normalized.redactToolOutputs } : {}),
     });
     if (normalized.tools) {
       this.tools = [...normalized.tools];
@@ -1220,6 +1236,11 @@ this.stepExecutor = new StepExecutor({
       ...(this.outputGuardrails.length > 0 ? { outputGuardrails: this.outputGuardrails } : {}),
       ...(this.outputType !== 'text' ? { outputType: this.outputType } : {}),
       ...(resolvedWorkspaceRoot !== undefined ? { workspaceRoot: resolvedWorkspaceRoot } : {}),
+      ...(this.modelRegistry ? { modelRegistry: this.modelRegistry } : {}),
+      ...(this.modelRouting?.failoverModels?.length
+        ? { failoverModels: this.modelRouting.failoverModels }
+        : {}),
+      ...(this.contextBudget ? { contextBudget: this.contextBudget } : {}),
       addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
       beforeRun: async () => {
         const parentRunId = this.stateMachine.runIdStack.at(-2);

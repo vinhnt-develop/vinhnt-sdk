@@ -14,6 +14,11 @@ export type { AgentKernelConfig, ModelSettings, RunHandle, AgentRunHandle, Agent
 export { AgentRunContext } from "./kernel/run-context.js";
 export type { ApprovalRecord } from "./kernel/run-context.js";
 
+// === Context budget ===
+
+export { DEFAULT_CONTEXT_BUDGET, deriveContextBudget, budgetToCompressorFields } from "./context/context-budget.js";
+export type { ContextBudget } from "./context/context-budget.js";
+
 // === Agent system ===
 
 export { createAgent } from "./agent/agent-factory.js";

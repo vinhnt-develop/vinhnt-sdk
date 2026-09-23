@@ -173,6 +173,15 @@ export interface AgentKernelConfig {
   readonly workspaceRoot?: string;
   /** Context compaction threshold ratio (0-1). Default: 0.75. */
   readonly compactionThreshold?: number;
+  /**
+   * Unified context budget — coordinates sanitizer/compressor/subagent limits.
+   * Partial overrides; omitted fields fall back to {@link DEFAULT_CONTEXT_BUDGET}.
+   */
+  readonly contextBudget?: Partial<import("../context/context-budget.js").ContextBudget>;
+  /**
+   * Scrub secrets from tool outputs before persist/send (P1-7). Default: true.
+   */
+  readonly redactToolOutputs?: boolean;
   /** If true, disable event persistence (ephemeral runs). */
   readonly noStore?: boolean;
   /** Termination policy for advanced stop conditions. */

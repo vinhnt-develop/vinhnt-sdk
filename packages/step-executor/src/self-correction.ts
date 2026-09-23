@@ -10,6 +10,7 @@ import type { ModelCaller } from "@vinhnt-sdk/llm";
 import type { ModelProvider } from "@vinhnt-sdk/schema";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
+import { formatToolFailure } from "@vinhnt-sdk/schema";
 
 /** Dependencies required by {@link runSelfCorrection}. */
 export interface SelfCorrectionDeps {
@@ -75,7 +76,7 @@ export async function runSelfCorrection(
         for (const ct of correction.toolCalls) {
           if (runAbort.signal.aborted) break;
           if (detectDoomLoop(recentCalls, ct.name, ct.args, deps.doomLoopThreshold)) {
-            messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Doom loop detected in self-correction for "${ct.name}"` });
+            messages.push({ role: "tool", toolCallId: ct.id, content: formatToolFailure(`Error: Doom loop detected in self-correction for "${ct.name}"`, undefined, "doom_loop") });
             corrected = true;
             break;
           }
@@ -86,7 +87,7 @@ export async function runSelfCorrection(
           }
           const cpermResult = deps.permissionGate.checkTool(ct.name, ctool.risk, ct.args as Record<string, unknown> | undefined, deps.currentAgent);
           if (!cpermResult.allowed && !cpermResult.needsApproval) {
-            messages.push({ role: "tool", toolCallId: ct.id, content: `Error: ${cpermResult.reason}` });
+            messages.push({ role: "tool", toolCallId: ct.id, content: formatToolFailure(cpermResult.reason ?? `Tool "${ct.name}" requires approval for self-correction`, undefined, "permission_denied") });
             continue;
           }
           if (cpermResult.needsApproval) {

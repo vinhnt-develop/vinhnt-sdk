@@ -1,5 +1,6 @@
 import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
 import { sanitizeEnv } from "@vinhnt-sdk/guard";
+import { formatToolFailure } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
@@ -67,8 +68,11 @@ export async function handleToolError(
     toolId: tc.toolId, toolName: tc.toolName, error: errorMsg,
   });
 
-  messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: ${errorMsg}` });
-  await deps.addSessionMessage(sessionId, "tool", `Error: ${errorMsg}`, {
+  // P1-4 RespondToModel: stable envelope so the model can self-correct.
+  const failKind = isPermissionDenied ? "permission_denied" : undefined;
+  const modelVisible = formatToolFailure(errorMsg, undefined, failKind);
+  messages.push({ role: "tool", toolCallId: tc.toolId, content: modelVisible });
+  await deps.addSessionMessage(sessionId, "tool", modelVisible, {
     toolCallId: tc.toolId, model: runModel.model,
   });
 
@@ -137,9 +141,9 @@ export async function tryReadFileFallback(
 
     messages.push({
       role: "tool", toolCallId: tc.toolId,
-      content: `Error: ${errorMsg}\n\nCurrent file content:\n${fbContent}`,
+      content: `${formatToolFailure(errorMsg, undefined, "file_not_found")}\n\nCurrent file content:\n${fbContent}`,
     });
-    await deps.addSessionMessage(sessionId, "tool", `Error: ${errorMsg}\n\nCurrent file content:\n${fbContent}`, {
+    await deps.addSessionMessage(sessionId, "tool", `${formatToolFailure(errorMsg, undefined, "file_not_found")}\n\nCurrent file content:\n${fbContent}`, {
       toolCallId: tc.toolId, model: runModel.model,
     });
 

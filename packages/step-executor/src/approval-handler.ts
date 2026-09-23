@@ -3,6 +3,7 @@ import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
+import { formatToolFailure } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { AgentConfig } from "@vinhnt-sdk/schema";
 import { toolDomain } from "./kernel-utils.js";
@@ -31,7 +32,7 @@ export async function handleApproval(
   // otherwise hand a denied tool straight through to execution.
   if (permResult.allowed) return true;
   if (!permResult.needsApproval) {
-    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" denied by permission rules` });
+    messages.push({ role: "tool", toolCallId: tc.toolId, content: formatToolFailure(`Tool "${tc.toolName}" denied by permission rules`, undefined, "permission_denied") });
     return false;
   }
 

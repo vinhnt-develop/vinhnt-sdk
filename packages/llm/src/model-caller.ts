@@ -119,6 +119,14 @@ export class ModelCaller {
     return this.deps.defaultModel;
   }
 
+  /**
+   * Swap the active model for a run (P1-2 failover).
+   * Subsequent `callModelStream` for this runId will use `model`.
+   */
+  setModelForRun(runId: RunId, model: ModelProvider): void {
+    this.deps.setModelForRun(runId, model);
+  }
+
   resolveAgentModel(agent: { profile: { model?: string } }, runId?: RunId): ModelProvider {
     const preferred = agent?.profile?.model;
     if (preferred && this.deps.modelRegistry) {
