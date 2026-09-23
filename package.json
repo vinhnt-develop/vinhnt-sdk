@@ -20,7 +20,8 @@
     "test:run": "vitest run",
     "lint": "turbo lint",
     "clean": "turbo clean",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "node scripts/run-coverage.mjs",
+    "eval": "vitest run --project evals",
     "docs:generate": "node scripts/generate-api-docs.mjs",
     "publish:fix-deps": "node scripts/fix-workspace-deps.mjs",
     "publish:all": "node scripts/fix-workspace-deps.mjs && turbo build && pnpm -r publish --access public --no-git-checks"

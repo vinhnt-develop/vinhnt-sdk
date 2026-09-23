@@ -1,0 +1,12 @@
+{
+  "name": "@vinhnt-sdk/evals",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Golden offline eval suite for vinhnt-sdk (CI: pnpm eval)",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  }
+}

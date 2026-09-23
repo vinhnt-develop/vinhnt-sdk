@@ -9,6 +9,15 @@ export default defineConfig({
       exclude: ['**/*.d.ts', 'packages/*/test/**', 'packages/*/src/**/fixtures/**'],
       reporter: ['text', 'json', 'json-summary'],
       reportsDirectory: './coverage',
+      // P1-10: always emit coverage even when pre-existing unit tests fail.
+      reportOnFailure: true,
+      // P1-10 G20b: start modest (lines 60), ramp to 75 once baseline is stable.
+      thresholds: {
+        lines: 60,
+        statements: 60,
+        branches: 65,
+        functions: 25,
+      },
     },
     projects: [
       'packages/core',
@@ -31,6 +40,7 @@ export default defineConfig({
       'packages/plugin',
       'packages/lsp',
       'packages/provider-openai-compatible',
+      'evals',
     ],
   },
 });
