@@ -57,7 +57,7 @@
     "@vinhnt-sdk/guard": "workspace:*",
     "@vinhnt-sdk/llm": "workspace:*",
     "@vinhnt-sdk/permission": "workspace:*",
-    "@vinhnt-sdk/schema": "^0.5.3",
+    "@vinhnt-sdk/schema": "workspace:*",
     "@vinhnt-sdk/session": "workspace:*",
     "@vinhnt-sdk/tools": "workspace:*"
   }

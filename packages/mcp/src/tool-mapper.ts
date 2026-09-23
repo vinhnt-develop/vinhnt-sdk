@@ -42,11 +42,15 @@ export function mapMcpTool(
 
   return {
     id,
-    name: mcpTool.name,
-    description: mcpTool.description ?? `MCP tool: ${mcpTool.name}`,
+    // Namespaced wire name (industry: mcp__server__tool) so model calls match dispatch.
+    name: id,
+    description: mcpTool.description ?? `MCP tool from server "${serverName}": ${mcpTool.name}`,
     risk: "external",
     inputSchema: mcpTool.inputSchema as unknown as ToolDefinition["inputSchema"],
-    metadata: { source: "mcp" },
+    metadata: { source: "mcp", server: serverName, mcpName: mcpTool.name },
+    ...(mcpTool.annotations
+      ? { annotations: mcpTool.annotations as unknown as ToolDefinition["annotations"] }
+      : {}),
     async execute(args: unknown, ctx) {
       ctx?.metadata({ title: id, metadata: { server: serverName, mcp: true } });
 

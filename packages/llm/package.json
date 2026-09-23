@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/llm",
-  "version": "0.5.2",
+  "version": "0.5.4",
   "description": "LLM capability seam - adapter abstraction, registry, retry, token metering",
   "type": "module",
   "main": "./dist/index.js",
@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@vinhnt-sdk/config": "workspace:*",
-    "@vinhnt-sdk/schema": "^0.5.3",
+    "@vinhnt-sdk/schema": "workspace:*",
     "@vinhnt-sdk/tools": "workspace:*"
   },
   "license": "MIT"

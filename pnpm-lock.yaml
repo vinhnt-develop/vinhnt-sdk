@@ -66,8 +66,8 @@ importers:
         specifier: workspace:*
         version: link:../sandbox
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
       '@vinhnt-sdk/session':
         specifier: workspace:*
         version: link:../session
@@ -119,8 +119,8 @@ importers:
   packages/knowledge:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -131,8 +131,8 @@ importers:
         specifier: workspace:*
         version: link:../config
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.6
-        version: 0.5.6
+        specifier: workspace:*
+        version: link:../schema
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -152,8 +152,8 @@ importers:
   packages/mcp:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.6
-        version: 0.5.6
+        specifier: workspace:*
+        version: link:../schema
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -230,8 +230,8 @@ importers:
         specifier: workspace:*
         version: link:../permission
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
       '@vinhnt-sdk/session':
         specifier: workspace:*
         version: link:../session
@@ -254,8 +254,8 @@ importers:
         specifier: workspace:*
         version: link:../sandbox
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.6
-        version: 0.5.6
+        specifier: workspace:*
+        version: link:../schema
       zod:
         specifier: ^4.4.3
         version: 4.4.3

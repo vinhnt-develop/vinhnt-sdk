@@ -19,7 +19,7 @@ export const KNOWN_TOOL_SOURCES = ["system", "custom", "mcp"] as const;
 /** Tool source/provenance — open string for extensibility. */
 export type ToolSource = string;
 
-/** Tool annotations — hint about tool behavior for LLMs (MCP 2026-07-28 pattern) */
+/** Tool annotations — hint about tool behavior for LLMs (MCP 2026-07-28 pattern). */
 export interface ToolAnnotations {
   /** If true, tool does not modify its environment */
   readonly readOnlyHint?: boolean;
@@ -29,6 +29,8 @@ export interface ToolAnnotations {
   readonly openWorldHint?: boolean;
   /** If true, tool requires human approval before execution */
   readonly requiresApproval?: boolean;
+  /** Open extension bag — keeps assignability to `ToolDefinitionLike.annotations`. */
+  readonly [key: string]: unknown;
 }
 
 /** Provider-facing tool definition: schema, risk and execute. */
@@ -56,7 +58,7 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> extends Too
   /** Tags for tool search (e.g. ["file", "read", "search"]). */
   readonly tags?: readonly string[];
   /** Tool annotations — hints about tool behavior for LLMs */
-  readonly annotations?: ToolAnnotations;
+  readonly annotations?: ToolAnnotations | undefined;
   /** Icon identifier or emoji for UI display */
   readonly icon?: string;
   /** Human-readable category for tool grouping */

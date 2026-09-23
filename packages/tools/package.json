@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/tools",
-  "version": "0.4.4",
+  "version": "0.4.6",
   "description": "Built-in tools for VNT Agent - file, shell, git, web, search, image, and more",
   "license": "MIT",
   "type": "module",
@@ -55,7 +55,7 @@
   "dependencies": {
     "@vinhnt-sdk/guard": "workspace:*",
     "@vinhnt-sdk/sandbox": "workspace:*",
-    "@vinhnt-sdk/schema": "^0.5.3",
+    "@vinhnt-sdk/schema": "workspace:*",
     "zod": "^4.4.3"
   }
 }

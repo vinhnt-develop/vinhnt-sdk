@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/mcp",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "MCP client/server for vinhnt-sdk - Model Context Protocol integration",
   "license": "MIT",
   "type": "module",
@@ -49,7 +49,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "^0.5.3",
+    "@vinhnt-sdk/schema": "workspace:*",
     "@vinhnt-sdk/tools": "workspace:*"
   },
   "devDependencies": {

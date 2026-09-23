@@ -26,15 +26,27 @@ export type LlmSnapshotMessage = z.infer<typeof LlmSnapshotMessageSchema>;
 /**
  * Tool definition snapshot for LLM request debugging.
  *
- * Captures the tool schema as sent to the LLM (not the full ToolDefinition).
+ * Structure follows AGENTS.md §2b (Wire vs Non-Wire):
+ * - Top-level `name` / `description` / `parameters` = **wire** (what the LLM sees).
+ * - Nested `origin` = **runtime/trajectory only** — never serialized to the provider.
  */
 export const LlmSnapshotToolDefSchema = z.object({
+  /** Wire name as sent to the provider (e.g. `mcp__server__tool`). */
   name: z.string(),
   description: z.string().optional(),
   parameters: z.record(z.string(), z.unknown()).optional(),
-  risk: z.string().optional(),
-  /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). Not sent to the LLM. */
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  /** Off-wire provenance — not sent to the LLM. */
+  origin: z
+    .object({
+      /** Canonical tool id (may differ from wire `name`). */
+      id: z.string().optional(),
+      risk: z.string().optional(),
+      /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). */
+      metadata: z.record(z.string(), z.unknown()).optional(),
+      /** MCP-style behavioral hints (readOnly, destructive, …). */
+      annotations: z.record(z.string(), z.unknown()).optional(),
+    })
+    .optional(),
 });
 /** Inferred type of {@link LlmSnapshotToolDefSchema}. */
 export type LlmSnapshotToolDef = z.infer<typeof LlmSnapshotToolDefSchema>;
@@ -302,23 +314,52 @@ export const RequestContextDataSchema = z.object({
 /** Inferred type of {@link RequestContextDataSchema}. */
 export type RequestContextData = z.infer<typeof RequestContextDataSchema>;
 
-/** Data payload for the `llm.request` event. */
+/**
+ * Data payload for the `llm.request` event.
+ *
+ * Grouped (not flat) so consumers can distinguish layers:
+ * - `params` — generation knobs sent toward the provider
+ * - `prompt` — assembled prompt summary (always captured)
+ * - top-level `messages`/`tools`/`selection`/`agent` — optional full snapshot
+ */
 export const LlmRequestDataSchema = z.object({
   step: z.number(),
   model: z.string(),
   provider: z.string().optional(),
-  temperature: z.number().optional(),
-  maxTokens: z.number().optional(),
-  topP: z.number().optional(),
-  stopSequences: z.array(z.string()).optional(),
-  frequencyPenalty: z.number().optional(),
-  presencePenalty: z.number().optional(),
-  systemPromptLength: z.number().optional(),
-  systemPrompt: z.string().optional(),
-  messageCount: z.number().optional(),
-  toolCount: z.number().optional(),
 
-  // ─── Snapshot additions ─────────────────────────────────────────
+  /** Generation / sampling knobs (wire may still differ in casing). */
+  params: z
+    .object({
+      temperature: z.number().optional(),
+      maxTokens: z.number().optional(),
+      maxCompletionTokens: z.number().optional(),
+      topP: z.number().optional(),
+      stopSequences: z.array(z.string()).optional(),
+      frequencyPenalty: z.number().optional(),
+      presencePenalty: z.number().optional(),
+      toolChoice: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+      parallelToolCalls: z.boolean().optional(),
+      responseFormat: z.record(z.string(), z.unknown()).optional(),
+      stream: z.boolean().optional(),
+      seed: z.number().optional(),
+      user: z.string().optional(),
+      logitBias: z.record(z.string(), z.number()).optional(),
+      logprobs: z.boolean().optional(),
+      topLogprobs: z.number().optional(),
+      reasoningEffort: z.string().optional(),
+    })
+    .optional(),
+
+  /** Prompt assembly summary — present even when full snapshot is off. */
+  prompt: z
+    .object({
+      systemPromptLength: z.number().optional(),
+      systemPrompt: z.string().optional(),
+      messageCount: z.number().optional(),
+      toolCount: z.number().optional(),
+    })
+    .optional(),
+
   /** Full messages array sent to LLM. Only captured when snapshot enabled. */
   messages: z.array(LlmSnapshotMessageSchema).optional(),
   /** Tool definitions with schemas. Only captured when snapshot enabled. */

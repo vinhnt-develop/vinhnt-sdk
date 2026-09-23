@@ -19,7 +19,7 @@ import type {
 } from "@vinhnt-sdk/schema";
 import { ConfigurationError, NetworkError, TimeoutError } from "@vinhnt-sdk/schema";
 import { buildRequest } from "./build-request.js";
-import type { BuildRequestOptions } from "./build-request.js";
+import type { BuildRequestOptions, OpenAICompatibleRequestBody } from "./build-request.js";
 import { toModelStreamEvents } from "./sse.js";
 import { fromOpenAIResponse } from "./convert.js";
 import type { RetryOptions } from "./error.js";
@@ -64,6 +64,12 @@ export interface OpenAICompatibleProviderOptions {
   readonly includeUsage?: boolean;
   /** Injectable fetch implementation (defaults to the global `fetch`). */
   readonly fetchImpl?: typeof fetch;
+  /**
+   * Called with the exact wire body right before POST (for debug/trajectory).
+   * `url` is the endpoint; headers are NOT passed — redact secrets yourself
+   * if you log beyond the JSON body.
+   */
+  readonly onWireRequest?: (url: string, body: OpenAICompatibleRequestBody) => void;
   readonly metadata?: Record<string, unknown>;
 }
 
@@ -104,6 +110,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
   private readonly timeoutMs: number;
   private readonly includeUsage: boolean;
   private readonly fetchImpl: typeof fetch;
+  private readonly onWireRequest?: ((url: string, body: OpenAICompatibleRequestBody) => void) | undefined;
 
   constructor(opts: OpenAICompatibleProviderOptions) {
     if (!opts.defaultModel || opts.defaultModel.trim() === "") {
@@ -122,6 +129,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
     this.retry = opts.retry;
     this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.includeUsage = opts.includeUsage ?? true;
+    this.onWireRequest = opts.onWireRequest;
     const globalFetch = (globalThis as { fetch?: typeof fetch }).fetch;
     if (opts.fetchImpl) {
       this.fetchImpl = opts.fetchImpl;
@@ -171,6 +179,11 @@ export class OpenAICompatibleProvider implements ModelProvider {
       stream: opts.stream,
       includeUsage: opts.includeUsage,
     } satisfies BuildRequestOptions);
+    try {
+      this.onWireRequest?.(url, body);
+    } catch {
+      // debug hook must never break the call
+    }
     const init: RequestInit = {
       method: "POST",
       headers: this.buildHeaders(),

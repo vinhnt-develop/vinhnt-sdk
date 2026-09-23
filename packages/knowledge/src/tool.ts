@@ -15,6 +15,7 @@ export function createMemorySearchTool(store: SessionStore): ToolDefinition {
       required: ["query"],
     },
     risk: "read",
+    metadata: { source: "knowledge" },
     async execute(input: { query: string; limit?: number }) {
       if (!store.searchMessages) return [];
       const messages = await store.searchMessages(input.query, { limit: input.limit ?? 10 });

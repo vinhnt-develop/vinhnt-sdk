@@ -4,8 +4,12 @@ dist/
 .turbo/
 *.log
 .DS_Store
+coverage/
 
-# Internal files
+# Internal files (local dev only — never commit)
 AGENTS.md
 .agents/
-coverage/
+.pkg-backup*
+BUG_FIX_PLAN*
+RESEARCH-*.md
+

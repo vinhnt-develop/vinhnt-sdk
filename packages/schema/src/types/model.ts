@@ -241,6 +241,8 @@ export interface ToolDefinitionLike {
   readonly type?: "function";
   /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). Not sent to the LLM. */
   readonly metadata?: Record<string, unknown> | undefined;
+  /** MCP-style behavioral hints (readOnly/destructive/…). Off-wire. */
+  readonly annotations?: Record<string, unknown> | undefined;
   readonly function?: {
     readonly name: string;
     readonly description: string;

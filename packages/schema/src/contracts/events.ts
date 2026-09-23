@@ -22,14 +22,22 @@ export interface LlmSnapshotMessage {
 
 /**
  * Tool definition snapshot for LLM request debugging.
+ *
+ * Wire (`name`/`description`/`parameters`) vs off-wire (`origin`) per AGENTS.md §2b.
+ * Prefer the Zod-derived type from `./schema/run-event.js` when validating.
  */
 export interface LlmSnapshotToolDef {
+  /** Wire name as sent to the provider. */
   readonly name: string;
   readonly description?: string;
   readonly parameters?: Record<string, unknown>;
-  readonly risk?: string;
-  /** Non-wire extension bag (e.g. `{ source: "system" | "custom" | "mcp" }`). Not sent to the LLM. */
-  readonly metadata?: Record<string, unknown>;
+  /** Off-wire provenance — never sent to the LLM. */
+  readonly origin?: {
+    readonly id?: string;
+    readonly risk?: string;
+    readonly metadata?: Record<string, unknown>;
+    readonly annotations?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -261,21 +269,44 @@ export interface ApprovalDecidedData { readonly requestId: RequestId; readonly d
 export interface ToolCancelledData { readonly toolId: string; readonly toolName: string; readonly callId?: string }
 export interface RequestHeaderData { readonly provider: string; readonly model: string; readonly reason: "initial" | "resume" | "change" | "series" }
 export interface RequestContextData { readonly provider: string; readonly model: string; readonly contextWindow?: number }
+/**
+ * Data payload for the `llm.request` event.
+ *
+ * Grouped: `params` (generation knobs), `prompt` (assembly summary),
+ * optional top-level snapshot (`messages`/`tools`/`selection`/`agent`).
+ * Prefer Zod-derived type from `./schema/run-event.js` when validating.
+ */
 export interface LlmRequestData {
   readonly step: number;
   readonly model: string;
   readonly provider?: string;
-  readonly temperature?: number;
-  readonly maxTokens?: number;
-  readonly topP?: number;
-  readonly stopSequences?: string[];
-  readonly frequencyPenalty?: number;
-  readonly presencePenalty?: number;
-  readonly systemPromptLength?: number;
-  readonly systemPrompt?: string;
-  readonly messageCount?: number;
-  readonly toolCount?: number;
-  // ─── Snapshot additions ─────────────────────────────────────────
+  /** Generation / sampling knobs. */
+  readonly params?: {
+    readonly temperature?: number;
+    readonly maxTokens?: number;
+    readonly maxCompletionTokens?: number;
+    readonly topP?: number;
+    readonly stopSequences?: readonly string[];
+    readonly frequencyPenalty?: number;
+    readonly presencePenalty?: number;
+    readonly toolChoice?: string | Record<string, unknown>;
+    readonly parallelToolCalls?: boolean;
+    readonly responseFormat?: Record<string, unknown>;
+    readonly stream?: boolean;
+    readonly seed?: number;
+    readonly user?: string;
+    readonly logitBias?: Record<string, number>;
+    readonly logprobs?: boolean;
+    readonly topLogprobs?: number;
+    readonly reasoningEffort?: string;
+  };
+  /** Prompt assembly summary. */
+  readonly prompt?: {
+    readonly systemPromptLength?: number;
+    readonly systemPrompt?: string;
+    readonly messageCount?: number;
+    readonly toolCount?: number;
+  };
   /** Full messages array sent to LLM. */
   readonly messages?: ReadonlyArray<LlmSnapshotMessage>;
   /** Tool definitions with schemas. */

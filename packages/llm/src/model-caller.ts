@@ -219,8 +219,32 @@ export class ModelCaller {
     let cacheReadTokens = 0;
     let cacheWriteTokens = 0;
 
-    // Emit llm.request with request parameters for trajectory visibility
+    // Emit llm.request with request parameters for trajectory visibility.
+    // Capture POST-hook messages/tools (what the model will actually see).
+    // Shape: params (generation) + prompt (assembly) + optional snapshot — AGENTS.md §2b.
     if (runId) {
+      const snapMessages = request.messages ?? messages;
+      const promptSystem = snapMessages[0]?.role === "system"
+        ? getTextContent(snapMessages[0].content)
+        : undefined;
+      const genParams = {
+        ...(request.temperature != null ? { temperature: request.temperature } : {}),
+        ...(request.maxTokens != null ? { maxTokens: request.maxTokens } : {}),
+        ...(request.maxCompletionTokens != null ? { maxCompletionTokens: request.maxCompletionTokens } : {}),
+        ...(request.topP != null ? { topP: request.topP } : {}),
+        ...(request.stopSequences?.length ? { stopSequences: [...request.stopSequences] } : {}),
+        ...(request.frequencyPenalty != null ? { frequencyPenalty: request.frequencyPenalty } : {}),
+        ...(request.presencePenalty != null ? { presencePenalty: request.presencePenalty } : {}),
+        ...(request.toolChoice !== undefined ? { toolChoice: request.toolChoice as string | Record<string, unknown> } : {}),
+        ...(request.parallelToolCalls !== undefined ? { parallelToolCalls: request.parallelToolCalls } : {}),
+        ...(request.responseFormat !== undefined ? { responseFormat: request.responseFormat as Record<string, unknown> } : {}),
+        ...(request.seed != null ? { seed: request.seed } : {}),
+        ...(request.user != null ? { user: request.user } : {}),
+        ...(request.logitBias ? { logitBias: request.logitBias } : {}),
+        ...(request.logprobs !== undefined ? { logprobs: request.logprobs } : {}),
+        ...(request.topLogprobs != null ? { topLogprobs: request.topLogprobs } : {}),
+        ...(request.reasoningEffort != null ? { reasoningEffort: request.reasoningEffort } : {}),
+      };
       await this.deps.emitEvent({
         id: crypto.randomUUID(), runId, type: "llm.request" as const,
         occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
@@ -228,30 +252,34 @@ export class ModelCaller {
           step,
           model: modelName,
           provider: model.provider,
-          ...(request.temperature != null ? { temperature: request.temperature } : {}),
-          ...(request.maxTokens != null ? { maxTokens: request.maxTokens } : {}),
-          ...(request.topP != null ? { topP: request.topP } : {}),
-          ...(request.stopSequences?.length ? { stopSequences: [...request.stopSequences] } : {}),
-          ...(request.frequencyPenalty != null ? { frequencyPenalty: request.frequencyPenalty } : {}),
-          ...(request.presencePenalty != null ? { presencePenalty: request.presencePenalty } : {}),
-          systemPromptLength: messages[0]?.content ? getTextContent(messages[0].content).length : undefined,
-          systemPrompt: messages[0]?.role === "system" ? getTextContent(messages[0].content) : undefined,
-          messageCount: messages.length,
-          ...(request.tools?.length ? { toolCount: request.tools.length } : {}),
-          // ─── Snapshot additions ─────────────────────────────────
-          messages: messages.map(m => ({
+          ...(Object.keys(genParams).length ? { params: genParams } : {}),
+          prompt: {
+            systemPromptLength: promptSystem ? promptSystem.length : undefined,
+            systemPrompt: promptSystem,
+            messageCount: snapMessages.length,
+            toolCount: request.tools?.length,
+          },
+          // ─── Snapshot (wire + origin split) ─────────────────────
+          messages: snapMessages.map(m => ({
             role: m.role,
             content: getTextContent(m.content),
             ...(m.toolCalls?.length ? { toolCalls: m.toolCalls } : {}),
             ...(m.toolCallId ? { toolCallId: m.toolCallId } : {}),
           })),
-          tools: request.tools?.map(t => ({
-            name: t.function?.name ?? t.name ?? t.id,
-            description: t.description,
-            parameters: (t.function?.parameters ?? t.inputSchema) as Record<string, unknown>,
-            ...(t.risk ? { risk: t.risk } : {}),
-            ...(t.metadata ? { metadata: t.metadata } : {}),
-          })),
+          tools: request.tools?.map(t => {
+            const origin = {
+              ...(t.id ? { id: t.id } : {}),
+              ...(t.risk ? { risk: t.risk } : {}),
+              ...(t.metadata ? { metadata: t.metadata } : {}),
+              ...(t.annotations ? { annotations: t.annotations as Record<string, unknown> } : {}),
+            };
+            return {
+              name: t.function?.name ?? t.name ?? t.id,
+              description: t.description,
+              parameters: (t.function?.parameters ?? t.inputSchema) as Record<string, unknown>,
+              ...(Object.keys(origin).length ? { origin } : {}),
+            };
+          }),
           ...(ctx.overrides?.selection ? { selection: ctx.overrides.selection } : {}),
           ...(ctx.overrides?.agent ? { agent: ctx.overrides.agent } : {}),
         },
