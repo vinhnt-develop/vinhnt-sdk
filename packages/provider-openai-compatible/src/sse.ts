@@ -107,13 +107,18 @@ interface AssembledToolCall {
   argsBuffer: string;
 }
 
-function safeParseArgs(buffer: string): Record<string, unknown> {
-  if (!buffer.trim()) return {};
+function safeParseArgs(buffer: string): { args: Record<string, unknown>; malformed: boolean } {
+  if (!buffer.trim()) return { args: {}, malformed: false };
   try {
     const parsed = JSON.parse(buffer) as unknown;
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return { args: parsed as Record<string, unknown>, malformed: false };
+    }
+    return { args: {}, malformed: true };
   } catch {
-    return {};
+    // Keep a raw marker so downstream validation/self-correction can see the failure
+    // instead of silently treating it as an empty object.
+    return { args: { __malformedArgs: buffer }, malformed: true };
   }
 }
 
@@ -257,10 +262,14 @@ export async function* toModelStreamEvents(
     return;
   }
 
+  // Emit every assembled call — local models (LM Studio etc.) often omit `id`.
+  // A missing id used to drop the call entirely → run "succeeded" with no tool execution.
+  let synthSeq = 0;
   for (const tc of assembled.values()) {
-    if (tc.id) {
-      yield { type: "tool_call", id: tc.id, name: tc.name, args: safeParseArgs(tc.argsBuffer) };
-    }
+    if (!tc.name && !tc.argsBuffer.trim()) continue;
+    const id = tc.id || `call_synth_${synthSeq++}_${tc.name || "unknown"}`;
+    const { args } = safeParseArgs(tc.argsBuffer);
+    yield { type: "tool_call", id, name: tc.name, args };
   }
 
   yield { type: "done" };

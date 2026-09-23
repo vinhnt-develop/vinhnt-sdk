@@ -39,8 +39,8 @@ importers:
   packages/config:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
 
   packages/core:
     dependencies:
@@ -87,8 +87,8 @@ importers:
   packages/event:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -96,8 +96,8 @@ importers:
   packages/guard:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       vitest:
         specifier: ^3.2.7
@@ -109,8 +109,8 @@ importers:
         specifier: workspace:*
         version: link:../guard
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       vitest:
         specifier: ^3.2.7
@@ -140,8 +140,8 @@ importers:
   packages/lsp:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
       '@vinhnt-sdk/tools':
         specifier: workspace:*
         version: link:../tools
@@ -165,14 +165,14 @@ importers:
   packages/permission:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
 
   packages/plugin:
     dependencies:
       '@vinhnt-sdk/core':
-        specifier: '>=0.6.0'
-        version: 0.9.2
+        specifier: workspace:*
+        version: link:../core
 
   packages/provider-openai-compatible:
     dependencies:
@@ -183,8 +183,8 @@ importers:
         specifier: workspace:*
         version: link:../guard
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
 
   packages/provider-spec: {}
 
@@ -194,8 +194,8 @@ importers:
         specifier: workspace:*
         version: link:../guard
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
 
   packages/schema:
     dependencies:
@@ -212,8 +212,8 @@ importers:
   packages/session:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
 
   packages/step-executor:
     dependencies:
@@ -263,8 +263,8 @@ importers:
   packages/trace:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       vitest:
         specifier: ^3.2.7
@@ -273,8 +273,8 @@ importers:
   packages/workflow:
     dependencies:
       '@vinhnt-sdk/schema':
-        specifier: ^0.5.3
-        version: 0.5.3
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       vitest:
         specifier: ^3.2.7
@@ -915,91 +915,6 @@ packages:
   '@typescript-eslint/visitor-keys@8.67.0':
     resolution: {integrity: sha512-fkv8dHRDqfGtTHuJeebdrQ7cX6Ad4WAS00rgHh9UGvMycF1mjBfsxry1XsLIFhWZ6Judlh6UdzK+TYlbpCXgnA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
-
-  '@vinhnt-sdk/config@0.4.2':
-    resolution: {integrity: sha512-lozZ4Izq8LSFFI9FuQqCFOrjUaBuQ0HA3BOvf+72kVJb5GSidnIaUANhoHwqPyXwmRd1KnZFPmqnCgvt6WbA3Q==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/core@0.9.2':
-    resolution: {integrity: sha512-4qCtS6iP5Cd5KRzGPNrdZUdsTR2Vp4kfR+xftixL9epN6ivMTOq89qJ1y0x5u7zEfh9KmJRnkXIRx5HFP7j4vA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/event@0.4.2':
-    resolution: {integrity: sha512-zPqnZS6aEn2I3DxfFH/W1DwmaYmK6i4TsKmxI3scjJ3p9pGklriBvVTGJP1yCx5TqVnRvPAhvhSey3Ez4SbaUA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/guard@0.4.2':
-    resolution: {integrity: sha512-3LQZVNIrvy7W/qULWEU5Ns5+tSy0beO/7Bukr9SXEhVH5jgFwDA06Zqfjtiz3dRVNg7rgZWSszmOnt2PywyNrQ==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/guard@0.4.3':
-    resolution: {integrity: sha512-So94s4pH3BXy3ktQpalDk+8fNvpcA2kn9vhSLzS7eFleBnXjFbazRpKvoE4ioZ5UeCkTjfbyNCb88EDC5UIZfA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/guardrails@0.4.2':
-    resolution: {integrity: sha512-T2VdCyUnNNSe138MLLxu6u6A0UjFWaPe7bwjAldJ/PeI1iZ+OaFb8LdxSp05WCV6UoRH5q07GEjedRs/brDerA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/knowledge@0.4.2':
-    resolution: {integrity: sha512-STZcfJx60ovAQjRtzm7OCYADKGdanKroWOcFasGhtUd/3lHB0g2+eF8d/AxjDDFuQ8kZvO+gg4QZktQxcAZDyA==}
-    engines: {node: '>=20'}
-    peerDependencies:
-      '@vinhnt-sdk/tools': 0.4.2
-    peerDependenciesMeta:
-      '@vinhnt-sdk/tools':
-        optional: true
-
-  '@vinhnt-sdk/llm@0.5.0':
-    resolution: {integrity: sha512-uqchItSrQCWyX20+1IAe9AF2L648/nJPtZftv+jg69uMpUIZjRsAKkJOSlKVuCNVfYQr3xoGPfUZD3JFPYsbtQ==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/llm@0.5.2':
-    resolution: {integrity: sha512-O8u6Dpw8b9LqzlYS4nzBKHuTzz1U30RpBCErLXvwwBCgz3S1yzUStQD2VhL0gHnOUFf38NB+XtrGYU4n7f5wKg==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/permission@0.4.2':
-    resolution: {integrity: sha512-6ecXTdnvS+LTu9tuO9JrnZDcNnhMWV0N14waoIX8eVAT01GgARAoLBRQigIKlmqJcMfIdnpvLm9vxHHTGerY1Q==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/sandbox@0.4.2':
-    resolution: {integrity: sha512-tLeSlk9qvKJhQ0eKLKZbP0zboKdfxtrJJR4MEjj3sxHluAaaLDJmCzgkDwKNa2/mN3yGer1igTOSReAikaELLg==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/schema@0.4.2':
-    resolution: {integrity: sha512-w4AaWCDMEk+wLU3QxMcnpJMpKYPMdhJVVnsYZTaYGOb5BkCs9R3Adj3EU4LBdF28DauZSxWxnf2cH6K0v2anbA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/schema@0.5.3':
-    resolution: {integrity: sha512-gaE0cbK03gndnMdzHblW9OoxMt4nTh/iZ646gfuHFObkcI14vUIJNg4c51T9ZMlE5jma74FgwmAZxiCVmcwMUA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/schema@0.5.6':
-    resolution: {integrity: sha512-jRKaz8CmJh3DIecXsoYAuOg5m4ljkjoWidOG867mXophmTvbzpuWN4UAGqm93xiWOEWbAspnEKuU52HjbQiw3Q==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/security@0.4.2':
-    resolution: {integrity: sha512-q+qCpPbofQhGpANQ7CueMU3EHeBr/O+lsBUGfvJKPxEg1GJiLe5hR1TwP4jTtacKKQy6qwz2lnY2IU8dmjb3+A==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/session@0.4.2':
-    resolution: {integrity: sha512-vq+Wbhpf1NQ5YCDPPJkfG+67LEOMbq52VIRu5H24b0kvZ/JWSPuR2sO3gUm0LfKQbcvoYn+VwXdGNI7dHTjWQA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/step-executor@0.4.5':
-    resolution: {integrity: sha512-DsBT/B+pZ234eT5weM5Kxi5+zIB6Jwc2ACafVnIFp+StYARTbcfWBTAFXPMhH4ZZvDKD0iXZr02A1gX8zcQ3tw==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/tools@0.4.2':
-    resolution: {integrity: sha512-Z47hX6PtpmkYyhQzae+sIiaISPH1QqxpLami8BZfKuMBOKJI3CROa4PzMhRuysT8oUVLmdlL2AQJS/m1J+OQDA==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/tools@0.4.4':
-    resolution: {integrity: sha512-83rJ88prnK3t9FHCxf8VwjrmSwHZEFt50oZ3kI09PfRaFQ+iCBfk3oPp1KNe3TCp/BvBAKxDsOrf54mHia1ziQ==}
-    engines: {node: '>=20'}
-
-  '@vinhnt-sdk/workflow@0.4.2':
-    resolution: {integrity: sha512-d09tWuwhfc1OGQC5xkxUnBJVUMeVJ81iF8UWdn7mShgZCEOE+bilxzV7WtncXUk1H0G1V3wV66KscZ3n7loVJQ==}
-    engines: {node: '>=20'}
 
   '@vitest/coverage-v8@3.2.7':
     resolution: {integrity: sha512-NEGWJS2XNu2PfRLQwOO3CTKj1tTETxNBdk454vDxVBhxJYhPaA/eS0nAI0c+1El1P7a60z8+i+ZrQoGESweGKg==}
@@ -2286,120 +2201,6 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.67.0
       eslint-visitor-keys: 5.0.1
-
-  '@vinhnt-sdk/config@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
-
-  '@vinhnt-sdk/core@0.9.2':
-    dependencies:
-      '@vinhnt-sdk/event': 0.4.2
-      '@vinhnt-sdk/guard': 0.4.3
-      '@vinhnt-sdk/guardrails': 0.4.2
-      '@vinhnt-sdk/knowledge': 0.4.2(@vinhnt-sdk/tools@0.4.4)
-      '@vinhnt-sdk/llm': 0.5.2
-      '@vinhnt-sdk/permission': 0.4.2
-      '@vinhnt-sdk/sandbox': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.6
-      '@vinhnt-sdk/session': 0.4.2
-      '@vinhnt-sdk/step-executor': 0.4.5
-      '@vinhnt-sdk/tools': 0.4.4
-      '@vinhnt-sdk/workflow': 0.4.2
-      zod: 4.4.3
-
-  '@vinhnt-sdk/event@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
-      zod: 4.4.3
-
-  '@vinhnt-sdk/guard@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
-
-  '@vinhnt-sdk/guard@0.4.3':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.5.6
-
-  '@vinhnt-sdk/guardrails@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/guard': 0.4.2
-      '@vinhnt-sdk/schema': 0.4.2
-
-  '@vinhnt-sdk/knowledge@0.4.2(@vinhnt-sdk/tools@0.4.4)':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
-    optionalDependencies:
-      '@vinhnt-sdk/tools': 0.4.4
-
-  '@vinhnt-sdk/llm@0.5.0':
-    dependencies:
-      '@vinhnt-sdk/config': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.6
-      '@vinhnt-sdk/tools': 0.4.2
-
-  '@vinhnt-sdk/llm@0.5.2':
-    dependencies:
-      '@vinhnt-sdk/config': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.6
-      '@vinhnt-sdk/tools': 0.4.4
-
-  '@vinhnt-sdk/permission@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
-
-  '@vinhnt-sdk/sandbox@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/guard': 0.4.2
-      '@vinhnt-sdk/schema': 0.4.2
-
-  '@vinhnt-sdk/schema@0.4.2':
-    dependencies:
-      zod: 4.4.3
-
-  '@vinhnt-sdk/schema@0.5.3':
-    dependencies:
-      zod: 4.4.3
-
-  '@vinhnt-sdk/schema@0.5.6':
-    dependencies:
-      zod: 4.4.3
-
-  '@vinhnt-sdk/security@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/guard': 0.4.2
-
-  '@vinhnt-sdk/session@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
-
-  '@vinhnt-sdk/step-executor@0.4.5':
-    dependencies:
-      '@vinhnt-sdk/event': 0.4.2
-      '@vinhnt-sdk/guard': 0.4.3
-      '@vinhnt-sdk/llm': 0.5.0
-      '@vinhnt-sdk/permission': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.6
-      '@vinhnt-sdk/session': 0.4.2
-      '@vinhnt-sdk/tools': 0.4.4
-
-  '@vinhnt-sdk/tools@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/guard': 0.4.2
-      '@vinhnt-sdk/sandbox': 0.4.2
-      '@vinhnt-sdk/schema': 0.4.2
-      '@vinhnt-sdk/security': 0.4.2
-      zod: 4.4.3
-
-  '@vinhnt-sdk/tools@0.4.4':
-    dependencies:
-      '@vinhnt-sdk/guard': 0.4.3
-      '@vinhnt-sdk/sandbox': 0.4.2
-      '@vinhnt-sdk/schema': 0.5.6
-      zod: 4.4.3
-
-  '@vinhnt-sdk/workflow@0.4.2':
-    dependencies:
-      '@vinhnt-sdk/schema': 0.4.2
 
   '@vitest/coverage-v8@3.2.7(vitest@3.2.7(@types/debug@4.1.13)(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.10))':
     dependencies:

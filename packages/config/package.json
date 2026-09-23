@@ -49,7 +49,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "^0.5.3"
+    "@vinhnt-sdk/schema": "workspace:*"
   },
   "license": "MIT"
 }

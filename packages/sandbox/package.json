@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@vinhnt-sdk/guard": "workspace:*",
-    "@vinhnt-sdk/schema": "^0.5.3"
+    "@vinhnt-sdk/schema": "workspace:*"
   },
   "scripts": {
     "build": "tsc -b",

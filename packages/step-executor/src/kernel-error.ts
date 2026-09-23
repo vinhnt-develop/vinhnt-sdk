@@ -13,7 +13,8 @@ export type KernelErrorCode =
   | "timeout"
   | "model_unavailable"
   | "guardrail_denied"
-  | "validation_error";
+  | "validation_error"
+  | "missed_tool_calls";
 
 /** Kernel-level failure with a typed {@link KernelErrorCode}. */
 export class KernelError extends VntError {

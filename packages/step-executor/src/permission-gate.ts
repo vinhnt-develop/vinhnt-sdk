@@ -284,8 +284,13 @@ export class PermissionGate {
       reply = hookResult.modified.reply as PermissionReply;
     } else if (this.deps.approvalStore) {
       // Race the approval wait against the run's abort signal so a cancelled
-      // run does not hang forever waiting for a human reply.
-      reply = await this.deps.approvalStore.awaitReply(req, { signal });
+      // run does not hang forever waiting for a human reply. Default 5-minute
+      // timeout so a missed UI reply fails the tool instead of blocking the
+      // step until stepTimeout.
+      reply = await this.deps.approvalStore.awaitReply(req, {
+        signal,
+        ...(signal ? {} : { timeoutMs: 300_000 }),
+      });
     }
 
     // Persist permission.replied to store (sync for tests) AND publish to bus

@@ -86,10 +86,17 @@ export function fromOpenAIMessage(msg: OpenAIMessage): ChatMessage {
     (result as { toolCalls?: readonly ToolCall[] }).toolCalls = msg.tool_calls.map((tc): ToolCall => {
       let parsedArgs: Record<string, unknown> = {};
       try {
-        parsedArgs = JSON.parse(tc.function.arguments || "{}");
-      } catch { /* malformed arguments — default to empty */ }
+        const raw = tc.function.arguments || "{}";
+        const parsed = JSON.parse(raw) as unknown;
+        parsedArgs = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+          ? (parsed as Record<string, unknown>)
+          : { __malformedArgs: raw };
+      } catch {
+        // Preserve raw string so validation/self-correction can repair instead of silent {}
+        parsedArgs = { __malformedArgs: tc.function.arguments || "" };
+      }
       return {
-        id: tc.id,
+        id: tc.id || `call_synth_${crypto.randomUUID().slice(0, 8)}`,
         name: tc.function.name,
         args: parsedArgs,
       };
@@ -166,10 +173,16 @@ export function fromOpenAIResponse(res: OpenAIResponse, provider?: string): Mode
   const toolCalls = choice.message.tool_calls?.map((tc) => {
     let parsedArgs: Record<string, unknown> = {};
     try {
-      parsedArgs = JSON.parse(tc.function.arguments || "{}");
-    } catch { /* malformed arguments — default to empty */ }
+      const raw = tc.function.arguments || "{}";
+      const parsed = JSON.parse(raw) as unknown;
+      parsedArgs = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : { __malformedArgs: raw };
+    } catch {
+      parsedArgs = { __malformedArgs: tc.function.arguments || "" };
+    }
     return {
-      id: tc.id,
+      id: tc.id || `call_synth_${crypto.randomUUID().slice(0, 8)}`,
       name: tc.function.name,
       args: parsedArgs,
     };

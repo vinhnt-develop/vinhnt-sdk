@@ -80,6 +80,35 @@ describe("OpenAI Adapter", () => {
       }]);
     });
 
+    it("synthesizes missing tool_call id (P0-1)", () => {
+      const msg: OpenAIMessage = {
+        role: "assistant",
+        content: null,
+        tool_calls: [{
+          id: "",
+          type: "function",
+          function: { name: "write_file", arguments: '{"filePath":"a.txt"}' },
+        }],
+      };
+      const result = fromOpenAIMessage(msg);
+      expect(result.toolCalls?.[0]?.id).toMatch(/^call_synth_/);
+      expect(result.toolCalls?.[0]?.name).toBe("write_file");
+    });
+
+    it("preserves malformed tool_call args as __malformedArgs (P0-1)", () => {
+      const msg: OpenAIMessage = {
+        role: "assistant",
+        content: null,
+        tool_calls: [{
+          id: "call_1",
+          type: "function",
+          function: { name: "write_file", arguments: '{"filePath":' },
+        }],
+      };
+      const result = fromOpenAIMessage(msg);
+      expect(result.toolCalls?.[0]?.args).toEqual({ __malformedArgs: '{"filePath":' });
+    });
+
     it("converts developer role", () => {
       const msg: OpenAIMessage = { role: "developer", content: "System prompt" };
       const result = fromOpenAIMessage(msg);

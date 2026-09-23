@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@vinhnt-sdk/guard": "workspace:*",
-    "@vinhnt-sdk/schema": "^0.5.3"
+    "@vinhnt-sdk/schema": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^3.2.7"

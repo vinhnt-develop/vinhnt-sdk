@@ -4,7 +4,7 @@ import type { ToolDefinition } from "./index.js";
 import { z } from "zod";
 import { defineTool } from "./index.js";
 import type { RootGetter } from "./root-resolver.js";
-import { resolveRoot } from "./root-resolver.js";
+import { resolveToolRoot } from "./root-resolver.js";
 
 const GlobFilesSchema = z.object({
   pattern: z.string().min(1),
@@ -54,8 +54,8 @@ export function createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs?: str
       },
       required: ["pattern"],
     },
-    async execute(v, _ctx) {
-      const root = resolveRoot(workspaceRoot);
+    async execute(v, ctx) {
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const results: string[] = [];
       await globRecursive(root, v.pattern, root, results, ignoreSet);
       return results.slice(0, v.maxResults ?? 50);
@@ -81,8 +81,8 @@ export function createGrepFilesTool(workspaceRoot: RootGetter, ignoredDirs?: str
       },
       required: ["pattern"],
     },
-    async execute(v, _ctx) {
-      const root = resolveRoot(workspaceRoot);
+    async execute(v, ctx) {
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const maxResults = v.maxResults ?? 30;
       const regex = new RegExp(v.pattern);
       const matches: { file: string; line: number; content: string }[] = [];

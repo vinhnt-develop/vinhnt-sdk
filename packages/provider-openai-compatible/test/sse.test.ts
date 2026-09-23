@@ -143,6 +143,44 @@ describe("toModelStreamEvents", () => {
     expect(events[events.length - 1]).toEqual({ type: "done" });
   });
 
+  it("emits tool call with synthesized id when provider omits id (P0-1)", async () => {
+    const input = [
+      `data: ${JSON.stringify(toolDeltaChunk("c1", [{ index: 0, name: "write_file" }]))}`,
+      `data: ${JSON.stringify(toolDeltaChunk("c2", [{ index: 0, arguments: '{"filePath":"a.txt","content":"x"}' }]))}`,
+      "data: [DONE]",
+      "",
+    ].join("\n");
+
+    const events: ModelStreamEvent[] = [];
+    for await (const evt of toModelStreamEvents(toStream(input))) events.push(evt);
+
+    const toolCall = events.find((e) => e.type === "tool_call");
+    expect(toolCall).toBeDefined();
+    if (toolCall?.type === "tool_call") {
+      expect(toolCall.id).toMatch(/^call_synth_/);
+      expect(toolCall.name).toBe("write_file");
+      expect(toolCall.args).toEqual({ filePath: "a.txt", content: "x" });
+    }
+  });
+
+  it("preserves malformed tool-call args as __malformedArgs marker (P0-1)", async () => {
+    const input = [
+      `data: ${JSON.stringify(toolDeltaChunk("c1", [{ index: 0, id: "tc1", name: "write_file" }]))}`,
+      `data: ${JSON.stringify(toolDeltaChunk("c2", [{ index: 0, arguments: '{"filePath":' }]))}`,
+      "data: [DONE]",
+      "",
+    ].join("\n");
+
+    const events: ModelStreamEvent[] = [];
+    for await (const evt of toModelStreamEvents(toStream(input))) events.push(evt);
+
+    const toolCall = events.find((e) => e.type === "tool_call");
+    expect(toolCall).toBeDefined();
+    if (toolCall?.type === "tool_call") {
+      expect(toolCall.args).toEqual({ __malformedArgs: '{"filePath":' });
+    }
+  });
+
   it("yields usage from the final chunk", async () => {
     const input = `data: ${JSON.stringify(usageChunk("u"))}\n\ndata: [DONE]\n\n`;
     const events: ModelStreamEvent[] = [];

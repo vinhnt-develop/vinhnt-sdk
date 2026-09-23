@@ -85,9 +85,9 @@ const LIST_DIRECTORY_SCHEMA = {
   },
 };
 
-export { resolveRoot, type RootGetter } from "./root-resolver.js";
+export { resolveRoot, resolveToolRoot, type RootGetter } from "./root-resolver.js";
 import type { RootGetter } from "./root-resolver.js";
-import { resolveRoot } from "./root-resolver.js";
+import { resolveToolRoot } from "./root-resolver.js";
 
 const DEFAULT_MAX_FILE_SIZE = 1_048_576;
 
@@ -207,7 +207,7 @@ export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileRead
     jsonSchema: READ_FILE_SCHEMA,
     normalize: normalizeInput,
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const target = await ensurePathAccess(resolve(root, v.filePath), root, v.filePath, ctx, externalDirAccess);
       const st = await stat(target);
       const mfs = maxFileSize ?? DEFAULT_MAX_FILE_SIZE;
@@ -239,7 +239,7 @@ export function createWriteFileTool(workspaceRoot: RootGetter, tracker?: FileRea
     jsonSchema: WRITE_FILE_SCHEMA,
     normalize: normalizeInput,
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const target = await ensurePathAccess(resolve(root, v.filePath), root, v.filePath, ctx, externalDirAccess);
       await tracker?.assertWasRead(target);
       await mkdir(dirname(target), { recursive: true });
@@ -512,7 +512,7 @@ export function createEditFileTool(workspaceRoot: RootGetter, tracker?: FileRead
     jsonSchema: EDIT_FILE_SCHEMA,
     normalize: normalizeInput,
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const target = await ensurePathAccess(resolve(root, v.filePath), root, v.filePath, ctx, externalDirAccess);
       await tracker?.assertWasRead(target);
       const content = await readFile(target, "utf-8");
@@ -571,7 +571,7 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
     jsonSchema: APPLY_PATCH_SCHEMA,
     normalize: normalizeInput,
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const target = await ensurePathAccess(resolve(root, v.filePath), root, v.filePath, ctx, externalDirAccess);
       await tracker?.assertWasRead(target);
       const oldContent = await readFile(target, "utf-8");
@@ -638,7 +638,7 @@ export function createListDirectoryTool(workspaceRoot: RootGetter, externalDirAc
     jsonSchema: LIST_DIRECTORY_SCHEMA,
     normalize: normalizeInput,
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const target = await ensurePathAccess(resolve(root, v.dirPath), root, v.dirPath, ctx, externalDirAccess);
       const entries = await readdir(target, { withFileTypes: true });
       return entries

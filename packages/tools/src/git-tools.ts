@@ -4,7 +4,7 @@ import { z } from "zod";
 import { defineTool } from "./index.js";
 import { sanitizeEnv } from "@vinhnt-sdk/guard";
 import type { RootGetter } from "./root-resolver.js";
-import { resolveRoot } from "./root-resolver.js";
+import { resolveToolRoot } from "./root-resolver.js";
 
 const GitStatusSchema = z.object({});
 const GitDiffSchema = z.object({
@@ -49,7 +49,7 @@ export function createGitStatusTool(workspaceRoot: RootGetter): ToolDefinition {
     risk: "read",
     input: GitStatusSchema,
     async execute(_v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const branch = (await gitAsync(["rev-parse", "--abbrev-ref", "HEAD"], root, ctx.signal)).trim();
       const status = (await gitAsync(["status", "--short"], root, ctx.signal)).trim();
       return { branch, status: status || "(clean)" };
@@ -71,7 +71,7 @@ export function createGitDiffTool(workspaceRoot: RootGetter): ToolDefinition {
       },
     },
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const args = ["diff"];
       if (v.staged) args.push("--staged");
       const output = await gitAsync(args, root, ctx.signal);
@@ -94,7 +94,7 @@ export function createGitLogTool(workspaceRoot: RootGetter): ToolDefinition {
       },
     },
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       const count = Math.min(v.maxCount ?? 10, 50);
       const log = await gitAsync(["log", `--max-count=${count}`, "--oneline"], root, ctx.signal);
       return { commits: log.trim().split("\n").filter(Boolean) };
@@ -117,7 +117,7 @@ export function createGitCommitTool(workspaceRoot: RootGetter): ToolDefinition {
       required: ["message"],
     },
     async execute(v, ctx) {
-      const root = resolveRoot(workspaceRoot);
+      const root = resolveToolRoot(workspaceRoot, ctx);
       await gitAsync(["add", "-A"], root, ctx.signal);
       const result = await gitAsync(["commit", "-m", v.message], root, ctx.signal);
       return { result: result.trim() };

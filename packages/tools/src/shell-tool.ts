@@ -106,7 +106,8 @@ export function createShellTool(config: ShellToolConfig) {
       required: ["command"],
     },
     async execute(v, ctx: ToolContext) {
-      const root = typeof config.workspaceRoot === "function" ? config.workspaceRoot() : config.workspaceRoot;
+      const root = ctx.workspaceRoot
+        ?? (typeof config.workspaceRoot === "function" ? config.workspaceRoot() : config.workspaceRoot);
       const timeout = Math.min(v.timeoutMs ?? config.defaultTimeoutMs, config.maxTimeoutMs ?? 300_000);
 
       // Check for prompt injection patterns in command

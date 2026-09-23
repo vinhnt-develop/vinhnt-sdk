@@ -334,6 +334,8 @@ interface StepInput {
   validatedOutput?: unknown;
   outputType?: 'text' | z.ZodTypeAny;
   workspaceRoot?: string;
+  /** Bounded repair attempts when finish_reason=tool_calls but toolCalls empty. */
+  toolCallRepairAttempts?: number;
 }
 
 interface StepOutput {
@@ -358,6 +360,8 @@ interface StepOutput {
   /** Validated structured output (when outputType is Zod schema). */
   structuredOutput?: unknown;
   outputType?: 'text' | z.ZodTypeAny;
+  /** Propagated when a tool-call repair prompt was injected this step. */
+  toolCallRepairAttempts?: number;
 }
 
 async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOutput> {
@@ -526,6 +530,38 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     });
 
     if (toolCalls.length === 0) {
+      // Missed tool-call detection: model said finish_reason=tool_calls but
+      // produced zero calls (malformed stream / dropped ids). Inject a repair
+      // prompt (bounded) instead of falsely completing the run.
+      const fr = (response.finishReason ?? "").toLowerCase().replace(/_/g, "-");
+      const expectsTools = fr === "tool-calls" || fr === "tool_use" || fr === "tool-use";
+      const repairs = input.toolCallRepairAttempts ?? 0;
+      if (expectsTools && !input.disableTools && repairs < 2) {
+        messages.push({
+          role: "user",
+          content: `[System] Your previous response had finish_reason=tool_calls but no tool calls were received (likely truncated or malformed). Emit complete tool calls now with valid JSON arguments, or reply with final text if no tools are needed.`,
+        });
+        return {
+          messages,
+          step: input.step,
+          runId,
+          totalInputTokens: input.totalInputTokens,
+          totalOutputTokens: input.totalOutputTokens,
+          finalOutput: response.content,
+          completed: false,
+          toolCallCount: 0,
+          lastStepToolOutcomes: [],
+          toolCallRepairAttempts: repairs + 1,
+        };
+      }
+      if (expectsTools && !input.disableTools) {
+        // Repair budget exhausted — fail hard rather than infinite-looping or
+        // silently reporting success with no file written.
+        throw new KernelError(
+          "missed_tool_calls",
+          `finish_reason=tool_calls but no tool calls after ${repairs} repair attempts`,
+        );
+      }
       return {
         messages,
         step: input.step,
@@ -655,6 +691,7 @@ export async function runLoop(
   let structuredOutput: unknown = undefined;
   let handoffResult: { targetAgentId: string; reason: string; summary?: string | undefined; context?: Record<string, unknown> | undefined } | undefined;
   let contextEpochActive = false;
+  let toolCallRepairAttempts = 0;
   // Real system head (identity + agent systemPrompt) sent as a proper `system`
   // message at the head of the conversation instead of being flattened into the
   // user turn (RV-40).
@@ -855,12 +892,16 @@ export async function runLoop(
         ...(runSessionState !== undefined ? { runSessionState } : {}),
         totalInputTokens, totalOutputTokens, finalOutput,
         ...(onLastStep ? { disableTools: true } : {}),
+        toolCallRepairAttempts,
       });
 
       messages = stepResult.messages;
       totalInputTokens = stepResult.totalInputTokens;
       totalOutputTokens = stepResult.totalOutputTokens;
       finalOutput = stepResult.finalOutput;
+      if (stepResult.toolCallRepairAttempts !== undefined) {
+        toolCallRepairAttempts = stepResult.toolCallRepairAttempts;
+      }
       if (stepResult.structuredOutput !== undefined) {
         structuredOutput = stepResult.structuredOutput;
       }

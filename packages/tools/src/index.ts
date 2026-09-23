@@ -72,7 +72,7 @@ export {
 
 // === Root resolver (shared by file, git, search tools) ===
 
-export { resolveRoot } from "./root-resolver.js";
+export { resolveRoot, resolveToolRoot } from "./root-resolver.js";
 export type { RootGetter } from "./root-resolver.js";
 
 // === Image tools ===

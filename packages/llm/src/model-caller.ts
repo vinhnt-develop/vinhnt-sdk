@@ -297,6 +297,7 @@ export class ModelCaller {
     let content = "";
     let thinkingContent = ""; // Aggregate thinking tokens into one event
     const toolCalls: { id: string; name: string; args: unknown }[] = [];
+    let finishReason: string | undefined;
 
     if (!model.stream) {
       const res = await model.generate(request, signal);
@@ -384,6 +385,10 @@ export class ModelCaller {
         case "tool_call":
           toolCalls.push({ id: event.id, name: event.name, args: event.args });
           break;
+        case "finish":
+          // Carry finish_reason from the stream — needed for missed tool-call detection.
+          finishReason = event.reason;
+          break;
         case "usage":
           inputTokens = event.inputTokens;
           outputTokens = event.outputTokens;
@@ -428,6 +433,7 @@ export class ModelCaller {
       content,
       provider: model.provider ?? "unknown",
       ...(toolCalls.length > 0 ? { toolCalls } : {}),
+      ...(finishReason ? { finishReason } : {}),
       ...(inputTokens > 0 || outputTokens > 0
         ? { usage: { promptTokens: inputTokens, completionTokens: outputTokens, ...(reasoningTokens > 0 ? { reasoningTokens } : {}) } }
         : {}),

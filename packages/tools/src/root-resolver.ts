@@ -13,3 +13,13 @@ export type RootGetter = string | (() => string);
 export function resolveRoot(r: RootGetter): string {
   return typeof r === "function" ? r() : r;
 }
+
+/**
+ * Resolve the effective workspace root for a tool execution.
+ * Prefer the per-run `ctx.workspaceRoot` (from `ctx.overrides.workspaceRoot`)
+ * over the factory-closed static root, so per-project runs write to the
+ * correct directory instead of the kernel default `'.'`.
+ */
+export function resolveToolRoot(r: RootGetter, ctx?: { readonly workspaceRoot?: string }): string {
+  return ctx?.workspaceRoot ?? resolveRoot(r);
+}
