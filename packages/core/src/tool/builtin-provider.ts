@@ -67,36 +67,40 @@ export class BuiltinToolProvider implements ToolProvider {
   private createTools(): ToolDefinition[] {
     const { workspaceRoot, shell, toolConfigs } = this.config;
     const cfg = (id: string) => toolConfigs?.[id];
+    const asSystem = (tool: ToolDefinition): ToolDefinition => ({
+      ...tool,
+      metadata: { ...tool.metadata, source: "system" },
+    });
 
     const allTools: Array<ToolDefinition | null> = [
       // File tools
-      this.applyConfig(createReadFileTool(workspaceRoot), cfg("read_file")),
-      this.applyConfig(createWriteFileTool(workspaceRoot), cfg("write_file")),
-      this.applyConfig(createEditFileTool(workspaceRoot), cfg("edit_file")),
-      this.applyConfig(createApplyPatchTool(workspaceRoot), cfg("apply_patch")),
-      this.applyConfig(createListDirectoryTool(workspaceRoot), cfg("list_directory")),
+      this.applyConfig(asSystem(createReadFileTool(workspaceRoot)), cfg("read_file")),
+      this.applyConfig(asSystem(createWriteFileTool(workspaceRoot)), cfg("write_file")),
+      this.applyConfig(asSystem(createEditFileTool(workspaceRoot)), cfg("edit_file")),
+      this.applyConfig(asSystem(createApplyPatchTool(workspaceRoot)), cfg("apply_patch")),
+      this.applyConfig(asSystem(createListDirectoryTool(workspaceRoot)), cfg("list_directory")),
 
       // Shell tool
-      this.applyConfig(createShellTool(shell), cfg("execute_command")),
+      this.applyConfig(asSystem(createShellTool(shell)), cfg("execute_command")),
 
       // Search tools
-      this.applyConfig(createGlobFilesTool(workspaceRoot), cfg("glob_files")),
-      this.applyConfig(createGrepFilesTool(workspaceRoot), cfg("grep_files")),
+      this.applyConfig(asSystem(createGlobFilesTool(workspaceRoot)), cfg("glob_files")),
+      this.applyConfig(asSystem(createGrepFilesTool(workspaceRoot)), cfg("grep_files")),
 
       // Web tools
-      this.applyConfig(createWebFetchTool(), cfg("web_fetch")),
-      ...this.createWebSearchTool().map((t) => this.applyConfig(t, cfg("web_search"))),
+      this.applyConfig(asSystem(createWebFetchTool()), cfg("web_fetch")),
+      ...this.createWebSearchTool().map((t) => this.applyConfig(asSystem(t), cfg("web_search"))),
 
       // Git tools
-      this.applyConfig(createGitStatusTool(workspaceRoot), cfg("git_status")),
-      this.applyConfig(createGitDiffTool(workspaceRoot), cfg("git_diff")),
-      this.applyConfig(createGitLogTool(workspaceRoot), cfg("git_log")),
-      this.applyConfig(createGitCommitTool(workspaceRoot), cfg("git_commit")),
+      this.applyConfig(asSystem(createGitStatusTool(workspaceRoot)), cfg("git_status")),
+      this.applyConfig(asSystem(createGitDiffTool(workspaceRoot)), cfg("git_diff")),
+      this.applyConfig(asSystem(createGitLogTool(workspaceRoot)), cfg("git_log")),
+      this.applyConfig(asSystem(createGitCommitTool(workspaceRoot)), cfg("git_commit")),
 
       // Utility tools
-      this.applyConfig(createTodoWriteTool(), cfg("todowrite")),
-      this.applyConfig(createQuestionTool(), cfg("question")),
-      this.applyConfig(createReadImageTool(workspaceRoot), cfg("read_image")),
+      this.applyConfig(asSystem(createTodoWriteTool()), cfg("todowrite")),
+      this.applyConfig(asSystem(createQuestionTool()), cfg("question")),
+      this.applyConfig(asSystem(createReadImageTool(workspaceRoot)), cfg("read_image")),
     ];
 
     // Filter out disabled tools (null)

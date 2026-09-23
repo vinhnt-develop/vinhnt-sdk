@@ -186,7 +186,11 @@ export class PermissionGate {
     }
 
     // Phase 4: Risk-based default fallback (merged from ToolPolicy)
-    const decision = this.riskOverrides?.[risk] ?? RISK_DECISIONS[risk];
+    // Unknown risk MUST NOT fall through to allow — treat as write (needs approval).
+    const decision =
+      this.riskOverrides?.[risk] ??
+      RISK_DECISIONS[risk] ??
+      ("approval_required" as const);
     if (decision === "deny") return { allowed: false, reason: `Tool "${name}" (risk: ${risk}) is denied` };
     if (decision === "approval_required") return { allowed: false, needsApproval: true, reason: `Tool "${name}" (risk: ${risk}) requires approval` };
     return { allowed: true };
