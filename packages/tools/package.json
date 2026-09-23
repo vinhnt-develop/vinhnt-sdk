@@ -55,7 +55,7 @@
   "dependencies": {
     "@vinhnt-sdk/guard": "workspace:*",
     "@vinhnt-sdk/sandbox": "workspace:*",
-    "@vinhnt-sdk/schema": ">=0.5.0",
+    "@vinhnt-sdk/schema": "^0.5.3",
     "zod": "^4.4.3"
   }
 }

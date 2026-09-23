@@ -43,9 +43,25 @@ export type LlmSnapshotToolDef = z.infer<typeof LlmSnapshotToolDefSchema>;
  * Captures what the user chose in the composer (tools, knowledge, plugins).
  * Empty arrays or undefined = send all (backward compatible default).
  */
+export const LlmSnapshotSelectedToolSchema = z.union([
+  z.string(),
+  z.object({
+    id: z.string(),
+    name: z.string().optional(),
+    enabled: z.boolean().optional(),
+  }),
+]);
+export const LlmSnapshotSelectedKnowledgeSchema = z.union([
+  z.string(),
+  z.object({
+    id: z.string(),
+    key: z.string().optional(),
+    enabled: z.boolean().optional(),
+  }),
+]);
 export const LlmSnapshotSelectionSchema = z.object({
-  tools: z.array(z.string()).optional(),
-  knowledge: z.array(z.string()).optional(),
+  tools: z.array(LlmSnapshotSelectedToolSchema).optional(),
+  knowledge: z.array(LlmSnapshotSelectedKnowledgeSchema).optional(),
   plugins: z.array(z.string()).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
@@ -379,6 +395,8 @@ export type RunCompletedData = z.infer<typeof RunCompletedDataSchema>;
 
 /** Data payload for the `llm.response` event. */
 export const LlmResponseDataSchema = z.object({
+  /** Step number this response belongs to (matches llm.request.step). */
+  step: z.number().optional(),
   /** Full assistant response text. */
   content: z.string(),
   /** Tool calls requested by the model. */

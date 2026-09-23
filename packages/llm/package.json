@@ -49,10 +49,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": ">=0.5.0",
     "@vinhnt-sdk/config": "workspace:*",
+    "@vinhnt-sdk/schema": "^0.5.3",
     "@vinhnt-sdk/tools": "workspace:*"
   },
-  "devDependencies": {},
   "license": "MIT"
 }

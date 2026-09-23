@@ -31,12 +31,29 @@ export interface LlmSnapshotToolDef {
 }
 
 /**
+ * Selected resource entry — either a bare id string or an object with id +
+ * optional display/enabled flags (webui composer form).
+ */
+export type LlmSnapshotSelectedTool = string | {
+  readonly id: string;
+  readonly name?: string;
+  readonly enabled?: boolean;
+};
+
+/** Selected knowledge entry — bare id or object with id/key/enabled. */
+export type LlmSnapshotSelectedKnowledge = string | {
+  readonly id: string;
+  readonly key?: string;
+  readonly enabled?: boolean;
+};
+
+/**
  * User-selected resources for a specific LLM request.
  * Empty arrays or undefined = send all (backward compatible default).
  */
 export interface LlmSnapshotSelection {
-  readonly tools?: string[];
-  readonly knowledge?: string[];
+  readonly tools?: LlmSnapshotSelectedTool[];
+  readonly knowledge?: LlmSnapshotSelectedKnowledge[];
   readonly plugins?: string[];
   readonly metadata?: Record<string, unknown>;
 }
@@ -289,6 +306,8 @@ export interface LlmResponseData {
   readonly durationMs: number;
   readonly model?: string;
   readonly provider?: string;
+  /** Step number this response belongs to (matches llm.request.step). */
+  readonly step?: number;
   readonly metadata?: Record<string, unknown>;
 }
 

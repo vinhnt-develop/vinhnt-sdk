@@ -7,7 +7,7 @@
 
 > AI Agent SDK — modular TypeScript libraries for building AI coding agents.
 
-## Packages (21 packages)
+## Packages (22 packages)
 
 ### Core Layer (Required)
 
@@ -35,6 +35,7 @@
 | `@vinhnt-sdk/event` | Event bus, typed events, replay |
 | `@vinhnt-sdk/mcp` | Model Context Protocol client (2026-07-28) |
 | `@vinhnt-sdk/trace` | Telemetry, cost tracking, observability |
+| `@vinhnt-sdk/security` | Secret redactor, injection detection (deprecated → use guard) |
 | `@vinhnt-sdk/lsp` | Language Server Protocol integration |
 | `@vinhnt-sdk/guardrails` | Guardrail tripwires for inputs/outputs |
 | `@vinhnt-sdk/workflow` | Workflow primitives (parallel, sequential, conditional) |
@@ -96,7 +97,7 @@ const kernel = new AgentKernel({
   model: yourModelProvider,
   store: new InMemoryEventBus(),
   tools: [calculatorTool],
-  maxSteps: (ctx) => (ctx复杂 ? 20 : 10), // Dynamic per request
+  maxSteps: (ctx) => (ctx.isComplex ? 20 : 10), // Dynamic per request
 });
 
 // Run with prepareStep callback for per-step model override

@@ -308,6 +308,7 @@ export class ModelCaller {
           id: crypto.randomUUID(), runId, type: "llm.response" as const,
           occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
           data: {
+            step,
             content: effectiveRes.content ?? "",
             toolCalls: effectiveRes.toolCalls,
             finishReason: effectiveRes.finishReason,
@@ -376,13 +377,14 @@ export class ModelCaller {
       throw new DOMException("Aborted", "AbortError");
     }
 
-    // Emit aggregated thinking content as one completed event
+    // Emit aggregated thinking content as one completed event (persist=true
+    // so trajectory can attach thinkingContent to steps)
     if (thinkingContent) {
       await this.deps.emitEvent({
         id: crypto.randomUUID(), runId, type: "thinking.completed",
         occurredAt: new Date().toISOString(), traceId: ctx.traceId,
         data: { content: thinkingContent, step },
-      } as never, false);
+      } as never);
     }
 
     let source: "api" | "local" = "api";
@@ -416,36 +418,37 @@ export class ModelCaller {
     const p = model?.pricing;
     this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
 
-    // Emit llm.response with full response snapshot
-    if (runId) {
-      await this.deps.emitEvent({
-        id: crypto.randomUUID(), runId, type: "llm.response" as const,
-        occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
-        data: {
-          content: effectiveRes.content ?? "",
-          toolCalls: effectiveRes.toolCalls,
-          finishReason: effectiveRes.finishReason,
-          usage: {
-            inputTokens,
-            outputTokens,
-            ...(reasoningTokens > 0 ? { reasoningTokens } : {}),
-            ...(cacheReadTokens > 0 ? { cacheReadTokens } : {}),
-            ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}),
+      // Emit llm.response with full response snapshot
+      if (runId) {
+        await this.deps.emitEvent({
+          id: crypto.randomUUID(), runId, type: "llm.response" as const,
+          occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
+          data: {
+            step,
+            content: effectiveRes.content ?? "",
+            toolCalls: effectiveRes.toolCalls,
+            finishReason: effectiveRes.finishReason,
+            usage: {
+              inputTokens,
+              outputTokens,
+              ...(reasoningTokens > 0 ? { reasoningTokens } : {}),
+              ...(cacheReadTokens > 0 ? { cacheReadTokens } : {}),
+              ...(cacheWriteTokens > 0 ? { cacheWriteTokens } : {}),
+            },
+            durationMs,
+            model: modelName,
+            provider: model.provider,
           },
-          durationMs,
-          model: modelName,
-          provider: model.provider,
-        },
-      } as Omit<KnownRunEvent, "sequence">);
-    }
+        } as Omit<KnownRunEvent, "sequence">);
+      }
 
-    // RV-42: a hook may have replaced the response without usage — surface the
-    // authoritative usage so downstream token budgeting is not a no-op.
-    return effectiveRes.usage
-      ? effectiveRes
-      : inputTokens > 0 || outputTokens > 0
-        ? { ...effectiveRes, usage: { promptTokens: inputTokens, completionTokens: outputTokens } }
-        : effectiveRes;
+      // RV-42: a hook may have replaced the response without usage — surface the
+      // authoritative usage so downstream token budgeting is not a no-op.
+      return effectiveRes.usage
+        ? effectiveRes
+        : inputTokens > 0 || outputTokens > 0
+          ? { ...effectiveRes, usage: { promptTokens: inputTokens, completionTokens: outputTokens } }
+          : effectiveRes;
   }
 
   async doThinkingStep(

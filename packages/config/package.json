@@ -49,8 +49,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": ">=0.5.0"
+    "@vinhnt-sdk/schema": "^0.5.3"
   },
-  "devDependencies": {},
   "license": "MIT"
 }

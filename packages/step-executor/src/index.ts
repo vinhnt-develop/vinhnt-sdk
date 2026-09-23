@@ -35,7 +35,7 @@ export type { ApprovalDecision, DynamicRule, PermissionCheckResult } from "./per
 // === Run Context ===
 
 export { createRunContext } from "./run-context.js";
-export type { RunContext } from "./run-context.js";
+export type { RunContext, RunSelection } from "./run-context.js";
 
 // === Kernel Error ===
 

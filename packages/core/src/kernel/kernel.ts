@@ -444,6 +444,21 @@ this.stepExecutor = new StepExecutor({
       pool = pool.filter((t: ToolDefinition) => caps.some((c) => wildcardMatch(c, t.id)));
     }
 
+    // Honour per-run tool selection from ctx.overrides.selection (webui composer).
+    // Stored on RunContext at run start; tools may be bare ids or {id, enabled} objects.
+    const toolsSel = rc?.selection?.tools;
+    if (toolsSel !== undefined && toolsSel.length > 0) {
+      const selectedIds = new Set<string>();
+      for (const t of toolsSel) {
+        if (typeof t === "string") {
+          selectedIds.add(t);
+        } else if (t && t.enabled !== false) {
+          selectedIds.add(t.id);
+        }
+      }
+      pool = pool.filter((t: ToolDefinition) => selectedIds.has(t.id));
+    }
+
     // Apply behaviour mode profile (if not "build" mode, profile rules restrict tools)
     const behaviourMode = target?.behaviourMode ?? "build";
     if (behaviourMode !== "build") {
@@ -1161,9 +1176,12 @@ this.stepExecutor = new StepExecutor({
     }
 
     const runSagaInstance = runSaga ?? new ToolSaga();
-    // Per-run context — the active agent, sub-agent depth/chain, saga and tool
-    // cache all live here so parallel runs never clobber each other's state.
+    // Per-run context — the active agent, sub-agent depth/chain, saga, tool
+    // cache and resource selection all live here so parallel runs never clobber
+    // each other's state.
     const runContext = createRunContext(runId, currentAgent, runSagaInstance);
+    const runSelection = ctx.overrides?.selection;
+    if (runSelection) runContext.selection = runSelection;
     this.runContexts.set(runId, runContext);
     // Point the run's recorder at this run's saga so that
     // record()/registerCompensation()/rollbackStep() operate on the same instance.
