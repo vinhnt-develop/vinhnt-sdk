@@ -85,8 +85,10 @@ export type { Logger, LogLevel } from "./logger.js";
 
 // === Plugin system ===
 
-export type { PluginManifest, PluginContext, PluginHooks, Plugin, Disposable } from "./plugin.js";
+export type { PluginManifest, PluginContext, PluginHooks, Plugin, Disposable, PluginManager, HookName, HookPayload, HookReturn } from "./plugin.js";
 export { createDisposable } from "./plugin.js";
+export { DefaultPluginManager } from "./plugin/manager.js";
+export type { PluginManagerConfig } from "./plugin/manager.js";
 
 export type { ContextSourceValue, ContextSourceKey, ContextSnapshot, SystemContext, ReconcileResult, ContextRegistry } from "./system-context/types.js";
 export { createContextRegistry } from "./system-context/registry.js";
