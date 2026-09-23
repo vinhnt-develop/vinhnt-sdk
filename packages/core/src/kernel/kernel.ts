@@ -117,6 +117,10 @@ export class AgentKernel {
   private cachedToolsAgentId: string | undefined;
   private stepTimeout: number;
   private readonly doomLoopThreshold: number;
+  /** P1-5: bare-name deny → hide tool from model tools[] snapshot (default true). */
+  private bareDenyHidesTool: boolean;
+  /** P1-5: always-omit globs for the model-facing tools[] snapshot. */
+  private hideFromModel: readonly string[] | undefined;
   private compactionThreshold: number | undefined;
   private readonly termination: TerminationPolicy | undefined;
   private circuitBreaker: CircuitBreaker;
@@ -243,6 +247,8 @@ export class AgentKernel {
         ? { autoApprovalEnabled: normalized.permissions.autoApprovalEnabled }
         : {}),
     });
+    this.bareDenyHidesTool = normalized.permissions?.bareDenyHidesTool !== false;
+    this.hideFromModel = normalized.permissions?.hideFromModel;
     if (normalized.permissions?.globalPermissionRules) {
       this.permissionGate.setGlobalRules(normalized.permissions.globalPermissionRules);
     }
@@ -307,6 +313,7 @@ this.stepExecutor = new StepExecutor({
       maxSelfCorrectAttempts: this.maxSelfCorrectAttempts,
       selfCorrectOnFailure: this.selfCorrectOnFailure,
       doomLoopThreshold: this.doomLoopThreshold,
+      ...(normalized.loopDetection !== undefined ? { loopDetection: normalized.loopDetection } : {}),
       ...(normalized.permissions?.externalDirectoryAccess !== undefined ? { externalDirectoryAccess: normalized.permissions.externalDirectoryAccess } : {}),
       ...(normalized.workspaceRoot !== undefined ? { workspaceRoot: normalized.workspaceRoot } : {}),
       currentAgent: this.currentAgent,
@@ -490,8 +497,16 @@ this.stepExecutor = new StepExecutor({
     }
 
     const result = pool.filter((t) => {
+      // P1-5: explicit hideFromModel globs always omit the tool from the snapshot.
+      if (this.hideFromModel && this.hideFromModel.some((p) => wildcardMatch(p, t.id))) {
+        return false;
+      }
       const perm = this.permissionGate.checkTool(t.id, t.risk, undefined, target);
-      return perm.allowed || perm.needsApproval;
+      if (perm.allowed || perm.needsApproval) return true;
+      // Hard deny (bare-name deny / deniedTools / etc.): remove from tools[]
+      // when bareDenyHidesTool (default true). Pattern-scoped denies already
+      // fall through as needsApproval/allowed at snapshot time (args undefined).
+      return this.bareDenyHidesTool === false;
     });
     if (rc) {
       rc.cachedTools = result;
@@ -1040,6 +1055,12 @@ this.stepExecutor = new StepExecutor({
     }
     if (normalized.permissions?.topLevelPermissionRules) {
       this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);
+    }
+    if (normalized.permissions?.bareDenyHidesTool !== undefined) {
+      this.bareDenyHidesTool = normalized.permissions.bareDenyHidesTool;
+    }
+    if (normalized.permissions?.hideFromModel !== undefined) {
+      this.hideFromModel = normalized.permissions.hideFromModel;
     }
     this.cachedTools = null;
   }

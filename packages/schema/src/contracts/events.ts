@@ -257,7 +257,7 @@ export interface ToolSelfCorrectingData { readonly toolId: string; readonly tool
 export interface StepCompletedData { readonly turn: number; readonly step: number; readonly toolCallCount: number }
 export interface StepFailedData { readonly turn: number; readonly step: number; readonly reason: string; readonly error?: string }
 export interface RunCompletedData { readonly status: "succeeded" | "failed"; readonly cancelled?: boolean; readonly output?: string; readonly error?: string; readonly totalSteps: number; readonly durationMs?: number; readonly inputTokens?: number; readonly outputTokens?: number; readonly reasoningTokens?: number; readonly stopReason?: string; readonly provider?: string }
-export interface PermissionRequestedData { readonly requestId: RequestId; readonly toolName: string; readonly resource: string; readonly reason: string; readonly prompt: string }
+export interface PermissionRequestedData { readonly requestId: RequestId; readonly toolName: string; readonly resource: string; readonly reason: string; readonly prompt: string; readonly permission?: string }
 export interface PermissionRepliedData { readonly requestId: RequestId; readonly reply: "once" | "always" | "reject" }
 export interface StepTypeChangedData { readonly stepType: AgentStepType; readonly stepNumber: number; readonly toolName?: string; readonly detail?: string }
 export interface TurnStartedData { readonly turn: number }

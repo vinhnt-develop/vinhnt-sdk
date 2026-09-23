@@ -7,6 +7,7 @@ import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
 import type { RecentCall } from "./kernel-utils.js";
 import { detectDoomLoop, hashArgs, DOOM_LOOP_THRESHOLD, raceWithAbort, toolDomain, withToolTimeout } from "./kernel-utils.js";
+import { resolveLoopPolicy, type LoopDetectionConfig } from "./loop-policy.js";
 import type { ToolCallOutcome } from "./termination.js";
 import { inferStepType } from "@vinhnt-sdk/schema";
 import type { KnownRunEvent } from "@vinhnt-sdk/schema";
@@ -57,6 +58,8 @@ export interface StepExecutorDeps {
   /** Resolve the active saga for a run — used to keep parallel runs isolated. */
   readonly sagaForRun?: (runId: RunId) => ToolSaga;
   readonly doomLoopThreshold: number;
+  /** P1-3: config-driven doom-loop policy (default action `"ask"`). */
+  readonly loopDetection?: LoopDetectionConfig;
   readonly externalDirectoryAccess?: boolean;
   readonly workspaceRoot?: string;
   readonly findTool: (name: string, runId?: RunId) => ToolDefinition | undefined;
@@ -165,37 +168,109 @@ export class StepExecutor {
     for (let batchStart = 0; batchStart < toolCalls.length && !runAbort.signal.aborted && toolCallCount < limit; batchStart += limit) {
       const batch = toolCalls.slice(batchStart, Math.min(batchStart + limit, toolCalls.length));
 
-      // Filter out doom-loop tools from the concurrent batch
-      const doomThreshold = this.deps.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
-      const doomResult: { tc: ToolExecutionPlan; result: "doom" }[] = [];
+      // Classify doom-loop candidates against config-driven policy (P1-3).
+      const fallbackThreshold = this.deps.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
+      const doomCandidates: ToolExecutionPlan[] = [];
       const batchIdentical = new Map<string, number>();
-      const pendingEmits: Promise<void>[] = [];
-      const execBatch = batch.filter((tc) => {
+      const execBatchPre: ToolExecutionPlan[] = [];
+      for (const tc of batch) {
+        const policy = resolveLoopPolicy(this.deps.loopDetection, tc.toolName, fallbackThreshold);
+        if (!policy.enabled || policy.action === "allow") {
+          execBatchPre.push(tc);
+          continue;
+        }
         const argsKey = hashArgs(tc.args);
         const key = `${tc.toolName}:${argsKey}`;
         const prevCount = recentCalls.filter((r) => r.id === tc.toolName && (r.argsKey ?? hashArgs(r.args)) === argsKey).length;
         const totalSoFar = prevCount + (batchIdentical.get(key) ?? 0);
-        if (totalSoFar >= doomThreshold) {
-          doomResult.push({ tc, result: "doom" as const });
+        if (totalSoFar >= policy.threshold) {
+          doomCandidates.push(tc);
+        } else {
+          batchIdentical.set(key, (batchIdentical.get(key) ?? 0) + 1);
+          execBatchPre.push(tc);
+        }
+      }
+
+      // Resolve doom candidates via policy: ask / stop / inject-hint / allow.
+      const pendingEmits: Promise<void>[] = [];
+      const preDoomResults: { tc: ToolExecutionPlan; result: "doom" | "doom-hint"; reason?: string }[] = [];
+      const execBatch = [...execBatchPre];
+      for (const tc of doomCandidates) {
+        const policy = resolveLoopPolicy(this.deps.loopDetection, tc.toolName, fallbackThreshold);
+        const doomMsg = `Doom loop: "${tc.toolName}" called ${policy.threshold}x with identical args`;
+        if (policy.action === "ask" && !this.deps.permissionGate.isDoomLoopBypassed?.(tc.toolName)) {
+          const reply = await this.deps.permissionGate.askForTool(
+            tc.toolName, tc.toolId, runId, sessionId ?? "",
+            `${doomMsg}. Allow this call to continue?`,
+            this.agentFor(runId)?.id ?? "", ctx.traceId,
+            this.deps.pluginManager, undefined, runAbort.signal,
+            { forceAsk: true, permissionKey: "doom_loop" },
+          );
+          if (reply === "reject") {
+            preDoomResults.push({ tc, result: "doom", reason: `${doomMsg}. Rejected by user.` });
+            pendingEmits.push(safeEmit(this.deps.store, {
+              id: crypto.randomUUID(), runId, type: "tool.failed",
+              occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+              data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `${doomMsg}. Rejected by user.` },
+            }));
+          } else {
+            // once / always → allow this call through
+            execBatch.push(tc);
+          }
+        } else if (policy.action === "inject-hint") {
+          preDoomResults.push({ tc, result: "doom-hint", reason: doomMsg });
           pendingEmits.push(safeEmit(this.deps.store, {
             id: crypto.randomUUID(), runId, type: "tool.failed",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-            data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: `Doom loop: "${tc.toolName}" called ${this.deps.doomLoopThreshold}x with identical args` },
+            data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: doomMsg },
           }));
-          return false;
-        }
-        batchIdentical.set(key, (batchIdentical.get(key) ?? 0) + 1);
-        return true;
-      });
-
-      const tasks = execBatch.map((tc) => async () => {
-        if (detectDoomLoop(recentCalls, tc.toolName, tc.args, doomThreshold)) {
-          await safeEmit(this.deps.store, {
+        } else {
+          // action "stop", or "ask" with bypass → hard stop
+          preDoomResults.push({ tc, result: "doom", reason: `${doomMsg}. Aborting to prevent infinite loop.` });
+          pendingEmits.push(safeEmit(this.deps.store, {
             id: crypto.randomUUID(), runId, type: "tool.failed",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-            data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: `Doom loop: "${tc.toolName}" called ${doomThreshold}x with identical args` },
-          });
-          return { tc, result: "doom" as const };
+            data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: `${doomMsg}` },
+          }));
+        }
+      }
+
+      const tasks = execBatch.map((tc) => async () => {
+        const policy = resolveLoopPolicy(this.deps.loopDetection, tc.toolName, fallbackThreshold);
+        if (policy.enabled && policy.action !== "allow" && detectDoomLoop(recentCalls, tc.toolName, tc.args, policy.threshold)) {
+          const doomMsg = `Doom loop: "${tc.toolName}" called ${policy.threshold}x with identical args`;
+          if (policy.action === "ask" && !this.deps.permissionGate.isDoomLoopBypassed?.(tc.toolName)) {
+            const reply = await this.deps.permissionGate.askForTool(
+              tc.toolName, tc.toolId, runId, sessionId ?? "",
+              `${doomMsg}. Allow this call to continue?`,
+              this.agentFor(runId)?.id ?? "", ctx.traceId,
+              this.deps.pluginManager, undefined, runAbort.signal,
+              { forceAsk: true, permissionKey: "doom_loop" },
+            );
+            if (reply === "reject") {
+              await safeEmit(this.deps.store, {
+                id: crypto.randomUUID(), runId, type: "tool.failed",
+                occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+                data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `${doomMsg}. Rejected by user.` },
+              });
+              return { tc, result: "doom" as const };
+            }
+            // once / always → fall through and execute
+          } else if (policy.action === "inject-hint") {
+            await safeEmit(this.deps.store, {
+              id: crypto.randomUUID(), runId, type: "tool.failed",
+              occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+              data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: doomMsg },
+            });
+            return { tc, result: "doom-hint" as const };
+          } else {
+            await safeEmit(this.deps.store, {
+              id: crypto.randomUUID(), runId, type: "tool.failed",
+              occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+              data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: doomMsg },
+            });
+            return { tc, result: "doom" as const };
+          }
         }
 
         if (this.deps.externalDirectoryAccess !== true && this.deps.workspaceRoot) {
@@ -363,16 +438,14 @@ export class StepExecutor {
       await Promise.all(pendingEmits);
 
       const concurrency = this.deps.maxConcurrentToolCalls ?? 5;
-      const results = await this.runConcurrent(tasks, concurrency);
+      const taskResults = await this.runConcurrent(tasks, concurrency);
       if (runAbort.signal.aborted) break;
 
-      // Process pre-identified doom loops after batch execution
-      if (doomResult.length > 0) {
-        const doom = doomResult[0]!;
-        const errorMsg = `Tool "${doom.tc.toolName}" called with identical arguments ${doomThreshold} consecutive times. Aborting to prevent infinite loop.`;
-        messages.push({ role: "tool", toolCallId: doom.tc.toolId, content: `Error: ${errorMsg}` });
-        break;
-      }
+      // Merge pre-classified doom outcomes with concurrent task results.
+      const results: PromiseSettledResult<{ tc: ToolExecutionPlan; result: string; reason?: string; output?: unknown }>[] = [
+        ...taskResults,
+        ...preDoomResults.map((r) => ({ status: "fulfilled" as const, value: r })),
+      ];
 
       // Detect handoff in tool results — if found, stop processing and signal run-loop
       const handoffResult = this.detectHandoff(results);
@@ -392,7 +465,7 @@ export class StepExecutor {
         };
       }
 
-      const processed = await processToolResults(results, doomThreshold, messages, sessionId, { model: runModel.model }, toolCallCount, recentCalls, toolResults, {
+      const processed = await processToolResults(results, fallbackThreshold, messages, sessionId, { model: runModel.model }, toolCallCount, recentCalls, toolResults, {
         addSessionMessage: this.deps.addSessionMessage,
         ...(this.deps.redactToolOutputs !== undefined ? { redactToolOutputs: this.deps.redactToolOutputs } : {}),
       });
@@ -478,6 +551,7 @@ export class StepExecutor {
       modelCaller: this.deps.modelCaller,
       maxSelfCorrectAttempts: this.deps.maxSelfCorrectAttempts,
       doomLoopThreshold: this.deps.doomLoopThreshold,
+      ...(this.deps.loopDetection !== undefined ? { loopDetection: this.deps.loopDetection } : {}),
       findTool: this.deps.findTool,
       permissionGate: this.deps.permissionGate,
       pluginManager: this.deps.pluginManager,

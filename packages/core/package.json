@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/core",
-  "version": "0.10.0",
+  "version": "0.10.2",
   "description": "Core agent engine for VNT Agent - kernel, tools, sessions, plugins, permissions, and knowledge",
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "url": "git+https://github.com/vinhnt-develop/vinhnt-sdk.git",
     "directory": "packages/core"
   },
   "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/core",

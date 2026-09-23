@@ -36,6 +36,18 @@ export interface PermissionConfig {
   readonly permissionRiskDefaults?: Record<string, string>;
   /** Top-level rules for allow/deny/ask categories. */
   readonly topLevelPermissionRules?: Record<"allow" | "deny" | "ask", string[]>;
+  /**
+   * P1-5: when a bare-name deny rule matches a tool, remove it from the
+   * model-facing tools[] snapshot. Default: true. Pattern-scoped denies
+   * (`paramPattern` / `Tool(glob)`) always keep the tool visible and only
+   * block matching calls at runtime.
+   */
+  readonly bareDenyHidesTool?: boolean;
+  /**
+   * P1-5: tools (glob patterns) always omitted from the model-facing
+   * tools[] snapshot, regardless of permission evaluation.
+   */
+  readonly hideFromModel?: readonly string[];
 }
 
 /** Model routing configuration for multi-model setups. */
@@ -169,6 +181,12 @@ export interface AgentKernelConfig {
   readonly maxRetryBackoffMs?: number;
   /** Doom loop detection threshold (consecutive identical outputs). Default: 3. */
   readonly doomLoopThreshold?: number;
+  /**
+   * P1-3: config-driven doom-loop policy (enabled/threshold/action/perTool).
+   * When set, takes precedence over {@link doomLoopThreshold} for detection
+   * and selects the action (`ask` default, `stop`, `inject-hint`, `allow`).
+   */
+  readonly loopDetection?: import("@vinhnt-sdk/step-executor").LoopDetectionConfig;
   /** Workspace root directory for file operations. */
   readonly workspaceRoot?: string;
   /** Context compaction threshold ratio (0-1). Default: 0.75. */
@@ -388,6 +406,8 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
       globalPermissionRules: normalized.globalPermissionRules,
       permissionRiskDefaults: normalized.permissionRiskDefaults,
       topLevelPermissionRules: normalized.topLevelPermissionRules,
+      bareDenyHidesTool: normalized.bareDenyHidesTool,
+      hideFromModel: normalized.hideFromModel,
     };
     delete normalized.approvalStore;
     delete normalized.autoApprovalEnabled;
@@ -395,6 +415,8 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
     delete normalized.globalPermissionRules;
     delete normalized.permissionRiskDefaults;
     delete normalized.topLevelPermissionRules;
+    delete normalized.bareDenyHidesTool;
+    delete normalized.hideFromModel;
   }
 
   if (!normalized.modelRouting) {

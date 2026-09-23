@@ -41,6 +41,26 @@ describe("processToolResults (P1-4 + P1-7)", () => {
     expect(r.breakBatch).toBe(true);
   });
 
+  it("P1-3: formats doom-hint without breaking the batch", async () => {
+    const messages: ChatMessage[] = [];
+    const r = await processToolResults(
+      [
+        fulfilled(plan("shell", "t1"), "ok", "done"),
+        fulfilled(plan("shell", "t2"), "doom-hint", undefined, "Doom loop: repeated"),
+        fulfilled(plan("shell", "t3"), "ok", "done"),
+      ],
+      3, messages, undefined, { model: "m" }, 0, [], [],
+      { addSessionMessage: noopAdd },
+    );
+    expect(r.breakBatch).toBe(false);
+    expect(messages).toHaveLength(3);
+    const parsed = JSON.parse(messages[1]!.content as string);
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toContain("Doom loop");
+    expect(messages[0]!.content).toBe("done");
+    expect(messages[2]!.content).toBe("done");
+  });
+
   it("formats rejected promise as envelope", async () => {
     const messages: ChatMessage[] = [];
     const rejected = { status: "rejected" as const, reason: new Error("worker crashed") };

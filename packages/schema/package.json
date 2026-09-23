@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/schema",
-  "version": "0.5.8",
+  "version": "0.5.10",
   "description": "Shared Zod schemas and types for VNT Agent - tool definitions, event types, and ACP protocol",
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "url": "git+https://github.com/vinhnt-develop/vinhnt-sdk.git",
     "directory": "packages/schema"
   },
   "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/schema",

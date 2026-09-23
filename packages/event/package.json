@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/event",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "description": "Typed event definitions and event bus for VNT Agent - defineEvent registry, built-in run/system/webhook events, in-memory and global event buses with durable replay",
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "url": "git+https://github.com/vinhnt-develop/vinhnt-sdk.git",
     "directory": "packages/event"
   },
   "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/event",

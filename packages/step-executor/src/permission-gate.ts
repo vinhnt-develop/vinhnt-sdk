@@ -28,6 +28,17 @@ export interface PermissionCheckResult {
   needsApproval?: boolean;
 }
 
+/** Optional ask options for non-standard permission keys (e.g. doom_loop). */
+export interface AskForToolOptions {
+  /**
+   * Bypass auto-approval and always surface the ask (P1-3 doom_loop).
+   * Default: false — auto-approval short-circuits to `"once"`.
+   */
+  readonly forceAsk?: boolean;
+  /** Permission key reported to hooks/events. Default: `tool.<name>`. */
+  readonly permissionKey?: string;
+}
+
 /** Dependencies required by {@link PermissionGate}. */
 export interface PermissionGateDeps {
   readonly store: RunEventStore;
@@ -73,6 +84,8 @@ export class PermissionGate {
   private riskOverrides?: Partial<Record<ToolRisk, ApprovalDecision>>;
   private topLevelRules: { toolName: string; pattern: string; decision: "allow" | "deny" | "ask" }[] = [];
   private autoApproval: boolean;
+  /** Tools for which the user answered doom_loop "always" (P1-3). */
+  private readonly doomLoopBypass = new Set<string>();
 
   constructor(private readonly deps: PermissionGateDeps) {
     this.autoApproval = deps.autoApprovalEnabled ?? false;
@@ -83,12 +96,16 @@ export class PermissionGate {
     this.autoApproval = enabled;
   }
 
-  /** Parse and apply config-level permission rules (OpenCode-style nested `{ tool: "allow|deny|ask" }`). */
+  /**
+   * Parse and apply config-level permission rules (OpenCode-style nested `{ tool: "allow|deny|ask" }`).
+   * Bare keys are stored as `tool.<name>` so they match {@link checkTool}'s
+   * `tool.${name}` resource (P1-5: bare-name deny removes the tool from the snapshot).
+   */
   setGlobalRules(configRules: Record<string, string | Record<string, string>>): void {
     const raw = buildPermissionRules(configRules);
     this.globalPermissionRules = raw.map((r: PermissionRule) => ({
       effect: r.effect,
-      target: r.action,
+      target: r.action.startsWith("tool.") ? r.action : `tool.${r.action}`,
       ...(r.resource !== "*" ? { paramPattern: r.resource } : {}),
     })) as AgentRule[];
   }
@@ -113,6 +130,16 @@ export class PermissionGate {
   /** Register a user-approved dynamic rule (last-match-wins over risk defaults). */
   addDynamicRule(rule: DynamicRule): void {
     this.dynamicRules.push(rule);
+  }
+
+  /** True when the user answered doom_loop "always" for this tool (P1-3). */
+  isDoomLoopBypassed(toolName: string): boolean {
+    return this.doomLoopBypass.has(toolName);
+  }
+
+  /** Persist a doom_loop "always" bypass for this tool (P1-3). */
+  addDoomLoopBypass(toolName: string): void {
+    this.doomLoopBypass.add(toolName);
   }
 
   /** Override risk-level defaults (read→allow, write→approval, destructive→deny). */
@@ -228,15 +255,22 @@ export class PermissionGate {
     pluginManager?: StepExecutorPluginHooks,
     savePatterns?: readonly string[],
     signal?: AbortSignal,
+    options?: AskForToolOptions,
   ): Promise<PermissionReply> {
-    if (this.autoApproval) return "once";
+    if (this.autoApproval && !options?.forceAsk) return "once";
 
-    const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal);
+    const permissionKey = options?.permissionKey;
+    const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal, permissionKey);
 
-    if (reply === "always" && savePatterns && savePatterns.length > 0) {
-      for (const pattern of savePatterns) {
-        if (!pattern || pattern === "*") continue;
-        this.addDynamicRule({ toolName, pattern, decision: "allow" });
+    if (reply === "always") {
+      if (permissionKey === "doom_loop") {
+        this.doomLoopBypass.add(toolName);
+      }
+      if (savePatterns && savePatterns.length > 0) {
+        for (const pattern of savePatterns) {
+          if (!pattern || pattern === "*") continue;
+          this.addDynamicRule({ toolName, pattern, decision: "allow" });
+        }
       }
     }
     return reply;
@@ -249,8 +283,10 @@ export class PermissionGate {
     traceId: string,
     pluginManager?: StepExecutorPluginHooks,
     signal?: AbortSignal,
+    permissionKey?: string,
   ): Promise<PermissionReply> {
     const requestId = crypto.randomUUID() as RequestId;
+    const permission = permissionKey ?? `tool.${toolName}`;
     const req: PermissionRequest = {
       id: requestId,
       runId,
@@ -260,23 +296,23 @@ export class PermissionGate {
       prompt: reason,
       occurredAt: new Date().toISOString(),
     };
-    
+
     // Persist permission.requested to store (sync for tests) AND publish to bus
     await this.deps.store.append({
       id: crypto.randomUUID(), runId, type: "permission.requested",
       occurredAt: new Date().toISOString(), traceId,
-      data: { requestId, toolName, resource: toolName, reason, prompt: reason },
+      data: { requestId, toolName, resource: toolName, reason, prompt: reason, permission },
     } as RunEvent);
-    
+
     if (this.deps.eventBus) {
       this.deps.eventBus.publish(PermissionRequested, {
-        requestId, toolName, resource: toolName, reason, prompt: reason
+        requestId, toolName, resource: toolName, reason, prompt: reason, permission
       }, { traceId, aggregateId: runId });
     }
 
     let reply: PermissionReply = "reject";
     const hookResult = await pluginManager?.fireHook("onPermissionAsk", {
-      permission: `tool.${toolName}`,
+      permission,
       resource: toolName,
       reason,
     });

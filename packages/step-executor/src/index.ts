@@ -22,6 +22,11 @@ export {
   toolDomain,
 } from "./kernel-utils.js";
 
+// === Loop Detection Policy (P1-3) ===
+
+export { resolveLoopPolicy } from "./loop-policy.js";
+export type { LoopDetectionConfig, LoopDetectionAction, ResolvedLoopPolicy } from "./loop-policy.js";
+
 // === Termination ===
 
 export { evaluateStopConditions, buildJudgeMessages, parseJudgeVerdict, toToolCallOutcome } from "./termination.js";
@@ -30,7 +35,7 @@ export type { ToolCallOutcome, StepVerificationContext, StopCondition, Terminati
 // === Permission Gate ===
 
 export { PermissionGate } from "./permission-gate.js";
-export type { ApprovalDecision, DynamicRule, PermissionCheckResult } from "./permission-gate.js";
+export type { ApprovalDecision, DynamicRule, PermissionCheckResult, AskForToolOptions } from "./permission-gate.js";
 
 // === Run Context ===
 

@@ -4,6 +4,7 @@ import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
 import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort, withToolTimeout } from "./kernel-utils.js";
+import { resolveLoopPolicy, type LoopDetectionConfig } from "./loop-policy.js";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { ModelCaller } from "@vinhnt-sdk/llm";
@@ -18,6 +19,8 @@ export interface SelfCorrectionDeps {
   readonly modelCaller: ModelCaller;
   readonly maxSelfCorrectAttempts: number;
   readonly doomLoopThreshold: number;
+  /** P1-3: config-driven doom-loop policy for self-correction retries. */
+  readonly loopDetection?: LoopDetectionConfig;
   readonly findTool: (name: string, runId?: RunId) => import("@vinhnt-sdk/tools").ToolDefinition | undefined;
   readonly permissionGate: PermissionGate;
   readonly pluginManager: StepExecutorPluginHooks | undefined;
@@ -75,10 +78,32 @@ export async function runSelfCorrection(
 
         for (const ct of correction.toolCalls) {
           if (runAbort.signal.aborted) break;
-          if (detectDoomLoop(recentCalls, ct.name, ct.args, deps.doomLoopThreshold)) {
-            messages.push({ role: "tool", toolCallId: ct.id, content: formatToolFailure(`Error: Doom loop detected in self-correction for "${ct.name}"`, undefined, "doom_loop") });
-            corrected = true;
-            break;
+          const loopPolicy = resolveLoopPolicy(deps.loopDetection, ct.name, deps.doomLoopThreshold);
+          if (loopPolicy.enabled && loopPolicy.action !== "allow" && detectDoomLoop(recentCalls, ct.name, ct.args, loopPolicy.threshold)) {
+            if (loopPolicy.action === "ask" && !deps.permissionGate.isDoomLoopBypassed?.(ct.name)) {
+              const doomReason = `Doom loop in self-correction for "${ct.name}" (${loopPolicy.threshold}x identical). Allow?`;
+              const doomReply = await deps.permissionGate.askForTool(
+                ct.name, ct.id, runId, "", doomReason,
+                deps.currentAgent?.id ?? "", ctx.traceId, deps.pluginManager,
+                undefined, runAbort.signal,
+                { forceAsk: true, permissionKey: "doom_loop" },
+              );
+              if (doomReply !== "reject") {
+                // once / always → fall through and attempt the corrected call
+              } else {
+                messages.push({ role: "tool", toolCallId: ct.id, content: formatToolFailure(`Error: Doom loop detected in self-correction for "${ct.name}" (rejected by user)`, undefined, "doom_loop") });
+                corrected = true;
+                break;
+              }
+            } else if (loopPolicy.action === "inject-hint") {
+              messages.push({ role: "tool", toolCallId: ct.id, content: formatToolFailure(`Error: Doom loop detected in self-correction for "${ct.name}" — change the approach`, undefined, "doom_loop") });
+              corrected = true;
+              break;
+            } else {
+              messages.push({ role: "tool", toolCallId: ct.id, content: formatToolFailure(`Error: Doom loop detected in self-correction for "${ct.name}"`, undefined, "doom_loop") });
+              corrected = true;
+              break;
+            }
           }
           const ctool = deps.findTool(ct.name, runId);
           if (!ctool) {

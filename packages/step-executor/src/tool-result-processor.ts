@@ -46,10 +46,16 @@ export async function processToolResults(
     }
     const r = settled.value;
     if (r.result === "doom") {
-      const errorMsg = `Tool "${r.tc.toolName}" called with identical arguments ${doomThreshold} consecutive times. Aborting to prevent infinite loop.`;
+      const errorMsg = r.reason ?? `Tool "${r.tc.toolName}" called with identical arguments ${doomThreshold} consecutive times. Aborting to prevent infinite loop.`;
       messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(errorMsg, undefined, "doom_loop") });
       breakBatch = true;
       break;
+    }
+    if (r.result === "doom-hint") {
+      // P1-3 inject-hint: surface a model-visible envelope WITHOUT aborting the batch.
+      const hintMsg = r.reason ?? `Tool "${r.tc.toolName}" repeated with identical arguments ${doomThreshold} times.`;
+      messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(hintMsg, undefined, "doom_loop") });
+      continue;
     }
     if (r.result === "not-found") {
       messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(`Tool "${r.tc.toolName}" not found`, undefined, "unknown") });

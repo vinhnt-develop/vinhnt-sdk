@@ -72,7 +72,12 @@ function matchesRule(rule: AnyRule, action: string, context?: string): boolean {
   const paramPattern = rule.paramPattern !== undefined ? normalizePattern(rule.paramPattern) : undefined;
 
   if (wildcardMatch(target, action)) {
-    if (paramPattern !== undefined && context !== undefined) {
+    if (paramPattern !== undefined) {
+      // Pattern-scoped rules only apply when the runtime context (args) is
+      // present. At snapshot time (`context === undefined`) they must NOT
+      // hard-match — otherwise a scoped deny would remove the whole tool
+      // from the model's tools[] (P1-5).
+      if (context === undefined) return false;
       return wildcardMatch(paramPattern, context);
     }
     return true;

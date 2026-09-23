@@ -488,5 +488,39 @@ describe("PermissionGate", () => {
       expect(gate.checkSavedApproval("read_file", { filePath: "/tmp/a.txt" }, "agent-1")).toBe(false);
     });
   });
+
+  describe("setGlobalRules (P1-5 bare-name deny)", () => {
+    it("bare deny matches at snapshot (no args) via tool. prefix", () => {
+      const { gate } = makeGate();
+      gate.setGlobalRules({ delete_file: "deny" });
+      const result = gate.checkTool("delete_file", "write", undefined, undefined);
+      expect(result.allowed).toBe(false);
+      expect(result.needsApproval).toBeUndefined();
+    });
+
+    it("bare allow still allows at snapshot", () => {
+      const { gate } = makeGate();
+      gate.setGlobalRules({ read_file: "allow" });
+      const result = gate.checkTool("read_file", "read", undefined, undefined);
+      expect(result.allowed).toBe(true);
+    });
+
+    it("bare ask requests approval at snapshot", () => {
+      const { gate } = makeGate();
+      gate.setGlobalRules({ write_file: "ask" });
+      const result = gate.checkTool("write_file", "write", undefined, undefined);
+      expect(result.needsApproval).toBe(true);
+    });
+
+    it("does not deny a different tool", () => {
+      const { gate } = makeGate();
+      gate.setGlobalRules({ delete_file: "deny" });
+      const result = gate.checkTool("read_file", "read", undefined, undefined);
+      // Unmatched tools under global rules fall through to default "ask"
+      // (never hard-denied) so they remain visible in tools[] snapshot.
+      expect(result.needsApproval).toBe(true);
+      expect(result.reason).not.toContain("Denied");
+    });
+  });
 });
 

@@ -60,6 +60,17 @@ describe("matchPermission", () => {
     expect(matchPermission(rules, "read", "main.ts").effect).toBe("ask");
   });
 
+  it("P1-5: does not hard-match paramPattern deny at snapshot (no context)", () => {
+    const rules: MatcherRule[] = [
+      { action: "read", resource: "*", effect: "deny", paramPattern: "*.env" },
+      { action: "delete_file", resource: "*", effect: "deny" },
+    ];
+    // Pattern-scoped deny must not match without context → tool stays visible.
+    expect(matchPermission(rules, "read").effect).toBe("ask");
+    // Bare deny still matches without context → tool can be hidden.
+    expect(matchPermission(rules, "delete_file").effect).toBe("deny");
+  });
+
   it("returns matchedRule on match", () => {
     const rules: PermissionRule[] = [
       { action: "test", resource: "*", effect: "allow" },

@@ -85,13 +85,15 @@ describe("StepExecutor", () => {
       expect(execute).toHaveBeenCalledTimes(1);
     });
 
-    it("detects doom loops and aborts after 3 identical calls", async () => {
+    it("detects doom loops and aborts after 3 identical calls (action: stop)", async () => {
+      const localDeps = makeDeps({ loopDetection: { action: "stop" } });
+      const localExecutor = new StepExecutor(localDeps);
       const execute = vi.fn().mockResolvedValue("ok");
-      (deps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
 
       const messages: ChatMessage[] = [];
 
-      await executor.executeToolCalls(
+      await localExecutor.executeToolCalls(
         [
           makeToolCall({ toolId: "t1" }),
           makeToolCall({ toolId: "t2" }),
@@ -105,9 +107,159 @@ describe("StepExecutor", () => {
 
       expect(execute).toHaveBeenCalledTimes(3);
       const doomMsg = messages.find((m: unknown) =>
+        (m as Record<string, unknown>).content?.toString().includes("identical args") ||
         (m as Record<string, unknown>).content?.toString().includes("identical arguments"),
       );
       expect(doomMsg).toBeDefined();
+    });
+
+    it("P1-3: default action ask rejects → aborts without 4th execute", async () => {
+      const gate = {
+        checkTool: vi.fn().mockReturnValue({ allowed: true }),
+        askForTool: vi.fn().mockResolvedValue("reject" as const),
+        checkSavedApproval: vi.fn().mockReturnValue(false),
+        saveApproval: vi.fn(),
+        isDoomLoopBypassed: vi.fn().mockReturnValue(false),
+      };
+      const localDeps = makeDeps({ permissionGate: gate as never });
+      const localExecutor = new StepExecutor(localDeps);
+      const execute = vi.fn().mockResolvedValue("ok");
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
+
+      const messages: ChatMessage[] = [];
+      await localExecutor.executeToolCalls(
+        [
+          makeToolCall({ toolId: "t1" }),
+          makeToolCall({ toolId: "t2" }),
+          makeToolCall({ toolId: "t3" }),
+          makeToolCall({ toolId: "t4" }),
+        ],
+        messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(execute).toHaveBeenCalledTimes(3);
+      expect(gate.askForTool).toHaveBeenCalledTimes(1);
+      const askOpts = gate.askForTool.mock.calls[0]!.at(-1);
+      expect(askOpts).toMatchObject({ forceAsk: true, permissionKey: "doom_loop" });
+      expect(messages.some((m) => String(m.content).includes("Rejected by user"))).toBe(true);
+    });
+
+    it("P1-3: default action ask once → continues 4th call", async () => {
+      const gate = {
+        checkTool: vi.fn().mockReturnValue({ allowed: true }),
+        askForTool: vi.fn().mockResolvedValue("once" as const),
+        checkSavedApproval: vi.fn().mockReturnValue(false),
+        saveApproval: vi.fn(),
+        isDoomLoopBypassed: vi.fn().mockReturnValue(false),
+      };
+      const localDeps = makeDeps({ permissionGate: gate as never });
+      const localExecutor = new StepExecutor(localDeps);
+      const execute = vi.fn().mockResolvedValue("ok");
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
+
+      await localExecutor.executeToolCalls(
+        [
+          makeToolCall({ toolId: "t1" }),
+          makeToolCall({ toolId: "t2" }),
+          makeToolCall({ toolId: "t3" }),
+          makeToolCall({ toolId: "t4" }),
+        ],
+        [], 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(gate.askForTool).toHaveBeenCalledTimes(1);
+      expect(execute).toHaveBeenCalledTimes(4);
+    });
+
+    it("P1-3: action allow skips doom detection", async () => {
+      const localDeps = makeDeps({ loopDetection: { action: "allow" } });
+      const localExecutor = new StepExecutor(localDeps);
+      const execute = vi.fn().mockResolvedValue("ok");
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
+
+      const messages: ChatMessage[] = [];
+      await localExecutor.executeToolCalls(
+        [
+          makeToolCall({ toolId: "t1" }),
+          makeToolCall({ toolId: "t2" }),
+          makeToolCall({ toolId: "t3" }),
+          makeToolCall({ toolId: "t4" }),
+          makeToolCall({ toolId: "t5" }),
+        ],
+        messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(execute).toHaveBeenCalledTimes(5);
+      expect(messages.some((m) => String(m.content).includes("identical arguments"))).toBe(false);
+    });
+
+    it("P1-3: action inject-hint surfaces envelope without aborting batch", async () => {
+      const localDeps = makeDeps({ loopDetection: { action: "inject-hint" } });
+      const localExecutor = new StepExecutor(localDeps);
+      const execute = vi.fn().mockResolvedValue("ok");
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
+
+      const messages: ChatMessage[] = [];
+      const result = await localExecutor.executeToolCalls(
+        [
+          makeToolCall({ toolId: "t1" }),
+          makeToolCall({ toolId: "t2" }),
+          makeToolCall({ toolId: "t3" }),
+          makeToolCall({ toolId: "t4" }),
+        ],
+        messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      // 3 executed + 4th rejected as doom-hint (not executed)
+      expect(execute).toHaveBeenCalledTimes(3);
+      const hint = messages.find((m) => String(m.content).includes("Doom loop"));
+      expect(hint).toBeDefined();
+      const parsed = JSON.parse(String(hint!.content));
+      expect(parsed.ok).toBe(false);
+      // inject-hint must NOT hard-stop the batch
+      expect(result.toolCallCount).toBeGreaterThan(0);
+      expect(messages.filter((m) => String(m.content).includes("Doom loop"))).toHaveLength(1);
+    });
+
+    it("P1-3: perTool threshold override triggers earlier", async () => {
+      const gate = {
+        checkTool: vi.fn().mockReturnValue({ allowed: true }),
+        askForTool: vi.fn().mockResolvedValue("reject" as const),
+        checkSavedApproval: vi.fn().mockReturnValue(false),
+        saveApproval: vi.fn(),
+        isDoomLoopBypassed: vi.fn().mockReturnValue(false),
+      };
+      const localDeps = makeDeps({
+        permissionGate: gate as never,
+        loopDetection: { action: "ask", threshold: 10, perTool: { read_file: 2 } },
+      });
+      const localExecutor = new StepExecutor(localDeps);
+      const execute = vi.fn().mockResolvedValue("ok");
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({ execute, risk: "read" });
+
+      const messages: ChatMessage[] = [];
+      await localExecutor.executeToolCalls(
+        [
+          makeToolCall({ toolId: "t1" }),
+          makeToolCall({ toolId: "t2" }),
+          makeToolCall({ toolId: "t3" }),
+        ],
+        messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      // threshold 2 → 3rd is doom candidate → ask reject → only 2 execute
+      expect(execute).toHaveBeenCalledTimes(2);
+      expect(gate.askForTool).toHaveBeenCalledTimes(1);
     });
 
     it("handles tool not found", async () => {

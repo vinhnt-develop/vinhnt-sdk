@@ -201,6 +201,8 @@ export const PermissionRequestedDataSchema = z.object({
   resource: z.string(),
   reason: z.string(),
   prompt: z.string(),
+  /** Permission/rule key (e.g. `tool.read_file` or `doom_loop`). Optional for P1-3. */
+  permission: z.string().optional(),
 });
 /** Inferred type of {@link PermissionRequestedDataSchema}. */
 export type PermissionRequestedData = z.infer<typeof PermissionRequestedDataSchema>;
