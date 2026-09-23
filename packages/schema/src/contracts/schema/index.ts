@@ -3,6 +3,13 @@ export {
 } from "./request-context.js";
 export type { RequestContext } from "./request-context.js";
 
+export {
+  LlmSnapshotSelectedToolSchema,
+  LlmSnapshotSelectedKnowledgeSchema,
+  LlmSnapshotSelectionSchema,
+} from "./selection.js";
+export type { LlmSnapshotSelection } from "./selection.js";
+
 export { RunStatusSchema } from "./run-status.js";
 export type { RunStatus } from "./run-status.js";
 
@@ -38,7 +45,7 @@ export {
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
   RequestHeaderDataSchema, RequestContextDataSchema,
   LlmRequestDataSchema,
-  LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,
+  LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema,
   LlmResponseDataSchema,
 } from "./run-event.js";
 export type {
@@ -53,7 +60,7 @@ export type {
   ApprovalAskedData, ApprovalDecidedData,
   RequestHeaderData, RequestContextData,
   LlmRequestData,
-  LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
+  LlmSnapshotMessage, LlmSnapshotToolDef,
   LlmResponseData,
 } from "./run-event.js";
 export {

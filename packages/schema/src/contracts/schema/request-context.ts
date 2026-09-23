@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isRequestId, isTraceId, isRunId } from "../branded.js";
-import { LlmSnapshotSelectionSchema } from "./run-event.js";
+import { LlmSnapshotSelectionSchema } from "./selection.js";
 
 /** Request metadata (ids, actor, tenant) propagated through a run. */
 export const RequestContextSchema = z.object({
