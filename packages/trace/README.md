@@ -1,6 +1,6 @@
 ﻿# @vinhnt-sdk/trace
 
-> Version: 0.4.2 | Status: STABLE
+> Version: 0.4.3 | Status: STABLE
 
 Observability for vinhnt-sdk — OpenTelemetry-compatible spans, timeline replay, telemetry aggregation, and cost tracking.
 
@@ -21,6 +21,7 @@ pnpm add @vinhnt-sdk/trace
 - **CostMeter** — Track token usage and calculate costs per model
 - **ContextPressure** — Monitor context window utilization
 - **TelemetryProvider** — Interface for custom telemetry backends
+- **OTLP exporter** — `createOtlpSpanExporter` ships spans to any OTLP/HTTP collector (optional)
 - **DEFAULT_MODEL_PRICING** — Built-in pricing for common models
 
 ## Quick Start
@@ -105,6 +106,41 @@ console.log(transcript);
 | ModelPricing | Interface | Per-1M-token pricing |
 | ContextPressure | Interface | Context window utilization |
 | TelemetryProvider | Interface | Custom telemetry backend |
+
+### OTLP Export (P1-9)
+
+| Export | Type | Description |
+|--------|------|-------------|
+| createOtlpSpanExporter | Function | OTLP/HTTP JSON exporter (config or env endpoint) |
+| resolveOtlpEndpoint | Function | Resolve endpoint from config / `OTEL_EXPORTER_OTLP_*` |
+| mapSpanToOtlp | Function | Map custom `Span` → OTLP JSON span |
+| buildOtlpExportRequest | Function | Wrap spans into `ExportTraceServiceRequest` |
+| SpanExporter | Interface | `export(spans)` / `shutdown()` seam |
+
+Endpoint resolution (first match wins):
+
+1. `config.endpoint`
+2. `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+3. `OTEL_EXPORTER_OTLP_ENDPOINT` + `/v1/traces`
+
+Headers: `OTEL_EXPORTER_OTLP_HEADERS` (`k1=v1,k2=v2`) merged with `config.headers`.
+Resource: `config.resourceAttributes` (default `service.name=vinhnt-sdk`, override via `OTEL_SERVICE_NAME` in attributes).
+
+```typescript
+import { createOtlpSpanExporter, SpanRecorder } from "@vinhnt-sdk/trace";
+
+const recorder = new SpanRecorder();
+// ... record spans ...
+
+const exporter = createOtlpSpanExporter({
+  endpoint: "http://localhost:4318/v1/traces", // or set env only
+  resourceAttributes: { "service.name": "my-agent", "deployment.environment": "dev" },
+});
+await exporter.export(recorder.getSpans());
+await exporter.shutdown();
+```
+
+No exporter is created unless you call `createOtlpSpanExporter` — default telemetry path unchanged.
 
 ## Usage Examples
 

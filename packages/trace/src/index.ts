@@ -22,3 +22,32 @@ export type { TimelineEvent, TimelineEventType, TranscriptEntry } from "./timeli
 // ── Telemetry ──
 export { CostMeter, calculateCost, calculateContextPressure, DEFAULT_MODEL_PRICING, MODEL_PRICING, ConsoleTelemetryProvider } from "./telemetry.js";
 export type { UsageStats, ModelPricing, ContextPressure, TelemetryProvider } from "./telemetry.js";
+
+// ── OTLP export (P1-9) ──
+export {
+  createOtlpSpanExporter,
+  resolveOtlpEndpoint,
+  parseOtlpHeaders,
+  mapSpanToOtlp,
+  buildOtlpExportRequest,
+  toOtlpAnyValue,
+  toOtlpAttributes,
+  toOtlpId,
+  msToUnixNano,
+  OTLP_SPAN_KIND,
+  OTLP_STATUS_OK,
+  OTLP_STATUS_ERROR,
+  OTLP_STATUS_UNSET,
+} from "./otlp-exporter.js";
+export type {
+  OtlpExporterConfig,
+  SpanExporter,
+  FetchLike,
+  OtlpAnyValue,
+  OtlpKeyValue,
+  OtlpSpan,
+  OtlpSpanEvent,
+  OtlpSpanStatus,
+  OtlpResourceSpans,
+  OtlpExportTraceRequest,
+} from "./otlp-exporter.js";
