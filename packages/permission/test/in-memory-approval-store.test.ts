@@ -86,6 +86,35 @@ describe("InMemoryApprovalStore", () => {
     await expect(promise).rejects.toMatchObject({ name: "AbortError" });
   });
 
+  it("awaitReply applies timeout even when signal is present (P0'-4)", async () => {
+    const store = new InMemoryApprovalStore();
+    const abort = new AbortController();
+    const promise = store.awaitReply(makeRequest({ id: id("req-to") }), {
+      signal: abort.signal,
+      timeoutMs: 5,
+    });
+    await expect(promise).rejects.toMatchObject({ name: "AbortError" });
+    // signal not aborted — only timeout fired
+    expect(abort.signal.aborted).toBe(false);
+  });
+
+  it("awaitReply waits when both signal and timeout are long (no early reject)", async () => {
+    vi.useFakeTimers();
+    try {
+      const store = new InMemoryApprovalStore();
+      const abort = new AbortController();
+      const promise = store.awaitReply(makeRequest({ id: id("req-ok") }), {
+        signal: abort.signal,
+        timeoutMs: 60_000,
+      });
+      vi.advanceTimersByTime(1_000);
+      store.resolveRequest("req-ok", "once");
+      await expect(promise).resolves.toBe("once");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("cancelRequest is no-op for unknown requestId", () => {
     const store = new InMemoryApprovalStore();
     expect(() => store.cancelRequest("ghost")).not.toThrow();

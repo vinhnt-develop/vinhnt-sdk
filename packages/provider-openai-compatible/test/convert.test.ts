@@ -176,6 +176,44 @@ describe("OpenAI Adapter", () => {
       const result = toOpenAIMessage(msg);
       expect(result.refusal).toBe("I cannot help with that");
     });
+
+    it("preserves image_url parts outbound (P0'-8a)", () => {
+      const msg = {
+        role: "user" as const,
+        content: [
+          { type: "text" as const, text: "what is this?" },
+          {
+            type: "image_url" as const,
+            image_url: { url: "https://example.com/cat.png", detail: "high" as const },
+          },
+        ],
+      };
+      const result = toOpenAIMessage(msg);
+      expect(Array.isArray(result.content)).toBe(true);
+      const parts = result.content as ReadonlyArray<{ type: string; text?: string; image_url?: { url: string; detail?: string } }>;
+      expect(parts).toHaveLength(2);
+      expect(parts[0]).toEqual({ type: "text", text: "what is this?" });
+      expect(parts[1]).toEqual({
+        type: "image_url",
+        image_url: { url: "https://example.com/cat.png", detail: "high" },
+      });
+    });
+
+    it("preserves input_audio parts outbound (P0'-8a)", () => {
+      const msg = {
+        role: "user" as const,
+        content: [
+          {
+            type: "input_audio" as const,
+            input_audio: { data: "AAAA", format: "wav" as const },
+          },
+        ],
+      };
+      const result = toOpenAIMessage(msg);
+      expect(result.content).toEqual([
+        { type: "input_audio", input_audio: { data: "AAAA", format: "wav" } },
+      ]);
+    });
   });
 
   describe("fromOpenAIResponse", () => {
@@ -198,6 +236,7 @@ describe("OpenAI Adapter", () => {
         id: "chatcmpl-123",
         model: "gpt-4",
         created: 1234567890,
+        provider: "unknown",
       });
     });
 

@@ -12,6 +12,7 @@ import type {
   ToolCall,
   ModelUsage,
   OpenAIMessage,
+  OpenAIContentPart,
   OpenAIToolCall,
   OpenAIChoice,
   OpenAIResponse,
@@ -122,11 +123,34 @@ export function fromOpenAIMessage(msg: OpenAIMessage): ChatMessage {
  * ```
  */
 export function toOpenAIMessage(msg: ChatMessage): OpenAIMessage {
-  const content = getTextContent(msg.content);
+  // Preserve multimodal parts outbound (image_url / input_audio) — flattening
+  // via getTextContent silently drops vision input (P0'-8a).
+  let content: string | OpenAIContentPart[] | null;
+  if (Array.isArray(msg.content)) {
+    content = msg.content.map((p): OpenAIContentPart => {
+      switch (p.type) {
+        case "image_url": {
+          const url = p.image_url?.url ?? "";
+          const detail = p.image_url?.detail as "auto" | "low" | "high" | undefined;
+          return { type: "image_url", image_url: { url, ...(detail !== undefined ? { detail } : {}) } };
+        }
+        case "input_audio": {
+          const data = p.input_audio?.data ?? "";
+          const format = (p.input_audio?.format as "wav" | "mp3") ?? "wav";
+          return { type: "input_audio", input_audio: { data, format } };
+        }
+        case "text":
+        default:
+          return { type: "text", text: p.type === "text" ? (p.text ?? "") : "" };
+      }
+    });
+  } else {
+    content = getTextContent(msg.content) || null;
+  }
 
   const result: OpenAIMessage = {
     role: msg.role as OpenAIMessage["role"],
-    content: content || null,
+    content,
   };
 
   if (msg.toolCallId) {

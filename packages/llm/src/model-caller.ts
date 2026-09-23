@@ -157,8 +157,13 @@ export class ModelCaller {
     signal: AbortSignal,
     agentMaxTokens?: number,
     disableTools?: boolean,
+    toolChoiceOverride?: ToolChoice,
   ): Promise<ModelResponse> {
     const availableTools = disableTools ? [] : this.deps.getAvailableTools(runId);
+    // Last/no-tools step: force tool_choice=none so the model cannot emit calls
+    // that would be dropped. Repair paths may override with "required".
+    const effectiveToolChoice: ToolChoice | undefined = toolChoiceOverride
+      ?? (disableTools ? "none" : this.deps.toolChoice);
     const thinkingBudget = this.deps.thinkingBudget > 0 ? this.deps.thinkingBudget : undefined;
     // Resolve provider from context overrides or agent config
     const resolvedProvider = ctx.overrides?.provider;
@@ -173,7 +178,7 @@ export class ModelCaller {
       ...(this.deps.temperature !== undefined ? { temperature: this.deps.temperature } : {}),
       ...(this.deps.topP !== undefined ? { topP: this.deps.topP } : {}),
       // OpenAI fields passthrough
-      ...(this.deps.toolChoice !== undefined ? { toolChoice: this.deps.toolChoice } : {}),
+      ...(effectiveToolChoice !== undefined ? { toolChoice: effectiveToolChoice } : {}),
       ...(this.deps.parallelToolCalls !== undefined ? { parallelToolCalls: this.deps.parallelToolCalls } : {}),
       ...(this.deps.responseFormat !== undefined ? { responseFormat: this.deps.responseFormat } : {}),
       ...(this.deps.streamOptions !== undefined ? { streamOptions: this.deps.streamOptions } : {}),

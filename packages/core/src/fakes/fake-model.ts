@@ -52,6 +52,9 @@ export class FakeModelProvider implements ModelProvider {
         yield { type: "tool_call", id: tc.id, name: tc.name, args: tc.args as Record<string, unknown> };
       }
     }
+    if (response.finishReason) {
+      yield { type: "finish", reason: response.finishReason };
+    }
     yield { type: "done" };
   }
 

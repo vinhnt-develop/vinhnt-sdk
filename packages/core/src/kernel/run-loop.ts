@@ -336,6 +336,10 @@ interface StepInput {
   workspaceRoot?: string;
   /** Bounded repair attempts when finish_reason=tool_calls but toolCalls empty. */
   toolCallRepairAttempts?: number;
+  /** Bounded claim-vs-action repairs (prose "created file" with zero tool calls). */
+  claimRepairAttempts?: number;
+  /** Force tool_choice=required on the next model call (set after claim repair). */
+  forceToolChoice?: boolean;
 }
 
 interface StepOutput {
@@ -362,6 +366,31 @@ interface StepOutput {
   outputType?: 'text' | z.ZodTypeAny;
   /** Propagated when a tool-call repair prompt was injected this step. */
   toolCallRepairAttempts?: number;
+  /** Propagated when a claim-vs-action repair prompt was injected this step. */
+  claimRepairAttempts?: number;
+  /** Set true when this step injected a claim repair so the next step forces tool_choice. */
+  forceToolChoiceNext?: boolean;
+}
+
+/**
+ * Detect "model claims it created/wrote a file but emitted zero tool calls"
+ * with finish_reason=stop (or empty). Bounded repair instead of silently
+ * completing with prose only (P0'-1).
+ */
+function detectMissedFileAction(content: string, finishReason: string | undefined): boolean {
+  const fr = (finishReason ?? "").toLowerCase().replace(/_/g, "-");
+  // Only consider "natural end" finishes — tool-calls path is handled separately.
+  if (fr === "tool-calls" || fr === "tool_use" || fr === "tool-use") return false;
+  const text = content ?? "";
+  if (text.length < 40) return false;
+  // Vietnamese + English claim patterns for file creation/write.
+  const claimRe = /(?:đã\s+(?:tạo|ghi|viết|sửa|cập nhật)|created?|wrote|saved|generated|written)\s+(?:one\s+|a\s+|the\s+)?(?:new\s+)?file/i;
+  const hasClaim = claimRe.test(text);
+  // Large fenced code block strongly suggests the model meant to write a file.
+  const fenced = (text.match(/```[\w-]*\n[\s\S]{80,}?```/g) ?? []).length > 0;
+  // Or content looks like a file body (HTML/CSS/JSON/TS module markers) outside pure Q&A.
+  const looksLikeFileBody = /<!DOCTYPE|<html|^\s*\{[\s\S]{60,}\}|^export\s+(?:const|function|default)/m.test(text);
+  return hasClaim || (fenced && looksLikeFileBody) || (fenced && text.length > 400);
 }
 
 async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOutput> {
@@ -420,6 +449,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           messages, input.step, runId, ctx, stepTimeoutController.signal,
           deps.currentAgent?.permissions?.maxTokens,
           input.disableTools,
+          input.forceToolChoice ? "required" : undefined,
         ), stepTimeoutController.signal);
     } catch (err: unknown) {
       if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
@@ -450,6 +480,8 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           deps.modelCaller.callModelStream(
             messages, input.step, runId, ctx, stepTimeoutController.signal,
             deps.currentAgent?.permissions?.maxTokens,
+            input.disableTools,
+            input.forceToolChoice ? "required" : undefined,
           ),
           stepTimeoutController.signal,
         );
@@ -508,11 +540,25 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
 
     const toolCalls = response.toolCalls ?? [];
 
+    // P0'-7 Safety: suppress tool execution when finish_reason indicates
+    // truncation/filter — half-written args must not run (DeerFlow pattern).
+    const safetyFr = (response.finishReason ?? "").toLowerCase().replace(/_/g, "-");
+    let suppressedToolCalls = false;
+    let effectiveToolCalls = toolCalls;
+    if (
+      toolCalls.length > 0 &&
+      (safetyFr === "content-filter" || safetyFr === "content_filter" ||
+        safetyFr === "length" || safetyFr === "max-tokens" || safetyFr === "max_tokens")
+    ) {
+      effectiveToolCalls = [];
+      suppressedToolCalls = true;
+    }
+
     messages.push({
       role: "assistant",
       content: finalContent,
-      ...(toolCalls.length > 0 ? {
-        toolCalls: toolCalls.map((tc) => ({
+      ...(effectiveToolCalls.length > 0 ? {
+        toolCalls: effectiveToolCalls.map((tc) => ({
           id: tc.id,
           name: tc.name,
           args: tc.args as Record<string, unknown>,
@@ -529,7 +575,27 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       ...(msgCost !== undefined ? { cost: msgCost } : {}),
     });
 
-    if (toolCalls.length === 0) {
+    if (suppressedToolCalls) {
+      // Surface to the model as a tool-result style note so it can retry cleanly.
+      messages.push({
+        role: "user",
+        content: `[System] Tool calls were dropped because finish_reason=${response.finishReason} (response truncated or filtered). Partial text was kept. Call tools again with complete arguments if still needed.`,
+      });
+      return {
+        messages,
+        step: input.step,
+        runId,
+        totalInputTokens: input.totalInputTokens,
+        totalOutputTokens: input.totalOutputTokens,
+        finalOutput: finalContent,
+        completed: false,
+        toolCallCount: 0,
+        lastStepToolOutcomes: [],
+        ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
+      };
+    }
+
+    if (effectiveToolCalls.length === 0) {
       // Missed tool-call detection: model said finish_reason=tool_calls but
       // produced zero calls (malformed stream / dropped ids). Inject a repair
       // prompt (bounded) instead of falsely completing the run.
@@ -562,6 +628,34 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           `finish_reason=tool_calls but no tool calls after ${repairs} repair attempts`,
         );
       }
+
+      // P0'-1 Claim-vs-action: finish_reason=stop but content claims file work
+      // and no tools ran — force a repair turn with tool_choice=required.
+      const claimRepairs = input.claimRepairAttempts ?? 0;
+      if (
+        !input.disableTools &&
+        claimRepairs < 2 &&
+        detectMissedFileAction(finalContent, response.finishReason)
+      ) {
+        messages.push({
+          role: "user",
+          content: `[System] You described creating or modifying a file in your last message, but you did not call write_file/edit_file/apply_patch — nothing was written to disk. Call the appropriate file tool NOW with the actual content. Do not repeat the file body only in chat.`,
+        });
+        return {
+          messages,
+          step: input.step,
+          runId,
+          totalInputTokens: input.totalInputTokens,
+          totalOutputTokens: input.totalOutputTokens,
+          finalOutput: response.content,
+          completed: false,
+          toolCallCount: 0,
+          lastStepToolOutcomes: [],
+          claimRepairAttempts: claimRepairs + 1,
+          forceToolChoiceNext: true,
+        };
+      }
+
       return {
         messages,
         step: input.step,
@@ -577,7 +671,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     }
 
     const { toolCallCount, selfCorrectTokens, toolResults, handoff } = await deps.stepExecutor.executeToolCalls(
-      toolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
+      effectiveToolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
       messages, input.step, runId, ctx, stepTimeoutController, sessionId, runModel,
     );
 
@@ -692,6 +786,8 @@ export async function runLoop(
   let handoffResult: { targetAgentId: string; reason: string; summary?: string | undefined; context?: Record<string, unknown> | undefined } | undefined;
   let contextEpochActive = false;
   let toolCallRepairAttempts = 0;
+  let claimRepairAttempts = 0;
+  let forceToolChoiceNext = false;
   // Real system head (identity + agent systemPrompt) sent as a proper `system`
   // message at the head of the conversation instead of being flattened into the
   // user turn (RV-40).
@@ -893,6 +989,8 @@ export async function runLoop(
         totalInputTokens, totalOutputTokens, finalOutput,
         ...(onLastStep ? { disableTools: true } : {}),
         toolCallRepairAttempts,
+        claimRepairAttempts,
+        forceToolChoice: forceToolChoiceNext,
       });
 
       messages = stepResult.messages;
@@ -902,6 +1000,10 @@ export async function runLoop(
       if (stepResult.toolCallRepairAttempts !== undefined) {
         toolCallRepairAttempts = stepResult.toolCallRepairAttempts;
       }
+      if (stepResult.claimRepairAttempts !== undefined) {
+        claimRepairAttempts = stepResult.claimRepairAttempts;
+      }
+      forceToolChoiceNext = stepResult.forceToolChoiceNext === true;
       if (stepResult.structuredOutput !== undefined) {
         structuredOutput = stepResult.structuredOutput;
       }
