@@ -46,6 +46,12 @@ export interface PermissionGateDeps {
   readonly pluginManager: StepExecutorPluginHooks | undefined;
   readonly approvalStore: ApprovalStore | undefined;
   readonly autoApprovalEnabled?: boolean | undefined;
+  /**
+   * Hard timeout (ms) for a single approval wait. Defaults to 120_000 (2 min).
+   * Kept well below the agent stale-run threshold (5 min) so an unanswered
+   * dialog fails the tool long before trajectory marks the run as zombie.
+   */
+  readonly approvalTimeoutMs?: number | undefined;
 }
 
 const RISK_DECISIONS: Record<ToolRisk, ApprovalDecision> = {
@@ -84,11 +90,14 @@ export class PermissionGate {
   private riskOverrides?: Partial<Record<ToolRisk, ApprovalDecision>>;
   private topLevelRules: { toolName: string; pattern: string; decision: "allow" | "deny" | "ask" }[] = [];
   private autoApproval: boolean;
+  /** Per-approval hard timeout — separate from agent stale threshold. */
+  private readonly approvalTimeoutMs: number;
   /** Tools for which the user answered doom_loop "always" (P1-3). */
   private readonly doomLoopBypass = new Set<string>();
 
   constructor(private readonly deps: PermissionGateDeps) {
     this.autoApproval = deps.autoApprovalEnabled ?? false;
+    this.approvalTimeoutMs = deps.approvalTimeoutMs ?? 120_000;
   }
 
   /** Toggle auto-approval at runtime (mirrors config.autoApprovalEnabled). */
@@ -319,14 +328,28 @@ export class PermissionGate {
     if (hookResult?.modified?.reply) {
       reply = hookResult.modified.reply as PermissionReply;
     } else if (this.deps.approvalStore) {
-// Race the approval wait against the run's abort signal AND a hard
+      // Race the approval wait against the run's abort signal AND a hard
       // timeout so a missed UI reply fails the tool instead of blocking
       // the step until stepTimeout (P0'-4: always set timeoutMs even
       // when a signal is present — signal OR timeout, whichever first).
-      reply = await this.deps.approvalStore.awaitReply(req, {
-        ...(signal ? { signal } : {}),
-        timeoutMs: 300_000,
-      });
+      //
+      // On abort/timeout, awaitReply rejects with AbortError — still emit
+      // permission.replied below so the UI clears pendingPermission instead
+      // of leaving a stuck dialog.
+      try {
+        reply = await this.deps.approvalStore.awaitReply(req, {
+          ...(signal ? { signal } : {}),
+          timeoutMs: this.approvalTimeoutMs,
+        });
+      } catch (err) {
+        const isAbort =
+          err instanceof DOMException
+            ? err.name === "AbortError"
+            : err instanceof Error && err.name === "AbortError";
+        reply = "reject";
+        if (!isAbort) throw err;
+        // fall through — emit permission.replied with reject so UI unblocks
+      }
     }
 
     // Persist permission.replied to store (sync for tests) AND publish to bus
@@ -335,7 +358,7 @@ export class PermissionGate {
       occurredAt: new Date().toISOString(), traceId,
       data: { requestId, reply },
     } as RunEvent);
-    
+
     if (this.deps.eventBus) {
       this.deps.eventBus.publish(PermissionReplied, {
         requestId, reply

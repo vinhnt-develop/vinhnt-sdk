@@ -246,6 +246,9 @@ export class AgentKernel {
       ...(normalized.permissions?.autoApprovalEnabled !== undefined
         ? { autoApprovalEnabled: normalized.permissions.autoApprovalEnabled }
         : {}),
+      ...(normalized.permissions?.approvalTimeoutMs !== undefined
+        ? { approvalTimeoutMs: normalized.permissions.approvalTimeoutMs }
+        : {}),
     });
     this.bareDenyHidesTool = normalized.permissions?.bareDenyHidesTool !== false;
     this.hideFromModel = normalized.permissions?.hideFromModel;

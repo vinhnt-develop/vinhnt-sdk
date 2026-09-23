@@ -28,6 +28,11 @@ export interface PermissionConfig {
   readonly approvalStore?: ApprovalStore;
   /** If true, auto-approve low-risk operations without user confirmation. */
   readonly autoApprovalEnabled?: boolean;
+  /**
+   * Hard timeout (ms) for a single approval wait. Defaults to 120_000 (2 min)
+   * inside PermissionGate — independent of agent stale-run threshold.
+   */
+  readonly approvalTimeoutMs?: number;
   /** If true, allow tools to access files outside the workspace root. */
   readonly externalDirectoryAccess?: boolean;
   /** Global permission rules applied to all tools (e.g. { "edit": "allow", "shell": "ask" }). */
