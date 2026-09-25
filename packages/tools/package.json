@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/tools",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Built-in tools for VNT Agent - file, shell, git, web, search, image, and more",
   "license": "MIT",
   "type": "module",

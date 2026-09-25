@@ -46,6 +46,13 @@ export class FileReadTracker {
     const key = await resolveKey(filePath);
     const record = this.records.get(key);
     if (!record) {
+      // Creating a new file has nothing to read first — only enforce
+      // read-before-write when the target already exists on disk.
+      try {
+        await stat(key);
+      } catch {
+        return;
+      }
       throw new ToolPermissionDenied(
         "write_file",
         `File "${filePath}" has not been read before writing. Use read_file first.`,

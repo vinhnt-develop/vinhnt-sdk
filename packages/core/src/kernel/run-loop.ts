@@ -390,10 +390,12 @@ function detectMissedFileAction(content: string, finishReason: string | undefine
   // Only consider "natural end" finishes — tool-calls path is handled separately.
   if (fr === "tool-calls" || fr === "tool_use" || fr === "tool-use") return false;
   const text = content ?? "";
-  if (text.length < 40) return false;
   // Vietnamese + English claim patterns for file creation/write.
   const claimRe = /(?:đã\s+(?:tạo|ghi|viết|sửa|cập nhật)|created?|wrote|saved|generated|written)\s+(?:one\s+|a\s+|the\s+)?(?:new\s+)?file/i;
   const hasClaim = claimRe.test(text);
+  // An explicit claim ("Đã tạo file X." = 25 chars) must repair even when
+  // short — the length floor only guards the heuristic paths below.
+  if (!hasClaim && text.length < 40) return false;
   // Large fenced code block strongly suggests the model meant to write a file.
   const fenced = (text.match(/```[\w-]*\n[\s\S]{80,}?```/g) ?? []).length > 0;
   // Or content looks like a file body (HTML/CSS/JSON/TS module markers) outside pure Q&A.

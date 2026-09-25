@@ -3,7 +3,7 @@ import { getTextContent } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
-import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort, withToolTimeout } from "./kernel-utils.js";
+import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort, withToolTimeout, toolDomain } from "./kernel-utils.js";
 import { resolveLoopPolicy, type LoopDetectionConfig } from "./loop-policy.js";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
@@ -31,6 +31,18 @@ export interface SelfCorrectionDeps {
 export interface SelfCorrectionTokens {
   input: number;
   output: number;
+}
+
+/** Emit a run event without letting observability failures break correction. */
+async function safeEmit(
+  store: SelfCorrectionDeps["store"],
+  event: Omit<import("@vinhnt-sdk/schema").KnownRunEvent, "sequence">,
+): Promise<void> {
+  try {
+    await store.emitEvent(event);
+  } catch {
+    /* event emission is best-effort */
+  }
 }
 
 export async function runSelfCorrection(
@@ -129,6 +141,14 @@ export async function runSelfCorrection(
               }
             }
           }
+          // Emit tool.invoked/completed/failed around the corrected call so
+          // trajectory, tool_executions and WS clients observe it (it used to
+          // run silently — invisible to every consumer).
+          await safeEmit(deps.store, {
+            id: crypto.randomUUID(), runId, type: "tool.invoked",
+            occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+            data: { toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), decision: "allow", input: ct.args as Record<string, unknown> },
+          });
           try {
             // RV-19: cooperative timeout — signal the correction tool at the
             // deadline so its side effects stop, not just race-and-abandon.
@@ -146,10 +166,21 @@ export async function runSelfCorrection(
               content: typeof coutput === "string" ? coutput : JSON.stringify(coutput),
               toolCallId: ct.id,
             });
+            await safeEmit(deps.store, {
+              id: crypto.randomUUID(), runId, type: "tool.completed",
+              occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+              data: { toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), output: coutput },
+            });
             corrected = true;
           } catch (cErr) {
             if (cErr instanceof RunAbortedError) throw cErr;
-            messages.push({ role: "tool", toolCallId: ct.id, content: `Error: ${cErr instanceof Error ? cErr.message : String(cErr)}` });
+            const errMsg = cErr instanceof Error ? cErr.message : String(cErr);
+            messages.push({ role: "tool", toolCallId: ct.id, content: `Error: ${errMsg}` });
+            await safeEmit(deps.store, {
+              id: crypto.randomUUID(), runId, type: "tool.failed",
+              occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+              data: { toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), error: errMsg },
+            });
           }
         }
       } else if (correction.content) {
@@ -159,7 +190,6 @@ export async function runSelfCorrection(
     } catch (err) {
       console.warn(`[kernel] Self-correction attempt ${attempt}/${deps.maxSelfCorrectAttempts} failed:`, err instanceof Error ? err.message : String(err));
     }
-
     if (corrected) break;
   }
 
