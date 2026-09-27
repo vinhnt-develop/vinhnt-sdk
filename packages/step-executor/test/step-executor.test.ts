@@ -16,6 +16,7 @@ function makeDeps(overrides: Partial<StepExecutorDeps> = {}): StepExecutorDeps {
       checkTool: vi.fn().mockReturnValue({ allowed: true }),
       askForTool: vi.fn().mockResolvedValue("once" as const),
       checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
       saveApproval: vi.fn(),
     } as never,
     modelCaller: {
@@ -118,6 +119,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: true }),
         askForTool: vi.fn().mockResolvedValue("reject" as const),
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
         isDoomLoopBypassed: vi.fn().mockReturnValue(false),
       };
@@ -151,6 +153,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: true }),
         askForTool: vi.fn().mockResolvedValue("once" as const),
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
         isDoomLoopBypassed: vi.fn().mockReturnValue(false),
       };
@@ -234,6 +237,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: true }),
         askForTool: vi.fn().mockResolvedValue("reject" as const),
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
         isDoomLoopBypassed: vi.fn().mockReturnValue(false),
       };
@@ -299,6 +303,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
         askForTool: vi.fn().mockResolvedValue("once" as const),
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
       } as never;
 
@@ -322,6 +327,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
         askForTool: vi.fn().mockResolvedValue("reject" as const),
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
         saveRejection: vi.fn(),
       } as never;
@@ -349,6 +355,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
         askForTool: vi.fn().mockResolvedValue("always" as const),
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval,
       } as never;
 
@@ -372,6 +379,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
         askForTool,
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
         saveRejection: vi.fn(),
       } as never;
@@ -403,6 +411,7 @@ describe("StepExecutor", () => {
         checkTool: vi.fn().mockReturnValue({ allowed: false, needsApproval: true, reason: "needs ok" }),
         askForTool,
         checkSavedApproval: vi.fn().mockReturnValue(false),
+    hasSavedRejection: vi.fn().mockReturnValue(false),
         saveApproval: vi.fn(),
         saveRejection: vi.fn(),
       } as never;
@@ -505,7 +514,7 @@ describe("StepExecutor", () => {
 
     it("calls permission gate with tool risk and agent", async () => {
       const checkTool = vi.fn().mockReturnValue({ allowed: true });
-      deps.permissionGate = { checkTool, askForTool: vi.fn(), checkSavedApproval: vi.fn(), saveApproval: vi.fn() } as never;
+      deps.permissionGate = { checkTool, askForTool: vi.fn(), checkSavedApproval: vi.fn(), hasSavedRejection: vi.fn(), saveApproval: vi.fn() } as never;
       deps.currentAgent = { id: "agent1", profile: { name: "test" }, permissions: {} } as never;
 
       const execute = vi.fn().mockResolvedValue("ok");

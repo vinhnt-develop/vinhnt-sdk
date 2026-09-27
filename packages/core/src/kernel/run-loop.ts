@@ -241,11 +241,29 @@ async function maybeCompact(
 
   let shouldCompact = true;
   if (runModel.countTokens) {
-    const estimatedInput = messages.reduce((sum, m) => sum + runModel.countTokens!(getTextContent(m.content)), 0);
+    // Count text AND tool-call args — a write_file arg carries the whole file
+    // body, so ignoring it (old behavior) under-estimates badly and the window
+    // overflows before compaction ever triggers.
+    const estimatedInput = messages.reduce((sum, m) => {
+      let s = runModel.countTokens!(getTextContent(m.content));
+      if (m.toolCalls && m.toolCalls.length > 0) s += runModel.countTokens!(JSON.stringify(m.toolCalls));
+      return sum + s;
+    }, 0);
     const contextWindow = runModel.contextLimit ?? deps.maxTokens * 4;
     const ratio = deps.compactionThreshold ?? 0.75;
     const threshold = Math.floor(contextWindow * ratio);
     shouldCompact = estimatedInput > threshold;
+  } else {
+    // No tokenizer: approximate at 4 chars/token (text + tool-call args)
+    // instead of the old "no countTokens → always compact" behavior.
+    let chars = 0;
+    for (const m of messages) {
+      chars += getTextContent(m.content).length;
+      if (m.toolCalls && m.toolCalls.length > 0) chars += JSON.stringify(m.toolCalls).length;
+    }
+    const contextWindow = runModel.contextLimit ?? deps.maxTokens * 4;
+    const ratio = deps.compactionThreshold ?? 0.75;
+    shouldCompact = Math.ceil(chars / 4) > Math.floor(contextWindow * ratio);
   }
 
   if (!shouldCompact) return { messages, didCompact: false };
@@ -344,6 +362,8 @@ interface StepInput {
   toolCallRepairAttempts?: number;
   /** Bounded claim-vs-action repairs (prose "created file" with zero tool calls). */
   claimRepairAttempts?: number;
+  /** Bounded retries when tool calls were suppressed by finish_reason safety. */
+  suppressedRepairAttempts?: number;
   /** Force tool_choice=required on the next model call (set after claim repair). */
   forceToolChoice?: boolean;
   /** Emit a run event (wired from RunLoopInput.emitEvent — used by failover). */
@@ -376,6 +396,8 @@ interface StepOutput {
   toolCallRepairAttempts?: number;
   /** Propagated when a claim-vs-action repair prompt was injected this step. */
   claimRepairAttempts?: number;
+  /** Propagated when suppressed tool calls were retried this step. */
+  suppressedRepairAttempts?: number;
   /** Set true when this step injected a claim repair so the next step forces tool_choice. */
   forceToolChoiceNext?: boolean;
 }
@@ -586,7 +608,11 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     if (usageIn !== undefined && usageIn > 0) {
       input.totalInputTokens += usageIn;
     } else if (runModel.countTokens) {
-      input.totalInputTokens += messages.reduce((sum, m) => sum + runModel.countTokens!(getTextContent(m.content)), 0);
+      input.totalInputTokens += messages.reduce((sum, m) => {
+        let s = runModel.countTokens!(getTextContent(m.content));
+        if (m.toolCalls && m.toolCalls.length > 0) s += runModel.countTokens!(JSON.stringify(m.toolCalls));
+        return s;
+      }, 0);
     }
     if (usageOut !== undefined && usageOut > 0) {
       input.totalOutputTokens += usageOut;
@@ -672,18 +698,24 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         role: "user",
         content: `[System] Tool calls were dropped because finish_reason=${response.finishReason} (response truncated or filtered). Partial text was kept. Call tools again with complete arguments if still needed.`,
       });
-      return {
-        messages,
-        step: input.step,
-        runId,
-        totalInputTokens: input.totalInputTokens,
-        totalOutputTokens: input.totalOutputTokens,
-        finalOutput: finalContent,
-        completed: false,
-        toolCallCount: 0,
-        lastStepToolOutcomes: [],
-        ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
-      };
+      const suppressedRepairs = input.suppressedRepairAttempts ?? 0;
+      if (suppressedRepairs < 1) {
+        return {
+          messages,
+          step: input.step,
+          runId,
+          totalInputTokens: input.totalInputTokens,
+          totalOutputTokens: input.totalOutputTokens,
+          finalOutput: finalContent,
+          completed: false,
+          toolCallCount: 0,
+          lastStepToolOutcomes: [],
+          suppressedRepairAttempts: suppressedRepairs + 1,
+          ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
+        };
+      }
+      // Retry budget exhausted — fall through to the zero-tool-call handling
+      // below (claim-repair / complete) instead of looping until maxSteps.
     }
 
     if (effectiveToolCalls.length === 0) {
@@ -878,6 +910,7 @@ export async function runLoop(
   let contextEpochActive = false;
   let toolCallRepairAttempts = 0;
   let claimRepairAttempts = 0;
+  let suppressedRepairAttempts = 0;
   let forceToolChoiceNext = false;
   // Real system head (identity + agent systemPrompt) sent as a proper `system`
   // message at the head of the conversation instead of being flattened into the
@@ -1081,6 +1114,7 @@ export async function runLoop(
         ...(onLastStep ? { disableTools: true } : {}),
         toolCallRepairAttempts,
         claimRepairAttempts,
+        suppressedRepairAttempts,
         forceToolChoice: forceToolChoiceNext,
         emitEvent,
       });
@@ -1094,6 +1128,9 @@ export async function runLoop(
       }
       if (stepResult.claimRepairAttempts !== undefined) {
         claimRepairAttempts = stepResult.claimRepairAttempts;
+      }
+      if (stepResult.suppressedRepairAttempts !== undefined) {
+        suppressedRepairAttempts = stepResult.suppressedRepairAttempts;
       }
       forceToolChoiceNext = stepResult.forceToolChoiceNext === true;
       if (stepResult.structuredOutput !== undefined) {

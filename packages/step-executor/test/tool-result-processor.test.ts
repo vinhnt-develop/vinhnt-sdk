@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { processToolResults } from "../src/tool-result-processor.js";
+import { processToolResults, truncateToolOutput } from "../src/tool-result-processor.js";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "../src/step-executor.js";
 
@@ -96,5 +96,44 @@ describe("processToolResults (P1-4 + P1-7)", () => {
       { addSessionMessage: noopAdd, redactToolOutputs: false },
     );
     expect(messages[0]!.content as string).toContain(secret);
+  });
+});
+
+describe("truncateToolOutput + live cap", () => {
+  const noopAdd = async () => {};
+
+  it("TC01_truncate_tool_output_keeps_head_and_tail_with_marker", () => {
+    const text = "HEAD".repeat(50) + "MIDDLE".repeat(500) + "TAIL".repeat(50);
+    const out = truncateToolOutput(text, 500);
+    expect(out.length).toBeLessThan(text.length);
+    expect(out).toContain("chars truncated");
+    expect(out.startsWith("HEAD")).toBe(true);
+    expect(out.endsWith("TAIL")).toBe(true);
+    expect(out).toContain("[... ");
+  });
+
+  it("TC02_truncate_tool_output_returns_short_text_unchanged", () => {
+    expect(truncateToolOutput("hello", 100)).toBe("hello");
+    expect(truncateToolOutput("hello", 5)).toBe("hello");
+  });
+
+  it("TC03_process_tool_results_caps_model_view_but_persists_full_output", async () => {
+    const messages: ChatMessage[] = [];
+    const persisted: string[] = [];
+    const add = async (_sid: string | undefined, _role: string, content: string) => {
+      persisted.push(content);
+    };
+    const big = "A".repeat(5_000);
+    await processToolResults(
+      [fulfilled(plan(), "ok", big)],
+      3, messages, undefined, { model: "m" }, 0, [], [],
+      { addSessionMessage: add, maxToolOutputChars: 50 },
+    );
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0]).toHaveLength(5_000);
+    const modelView = messages[0]!.content as string;
+    expect(modelView).toContain("chars truncated");
+    expect(modelView.length).toBeLessThan(5_000);
+    expect(modelView.length).toBeLessThan(500);
   });
 });

@@ -326,6 +326,7 @@ this.stepExecutor = new StepExecutor({
       findTool: (name, runId) => self.findTool(name, runId),
       hasTool: (name) => self.hasTool(name),
       ...(normalized.redactToolOutputs !== undefined ? { redactToolOutputs: normalized.redactToolOutputs } : {}),
+      ...(this.contextBudget !== undefined ? { maxToolOutputChars: this.contextBudget.maxToolOutputChars } : {}),
     });
     if (normalized.tools) {
       this.tools = [...normalized.tools];

@@ -524,3 +524,58 @@ describe("PermissionGate", () => {
   });
 });
 
+describe("PermissionGate — saved rejection + ask cap", () => {
+  it("TC01_has_saved_rejection_scoped_to_args", () => {
+    const { gate } = makeGate();
+    expect(gate.hasSavedRejection("write_file", { filePath: "a.txt" })).toBe(false);
+    gate.saveRejection("write_file", { filePath: "a.txt" }, "agent-1");
+    expect(gate.hasSavedRejection("write_file", { filePath: "a.txt" }, "agent-1")).toBe(true);
+    expect(gate.hasSavedRejection("write_file", { filePath: "b.txt" }, "agent-1")).toBe(false);
+    expect(gate.hasSavedRejection("write_file", { filePath: "a.txt" }, "other-agent")).toBe(false);
+  });
+
+  it("TC02_has_saved_rejection_covers_whole_tool_rejection", () => {
+    const { gate } = makeGate();
+    gate.saveRejection("execute_command", "agent-1");
+    expect(gate.hasSavedRejection("execute_command", { command: "ls" }, "agent-1")).toBe(true);
+    expect(gate.hasSavedRejection("execute_command", { command: "rm -rf /" }, "agent-1")).toBe(true);
+  });
+
+  it("TC03_ask_cap_auto_rejects_beyond_limit_without_dialog", async () => {
+    const store = new FakeRunEventStore();
+    const approvalStore = new FakeApprovalStore();
+    approvalStore.autoReply = "once";
+    const gate = new PermissionGate({
+      store: store as never,
+      pluginManager: undefined,
+      approvalStore,
+      maxApprovalAsksPerRun: 2,
+    });
+    const runId = "run-cap" as RunId;
+    const ask = (toolId: string) =>
+      gate.askForTool("write_file", toolId, runId, "s1", "needs approval", "agent-1", "trace-1");
+
+    expect(await ask("t1")).toBe("once");
+    expect(await ask("t2")).toBe("once");
+    expect(await ask("t3")).toBe("reject");
+    expect(await ask("t4")).toBe("reject");
+    expect(approvalStore.requests).toHaveLength(2);
+  });
+
+  it("TC04_ask_cap_is_per_run", async () => {
+    const store = new FakeRunEventStore();
+    const approvalStore = new FakeApprovalStore();
+    approvalStore.autoReply = "once";
+    const gate = new PermissionGate({
+      store: store as never,
+      pluginManager: undefined,
+      approvalStore,
+      maxApprovalAsksPerRun: 1,
+    });
+    expect(await gate.askForTool("write_file", "t1", "run-a" as RunId, "s1", "r", "agent-1", "trace-1")).toBe("once");
+    expect(await gate.askForTool("write_file", "t2", "run-a" as RunId, "s1", "r", "agent-1", "trace-1")).toBe("reject");
+    expect(await gate.askForTool("write_file", "t3", "run-b" as RunId, "s1", "r", "agent-1", "trace-1")).toBe("once");
+    expect(approvalStore.requests).toHaveLength(2);
+  });
+});
+

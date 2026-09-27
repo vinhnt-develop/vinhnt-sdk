@@ -12,6 +12,7 @@ import type { ModelProvider } from "@vinhnt-sdk/schema";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import { formatToolFailure } from "@vinhnt-sdk/schema";
+import { truncateToolOutput, DEFAULT_MAX_LIVE_TOOL_OUTPUT_CHARS } from "./tool-result-processor.js";
 
 /** Dependencies required by {@link runSelfCorrection}. */
 export interface SelfCorrectionDeps {
@@ -128,6 +129,11 @@ export async function runSelfCorrection(
             continue;
           }
           if (cpermResult.needsApproval) {
+            // Saved rejections are terminal — never re-prompt inside correction.
+            if (deps.permissionGate.hasSavedRejection(ct.name, ct.args as Record<string, unknown> | undefined, deps.currentAgent?.id)) {
+              messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Tool "${ct.name}" rejected by user (previously rejected — will not re-prompt)` });
+              continue;
+            }
             if (!deps.permissionGate.checkSavedApproval(ct.name, ct.args as Record<string, unknown> | undefined, deps.currentAgent?.id)) {
               const reply = await deps.permissionGate.askForTool(
                 ct.name, ct.id, runId, "",
@@ -161,9 +167,10 @@ export async function runSelfCorrection(
                 )
               : ctool.execute(ct.args, toolCtx);
             const coutput = await raceWithAbort(cExec, runAbort.signal, runId);
+            const coutputStr = typeof coutput === "string" ? coutput : JSON.stringify(coutput);
             messages.push({
               role: "tool",
-              content: typeof coutput === "string" ? coutput : JSON.stringify(coutput),
+              content: truncateToolOutput(coutputStr, DEFAULT_MAX_LIVE_TOOL_OUTPUT_CHARS),
               toolCallId: ct.id,
             });
             await safeEmit(deps.store, {

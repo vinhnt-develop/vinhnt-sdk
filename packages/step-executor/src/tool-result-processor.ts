@@ -12,6 +12,27 @@ export interface ToolResultProcessorDeps {
   readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;
   /** P1-7: scrub secrets from tool outputs before persist/send. Default true when omitted. */
   readonly redactToolOutputs?: boolean;
+  /**
+   * Max chars of a single tool output the MODEL sees per call (head+tail kept).
+   * The full (redacted) output is still persisted to the session for the UI.
+   * Default: {@link DEFAULT_MAX_LIVE_TOOL_OUTPUT_CHARS}.
+   */
+  readonly maxToolOutputChars?: number;
+}
+
+/** Hard cap for one tool output pushed into model context (safety net vs. giant dumps). */
+export const DEFAULT_MAX_LIVE_TOOL_OUTPUT_CHARS = 100_000;
+
+/**
+ * Head+tail truncation with an omission marker. Keeps the most relevant parts
+ * (start of output + end, where errors usually land) within a bounded cost.
+ */
+export function truncateToolOutput(text: string, maxChars: number): string {
+  if (maxChars <= 0 || text.length <= maxChars) return text;
+  const head = Math.ceil(maxChars * 0.7);
+  const tail = maxChars - head;
+  const omitted = text.length - head - tail;
+  return `${text.slice(0, head)}\n[... ${omitted} chars truncated — full output saved to session ...]\n${text.slice(text.length - tail)}`;
 }
 
 /** Aggregated outcome of processing a batch of tool results. */
@@ -77,11 +98,13 @@ export async function processToolResults(
     if (deps.redactToolOutputs !== false) {
       outputStr = redactSecrets(outputStr);
     }
-    messages.push({ role: "tool", content: outputStr, toolCallId: r.tc.toolId });
-
+    // Persist the FULL (redacted) output for the trajectory/UI…
     await deps.addSessionMessage(sessionId, "tool", outputStr, {
       toolCallId: r.tc.toolId, model: runModel.model ?? "",
     });
+    // …but only a bounded view enters model context.
+    const liveCap = deps.maxToolOutputChars ?? DEFAULT_MAX_LIVE_TOOL_OUTPUT_CHARS;
+    messages.push({ role: "tool", content: truncateToolOutput(outputStr, liveCap), toolCallId: r.tc.toolId });
 
     toolCallCount++;
     recentCalls.push({ id: r.tc.toolName, args: r.tc.args, argsKey: hashArgs(r.tc.args) });

@@ -69,6 +69,8 @@ export class ContextCompressor implements ConversationCompactor {
    * Phase 2-4: Synchronous compress.
    * - Protects headCount messages at start
    * - Protects tailCount messages at end
+   * - Prunes tool outputs ONLY outside head/tail — recent tool results must
+   *   stay intact for the model's next step
    * - Summarizes middle portion
    */
   compress(messages: readonly ChatMessage[]): {
@@ -76,7 +78,10 @@ export class ContextCompressor implements ConversationCompactor {
     summary: CompressionSummary;
   } {
     const originalCount = messages.length;
-    const pruned = this.pruneToolOutputs(messages);
+    const pruned = messages.map((m, i) => {
+      const isProtected = i < this.opts.headCount || i >= messages.length - this.opts.tailCount;
+      return isProtected ? m : truncateToolOutput(m, this.opts.maxToolOutputLength);
+    });
 
     if (pruned.length <= this.opts.headCount + this.opts.tailCount) {
       return {

@@ -52,6 +52,12 @@ export interface PermissionGateDeps {
    * dialog fails the tool long before trajectory marks the run as zombie.
    */
   readonly approvalTimeoutMs?: number | undefined;
+  /**
+   * Safety valve: max approval dialogs opened per run before further asks are
+   * auto-rejected. Defaults to 20 — pathological ask loops (e.g. model
+   * re-requesting variants after timeouts) must not run unbounded.
+   */
+  readonly maxApprovalAsksPerRun?: number | undefined;
 }
 
 const RISK_DECISIONS: Record<ToolRisk, ApprovalDecision> = {
@@ -92,12 +98,17 @@ export class PermissionGate {
   private autoApproval: boolean;
   /** Per-approval hard timeout — separate from agent stale threshold. */
   private readonly approvalTimeoutMs: number;
+  /** Safety valve — max approval dialogs per run. */
+  private readonly maxApprovalAsksPerRun: number;
+  /** Ask counter per runId for the safety valve. */
+  private readonly approvalAskCounts = new Map<string, number>();
   /** Tools for which the user answered doom_loop "always" (P1-3). */
   private readonly doomLoopBypass = new Set<string>();
 
   constructor(private readonly deps: PermissionGateDeps) {
     this.autoApproval = deps.autoApprovalEnabled ?? false;
     this.approvalTimeoutMs = deps.approvalTimeoutMs ?? 120_000;
+    this.maxApprovalAsksPerRun = deps.maxApprovalAsksPerRun ?? 20;
   }
 
   /** Toggle auto-approval at runtime (mirrors config.autoApprovalEnabled). */
@@ -268,6 +279,14 @@ export class PermissionGate {
   ): Promise<PermissionReply> {
     if (this.autoApproval && !options?.forceAsk) return "once";
 
+    // Safety valve: cap the number of dialogs per run — beyond the limit the
+    // ask fails fast as "reject" instead of opening yet another dialog.
+    const askCount = (this.approvalAskCounts.get(runId) ?? 0) + 1;
+    this.approvalAskCounts.set(runId, askCount);
+    if (askCount > this.maxApprovalAsksPerRun) {
+      return "reject";
+    }
+
     const permissionKey = options?.permissionKey;
     const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal, permissionKey);
 
@@ -386,6 +405,25 @@ export class PermissionGate {
     // Pattern-scoped approval first, then whole-tool approval as fallback.
     if (store.checkApproval(resource, toolName, resolvedAgentId)) return true;
     return store.checkApproval(`tool.${toolName}`, toolName, resolvedAgentId);
+  }
+
+  /**
+   * True when a saved rejection (explicit reject OR approval timeout) covers
+   * this exact call. A rejection is terminal for the matching args — callers
+   * must fail the tool instead of re-prompting (prevents ask → timeout →
+   * ask loops).
+   */
+  hasSavedRejection(toolName: string, argsOrAgentId?: Record<string, unknown> | string, agentId?: string): boolean {
+    const store = this.deps.approvalStore;
+    if (!store) return false;
+    const args = typeof argsOrAgentId === "object" ? argsOrAgentId : undefined;
+    const resolvedAgentId = typeof argsOrAgentId === "string" ? argsOrAgentId : agentId;
+    const pattern = extractContextPattern(toolName, args);
+    const resource = pattern === "*" ? `tool.${toolName}` : `tool.${toolName}(${pattern})`;
+    return (
+      store.checkRejection(`tool.${toolName}`, toolName, resolvedAgentId) ||
+      store.checkRejection(resource, toolName, resolvedAgentId)
+    );
   }
 
   /** Return all registered dynamic rules (saved allow/deny policies). */

@@ -59,6 +59,8 @@ export async function buildToolContext(
       // per-tool approval must not resurrect a tool that is now deny-listed.
       if (!decision.needsApproval) return "reject";
       if (deps.permissionGate.checkSavedApproval(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id)) return "once";
+      // Rejections are terminal — never re-prompt for an already-rejected call.
+      if (deps.permissionGate.hasSavedRejection(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id)) return "reject";
       return deps.permissionGate.askForTool(
         tc.toolName, tc.toolId, runId, sessionId ?? "",
         askInput.reason, deps.currentAgent?.id ?? "",

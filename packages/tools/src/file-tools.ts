@@ -224,7 +224,10 @@ export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileRead
 
 /**
  * Create the `write_file` tool. Writes content to a file, creating parent
- * directories as needed and returning a diff of the change.
+ * directories as needed. The result reports a compact summary instead of the
+ * full diff: for a new file the diff IS the entire content the model just sent
+ * in the tool-call args, so echoing it back would duplicate the whole file in
+ * context on every write.
  */
 export function createWriteFileTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean) {
   return defineTool<{ filePath: string; content: string }, {
@@ -253,9 +256,21 @@ export function createWriteFileTool(workspaceRoot: RootGetter, tracker?: FileRea
       });
       await atomicWriteFile(target, v.content);
       const diff = generateDiff(v.filePath, oldContent, v.content);
-      return { written: v.filePath, bytes: v.content.length, diff: diff.diff, additions: diff.additions, removals: diff.removals };
+      const diffText = oldContent === "" ? "" : truncateMiddle(diff.diff, MAX_WRITE_DIFF_CHARS);
+      return { written: v.filePath, bytes: v.content.length, diff: diffText, additions: diff.additions, removals: diff.removals };
     },
   }).toDefinition();
+}
+
+/** Max chars of an update diff echoed back to the model (head+tail kept). */
+const MAX_WRITE_DIFF_CHARS = 1500;
+
+/** Head+tail truncation with an omission marker — bounded context cost. */
+function truncateMiddle(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  const head = Math.ceil(maxChars * 0.7);
+  const tail = maxChars - head;
+  return `${text.slice(0, head)}\n[... ${text.length - maxChars} chars of diff omitted ...]\n${text.slice(text.length - tail)}`;
 }
 
 function charSimilarity(a: string, b: string): number {

@@ -66,6 +66,8 @@ export interface StepExecutorDeps {
   readonly hasTool: (name: string) => boolean;
   /** P1-7: scrub secrets from tool outputs before persist/send (default true). */
   readonly redactToolOutputs?: boolean;
+  /** Max chars of a single tool output the model sees (head+tail kept; default 100_000). */
+  readonly maxToolOutputChars?: number;
 }
 
 /** One planned tool invocation within a step. */
@@ -468,6 +470,7 @@ export class StepExecutor {
       const processed = await processToolResults(results, fallbackThreshold, messages, sessionId, { model: runModel.model }, toolCallCount, recentCalls, toolResults, {
         addSessionMessage: this.deps.addSessionMessage,
         ...(this.deps.redactToolOutputs !== undefined ? { redactToolOutputs: this.deps.redactToolOutputs } : {}),
+        ...(this.deps.maxToolOutputChars !== undefined ? { maxToolOutputChars: this.deps.maxToolOutputChars } : {}),
       });
       toolCallCount = processed.toolCallCount;
       recentCalls.length = 0;

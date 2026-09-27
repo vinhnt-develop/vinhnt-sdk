@@ -43,6 +43,19 @@ export async function handleApproval(
   const savedOk = deps.permissionGate.checkSavedApproval(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id);
   if (savedOk) return true;
 
+  // A saved rejection (explicit reject or approval timeout) is terminal for
+  // this exact call — fail immediately instead of re-opening the dialog
+  // (prevents ask → timeout → ask loops burning steps and 2-min waits).
+  if (deps.permissionGate.hasSavedRejection(tc.toolName, tc.args as Record<string, unknown>, deps.currentAgent?.id)) {
+    await deps.store.emitEvent({
+      id: crypto.randomUUID(), runId, type: "tool.failed",
+      occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+      data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Tool "${tc.toolName}" rejected by user` },
+    });
+    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" rejected by user (previously rejected — will not re-prompt; choose a different approach or ask the user directly)` });
+    return false;
+  }
+
   const reply = await toolCtx.ask({
     permission: `tool.${tc.toolName}`,
     resource: tc.toolName,

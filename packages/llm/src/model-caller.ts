@@ -552,9 +552,20 @@ export class ModelCaller {
     }
 
     if (thinking.trim()) {
+      // Roll a SINGLE thinking note instead of appending one per step — the old
+      // behavior accumulated a full thinking dump each step, bloating the
+      // context on long runs. Keep only the latest pass.
+      const marker = "[Thinking from previous pass]";
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i]!;
+        if (m.role === "system" && typeof m.content === "string" && m.content.startsWith(marker)) {
+          messages.splice(i, 1);
+          break;
+        }
+      }
       messages.push({
         role: "system",
-        content: `[Thinking from previous pass]\n${thinking.trim()}`,
+        content: `${marker}\n${thinking.trim()}`,
       });
     }
 
