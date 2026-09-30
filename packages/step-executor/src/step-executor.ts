@@ -6,7 +6,7 @@ import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
 import type { RecentCall } from "./kernel-utils.js";
-import { detectDoomLoop, hashArgs, DOOM_LOOP_THRESHOLD, raceWithAbort, toolDomain, withToolTimeout } from "./kernel-utils.js";
+import { detectDoomLoop, hashArgs, DOOM_LOOP_THRESHOLD, raceWithAbort, toolDomain, toolSource, withToolTimeout } from "./kernel-utils.js";
 import { resolveLoopPolicy, type LoopDetectionConfig } from "./loop-policy.js";
 import type { ToolCallOutcome } from "./termination.js";
 import { inferStepType } from "@vinhnt-sdk/schema";
@@ -314,7 +314,10 @@ export class StepExecutor {
           await safeEmit(this.deps.store, {
             id: crypto.randomUUID(), runId, type: "tool.failed",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-            data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: permResult.reason! },
+            data: {
+              toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: permResult.reason!,
+              ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}), risk: tool.risk,
+            },
           });
           return { tc, result: "denied" as const, reason: permResult.reason! };
         }
@@ -334,7 +337,10 @@ export class StepExecutor {
         await safeEmit(this.deps.store, {
           id: crypto.randomUUID(), runId, type: "tool.invoked",
           occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-          data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "allow", input: tc.args },
+          data: {
+            toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "allow", input: tc.args,
+            ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}), risk: tool.risk,
+          },
         });
 
         const invHookResult = await this.deps.pluginManager?.fireHook("onToolInvoked", {
@@ -357,12 +363,16 @@ export class StepExecutor {
             await safeEmit(this.deps.store, {
               id: crypto.randomUUID(), runId, type: "tool.failed",
               occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-              data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Plugin-modified input rejected: ${rePerm.reason}` },
+              data: {
+                toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Plugin-modified input rejected: ${rePerm.reason}`,
+                ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}), risk: tool.risk,
+              },
             });
             return { tc, result: "denied" as const, reason: rePerm.reason! };
           }
         }
 
+        const execStartedAt = Date.now();
         const toolTimeout = tool.timeoutMs;
         // RV-19: cooperative timeout — the tool's context signal is replaced
         // with a local controller aborted at the deadline so the tool can stop
@@ -410,6 +420,9 @@ export class StepExecutor {
               toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName),
               output: effectiveOutput,
               ...(metadataRef.current ? { metadata: metadataRef.current } : {}),
+              ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}),
+              risk: tool.risk,
+              durationMs: Date.now() - execStartedAt,
             },
           });
 
@@ -422,6 +435,7 @@ export class StepExecutor {
           await handleToolErrorFn(err, tc, tool, messages, step, runId, ctx, runAbort, toolCtx, sessionId, recentCalls, runModel, {
             store: this.deps.store,
             addSessionMessage: this.deps.addSessionMessage,
+            execStartedAt,
             pluginManager: this.deps.pluginManager,
             permissionGate: this.deps.permissionGate,
             selfCorrectOnFailure: this.deps.selfCorrectOnFailure,

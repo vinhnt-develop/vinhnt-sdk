@@ -7,6 +7,8 @@ import {
   ThinkingContentDataSchema, ThinkingCompletedDataSchema, ModelCostDataSchema,
   PermissionRequestedDataSchema, PermissionRepliedDataSchema,
   ContextCompressedDataSchema,
+  TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
+  LlmFailoverDataSchema, LlmRequestDataSchema, LlmResponseDataSchema,
 } from "@vinhnt-sdk/schema";
 
 // ── Run events (durable, aggregate=runId) ──
@@ -78,6 +80,7 @@ export const ToolFailed = defineEvent({
 export const ToolSelfCorrecting = defineEvent({
   type: "tool.self_correcting",
   description: "A tool failure triggered self-correction",
+  durable: { version: 1, aggregate: "runId" },
   schema: ToolSelfCorrectingDataSchema,
 });
 
@@ -85,6 +88,7 @@ export const ToolSelfCorrecting = defineEvent({
 export const StepTypeChanged = defineEvent({
   type: "step.type_changed",
   description: "The active step type changed based on tool activity",
+  durable: { version: 1, aggregate: "runId" },
   schema: StepTypeChangedDataSchema,
 });
 
@@ -100,20 +104,23 @@ export const TokenStreamed = defineEvent({
 export const TokenCounted = defineEvent({
   type: "token.counted",
   description: "Token usage was counted for a model call",
+  durable: { version: 1, aggregate: "runId" },
   schema: TokenCountedDataSchema,
 });
 
-/** Event definition for `thinking.started` — Thinking started (ephemeral). */
+/** Event definition for `thinking.started` — Thinking started. */
 export const ThinkingStarted = defineEvent({
   type: "thinking.started",
-  description: "Thinking started (ephemeral)",
+  description: "Thinking started",
+  durable: { version: 1, aggregate: "runId" },
   schema: ThinkingStartedDataSchema,
 });
 
-/** Event definition for `thinking.content` — Thinking content (ephemeral). */
+/** Event definition for `thinking.content` — Thinking content chunk. */
 export const ThinkingContent = defineEvent({
   type: "thinking.content",
-  description: "Thinking content (ephemeral)",
+  description: "Thinking content chunk",
+  durable: { version: 1, aggregate: "runId" },
   schema: ThinkingContentDataSchema,
 });
 
@@ -121,6 +128,7 @@ export const ThinkingContent = defineEvent({
 export const ThinkingCompleted = defineEvent({
   type: "thinking.completed",
   description: "Thinking completed",
+  durable: { version: 1, aggregate: "runId" },
   schema: ThinkingCompletedDataSchema,
 });
 
@@ -144,7 +152,56 @@ export const PermissionReplied = defineEvent({
 export const ModelCost = defineEvent({
   type: "model.cost",
   description: "LLM call cost calculated",
+  durable: { version: 1, aggregate: "runId" },
   schema: ModelCostDataSchema,
+});
+
+/** Event definition for `turn.started` — A turn has started. */
+export const TurnStarted = defineEvent({
+  type: "turn.started",
+  description: "A turn has started",
+  durable: { version: 1, aggregate: "runId" },
+  schema: TurnStartedDataSchema,
+});
+
+/** Event definition for `turn.end` — A turn has ended. */
+export const TurnEnd = defineEvent({
+  type: "turn.end",
+  description: "A turn has ended",
+  durable: { version: 1, aggregate: "runId" },
+  schema: TurnEndedDataSchema,
+});
+
+/** Event definition for `agent.handoff` — Control was handed off to another agent. */
+export const AgentHandoff = defineEvent({
+  type: "agent.handoff",
+  description: "Control was handed off to another agent",
+  durable: { version: 1, aggregate: "runId" },
+  schema: AgentHandoffDataSchema,
+});
+
+/** Event definition for `llm.failover` — The model call failed over to another provider/model. */
+export const LlmFailover = defineEvent({
+  type: "llm.failover",
+  description: "The model call failed over to another provider/model",
+  durable: { version: 1, aggregate: "runId" },
+  schema: LlmFailoverDataSchema,
+});
+
+/** Event definition for `llm.request` — A request was sent to the model. */
+export const LlmRequest = defineEvent({
+  type: "llm.request",
+  description: "A request was sent to the model",
+  durable: { version: 1, aggregate: "runId" },
+  schema: LlmRequestDataSchema,
+});
+
+/** Event definition for `llm.response` — A response was received from the model. */
+export const LlmResponse = defineEvent({
+  type: "llm.response",
+  description: "A response was received from the model",
+  durable: { version: 1, aggregate: "runId" },
+  schema: LlmResponseDataSchema,
 });
 
 // ── System events (non-durable, broadcast-only) ──

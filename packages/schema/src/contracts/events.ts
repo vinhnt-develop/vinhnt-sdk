@@ -250,9 +250,9 @@ export interface ContextCompressedData {
 }
 export interface TokenCountedData { readonly inputTokens: number; readonly outputTokens?: number; readonly reasoningTokens?: number; readonly cacheReadTokens?: number; readonly cacheWriteTokens?: number; readonly provider: string; readonly model: string; readonly step: number; readonly source?: "local" | "api" }
 export interface ModelCostData { readonly inputTokens: number; readonly outputTokens: number; readonly cost: number; readonly model: string; readonly provider: string; readonly durationMs: number; readonly step: number }
-export interface ToolInvokedData { readonly toolId: string; readonly toolName: string; readonly input: unknown; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask" }
-export interface ToolCompletedData { readonly toolId: string; readonly toolName: string; readonly output: unknown; readonly metadata?: Record<string, unknown>; readonly domain?: string }
-export interface ToolFailedData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask" }
+export interface ToolInvokedData { readonly toolId: string; readonly toolName: string; readonly input: unknown; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask"; readonly source?: string; readonly risk?: string }
+export interface ToolCompletedData { readonly toolId: string; readonly toolName: string; readonly output: unknown; readonly metadata?: Record<string, unknown>; readonly domain?: string; readonly source?: string; readonly risk?: string; readonly durationMs?: number }
+export interface ToolFailedData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly domain?: string; readonly decision?: "allow" | "deny" | "ask"; readonly source?: string; readonly risk?: string; readonly durationMs?: number }
 export interface ToolSelfCorrectingData { readonly toolId: string; readonly toolName: string; readonly error: string; readonly attempt: number }
 export interface StepCompletedData { readonly turn: number; readonly step: number; readonly toolCallCount: number }
 export interface StepFailedData { readonly turn: number; readonly step: number; readonly reason: string; readonly error?: string }
@@ -262,6 +262,7 @@ export interface PermissionRepliedData { readonly requestId: RequestId; readonly
 export interface StepTypeChangedData { readonly stepType: AgentStepType; readonly stepNumber: number; readonly toolName?: string; readonly detail?: string }
 export interface TurnStartedData { readonly turn: number }
 export interface TurnEndedData { readonly turn: number; readonly reason: "completed" | "aborted" | "blocked" | "error" | "max_tokens" | "interrupted" }
+export interface AgentHandoffData { readonly fromAgentId: string; readonly toAgentId: string; readonly reason: string; readonly summary?: string }
 export interface LlmRetryData { readonly attempt: number; readonly delayMs: number; readonly reason: string; readonly provider?: string }
 export interface LlmRetryStartedData { readonly attempt: number }
 export interface LlmFailoverData { readonly fromProvider: string; readonly fromModel: string; readonly toProvider: string; readonly toModel: string; readonly reason: string }
@@ -372,6 +373,7 @@ export type KnownRunEvent =
   | (RunEvent<ModelCostData> & { readonly type: "model.cost" })
   | (RunEvent<TurnStartedData> & { readonly type: "turn.started" })
   | (RunEvent<TurnEndedData> & { readonly type: "turn.end" })
+  | (RunEvent<AgentHandoffData> & { readonly type: "agent.handoff" })
   | (RunEvent<LlmRetryData> & { readonly type: "llm.retry" })
   | (RunEvent<LlmRetryStartedData> & { readonly type: "llm.retry_started" })
   | (RunEvent<LlmFailoverData> & { readonly type: "llm.failover" })

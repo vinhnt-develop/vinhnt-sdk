@@ -7,7 +7,7 @@ import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { PluginManager } from "../plugin.js";
 import type { SessionRuntimeState } from "@vinhnt-sdk/session";
 import { KernelError } from "@vinhnt-sdk/step-executor";
-import type { ModelCaller } from "@vinhnt-sdk/llm";
+import { DEFAULT_CONTEXT_WINDOW, type ModelCaller } from "@vinhnt-sdk/llm";
 import type { PermissionGate } from "@vinhnt-sdk/step-executor";
 import type { StepExecutor } from "@vinhnt-sdk/step-executor";
 import type { ToolSaga } from "@vinhnt-sdk/tools";
@@ -249,7 +249,8 @@ async function maybeCompact(
       if (m.toolCalls && m.toolCalls.length > 0) s += runModel.countTokens!(JSON.stringify(m.toolCalls));
       return sum + s;
     }, 0);
-    const contextWindow = runModel.contextLimit ?? deps.maxTokens * 4;
+    // E5a: context window ≠ 4×max output — fall back to DEFAULT_CONTEXT_WINDOW.
+    const contextWindow = runModel.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
     const ratio = deps.compactionThreshold ?? 0.75;
     const threshold = Math.floor(contextWindow * ratio);
     shouldCompact = estimatedInput > threshold;
@@ -261,7 +262,8 @@ async function maybeCompact(
       chars += getTextContent(m.content).length;
       if (m.toolCalls && m.toolCalls.length > 0) chars += JSON.stringify(m.toolCalls).length;
     }
-    const contextWindow = runModel.contextLimit ?? deps.maxTokens * 4;
+    // E5a: context window ≠ 4×max output — fall back to DEFAULT_CONTEXT_WINDOW.
+    const contextWindow = runModel.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
     const ratio = deps.compactionThreshold ?? 0.75;
     shouldCompact = Math.ceil(chars / 4) > Math.floor(contextWindow * ratio);
   }
@@ -403,6 +405,34 @@ interface StepOutput {
 }
 
 /**
+ * Strip Vietnamese diacritics (NFD + remove combining marks) and fold đ→d so
+ * no-diacritics claims ("da tao file...") match the same patterns as NFC text.
+ */
+function stripDiacritics(input: string): string {
+  return input.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").normalize("NFC");
+}
+
+/** File-related verbs (VN), multiword forms first within each alternative. */
+const VN_FILE_VERBS = String.raw`tạo(?:\s+mới)?|ghi|viết|sửa|cập nhật|xuất|hoàn\s+thành|lưu|thêm|chèn|thay\s+đổi|chỉnh\s+sửa`;
+const VN_FILE_OBJECT = String.raw`(?:file|tập tin)`;
+/**
+ * Vietnamese claim patterns (E4):
+ *  1) "đã [được] VERB … file"        — "Đã tạo xong file báo cáo.html"
+ *  2) "file … đã [được] VERB"        — "File đã được ghi thành công"
+ *  3) "[tôi|mình|…] [đã] VERB … file" — "Tôi tạo file index.html" (no "đã")
+ * Gated on a file object nearby so general past-tense statements do not match;
+ * first-person subjects are required when "đã" is absent to keep questions
+ * ("Bạn có thể tạo file được không?") out.
+ */
+const VN_CLAIM_PATTERN =
+  String.raw`(?:đã\s+(?:được\s+)?(?:${VN_FILE_VERBS})(?:\s+\S+){0,3}\s+${VN_FILE_OBJECT}` +
+  String.raw`|${VN_FILE_OBJECT}(?:\s+\S+){0,6}?\s+đã\s+(?:được\s+)?(?:${VN_FILE_VERBS})` +
+  String.raw`|(?:^|[\s,;:!?])\s*(?:tôi|mình|ta|tớ|tao|em)\s+(?:đã\s+)?(?:${VN_FILE_VERBS})(?:\s+\S+){0,3}\s+${VN_FILE_OBJECT})`;
+const VN_CLAIM_RE = new RegExp(VN_CLAIM_PATTERN, "i");
+const VN_CLAIM_ASCII_RE = new RegExp(stripDiacritics(VN_CLAIM_PATTERN), "i");
+const EN_CLAIM_RE = /(?:created?|wrote|saved|generated|written)\s+(?:one\s+|a\s+|the\s+)?(?:new\s+)?file/i;
+
+/**
  * Detect "model claims it created/wrote a file but emitted zero tool calls"
  * with finish_reason=stop (or empty). Bounded repair instead of silently
  * completing with prose only (P0'-1).
@@ -412,9 +442,14 @@ function detectMissedFileAction(content: string, finishReason: string | undefine
   // Only consider "natural end" finishes — tool-calls path is handled separately.
   if (fr === "tool-calls" || fr === "tool_use" || fr === "tool-use") return false;
   const text = content ?? "";
-  // Vietnamese + English claim patterns for file creation/write.
-  const claimRe = /(?:đã\s+(?:tạo|ghi|viết|sửa|cập nhật)|created?|wrote|saved|generated|written)\s+(?:one\s+|a\s+|the\s+)?(?:new\s+)?file/i;
-  const hasClaim = claimRe.test(text);
+  // Vietnamese + English claim patterns for file creation/write (E4: NFC-normalised,
+  // matches with and without diacritics; "đã" optional when a first-person subject
+  // is present; also handles file-first passive claims "File đã được ghi…").
+  const norm = text.normalize("NFC").toLowerCase();
+  const hasClaim =
+    VN_CLAIM_RE.test(norm) ||
+    VN_CLAIM_ASCII_RE.test(stripDiacritics(norm)) ||
+    EN_CLAIM_RE.test(norm);
   // An explicit claim ("Đã tạo file X." = 25 chars) must repair even when
   // short — the length floor only guards the heuristic paths below.
   if (!hasClaim && text.length < 40) return false;
@@ -686,11 +721,18 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     const activeAfter = deps.modelCaller.getActiveModel(runId);
     const asstModel = activeAfter.model ?? runModel.model;
     const msgCost = deps.modelCaller.calculateCost(asstTokens.input, asstTokens.output, activeAfter);
-    await deps.addSessionMessage(sessionId, "assistant", finalContent, {
-      tokens: asstTokens,
-      ...(asstModel ? { model: asstModel } : {}),
-      ...(msgCost !== undefined ? { cost: msgCost } : {}),
-    });
+    // E1: never persist a text-less assistant row. Tool calls are not persisted
+    // (only tool rows carry toolCallId), so an empty assistant row would render
+    // as an empty bubble in UIs and reload as a useless orphan (messageToChatMessage
+    // cannot restore toolCalls). In-memory history is unaffected — the live
+    // messages.push above already kept this turn with its toolCalls.
+    if (finalContent.trim().length > 0) {
+      await deps.addSessionMessage(sessionId, "assistant", finalContent, {
+        tokens: asstTokens,
+        ...(asstModel ? { model: asstModel } : {}),
+        ...(msgCost !== undefined ? { cost: msgCost } : {}),
+      });
+    }
 
     if (suppressedToolCalls) {
       // Surface to the model as a tool-result style note so it can retry cleanly.

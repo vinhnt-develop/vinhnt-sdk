@@ -483,7 +483,10 @@ describe("AgentKernel", () => {
       },
     };
 
-    // Use a small maxTokens and large prompt to ensure overflow detection triggers compaction
+    // E5: declare a small context window so overflow detection triggers
+    // compaction (contextLimit drives the threshold — maxTokens is output budget).
+    Object.defineProperty(model, "contextLimit", { value: 400, configurable: true });
+
     const kernel = new AgentKernel({ model, store, tools: [echo], maxSteps: 5, maxTokens: 10, compactor });
 
     const handle = kernel.run("Hello! " + "x".repeat(2000), testCtx);
@@ -524,6 +527,10 @@ describe("AgentKernel", () => {
         };
       },
     };
+
+    // E5: declare a small context window so overflow detection triggers
+    // compaction (contextLimit drives the threshold — maxTokens is output budget).
+    Object.defineProperty(model, "contextLimit", { value: 400, configurable: true });
 
     const kernel = new AgentKernel({
       model, store, tools: [echo], sessionStore,

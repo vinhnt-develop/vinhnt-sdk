@@ -176,6 +176,68 @@ describe("P0'-1 claim-vs-action repair", () => {
   });
 });
 
+describe("E4 Vietnamese claim-repair regex", () => {
+  const repairSeen = async (content: string): Promise<number> => {
+    const model = new CapturingModel([
+      { content, provider: "test", finishReason: "stop" },
+      { content: "recovered", provider: "test", finishReason: "stop" },
+    ]);
+    const deps = makeDeps(model, [new FakeTool("write_file", undefined, undefined, "write")]);
+    await runLoop(deps, makeInput({ runModel: model }));
+    const allText = model.seen
+      .flat()
+      .map((m) => (typeof m.content === "string" ? m.content : ""))
+      .join("\n");
+    return allText.match(/did not call write_file/i) ? model.seen.length : 1;
+  };
+
+  it("TC01_repairs_first_person_claim_with_da (Tôi đã tạo file index.html)", async () => {
+    const seen = await repairSeen("Tôi đã tạo file index.html rồi.");
+    expect(seen).toBeGreaterThanOrEqual(2);
+  });
+
+  it("TC02_repairs_da_verb_object_gap (Đã tạo xong file báo cáo.html)", async () => {
+    const seen = await repairSeen("Đã tạo xong file báo cáo.html.");
+    expect(seen).toBeGreaterThanOrEqual(2);
+  });
+
+  it("TC03_repairs_file_first_passive (File đã được ghi thành công.)", async () => {
+    const seen = await repairSeen("File đã được ghi thành công.");
+    expect(seen).toBeGreaterThanOrEqual(2);
+  });
+
+  it("TC04_repairs_no_diacritics_claim (Da tao file index.html)", async () => {
+    const seen = await repairSeen("Da tao file index.html roi.");
+    expect(seen).toBeGreaterThanOrEqual(2);
+  });
+
+  it("TC05_repairs_first_person_without_da (Mình tạo file config.json mới)", async () => {
+    const seen = await repairSeen("Mình tạo file config.json mới.");
+    expect(seen).toBeGreaterThanOrEqual(2);
+  });
+
+  it("TC06_NO_repair_for_request_question (Bạn có thể tạo file được không?)", async () => {
+    const seen = await repairSeen("Bạn có thể tạo file được không?");
+    expect(seen).toBe(1);
+  });
+
+  it("TC07_finish_reason_tool_calls_still_suppressed_for_vn_claim", async () => {
+    const model = new CapturingModel([
+      { content: "Tôi đã tạo file index.html rồi.", provider: "test", finishReason: "tool-calls" },
+      { content: "recovered", provider: "test" },
+    ]);
+    const deps = makeDeps(model, [new FakeTool("write_file", undefined, undefined, "write")]);
+    await runLoop(deps, makeInput({ runModel: model }));
+    const allText = model.seen
+      .flat()
+      .map((m) => (typeof m.content === "string" ? m.content : ""))
+      .join("\n");
+    // Claim path must NOT fire — the tool-call repair path handles this case.
+    expect(allText).not.toMatch(/did not call write_file/i);
+    expect(allText).toMatch(/finish_reason=tool_calls but no tool calls/);
+  });
+});
+
 describe("P0'-7 safety finish_reason suppress", () => {
   it("drops tool calls when finish_reason=length", async () => {
     const model = new CapturingModel([

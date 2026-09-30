@@ -58,7 +58,7 @@ export type {
   ToolInvokedData, ToolCompletedData, ToolFailedData, ToolCancelledData, ToolSelfCorrectingData,
   StepCompletedData, StepFailedData, RunCompletedData,
   PermissionRequestedData, PermissionRepliedData, StepTypeChangedData,
-  TurnStartedData, TurnEndedData,
+  TurnStartedData, TurnEndedData, AgentHandoffData,
   LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
   // Snapshot types
@@ -275,7 +275,7 @@ export {
   ThinkingStartedDataSchema, ThinkingContentDataSchema, ThinkingCompletedDataSchema,
   ModelCostDataSchema, PermissionRequestedDataSchema, PermissionRepliedDataSchema,
   ContextCompressedDataSchema,
-  TurnStartedDataSchema, TurnEndedDataSchema,
+  TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmRetryDataSchema, LlmRetryStartedDataSchema, LlmFailoverDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
   // Snapshot schemas

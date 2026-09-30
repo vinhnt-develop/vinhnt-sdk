@@ -17,6 +17,32 @@ import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import { getTextContent } from "@vinhnt-sdk/schema";
 
 /**
+ * Fallback context window (tokens) used when the provider does not declare
+ * `contextLimit` (E5). Mirrors `DEFAULT_CONTEXT_BUDGET.maxContextTokens`.
+ * Override per provider via `ModelProvider.contextLimit` — this is only the
+ * safety default. Re-exported from `@vinhnt-sdk/core`.
+ */
+export const DEFAULT_CONTEXT_WINDOW = 128_000;
+
+/** Safety margin (tokens) reserved for tokenizer/estimation mismatch in the max-tokens clamp. */
+const MAX_TOKENS_CLAMP_MARGIN = 2048;
+/** Floor for clamped `max_tokens` — providers reject values ≤ 0. */
+const MIN_COMPLETION_TOKENS = 256;
+
+/** Rough prompt-size estimate: provider tokenizer when available, else 4 chars/token. */
+function estimateInputTokens(request: ModelRequest, model: ModelProvider): number {
+  const count = (text: string): number =>
+    model.countTokens ? model.countTokens(text) : Math.ceil(text.length / 4);
+  let total = 0;
+  for (const m of request.messages ?? []) {
+    total += count(getTextContent(m.content));
+    if (m.toolCalls && m.toolCalls.length > 0) total += count(JSON.stringify(m.toolCalls));
+  }
+  if (request.tools && request.tools.length > 0) total += count(JSON.stringify(request.tools));
+  return total;
+}
+
+/**
  * Minimal structural hook surface used by the model caller.
  *
  * Hosts (e.g. core's `PluginManager`) only need to implement `fireHook` for
@@ -231,6 +257,24 @@ export class ModelCaller {
     let reasoningTokens = 0;
     let cacheReadTokens = 0;
     let cacheWriteTokens = 0;
+
+    // E5b: clamp the requested completion budget so prompt + completion never
+    // exceeds the model's context window (providers 400/overflow otherwise).
+    // Falls back to DEFAULT_CONTEXT_WINDOW when no contextLimit is declared;
+    // floor at MIN_COMPLETION_TOKENS so a huge prompt never yields ≤ 0.
+    {
+      const contextLimit = model.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
+      const requestedMaxTokens = agentMaxTokens ?? this.deps.maxTokens;
+      const availableForOutput =
+        contextLimit - estimateInputTokens(request, model) - MAX_TOKENS_CLAMP_MARGIN;
+      const effectiveMaxTokens = Math.max(
+        MIN_COMPLETION_TOKENS,
+        Math.min(requestedMaxTokens, availableForOutput),
+      );
+      if (request.maxTokens !== effectiveMaxTokens) {
+        request = { ...request, maxTokens: effectiveMaxTokens };
+      }
+    }
 
     // Emit llm.request with request parameters for trajectory visibility.
     // Capture POST-hook messages/tools (what the model will actually see).

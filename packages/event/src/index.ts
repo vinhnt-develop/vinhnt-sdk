@@ -9,6 +9,8 @@ export {
   ThinkingStarted, ThinkingContent, ThinkingCompleted,
   PermissionRequested, PermissionReplied,
   ModelCost,
+  TurnStarted, TurnEnd, AgentHandoff,
+  LlmFailover, LlmRequest, LlmResponse,
   FileChanged, LspDiagnostics, McpToolsChanged, ConfigChanged,
   SessionCreated,
   QuestionAsked, QuestionReplied,

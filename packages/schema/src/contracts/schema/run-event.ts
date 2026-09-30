@@ -158,6 +158,10 @@ export const ToolInvokedDataSchema = z.object({
   input: z.unknown(),
   domain: z.string().optional(),
   decision: z.enum(["allow", "deny", "ask"]).optional(),
+  /** Tool provenance — off-wire only (app-set via `metadata.source`). */
+  source: z.string().optional(),
+  /** Tool risk level from the tool definition — off-wire only. */
+  risk: z.string().optional(),
 });
 /** Inferred type of {@link ToolInvokedDataSchema}. */
 export type ToolInvokedData = z.infer<typeof ToolInvokedDataSchema>;
@@ -169,6 +173,12 @@ export const ToolCompletedDataSchema = z.object({
   output: z.unknown(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   domain: z.string().optional(),
+  /** Tool provenance — off-wire only (app-set via `metadata.source`). */
+  source: z.string().optional(),
+  /** Tool risk level from the tool definition — off-wire only. */
+  risk: z.string().optional(),
+  /** Wall-clock execution duration in milliseconds. */
+  durationMs: z.number().optional(),
 });
 /** Inferred type of {@link ToolCompletedDataSchema}. */
 export type ToolCompletedData = z.infer<typeof ToolCompletedDataSchema>;
@@ -180,6 +190,12 @@ export const ToolFailedDataSchema = z.object({
   error: z.string(),
   domain: z.string().optional(),
   decision: z.enum(["allow", "deny", "ask"]).optional(),
+  /** Tool provenance — off-wire only (app-set via `metadata.source`). */
+  source: z.string().optional(),
+  /** Tool risk level from the tool definition — off-wire only. */
+  risk: z.string().optional(),
+  /** Wall-clock execution duration in milliseconds (set when execution started). */
+  durationMs: z.number().optional(),
 });
 /** Inferred type of {@link ToolFailedDataSchema}. */
 export type ToolFailedData = z.infer<typeof ToolFailedDataSchema>;
@@ -253,6 +269,16 @@ export const TurnEndedDataSchema = z.object({
 });
 /** Inferred type of {@link TurnEndedDataSchema}. */
 export type TurnEndedData = z.infer<typeof TurnEndedDataSchema>;
+
+/** Data payload for the `agent.handoff` event. */
+export const AgentHandoffDataSchema = z.object({
+  fromAgentId: z.string(),
+  toAgentId: z.string(),
+  reason: z.string(),
+  summary: z.string().optional(),
+});
+/** Inferred type of {@link AgentHandoffDataSchema}. */
+export type AgentHandoffData = z.infer<typeof AgentHandoffDataSchema>;
 
 /** Data payload for the `llm.retry` event. */
 export const LlmRetryDataSchema = z.object({
@@ -587,6 +613,11 @@ export const TurnEndEventSchema = eventSchema(TurnEndedDataSchema, z.literal("tu
 /** Inferred type of {@link TurnEndEventSchema}. */
 export type TurnEndEvent = z.infer<typeof TurnEndEventSchema>;
 
+/** Zod schema for the `agent.handoff` event. */
+export const AgentHandoffEventSchema = eventSchema(AgentHandoffDataSchema, z.literal("agent.handoff"));
+/** Inferred type of {@link AgentHandoffEventSchema}. */
+export type AgentHandoffEvent = z.infer<typeof AgentHandoffEventSchema>;
+
 /** Zod schema for the `llm.retry` event. */
 export const LlmRetryEventSchema = eventSchema(LlmRetryDataSchema, z.literal("llm.retry"));
 /** Inferred type of {@link LlmRetryEventSchema}. */
@@ -663,8 +694,10 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   StepTypeChangedEventSchema,
   TurnStartedEventSchema,
   TurnEndEventSchema,
+  AgentHandoffEventSchema,
   LlmRetryEventSchema,
   LlmRetryStartedEventSchema,
+  LlmFailoverEventSchema,
   ApprovalAskedEventSchema,
   ApprovalDecidedEventSchema,
   RequestHeaderEventSchema,

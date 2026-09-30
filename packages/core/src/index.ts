@@ -18,6 +18,8 @@ export type { ApprovalRecord } from "./kernel/run-context.js";
 
 export { DEFAULT_CONTEXT_BUDGET, deriveContextBudget, budgetToCompressorFields } from "./context/context-budget.js";
 export type { ContextBudget } from "./context/context-budget.js";
+// E5: default context window (fallback when the provider declares none).
+export { DEFAULT_CONTEXT_WINDOW } from "@vinhnt-sdk/llm";
 
 // === Agent system ===
 

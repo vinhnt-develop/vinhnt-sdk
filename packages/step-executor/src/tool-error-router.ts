@@ -6,7 +6,7 @@ import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { RecentCall } from "./kernel-utils.js";
-import { hashArgs, raceWithAbort, toolDomain } from "./kernel-utils.js";
+import { hashArgs, raceWithAbort, toolDomain, toolSource } from "./kernel-utils.js";
 import { ToolPermissionDenied, RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { ModelProvider } from "@vinhnt-sdk/schema";
@@ -21,6 +21,8 @@ export interface ToolErrorRouterDeps {
   readonly selfCorrectOnFailure: boolean;
   readonly externalDirectoryAccess?: boolean;
   readonly workspaceRoot?: string;
+  /** Epoch ms when the failing tool execution started — set when execution began (durationMs for tool.failed). */
+  readonly execStartedAt?: number;
   readonly findTool: (name: string, runId?: RunId) => ToolDefinition | undefined;
   currentAgent: import("@vinhnt-sdk/schema").AgentConfig | undefined;
   runSelfCorrection: (
@@ -34,7 +36,7 @@ export interface ToolErrorRouterDeps {
 export async function handleToolError(
   err: unknown,
   tc: ToolExecutionPlan,
-  _tool: ToolDefinition,
+  tool: ToolDefinition,
   messages: ChatMessage[],
   step: number,
   runId: RunId,
@@ -61,7 +63,12 @@ export async function handleToolError(
   await deps.store.emitEvent({
     id: crypto.randomUUID(), runId, type: "tool.failed",
     occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-    data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: errorMsg },
+    data: {
+      toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), error: errorMsg,
+      ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}),
+      risk: tool.risk,
+      ...(deps.execStartedAt !== undefined ? { durationMs: Date.now() - deps.execStartedAt } : {}),
+    },
   });
 
   await deps.pluginManager?.fireHook("onToolFailed", {
@@ -130,13 +137,19 @@ export async function tryReadFileFallback(
       metadata: () => {},
       setCompensation: () => {},
     };
+    const fbStart = Date.now();
     const fbOutput = await raceWithAbort(fallbackTool.execute(fbInput, toolCtx), runAbort.signal, runId);
     const fbContent = typeof fbOutput === "string" ? fbOutput : JSON.stringify(fbOutput);
 
     await deps.store.emitEvent({
       id: crypto.randomUUID(), runId, type: "tool.completed",
       occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-      data: { toolId: tc.toolId, toolName: "read_file", domain: toolDomain("read_file"), output: fbOutput },
+      data: {
+        toolId: tc.toolId, toolName: "read_file", domain: toolDomain("read_file"), output: fbOutput,
+        ...(toolSource(fallbackTool) !== undefined ? { source: toolSource(fallbackTool)! } : {}),
+        risk: fallbackTool.risk,
+        durationMs: Date.now() - fbStart,
+      },
     });
 
     messages.push({

@@ -3,7 +3,7 @@ import { getTextContent } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
-import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort, withToolTimeout, toolDomain } from "./kernel-utils.js";
+import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort, withToolTimeout, toolDomain, toolSource } from "./kernel-utils.js";
 import { resolveLoopPolicy, type LoopDetectionConfig } from "./loop-policy.js";
 import { RunAbortedError } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
@@ -153,8 +153,12 @@ export async function runSelfCorrection(
           await safeEmit(deps.store, {
             id: crypto.randomUUID(), runId, type: "tool.invoked",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-            data: { toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), decision: "allow", input: ct.args as Record<string, unknown> },
+            data: {
+              toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), decision: "allow", input: ct.args as Record<string, unknown>,
+              ...(toolSource(ctool) !== undefined ? { source: toolSource(ctool)! } : {}), risk: ctool.risk,
+            },
           });
+          const cStartedAt = Date.now();
           try {
             // RV-19: cooperative timeout — signal the correction tool at the
             // deadline so its side effects stop, not just race-and-abandon.
@@ -176,7 +180,12 @@ export async function runSelfCorrection(
             await safeEmit(deps.store, {
               id: crypto.randomUUID(), runId, type: "tool.completed",
               occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-              data: { toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), output: coutput },
+              data: {
+                toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), output: coutput,
+                ...(toolSource(ctool) !== undefined ? { source: toolSource(ctool)! } : {}),
+                risk: ctool.risk,
+                durationMs: Date.now() - cStartedAt,
+              },
             });
             corrected = true;
           } catch (cErr) {
@@ -186,7 +195,12 @@ export async function runSelfCorrection(
             await safeEmit(deps.store, {
               id: crypto.randomUUID(), runId, type: "tool.failed",
               occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-              data: { toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), error: errMsg },
+              data: {
+                toolId: ct.id, toolName: ct.name, domain: toolDomain(ct.name), error: errMsg,
+                ...(toolSource(ctool) !== undefined ? { source: toolSource(ctool)! } : {}),
+                risk: ctool.risk,
+                durationMs: Date.now() - cStartedAt,
+              },
             });
           }
         }

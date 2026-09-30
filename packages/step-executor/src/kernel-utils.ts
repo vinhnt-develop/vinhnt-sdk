@@ -98,3 +98,15 @@ export function toolDomain(toolName: string): string {
   const dot = toolName.indexOf(".");
   return dot > 0 ? toolName.slice(0, dot) : "core";
 }
+
+/**
+ * Tool provenance for event payloads — reads the app-set `metadata.source`
+ * off the tool definition. OFF-WIRE INVARIANT: event payloads only; never
+ * serialize `source`/`risk`/`metadata` into a provider adapter request.
+ */
+export function toolSource(
+  tool: { readonly metadata?: Record<string, unknown> } | undefined,
+): string | undefined {
+  const s = tool?.metadata?.source;
+  return typeof s === "string" && s.length > 0 ? s : undefined;
+}

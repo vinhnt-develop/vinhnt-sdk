@@ -31,6 +31,7 @@ export { TokenMeter } from "./token-meter.js";
 // Re-export ModelCaller (previously in @vinhnt-sdk/model-caller)
 export {
   ModelCaller,
+  DEFAULT_CONTEXT_WINDOW,
   type ModelCallerDeps,
   type ModelCallerPluginHooks,
   type ModelCallerLogger,
