@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CircuitBreaker, CircuitBreakerOpenError } from "../src/circuit-breaker.js";
+import { CircuitBreaker, CircuitBreakerOpenError } from "@vinhnt-sdk/guard";
 import { VntError } from "@vinhnt-sdk/schema";
 
 describe("CircuitBreaker", () => {

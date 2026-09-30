@@ -1,5 +1,5 @@
 import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
-import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
+import { hasErrorCode } from "@vinhnt-sdk/schema";
 import { ToolRegistry } from "@vinhnt-sdk/tools";
 import { ToolSandbox } from "@vinhnt-sdk/tools";
 import type { PermissionGate} from "@vinhnt-sdk/step-executor";
@@ -158,8 +158,8 @@ export class ToolRuntime {
         runContext.usage.toolCalls++;
       }
     } catch (err) {
-      if (err instanceof ToolPermissionDenied) {
-        result = { status: "denied", reason: err.message };
+      if (hasErrorCode(err, "TOOL_PERMISSION_DENIED")) {
+        result = { status: "denied", reason: err instanceof Error ? err.message : String(err) };
       } else {
         const msg = err instanceof Error ? err.message : String(err);
         result = { status: "error", error: msg };

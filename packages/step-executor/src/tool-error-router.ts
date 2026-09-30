@@ -7,7 +7,7 @@ import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { RecentCall } from "./kernel-utils.js";
 import { hashArgs, raceWithAbort, toolDomain, toolSource } from "./kernel-utils.js";
-import { ToolPermissionDenied, RunAbortedError } from "@vinhnt-sdk/schema";
+import { hasErrorCode } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { ModelProvider } from "@vinhnt-sdk/schema";
 import { checkExternalPaths } from "./path-policy.js";
@@ -48,8 +48,10 @@ export async function handleToolError(
   runModel: ModelProvider,
   deps: ToolErrorRouterDeps,
 ): Promise<void> {
-  const isPermissionDenied = err instanceof ToolPermissionDenied;
-  if (err instanceof RunAbortedError) return;
+  // Structural code check — the error may originate from a different copy of
+  // @vinhnt-sdk/schema (duplicate installs), where `instanceof` always fails.
+  const isPermissionDenied = hasErrorCode(err, "TOOL_PERMISSION_DENIED");
+  if (hasErrorCode(err, "RUN_ABORTED")) return;
 
   const errorMsg = err instanceof Error ? err.message : String(err);
 

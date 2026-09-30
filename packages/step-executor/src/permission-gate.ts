@@ -304,6 +304,21 @@ export class PermissionGate {
     return reply;
   }
 
+  /**
+   * Persist a permission event WITH a sequence number. Bypassing sequence
+   * allocation left these rows at the SQLite default 0, which corrupted
+   * trajectory ordering and broke the cursor-replay invariant.
+   */
+  private async appendPersisted(event: Omit<RunEvent, "sequence">): Promise<void> {
+    const store = this.deps.store;
+    if (store.appendWithSequence) {
+      await store.appendWithSequence(event as RunEvent);
+      return;
+    }
+    const sequence = await store.getNextSequence(event.runId);
+    await store.append({ ...event, sequence } as RunEvent);
+  }
+
   private async askViaApprovalStore(
     toolName: string,
     runId: RunId,
@@ -326,11 +341,11 @@ export class PermissionGate {
     };
 
     // Persist permission.requested to store (sync for tests) AND publish to bus
-    await this.deps.store.append({
+    await this.appendPersisted({
       id: crypto.randomUUID(), runId, type: "permission.requested",
       occurredAt: new Date().toISOString(), traceId,
       data: { requestId, toolName, resource: toolName, reason, prompt: reason, permission },
-    } as RunEvent);
+    } as Omit<RunEvent, "sequence">);
 
     if (this.deps.eventBus) {
       this.deps.eventBus.publish(PermissionRequested, {
@@ -372,11 +387,11 @@ export class PermissionGate {
     }
 
     // Persist permission.replied to store (sync for tests) AND publish to bus
-    await this.deps.store.append({
+    await this.appendPersisted({
       id: crypto.randomUUID(), runId, type: "permission.replied",
       occurredAt: new Date().toISOString(), traceId,
       data: { requestId, reply },
-    } as RunEvent);
+    } as Omit<RunEvent, "sequence">);
 
     if (this.deps.eventBus) {
       this.deps.eventBus.publish(PermissionReplied, {

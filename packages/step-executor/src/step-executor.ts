@@ -1,5 +1,5 @@
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
-import { RunAbortedError } from "@vinhnt-sdk/schema";
+import { hasErrorCode } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 
@@ -160,10 +160,14 @@ export class StepExecutor {
     runAbort: AbortController,
     sessionId: string | undefined,
     runModel: ModelProvider,
+    priorRecentCalls?: readonly RecentCall[],
   ): Promise<{ toolCallCount: number; recentCalls: RecentCall[]; selfCorrectTokens: { input: number; output: number }; toolResults: ToolCallOutcome[]; handoff?: HandoffSignal }> {
     const selfCorrectTokens = { input: 0, output: 0 };
     let toolCallCount = 0;
-    const recentCalls: RecentCall[] = [];
+    // Run-scoped doom-loop history (seeded across steps so identical repeats
+    // in later steps are actually detected — a per-step reset made the
+    // threshold structurally unreachable).
+    const recentCalls: RecentCall[] = priorRecentCalls ? [...priorRecentCalls] : [];
     const toolResults: ToolCallOutcome[] = [];
     const limit = this.deps.maxToolCallsPerStep;
 
@@ -428,7 +432,7 @@ export class StepExecutor {
 
           return { tc, result: "success" as const, output: effectiveOutput };
         } catch (err) {
-          if (!(err instanceof RunAbortedError)) {
+          if (!hasErrorCode(err, "RUN_ABORTED")) {
             // P1-N: never log raw tool args — they may contain apiKeys/secrets.
             console.error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: redactObjectSecrets(tc.args) });
           }

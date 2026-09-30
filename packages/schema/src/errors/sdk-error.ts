@@ -32,6 +32,24 @@ export function isSdkError(value: unknown): value is SdkError {
 }
 
 /**
+ * Structural error-code check — safe across duplicated package installs where
+ * `instanceof` fails because the error class comes from a different copy of
+ * this module (e.g. tools@schema 0.5.10 vs step-executor@schema 0.5.11).
+ *
+ * @example
+ * ```typescript
+ * if (hasErrorCode(err, 'TOOL_PERMISSION_DENIED')) { ... }
+ * ```
+ */
+export function hasErrorCode(value: unknown, code: string): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { code?: unknown }).code === code
+  );
+}
+
+/**
  * Render the full error cause chain, including AggregateError members.
  * Handles circular references and hostile values safely.
  *

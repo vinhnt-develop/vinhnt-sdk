@@ -5,7 +5,7 @@ import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
 import { detectDoomLoop, SELF_CORRECT_PROMPT, raceWithAbort, withToolTimeout, toolDomain, toolSource } from "./kernel-utils.js";
 import { resolveLoopPolicy, type LoopDetectionConfig } from "./loop-policy.js";
-import { RunAbortedError } from "@vinhnt-sdk/schema";
+import { hasErrorCode } from "@vinhnt-sdk/schema";
 import type { ToolExecutionPlan } from "./step-executor.js";
 import type { ModelCaller } from "@vinhnt-sdk/llm";
 import type { ModelProvider } from "@vinhnt-sdk/schema";
@@ -189,7 +189,7 @@ export async function runSelfCorrection(
             });
             corrected = true;
           } catch (cErr) {
-            if (cErr instanceof RunAbortedError) throw cErr;
+            if (hasErrorCode(cErr, "RUN_ABORTED")) throw cErr;
             const errMsg = cErr instanceof Error ? cErr.message : String(cErr);
             messages.push({ role: "tool", toolCallId: ct.id, content: `Error: ${errMsg}` });
             await safeEmit(deps.store, {

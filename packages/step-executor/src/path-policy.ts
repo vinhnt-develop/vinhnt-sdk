@@ -30,12 +30,16 @@ export function checkExternalPaths(
   const input = args as Record<string, unknown> | undefined;
   if (!input) return undefined;
   const normalizedRoot = workspaceRoot.replace(/\\/g, "/") + "/";
+  // Containment comparison ignores trailing separators so the root itself
+  // (".", "", or the root path) is inside — `normalize("root/.") === "root"`
+  // must not fail `startsWith("root/")`.
+  const rootNoSlash = normalizedRoot.replace(/\/+$/, "");
   const pathCandidates = [input.filePath, input.path, input.dirPath].filter((p): p is string => typeof p === "string");
   for (const p of pathCandidates) {
     const absRaw: string = p.startsWith("/") || /^[A-Za-z]:[/\\]/.test(p) ? p : workspaceRoot + "/" + p;
-    const absPath = normalize(absRaw).replace(/\\/g, "/");
-    if (!absPath.startsWith(normalizedRoot)) {
-      return `references path outside workspace: "${p}" (${absPath} not in ${normalizedRoot})`;
+    const absPath = normalize(absRaw).replace(/\\/g, "/").replace(/\/+$/, "");
+    if (absPath !== rootNoSlash && !absPath.startsWith(normalizedRoot)) {
+      return `references path outside workspace: "${p}" (${absPath} not in ${rootNoSlash})`;
     }
   }
   return undefined;

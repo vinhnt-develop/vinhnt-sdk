@@ -1,4 +1,4 @@
-export { SdkError, isSdkError, errorChain } from './sdk-error.js';
+export { SdkError, isSdkError, hasErrorCode, errorChain } from './sdk-error.js';
 export {
   isContextWindowExceededError,
   isQuotaExceededError,

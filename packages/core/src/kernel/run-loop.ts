@@ -17,6 +17,7 @@ import { evaluateStopConditions, buildJudgeMessages, parseJudgeVerdict } from "@
 import type { StopCondition, StepVerificationContext, TerminationPolicy, ToolCallOutcome } from "@vinhnt-sdk/step-executor";
 import type { Guardrail, GuardrailResult } from "@vinhnt-sdk/guardrails";
 import { runGuardrails } from "@vinhnt-sdk/guardrails";
+import type { RecentCall } from "@vinhnt-sdk/guard";
 import type { z } from "zod";
 import type { ResponseFormat } from "@vinhnt-sdk/schema";
 import { zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
@@ -368,6 +369,10 @@ interface StepInput {
   suppressedRepairAttempts?: number;
   /** Force tool_choice=required on the next model call (set after claim repair). */
   forceToolChoice?: boolean;
+  /** A file-mutating tool already succeeded earlier this run — claim-repair must not re-fire. */
+  fileActionSucceeded?: boolean;
+  /** Run-scoped doom-loop history seeded into step tool execution. */
+  priorRecentCalls?: readonly RecentCall[];
   /** Emit a run event (wired from RunLoopInput.emitEvent — used by failover). */
   emitEvent?: (event: { id: string; runId: RunId; type: string; occurredAt: string; traceId: string; data: Record<string, unknown> }, persist?: boolean) => Promise<void>;
 }
@@ -402,6 +407,8 @@ interface StepOutput {
   suppressedRepairAttempts?: number;
   /** Set true when this step injected a claim repair so the next step forces tool_choice. */
   forceToolChoiceNext?: boolean;
+  /** Run-scoped doom-loop history after this step (absent when no tools executed). */
+  recentCalls?: RecentCall[];
 }
 
 /**
@@ -431,6 +438,13 @@ const VN_CLAIM_PATTERN =
 const VN_CLAIM_RE = new RegExp(VN_CLAIM_PATTERN, "i");
 const VN_CLAIM_ASCII_RE = new RegExp(stripDiacritics(VN_CLAIM_PATTERN), "i");
 const EN_CLAIM_RE = /(?:created?|wrote|saved|generated|written)\s+(?:one\s+|a\s+|the\s+)?(?:new\s+)?file/i;
+
+/**
+ * File-mutating tools: once one of these succeeded earlier in the run, a later
+ * prose claim about file work is (possibly) truthful — claim-repair would be a
+ * false positive that forces a needless tool_choice=required turn (E4 live fix).
+ */
+const FILE_MUTATING_TOOLS = new Set(["write_file", "edit_file", "apply_patch"]);
 
 /**
  * Detect "model claims it created/wrote a file but emitted zero tool calls"
@@ -800,6 +814,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       if (
         !input.disableTools &&
         claimRepairs < 2 &&
+        !input.fileActionSucceeded &&
         detectMissedFileAction(finalContent, response.finishReason)
       ) {
         messages.push({
@@ -835,9 +850,10 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       };
     }
 
-    const { toolCallCount, selfCorrectTokens, toolResults, handoff } = await deps.stepExecutor.executeToolCalls(
+    const { toolCallCount, selfCorrectTokens, toolResults, recentCalls, handoff } = await deps.stepExecutor.executeToolCalls(
       effectiveToolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
       messages, input.step, runId, ctx, stepTimeoutController, sessionId, runModel,
+      input.priorRecentCalls,
     );
 
     // Handle handoff — transfer control to target agent
@@ -856,6 +872,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         completed: false,
         toolCallCount,
         lastStepToolOutcomes: toolResults,
+        recentCalls,
         handoff: {
           targetAgentId: handoff.targetAgentId,
           reason: handoff.reason,
@@ -883,6 +900,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         completed: false,
         toolCallCount,
         lastStepToolOutcomes: toolResults,
+        recentCalls,
         stepFailed: { reason: "timeout", error: `Tool execution timed out after ${deps.stepTimeout}ms` },
       };
     }
@@ -923,6 +941,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       completed: false,
       toolCallCount,
       lastStepToolOutcomes: toolResults,
+      recentCalls,
       ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
     };
   } finally {
@@ -954,6 +973,11 @@ export async function runLoop(
   let claimRepairAttempts = 0;
   let suppressedRepairAttempts = 0;
   let forceToolChoiceNext = false;
+  // E4 live fix: a successful file-mutating tool this run makes later prose
+  // claims truthful — claim-repair must not force another tool turn.
+  let fileActionSucceeded = false;
+  // Run-scoped doom-loop history (per-step reset made doomLoopThreshold unreachable).
+  let runRecentCalls: RecentCall[] = [];
   // Real system head (identity + agent systemPrompt) sent as a proper `system`
   // message at the head of the conversation instead of being flattened into the
   // user turn (RV-40).
@@ -1158,6 +1182,8 @@ export async function runLoop(
         claimRepairAttempts,
         suppressedRepairAttempts,
         forceToolChoice: forceToolChoiceNext,
+        fileActionSucceeded,
+        priorRecentCalls: runRecentCalls,
         emitEvent,
       });
 
@@ -1175,6 +1201,15 @@ export async function runLoop(
         suppressedRepairAttempts = stepResult.suppressedRepairAttempts;
       }
       forceToolChoiceNext = stepResult.forceToolChoiceNext === true;
+      if (stepResult.recentCalls) {
+        // Cap run-scoped history so long runs stay bounded.
+        runRecentCalls = stepResult.recentCalls.length > 100
+          ? stepResult.recentCalls.slice(-100)
+          : stepResult.recentCalls;
+      }
+      if (!fileActionSucceeded && stepResult.lastStepToolOutcomes.some((o) => FILE_MUTATING_TOOLS.has(o.toolName))) {
+        fileActionSucceeded = true;
+      }
       if (stepResult.structuredOutput !== undefined) {
         structuredOutput = stepResult.structuredOutput;
       }

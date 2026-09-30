@@ -288,7 +288,7 @@ export {
  * @internal
  */
 export {
-  SdkError, isSdkError, errorChain,
+  SdkError, isSdkError, hasErrorCode, errorChain,
   isContextWindowExceededError, isQuotaExceededError, isAuthError, classifyError,
 } from "./errors/index.js";
 
