@@ -30,6 +30,7 @@ export type {
 
 export {
   MessageTokensSchema, MessageSchema, SessionSchema,
+  ToolCallSchema, ContentPartSchema,
 } from "./session.js";
 export type { Message, Session } from "./session.js";
 

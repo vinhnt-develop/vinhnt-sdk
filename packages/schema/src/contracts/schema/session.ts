@@ -10,6 +10,29 @@ export const MessageTokensSchema = z.object({
 /** Inferred type of {@link MessageTokensSchema}. */
 export type MessageTokens = z.infer<typeof MessageTokensSchema>;
 
+/** Zod schema for a persisted assistant tool call (mirrors `ToolCall`). */
+export const ToolCallSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  args: z.record(z.string(), z.unknown()),
+});
+
+/** Zod schema for a structured content block (mirrors `ContentPart`). */
+export const ContentPartSchema = z.union([
+  z.object({ type: z.literal("text"), text: z.string() }),
+  z.object({
+    type: z.literal("image_url"),
+    image_url: z.object({
+      url: z.string(),
+      detail: z.enum(["auto", "low", "high"]).optional(),
+    }),
+  }),
+  z.object({
+    type: z.literal("input_audio"),
+    input_audio: z.object({ data: z.string(), format: z.enum(["wav", "mp3"]) }),
+  }),
+]);
+
 /** Zod schema for a stored message. */
 export const MessageSchema = z.object({
   id: z.string().refine(isMessageId, "Invalid MessageId"),
@@ -18,6 +41,10 @@ export const MessageSchema = z.object({
   content: z.string(),
   toolCallId: z.string().optional(),
   toolName: z.string().optional(),
+  /** Assistant tool calls persisted with the message (P1.2 round-trip). */
+  toolCalls: z.array(ToolCallSchema).optional(),
+  /** Structured content blocks persisted alongside `content` (P1.2 round-trip). */
+  contentBlocks: z.array(ContentPartSchema).optional(),
   tokens: MessageTokensSchema.optional(),
   model: z.string().optional(),
   provider: z.string().optional(),

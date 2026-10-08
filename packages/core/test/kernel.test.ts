@@ -510,7 +510,11 @@ describe("AgentKernel", () => {
       async listSessions() { return []; },
       async updateSession() {},
       async deleteSession() {},
-      async addMessage(_sid: string, role: string, content: string) {
+      async addMessage(_sid: string, roleOrMsg: string | { role: string; content: string }, maybeContent?: string) {
+        // kernel-session uses the options-object form (P1.2); legacy callers
+        // may still pass positional args — accept both.
+        const role = typeof roleOrMsg === "string" ? roleOrMsg : roleOrMsg.role;
+        const content = typeof roleOrMsg === "string" ? (maybeContent ?? "") : roleOrMsg.content;
         sessionMessages.push({ role, content });
       },
       async forkSession() { return { id: "s-fork", title: "t", createdAt: "", updatedAt: "", isActive: true }; },

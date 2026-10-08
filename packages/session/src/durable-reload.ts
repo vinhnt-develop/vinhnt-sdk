@@ -1,6 +1,6 @@
 import type { RunId, Message } from "@vinhnt-sdk/schema";
 import { COMPACTION_SUMMARY_PREFIX } from "@vinhnt-sdk/schema";
-import type { ChatMessage } from "@vinhnt-sdk/schema";
+import type { ChatMessage, ContentPart, ToolCall } from "@vinhnt-sdk/schema";
 import type { RunEventStore, SessionStore } from "./store.js";
 import type { SessionRuntimeState } from "./session-state.js";
 import { InMemorySessionState } from "./in-memory-session-state.js";
@@ -25,17 +25,90 @@ export interface RestoredRun {
 }
 
 /**
+ * Reconstruct a ChatMessage's `content` from persisted rows (P1.2).
+ * Structured blocks win when present; the text column is re-appended as a
+ * text part only when the blocks do not already carry one, so nothing the
+ * model saw live is lost on reload.
+ */
+function reconstructContent(msg: Message): string | readonly ContentPart[] {
+  const blocks = msg.contentBlocks;
+  if (!blocks || blocks.length === 0) return msg.content;
+  const hasTextPart = blocks.some((b) => b.type === "text");
+  if (!hasTextPart && msg.content.length > 0) {
+    return [...blocks, { type: "text", text: msg.content }] as readonly ContentPart[];
+  }
+  return blocks as readonly ContentPart[];
+}
+
+/**
  * Convert a DB Message to a ChatMessage for the run loop.
  */
 function messageToChatMessage(msg: Message): ChatMessage {
-  const base: ChatMessage = {
+  const toolCalls: ToolCall[] | undefined =
+    msg.toolCalls && msg.toolCalls.length > 0
+      ? msg.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, args: tc.args }))
+      : undefined;
+  return {
     role: msg.role as ChatMessage["role"],
-    content: msg.content,
+    content: reconstructContent(msg),
+    ...(msg.toolCallId ? { toolCallId: msg.toolCallId } : {}),
+    ...(toolCalls ? { toolCalls } : {}),
   };
-  if (msg.toolCallId) {
-    (base as ChatMessage & { toolCallId?: string }).toolCallId = msg.toolCallId;
-  }
-  return base;
+}
+
+/**
+ * Repair tool pairing in a persisted transcript (P1.2).
+ *
+ * Providers reject a `tool` message that is not preceded by an assistant
+ * `toolCalls` entry declaring its id — and equally reject an assistant
+ * `toolCalls` entry with no following result. Legacy rows (and partially
+ * written transcripts) contain exactly those shapes, so:
+ *
+ * - drop orphan `tool` rows (no preceding declaration, or a duplicate result);
+ * - strip assistant `toolCalls` entries that never got a result;
+ * - drop assistant rows left with neither text nor tool calls.
+ */
+function repairToolPairing(rows: readonly Message[]): Message[] {
+  // Pass 1 — forward scan: declarations must precede their results.
+  const declared = new Set<string>();
+  const pairedIndexes = new Set<number>();
+  const pairedIds = new Set<string>();
+  rows.forEach((row, i) => {
+    if (row.role === "assistant" && row.toolCalls && row.toolCalls.length > 0) {
+      for (const tc of row.toolCalls) declared.add(tc.id);
+    } else if (row.role === "tool" && row.toolCallId) {
+      if (declared.has(row.toolCallId) && !pairedIds.has(row.toolCallId)) {
+        pairedIndexes.add(i);
+        pairedIds.add(row.toolCallId);
+      }
+    }
+  });
+
+  // Pass 2 — filter rows and strip dangling calls.
+  const kept: Message[] = [];
+  rows.forEach((row, i) => {
+    if (row.role === "tool") {
+      if (pairedIndexes.has(i)) kept.push(row);
+      return;
+    }
+    if (row.role === "assistant" && row.toolCalls && row.toolCalls.length > 0) {
+      const surviving = row.toolCalls.filter((tc) => pairedIds.has(tc.id));
+      if (surviving.length === 0 && row.content.trim().length === 0) return;
+      kept.push(
+        surviving.length === row.toolCalls.length
+          ? row
+          : {
+              ...row,
+              ...(surviving.length > 0
+                ? { toolCalls: surviving }
+                : { toolCalls: undefined }),
+            },
+      );
+      return;
+    }
+    kept.push(row);
+  });
+  return kept;
 }
 
 /**
@@ -68,7 +141,11 @@ function collapseCompactedMessages(dbMessages: readonly Message[]): Message[] {
  *
  * - Collapses everything before the last compaction summary marker (RV-15) so
  *   the reloaded context equals the post-compaction conversation.
- * - Maps DB rows to ChatMessage (role/content + optional toolCallId).
+ * - Repairs tool pairing (P1.2): orphan `tool` rows are dropped and dangling
+ *   assistant `toolCalls` entries are stripped so providers never reject the
+ *   reloaded transcript.
+ * - Maps DB rows to ChatMessage (role/content, optional toolCallId,
+ *   assistant toolCalls and structured content blocks).
  *
  * Intended for hydrating a {@link SessionRuntimeState} at run start so the
  * model receives prior-turn history instead of a fresh single-turn array.
@@ -79,7 +156,9 @@ export async function loadSessionHistory(
 ): Promise<ChatMessage[]> {
   if (!sessionStore) return [];
   const dbMessages = await sessionStore.listMessages(sessionId);
-  return collapseCompactedMessages(dbMessages).map(messageToChatMessage);
+  // Collapse first (RV-15), then repair tool pairing (P1.2) — the compaction
+  // summary may itself subsume the assistant that declared a tool call.
+  return repairToolPairing(collapseCompactedMessages(dbMessages)).map(messageToChatMessage);
 }
 
 /**

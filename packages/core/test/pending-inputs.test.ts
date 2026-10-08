@@ -47,14 +47,19 @@ class TestSessionStore implements SessionStore {
 
   async addMessage(
     sessionId: string,
-    role: string,
-    content: string,
+    roleOrMsg: string | { role: string; content: string; toolCallId?: string; admittedSeq?: number; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number },
+    maybeContent?: string,
     _toolCallId?: string,
     _tokens?: { input: number; output: number; reasoning?: number },
     _model?: string,
     _cost?: number,
-    admittedSeq?: number,
+    positionalSeq?: number,
   ): Promise<Message> {
+    // kernel-session uses the options-object form (P1.2); RV-21 drains still
+    // pass admittedSeq positionally — accept both.
+    const role = typeof roleOrMsg === "string" ? roleOrMsg : roleOrMsg.role;
+    const content = typeof roleOrMsg === "string" ? (maybeContent ?? "") : roleOrMsg.content;
+    const admittedSeq = typeof roleOrMsg === "string" ? positionalSeq : roleOrMsg.admittedSeq;
     const message: Message = {
       id: `msg-${this.messages.length + 1}` as MessageId,
       sessionId: sessionId as SessionId,

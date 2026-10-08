@@ -21,6 +21,7 @@ const testCtx: RequestContext = {
 interface CapturedMessage {
   role: string;
   content: string;
+  toolCalls?: readonly { id: string; name: string; args: Record<string, unknown> }[];
 }
 
 class CapturingModel extends FakeModelProvider {
@@ -88,8 +89,14 @@ function makeDeps(
     store,
     circuitBreaker: new CircuitBreaker(),
     stateMachine,
-    addSessionMessage: async (_sid, role, content) => {
-      captured.push({ role, content });
+    addSessionMessage: async (_sid, role, content, extra?: Record<string, unknown>) => {
+      captured.push({
+        role,
+        content,
+        ...(extra?.toolCalls
+          ? { toolCalls: extra.toolCalls as { id: string; name: string; args: Record<string, unknown> }[] }
+          : {}),
+      });
     },
     maxSteps: 5,
     maxTokens: 4096,
@@ -115,7 +122,7 @@ function makeInput(overrides: Partial<RunLoopInput> = {}): RunLoopInput {
 }
 
 describe("E1 empty assistant row suppression", () => {
-  it("TC01_skips_assistant_persist_for_tool_only_turn_but_keeps_text_turn", async () => {
+  it("TC01_persists_tool_only_assistant_row_with_toolCalls_but_never_a_truly_empty_one", async () => {
     const captured: CapturedMessage[] = [];
     const model = new CapturingModel([
       {
@@ -132,9 +139,16 @@ describe("E1 empty assistant row suppression", () => {
 
     expect(result.status).toBe("succeeded");
     const assistantRows = captured.filter((c) => c.role === "assistant");
-    expect(assistantRows).toHaveLength(1);
-    expect(assistantRows[0]!.content).toBe("File written.");
-    expect(assistantRows.some((c) => c.content.trim() === "")).toBe(false);
+    // P1.2: the tool-call-only turn is persisted WITH its toolCalls so a
+    // reloaded transcript can pair it with the tool result row that follows.
+    expect(assistantRows).toHaveLength(2);
+    expect(assistantRows[0]!.content).toBe("");
+    expect(assistantRows[0]!.toolCalls).toEqual([
+      { id: "c1", name: "write_file", args: { path: "a.ts", content: "x" } },
+    ]);
+    expect(assistantRows[1]!.content).toBe("File written.");
+    // ...while a row with neither text nor tool calls stays suppressed.
+    expect(assistantRows.some((c) => c.content.trim() === "" && !c.toolCalls?.length)).toBe(false);
   });
 
   it("TC02_never_persists_empty_assistant_row_when_model_returns_nothing", async () => {

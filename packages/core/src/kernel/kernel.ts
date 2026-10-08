@@ -56,6 +56,7 @@ import {
   emitFail as sessionEmitFail,
   buildAgentIdentity,
   type KernelSessionDeps,
+  type SessionMessageExtra,
 } from "./kernel-session.js";
 import {
   runAgent as runSubAgent,
@@ -307,7 +308,7 @@ export class AgentKernel {
     const self = this;
 this.stepExecutor = new StepExecutor({
       store: { emitEvent: (event, persist) => this.emitEvent(event, persist) },
-      addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
+      addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as SessionMessageExtra | undefined),
       pluginManager: normalized.pluginManager as import("@vinhnt-sdk/step-executor").StepExecutorPluginHooks | undefined,
       permissionGate: this.permissionGate,
       modelCaller: this.modelCaller,
@@ -423,7 +424,7 @@ this.stepExecutor = new StepExecutor({
     return sessionEmit(this.sessionDeps, event, persist);
   }
 
-  private addSessionMessage(sid: string | undefined, role: string, content: string, extra?: { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number }): Promise<void> {
+  private addSessionMessage(sid: string | undefined, role: string, content: string, extra?: SessionMessageExtra): Promise<void> {
     return sessionAddMessage(this.sessionDeps, sid, role, content, extra);
   }
 
@@ -1269,7 +1270,7 @@ this.stepExecutor = new StepExecutor({
         ? { failoverModels: this.modelRouting.failoverModels }
         : {}),
       ...(this.contextBudget ? { contextBudget: this.contextBudget } : {}),
-      addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
+      addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as SessionMessageExtra | undefined),
       beforeRun: async () => {
         const parentRunId = this.stateMachine.runIdStack.at(-2);
         if (parentRunId) return;
@@ -1287,7 +1288,7 @@ this.stepExecutor = new StepExecutor({
         ...(systemPrompt !== undefined ? { systemPrompt } : {}),
         runModel,
         ...(runSessionState !== undefined ? { runSessionState } : {}),
-        addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number } | undefined),
+        addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as SessionMessageExtra | undefined),
         emitEvent: (event, persist) => this.emitEvent(event as unknown as Omit<KnownRunEvent, "sequence">, persist),
         setState: (rid, state) => this.stateMachine.setState(rid, state as RunState),
         emitCompleted: (event, sid, rid, totalIn, totalOut, status) =>

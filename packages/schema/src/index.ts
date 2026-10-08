@@ -261,6 +261,7 @@ export {
   AgentPermissionsSchema, AgentModeSchema, AgentBehaviourModeSchema,
   AgentRuleSchema, AgentRulesetSchema,
   MessageTokensSchema, MessageSchema, SessionSchema,
+  ToolCallSchema, ContentPartSchema,
 } from "./contracts/schema/index.js";
 
 /**

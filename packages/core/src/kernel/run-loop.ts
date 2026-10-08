@@ -737,14 +737,20 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     const activeAfter = deps.modelCaller.getActiveModel(runId);
     const asstModel = activeAfter.model ?? runModel.model;
     const msgCost = deps.modelCaller.calculateCost(asstTokens.input, asstTokens.output, activeAfter);
-    // E1: never persist a text-less assistant row. Tool calls are not persisted
-    // (only tool rows carry toolCallId), so an empty assistant row would render
-    // as an empty bubble in UIs and reload as a useless orphan (messageToChatMessage
-    // cannot restore toolCalls). In-memory history is unaffected — the live
-    // messages.push above already kept this turn with its toolCalls.
-    if (finalContent.trim().length > 0) {
+    // P1.2: persist the assistant toolCalls so a reloaded transcript can
+    // re-attach the tool rows that follow (an assistant `toolCalls` entry
+    // without its results — or a result without the declaring assistant —
+    // makes providers reject the request). E1 still holds for the truly
+    // empty case: no text AND no tool calls → no row.
+    const persistedToolCalls = effectiveToolCalls.map((tc) => ({
+      id: tc.id,
+      name: tc.name,
+      args: tc.args as Record<string, unknown>,
+    }));
+    if (finalContent.trim().length > 0 || persistedToolCalls.length > 0) {
       await deps.addSessionMessage(sessionId, "assistant", finalContent, {
         tokens: asstTokens,
+        ...(persistedToolCalls.length > 0 ? { toolCalls: persistedToolCalls } : {}),
         ...(asstModel ? { model: asstModel } : {}),
         ...(msgCost !== undefined ? { cost: msgCost } : {}),
       });
@@ -1064,7 +1070,12 @@ export async function runLoop(
 
       const currentModel = runModel.model;
       await addSessionMessage(sessionId, "user", prompt,
-        { ...(currentModel ? { model: currentModel } : {}) },
+        {
+          ...(currentModel ? { model: currentModel } : {}),
+          // P1.2: persist multimodal parts so a reload reproduces the same
+          // user turn that was sent live (content alone drops the images).
+          ...(userContentParts?.length ? { contentBlocks: userContentParts } : {}),
+        },
       );
 
       messages = [

@@ -1,5 +1,6 @@
 import type { RunEvent } from "../contracts/events.js";
 import type { Session, Message, SessionStats } from "./session.js";
+import type { ToolCall, ContentPart } from "./model.js";
 
 export interface RunEventSnapshot {
   readonly runId: string;
@@ -45,6 +46,10 @@ export interface AddMessageOptions {
   role: string;
   content: string;
   toolCallId?: string;
+  /** Assistant tool calls persisted with the message (P1.2 round-trip). */
+  toolCalls?: readonly ToolCall[];
+  /** Structured content blocks persisted to `content_blocks` (P1.2 round-trip). */
+  contentBlocks?: readonly ContentPart[];
   tokens?: { input: number; output: number; reasoning?: number };
   model?: string;
   /** Provider that generated this message (attribution). */

@@ -1,4 +1,4 @@
-import type { RequestContext, RunId, AgentConfig, KnownRunEvent, RunEvent } from "@vinhnt-sdk/schema";
+import type { RequestContext, RunId, AgentConfig, KnownRunEvent, RunEvent, ToolCall, ContentPart } from "@vinhnt-sdk/schema";
 import { ConfigurationError } from "@vinhnt-sdk/schema";
 import { EventRegistry } from "@vinhnt-sdk/event";
 import type { EventDefinition, EventBus } from "@vinhnt-sdk/event";
@@ -50,16 +50,37 @@ const meta: { traceId?: string; aggregateId?: string } = { ...(event.traceId !==
   }
 }
 
+/** Optional fields threaded through to `SessionStore.addMessage` (P1.2). */
+export type SessionMessageExtra = {
+  toolCallId?: string;
+  toolCalls?: readonly ToolCall[];
+  contentBlocks?: readonly ContentPart[];
+  tokens?: { input: number; output: number; reasoning?: number };
+  model?: string;
+  cost?: number;
+};
+
 export async function addSessionMessage(
   deps: KernelSessionDeps,
   sessionId: string | undefined,
   role: string,
   content: string,
-  extra?: { toolCallId?: string; tokens?: { input: number; output: number; reasoning?: number }; model?: string; cost?: number },
+  extra?: SessionMessageExtra,
 ): Promise<void> {
   if (!sessionId || !deps.sessionStore || deps.noStore) return;
   try {
-    await deps.sessionStore.addMessage(sessionId, role, content, extra?.toolCallId, extra?.tokens, extra?.model, extra?.cost);
+    // Options-object form: the legacy positional overload cannot carry
+    // toolCalls/contentBlocks (P1.2 round-trip).
+    await deps.sessionStore.addMessage(sessionId, {
+      role,
+      content,
+      ...(extra?.toolCallId !== undefined ? { toolCallId: extra.toolCallId } : {}),
+      ...(extra?.toolCalls !== undefined ? { toolCalls: extra.toolCalls } : {}),
+      ...(extra?.contentBlocks !== undefined ? { contentBlocks: extra.contentBlocks } : {}),
+      ...(extra?.tokens !== undefined ? { tokens: extra.tokens } : {}),
+      ...(extra?.model !== undefined ? { model: extra.model } : {}),
+      ...(extra?.cost !== undefined ? { cost: extra.cost } : {}),
+    });
   } catch (err) {
     console.error("[kernel] Failed to add session message:", err);
     throw err;
