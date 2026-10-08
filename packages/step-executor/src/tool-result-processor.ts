@@ -59,6 +59,15 @@ export async function processToolResults(
   const toolResults = [...existingToolResults];
   let breakBatch = false;
 
+  // P1-2: failure results must persist like success results, otherwise the
+  // next turn hydrates an assistant toolCalls declaration with no matching
+  // tool message and repairToolPairing has to strip the whole step.
+  const persistFailure = async (content: string, toolCallId: string): Promise<void> => {
+    await deps.addSessionMessage(sessionId, "tool", content, {
+      toolCallId, model: runModel.model ?? "",
+    });
+  };
+
   for (const settled of results) {
     if (settled.status === "rejected") {
       const reasonStr = settled.reason instanceof Error ? settled.reason.message : String(settled.reason);
@@ -68,26 +77,36 @@ export async function processToolResults(
     const r = settled.value;
     if (r.result === "doom") {
       const errorMsg = r.reason ?? `Tool "${r.tc.toolName}" called with identical arguments ${doomThreshold} consecutive times. Aborting to prevent infinite loop.`;
-      messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(errorMsg, undefined, "doom_loop") });
+      const content = formatToolFailure(errorMsg, undefined, "doom_loop");
+      messages.push({ role: "tool", toolCallId: r.tc.toolId, content });
+      await persistFailure(content, r.tc.toolId);
       breakBatch = true;
       break;
     }
     if (r.result === "doom-hint") {
       // P1-3 inject-hint: surface a model-visible envelope WITHOUT aborting the batch.
       const hintMsg = r.reason ?? `Tool "${r.tc.toolName}" repeated with identical arguments ${doomThreshold} times.`;
-      messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(hintMsg, undefined, "doom_loop") });
+      const content = formatToolFailure(hintMsg, undefined, "doom_loop");
+      messages.push({ role: "tool", toolCallId: r.tc.toolId, content });
+      await persistFailure(content, r.tc.toolId);
       continue;
     }
     if (r.result === "not-found") {
-      messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(`Tool "${r.tc.toolName}" not found`, undefined, "unknown") });
+      const content = formatToolFailure(`Tool "${r.tc.toolName}" not found`, undefined, "unknown");
+      messages.push({ role: "tool", toolCallId: r.tc.toolId, content });
+      await persistFailure(content, r.tc.toolId);
       continue;
     }
     if (r.result === "denied") {
-      messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(r.reason ?? "denied", undefined, "permission_denied") });
+      const content = formatToolFailure(r.reason ?? "denied", undefined, "permission_denied");
+      messages.push({ role: "tool", toolCallId: r.tc.toolId, content });
+      await persistFailure(content, r.tc.toolId);
       continue;
     }
     if (r.result === "external") {
-      messages.push({ role: "tool", toolCallId: r.tc.toolId, content: formatToolFailure(r.reason ?? "external path forbidden", undefined, "path_forbidden") });
+      const content = formatToolFailure(r.reason ?? "external path forbidden", undefined, "path_forbidden");
+      messages.push({ role: "tool", toolCallId: r.tc.toolId, content });
+      await persistFailure(content, r.tc.toolId);
       continue;
     }
     if (r.result === "rejected") continue;

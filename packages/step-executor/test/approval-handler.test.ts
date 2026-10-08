@@ -31,13 +31,16 @@ function makeCtx(ask: ToolContext["ask"]): ToolContext {
 
 function makeDeps(gate: { checkSavedApproval: PermissionGate["checkSavedApproval"]; hasSavedRejection: PermissionGate["hasSavedRejection"] }) {
   const emitEvent = vi.fn(async () => {});
+  const addSessionMessage = vi.fn(async () => {});
   return {
     emitEvent,
+    addSessionMessage,
     deps: {
       store: { emitEvent },
       permissionGate: gate as unknown as PermissionGate,
       pluginManager: undefined,
       currentAgent: undefined as AgentConfig | undefined,
+      addSessionMessage,
     },
   };
 }
@@ -47,9 +50,10 @@ function run(
   gate: Parameters<typeof makeDeps>[0],
   messages: Parameters<typeof handleApproval>[6],
 ) {
-  const { deps, emitEvent } = makeDeps(gate);
+  const { deps, emitEvent, addSessionMessage } = makeDeps(gate);
   return {
     emitEvent,
+    addSessionMessage,
     promise: handleApproval(
       NEEDS_APPROVAL,
       makeTc(),
@@ -67,7 +71,7 @@ describe("handleApproval — terminal saved rejection", () => {
   it("TC01_saved_rejection_fails_tool_without_reopening_dialog", async () => {
     const ask = vi.fn(async () => "once" as const);
     const messages: Awaited<Parameters<typeof handleApproval>>[6] = [];
-    const { promise, emitEvent } = run(
+    const { promise, emitEvent, addSessionMessage } = run(
       ask,
       { checkSavedApproval: () => false, hasSavedRejection: () => true },
       messages,
@@ -79,13 +83,18 @@ describe("handleApproval — terminal saved rejection", () => {
     expect(messages[0]!.content).toContain("previously rejected");
     expect(emitEvent).toHaveBeenCalledTimes(1);
     expect(emitEvent.mock.calls[0]![0]).toMatchObject({ type: "tool.failed" });
+    // P1-2: rejection result persists so the next turn hydrates the pair.
+    expect(addSessionMessage).toHaveBeenCalledTimes(1);
+    expect(addSessionMessage).toHaveBeenCalledWith(
+      "session-1", "tool", messages[0]!.content, { toolCallId: "t1" },
+    );
   });
 
   it("TC02_no_saved_rejection_still_prompts_and_saves_rejection_on_reject", async () => {
     const ask = vi.fn(async () => "reject" as const);
     const saveRejection = vi.fn();
     const messages: Awaited<Parameters<typeof handleApproval>>[6] = [];
-    const { promise, emitEvent } = run(
+    const { promise, emitEvent, addSessionMessage } = run(
       ask,
       {
         checkSavedApproval: () => false,
@@ -99,6 +108,10 @@ describe("handleApproval — terminal saved rejection", () => {
     expect(ask).toHaveBeenCalledTimes(1);
     expect(saveRejection).toHaveBeenCalledWith("write_file", { filePath: "a.txt" }, undefined);
     expect(emitEvent.mock.calls[0]![0]).toMatchObject({ type: "tool.failed" });
+    expect(addSessionMessage).toHaveBeenCalledTimes(1);
+    expect(addSessionMessage).toHaveBeenCalledWith(
+      "session-1", "tool", messages[0]!.content, { toolCallId: "t1" },
+    );
   });
 
   it("TC03_saved_approval_short_circuits_without_dialog", async () => {

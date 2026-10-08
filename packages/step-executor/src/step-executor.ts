@@ -471,10 +471,14 @@ export class StepExecutor {
       const handoffResult = this.detectHandoff(results);
       if (handoffResult) {
         // Add a tool message indicating the handoff (for conversation history)
+        const handoffContent = `Handoff initiated: transferring control to agent "${handoffResult.signal.targetAgentId}". Reason: ${handoffResult.signal.reason}`;
         messages.push({
           role: "tool",
           toolCallId: handoffResult.tc.toolId,
-          content: `Handoff initiated: transferring control to agent "${handoffResult.signal.targetAgentId}". Reason: ${handoffResult.signal.reason}`,
+          content: handoffContent,
+        });
+        await this.deps.addSessionMessage(sessionId, "tool", handoffContent, {
+          toolCallId: handoffResult.tc.toolId, model: runModel.model ?? "",
         });
         return {
           toolCallCount: toolCallCount + 1,
@@ -557,6 +561,7 @@ export class StepExecutor {
       permissionGate: this.deps.permissionGate,
       pluginManager: this.deps.pluginManager,
       currentAgent: this.agentFor(runId),
+      addSessionMessage: this.deps.addSessionMessage,
     }, selfApproving);
   }
 

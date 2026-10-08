@@ -28,6 +28,23 @@ describe("processToolResults (P1-4 + P1-7)", () => {
     expect(parsed.hint).toBe("Ask the user for approval or choose a different approach.");
   });
 
+  it("P1-2: persists failure results with toolCallId so the next turn hydrates the pair", async () => {
+    const messages: ChatMessage[] = [];
+    const calls: unknown[][] = [];
+    const add = async (...args: unknown[]) => { calls.push(args); };
+    await processToolResults(
+      [
+        fulfilled(plan("shell", "t9"), "denied", undefined, "not allowed"),
+        fulfilled(plan("shell", "t8"), "not-found"),
+      ],
+      3, messages, "sid-1", { model: "m1" }, 0, [], [],
+      { addSessionMessage: add },
+    );
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toEqual(["sid-1", "tool", messages[0]!.content, { toolCallId: "t9", model: "m1" }]);
+    expect(calls[1]).toEqual(["sid-1", "tool", messages[1]!.content, { toolCallId: "t8", model: "m1" }]);
+  });
+
   it("formats doom as envelope with doom_loop hint", async () => {
     const messages: ChatMessage[] = [];
     const r = await processToolResults(

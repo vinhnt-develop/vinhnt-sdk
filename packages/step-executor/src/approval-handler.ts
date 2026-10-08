@@ -14,6 +14,7 @@ export interface ApprovalHandlerDeps {
   readonly permissionGate: PermissionGate;
   readonly pluginManager: StepExecutorPluginHooks | undefined;
   currentAgent: AgentConfig | undefined;
+  readonly addSessionMessage: (sessionId: string | undefined, role: string, content: string, extra?: Record<string, unknown>) => Promise<void>;
 }
 
 export async function handleApproval(
@@ -22,7 +23,7 @@ export async function handleApproval(
   toolCtx: ToolContext,
   runId: RunId,
   ctx: RequestContext,
-  _sessionId: string | undefined,
+  sessionId: string | undefined,
   messages: ChatMessage[],
   deps: ApprovalHandlerDeps,
   selfApproving?: boolean,
@@ -32,7 +33,9 @@ export async function handleApproval(
   // otherwise hand a denied tool straight through to execution.
   if (permResult.allowed) return true;
   if (!permResult.needsApproval) {
-    messages.push({ role: "tool", toolCallId: tc.toolId, content: formatToolFailure(`Tool "${tc.toolName}" denied by permission rules`, undefined, "permission_denied") });
+    const content = formatToolFailure(`Tool "${tc.toolName}" denied by permission rules`, undefined, "permission_denied");
+    messages.push({ role: "tool", toolCallId: tc.toolId, content });
+    await deps.addSessionMessage(sessionId, "tool", content, { toolCallId: tc.toolId });
     return false;
   }
 
@@ -52,7 +55,9 @@ export async function handleApproval(
       occurredAt: new Date().toISOString(), traceId: ctx.traceId,
       data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Tool "${tc.toolName}" rejected by user` },
     });
-    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" rejected by user (previously rejected — will not re-prompt; choose a different approach or ask the user directly)` });
+    const content = `Error: Tool "${tc.toolName}" rejected by user (previously rejected — will not re-prompt; choose a different approach or ask the user directly)`;
+    messages.push({ role: "tool", toolCallId: tc.toolId, content });
+    await deps.addSessionMessage(sessionId, "tool", content, { toolCallId: tc.toolId });
     return false;
   }
 
@@ -69,7 +74,9 @@ export async function handleApproval(
       occurredAt: new Date().toISOString(), traceId: ctx.traceId,
       data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Tool "${tc.toolName}" rejected by user` },
     });
-    messages.push({ role: "tool", toolCallId: tc.toolId, content: `Error: Tool "${tc.toolName}" rejected by user` });
+    const content = `Error: Tool "${tc.toolName}" rejected by user`;
+    messages.push({ role: "tool", toolCallId: tc.toolId, content });
+    await deps.addSessionMessage(sessionId, "tool", content, { toolCallId: tc.toolId });
     return false;
   }
 
