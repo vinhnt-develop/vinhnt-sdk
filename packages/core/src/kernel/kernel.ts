@@ -832,7 +832,7 @@ this.stepExecutor = new StepExecutor({
         eventHandlers.forEach(h => h(startEvent));
 
         // Run the loop — it reports its terminal status through the return value.
-        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs, structuredOutput } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
+        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs, structuredOutput, error: loopError } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
 
         completed = true;
         result = {
@@ -843,6 +843,9 @@ this.stepExecutor = new StepExecutor({
           status: cancelled || runStatus === "cancelled"
             ? "cancelled"
             : runStatus === "failed" ? "failed" : "succeeded",
+          // Surface the run-loop failure reason (HTTP 400, max steps, budget...)
+          // instead of consumers falling back to a generic "Agent run failed".
+          ...(loopError !== undefined ? { error: loopError } : {}),
           ...(structuredOutput !== undefined ? { structuredOutput } : {}),
           usage: {
             totalSteps,

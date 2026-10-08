@@ -140,6 +140,8 @@ export interface RunLoopResult {
   readonly totalInputTokens?: number;
   readonly totalOutputTokens?: number;
   readonly durationMs?: number;
+  /** Failure reason when status is "failed" (surfaced to consumers via AgentRunResult.error). */
+  readonly error?: string;
   /** Validated structured output (when outputType is Zod schema). */
   readonly structuredOutput?: unknown;
   /** If set, a handoff was detected — kernel should transfer control. */
@@ -1261,7 +1263,7 @@ export async function runLoop(
             await emitFail(runId, ctx, reason, step, sessionId, totalInputTokens, totalOutputTokens);
             await deps.saga.rollbackAll();
             setState(runId, "failed");
-            return { totalSteps: step + 1, status: "failed", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
+            return { totalSteps: step + 1, status: "failed", error: reason, totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
           }
         }
 
@@ -1378,7 +1380,7 @@ export async function runLoop(
       await emitFail(runId, ctx, `Exceeded max steps (${runMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
       await deps.saga.rollbackAll();
       setState(runId, "failed");
-      return { totalSteps: step, status: "failed", totalInputTokens, totalOutputTokens, durationMs };
+      return { totalSteps: step, status: "failed", error: `Exceeded max steps (${runMaxSteps})`, totalInputTokens, totalOutputTokens, durationMs };
     } else {
       if (runAbort.signal.aborted) return cancelRun(step + 1);
       await emitCompleted({
@@ -1434,7 +1436,7 @@ export async function runLoop(
     await emitFail(runId, ctx, errorMsg, step, sessionId, totalInputTokens, totalOutputTokens, failDurationMs);
     setState(runId, "failed");
     if (runSessionState) runSessionState.isRunning = false;
-    return { totalSteps: step + 1, status: "failed", totalInputTokens, totalOutputTokens, durationMs: failDurationMs };
+    return { totalSteps: step + 1, status: "failed", error: errorMsg, totalInputTokens, totalOutputTokens, durationMs: failDurationMs };
   } finally {
     deps.saga.clear();
     deps.stateMachine.cleanupRun(runId, sessionId);
