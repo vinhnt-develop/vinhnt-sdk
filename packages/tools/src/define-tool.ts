@@ -133,6 +133,37 @@ function convert(schema: ZodLike): MutableSchema | undefined {
   }
 }
 
+/**
+ * A hand-written `jsonSchema` (used to advertise `path`/`dirPath` aliases)
+ * replaces the zod-derived schema wholesale — including its `required` list.
+ * Models then freely send `{}` or wrong-typed values (e.g. `dirPath: true`).
+ * Re-inject `required` derived from the zod shape when the override omits the
+ * `required` key entirely. An explicit `required` array (including `[]`) is
+ * always respected so authors can opt out by declaring it.
+ */
+function withZodRequired(
+  jsonSchema: NestedJsonSchema | undefined,
+  input: unknown,
+): NestedJsonSchema | undefined {
+  if (!jsonSchema || typeof jsonSchema !== "object" || Array.isArray(jsonSchema)) return jsonSchema;
+  if (jsonSchema.required !== undefined) return jsonSchema;
+  const schema = input as ZodLike | undefined;
+  if (schema?._def?.type !== "object") return jsonSchema;
+  const raw = schema._def.shape;
+  const shape: Record<string, ZodLike> = typeof raw === "function" ? raw() : (raw ?? {});
+  const required = Object.entries(shape)
+    .filter(
+      ([, child]) =>
+        child &&
+        !child.isOptional?.() &&
+        child._def?.type !== "optional" &&
+        child._def?.type !== "default",
+    )
+    .map(([key]) => key);
+  if (!required.length) return jsonSchema;
+  return { ...jsonSchema, required };
+}
+
 /** Build a schema-first {@link Tool} from its config. */
 export function defineTool<TInput = unknown, TOutput = unknown>(
   config: ToolConfig<TInput, TOutput>,
@@ -150,7 +181,9 @@ export function defineTool<TInput = unknown, TOutput = unknown>(
         id: config.name,
         description: config.description,
         risk: config.risk,
-        inputSchema: config.jsonSchema ?? zodSchemaToNestedJsonSchema(config.input),
+        inputSchema:
+          withZodRequired(config.jsonSchema, config.input) ??
+          zodSchemaToNestedJsonSchema(config.input),
         ...(config.timeoutMs !== undefined ? { timeoutMs: config.timeoutMs } : {}),
         ...(config.permissionAction !== undefined ? { permissionAction: config.permissionAction } : {}),
         ...(config.selfApproving !== undefined ? { selfApproving: config.selfApproving } : {}),

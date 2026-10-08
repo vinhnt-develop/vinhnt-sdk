@@ -103,7 +103,7 @@ describe("defineTool", () => {
     });
   });
 
-  it("allows an explicit jsonSchema override", () => {
+  it("merges zod required into an explicit jsonSchema override that omits it", () => {
     const tool = defineTool({
       name: "write_file",
       description: "Write a file",
@@ -117,6 +117,29 @@ describe("defineTool", () => {
     expect(tool.toDefinition().inputSchema).toEqual({
       type: "object",
       properties: { path: { type: "string" } },
+      required: ["path"],
+    });
+  });
+
+  it("respects an explicit required array on the override (including empty)", () => {
+    const tool = defineTool({
+      name: "write_file",
+      description: "Write a file",
+      risk: "write",
+      input: z.object({ path: z.string() }),
+      jsonSchema: {
+        type: "object",
+        properties: { path: { type: "string" } },
+        required: [],
+      },
+      async execute() {
+        return "ok";
+      },
+    });
+    expect(tool.toDefinition().inputSchema).toEqual({
+      type: "object",
+      properties: { path: { type: "string" } },
+      required: [],
     });
   });
 
