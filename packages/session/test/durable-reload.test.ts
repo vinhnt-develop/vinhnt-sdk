@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findActiveSessionIds, restoreRunFromStore } from "../src/durable-reload.js";
+import { findActiveSessionIds, restoreRunFromStore, loadSessionHistory } from "../src/durable-reload.js";
 import { NullRunEventStore, NullSessionStore } from "../src/null-store.js";
 import { COMPACTION_SUMMARY_PREFIX } from "@vinhnt-sdk/schema";
 import type { RunEvent, RunId, SessionId, Message } from "@vinhnt-sdk/schema";
@@ -157,6 +157,53 @@ describe("durable compaction reload (RV-15)", () => {
     expect(reloaded).toHaveLength(2);
     expect(reloaded[0]!.content).toBe("Second compression.");
     expect(reloaded[1]!.content).toBe("final reply");
+  });
+});
+
+describe("loadSessionHistory", () => {
+  function msg(id: string, role: string, content: string, toolCallId?: string): Message {
+    return {
+      id: id as Message["id"],
+      sessionId: "sess-hist" as Message["sessionId"],
+      role,
+      content,
+      ...(toolCallId ? { toolCallId } : {}),
+      createdAt: "2026-10-03T00:00:00.000Z",
+    };
+  }
+
+  function storeWith(messages: Message[]): SessionStore {
+    return {
+      async listMessages() { return messages; },
+    } as unknown as SessionStore;
+  }
+
+  it("returns an empty transcript when no store is provided", async () => {
+    expect(await loadSessionHistory(undefined, "sess-hist")).toEqual([]);
+  });
+
+  it("collapses to the last compaction marker and maps rows to ChatMessage", async () => {
+    const messages = [
+      msg("m-1", "user", "old prompt"),
+      msg("m-2", "system", `${COMPACTION_SUMMARY_PREFIX}Compressed context.`),
+      msg("m-3", "user", "recent prompt"),
+      msg("m-4", "assistant", "recent reply"),
+    ];
+
+    const history = await loadSessionHistory(storeWith(messages), "sess-hist");
+    expect(history.map((m) => [m.role, m.content])).toEqual([
+      ["system", "Compressed context."],
+      ["user", "recent prompt"],
+      ["assistant", "recent reply"],
+    ]);
+  });
+
+  it("keeps toolCallId so tool rows stay valid in the transcript", async () => {
+    const history = await loadSessionHistory(
+      storeWith([msg("m-1", "tool", "tool output", "call-1")]),
+      "sess-hist",
+    );
+    expect(history).toEqual([{ role: "tool", content: "tool output", toolCallId: "call-1" }]);
   });
 });
 

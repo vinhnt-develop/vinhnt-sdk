@@ -64,6 +64,25 @@ function collapseCompactedMessages(dbMessages: readonly Message[]): Message[] {
 }
 
 /**
+ * Load a session's persisted transcript as run-loop-ready {@link ChatMessage}s.
+ *
+ * - Collapses everything before the last compaction summary marker (RV-15) so
+ *   the reloaded context equals the post-compaction conversation.
+ * - Maps DB rows to ChatMessage (role/content + optional toolCallId).
+ *
+ * Intended for hydrating a {@link SessionRuntimeState} at run start so the
+ * model receives prior-turn history instead of a fresh single-turn array.
+ */
+export async function loadSessionHistory(
+  sessionStore: SessionStore | undefined,
+  sessionId: string,
+): Promise<ChatMessage[]> {
+  if (!sessionStore) return [];
+  const dbMessages = await sessionStore.listMessages(sessionId);
+  return collapseCompactedMessages(dbMessages).map(messageToChatMessage);
+}
+
+/**
  * Restore a run's state from durable storage (snapshot + messages).
  *
  * This enables "durable history reload" — after a process restart, the kernel
@@ -91,14 +110,10 @@ export async function restoreRunFromStore(
   // Find session ID from snapshot or events
   const sessionId = snapshot?.state?.sessionId as string | undefined;
 
-  // 3. Load persisted messages from SessionStore
-  let messages: ChatMessage[] = [];
-  if (sessionStore && sessionId) {
-    const dbMessages = await sessionStore.listMessages(sessionId);
-    // RV-15: drop everything before the last compaction summary marker so the
-    // resumed context equals the compacted conversation after a restart.
-    messages = collapseCompactedMessages(dbMessages).map(messageToChatMessage);
-  }
+  // 3. Load persisted messages from SessionStore (RV-15 collapse + mapping).
+  const messages: ChatMessage[] = sessionId
+    ? await loadSessionHistory(sessionStore, sessionId)
+    : [];
 
   // 4. Reconstruct SessionRuntimeState
   const sessionState = new InMemorySessionState();

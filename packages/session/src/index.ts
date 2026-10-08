@@ -31,7 +31,7 @@ export { InMemorySessionState } from "./in-memory-session-state.js";
 
 // Durable reload
 export type { RestoredRun } from "./durable-reload.js";
-export { restoreRunFromStore, findActiveSessionIds } from "./durable-reload.js";
+export { restoreRunFromStore, findActiveSessionIds, loadSessionHistory } from "./durable-reload.js";
 
 // Session tree
 export type { SessionTree } from "./session-tree.js";
