@@ -368,6 +368,77 @@ describe("loadSessionHistory — P1.2 content round-trip", () => {
   });
 });
 
+describe("loadSessionHistory — P4.1 historyLimit", () => {
+  function row(id: string, role: string, content: string, extra?: Partial<Message>): Message {
+    return {
+      id: id as Message["id"],
+      sessionId: "sess-limit" as Message["sessionId"],
+      role,
+      content,
+      createdAt: "2026-10-09T00:00:00.000Z",
+      ...extra,
+    };
+  }
+
+  function storeWith(messages: Message[]): SessionStore {
+    return { async listMessages() { return messages; } } as unknown as SessionStore;
+  }
+
+  it("keeps only the last N messages when limit is set (no store deletion)", async () => {
+    const messages = Array.from({ length: 30 }, (_, i) =>
+      row(`m-${i + 1}`, i % 2 === 0 ? "user" : "assistant", `message ${i + 1}`),
+    );
+    const history = await loadSessionHistory(storeWith(messages), "sess-limit", { limit: 20 });
+    expect(history).toHaveLength(20);
+    expect(history[0]!.content).toBe("message 11");
+    expect(history[19]!.content).toBe("message 30");
+  });
+
+  it("loads the full transcript when limit is 0 or omitted", async () => {
+    const messages = [row("m-1", "user", "a"), row("m-2", "assistant", "b")];
+    expect(await loadSessionHistory(storeWith(messages), "sess-limit")).toHaveLength(2);
+    expect(await loadSessionHistory(storeWith(messages), "sess-limit", { limit: 0 })).toHaveLength(2);
+  });
+
+  it("leaves transcripts shorter than the limit untouched", async () => {
+    const messages = [row("m-1", "user", "only")];
+    const history = await loadSessionHistory(storeWith(messages), "sess-limit", { limit: 20 });
+    expect(history).toEqual([{ role: "user", content: "only" }]);
+  });
+
+  it("drops tool rows orphaned by the window cut (pairs repaired after slicing)", async () => {
+    const messages = [
+      row("m-1", "assistant", "first call", { toolCalls: [{ id: "c1", name: "shell", args: {} }] }),
+      row("m-2", "tool", "first result", { toolCallId: "c1" }),
+      row("m-3", "user", "next"),
+    ];
+    // limit=2 cuts between the declaration and its result — the orphaned tool
+    // row must be dropped so providers never reject the transcript.
+    const history = await loadSessionHistory(storeWith(messages), "sess-limit", { limit: 2 });
+    expect(history.map((m) => m.role)).toEqual(["user"]);
+  });
+
+  it("applies the limit AFTER compaction collapse, not before", async () => {
+    const messages = [
+      row("m-1", "user", "ancient prompt"),
+      row("m-2", "assistant", "ancient reply"),
+      row("m-3", "system", `${COMPACTION_SUMMARY_PREFIX}Compressed.`),
+      row("m-4", "user", "recent"),
+      row("m-5", "assistant", "reply"),
+    ];
+    // Collapse yields 3 rows [summary, recent, reply]; limit=2 trims to the
+    // last 2 — the summary marker is the cut point, never dropped mid-window.
+    const history = await loadSessionHistory(storeWith(messages), "sess-limit", { limit: 2 });
+    expect(history.map((m) => [m.role, m.content])).toEqual([
+      ["user", "recent"],
+      ["assistant", "reply"],
+    ]);
+    // Without the cut the summary stays at the head.
+    const full = await loadSessionHistory(storeWith(messages), "sess-limit", { limit: 3 });
+    expect(full.map((m) => m.role)).toEqual(["system", "user", "assistant"]);
+  });
+});
+
 /** Minimal in-memory store that actually keeps snapshots (for snapshot-based tests). */
 class PersistingStore implements RunEventStore {
   private events: RunEvent[] = [];

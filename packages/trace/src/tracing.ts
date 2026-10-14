@@ -69,12 +69,16 @@ export function generateTraceId(): string {
 
 /**
  * Create a new span.
+ *
+ * `startTimeMs` back-dates the span — used when a span is recorded after the
+ * work finished (e.g. tool batches, failed calls) but must keep its real start.
  */
 export function createSpan(
   name: string,
   kind: SpanKind,
   parentId?: string,
   traceId?: string,
+  startTimeMs?: number,
 ): Span {
   return {
     id: generateSpanId(),
@@ -82,7 +86,7 @@ export function createSpan(
     parentId,
     name,
     kind,
-    startTimeMs: Date.now(),
+    startTimeMs: startTimeMs ?? Date.now(),
     endTimeMs: 0,
     status: "ok",
     attributes: {},
@@ -120,9 +124,9 @@ export class SpanRecorder {
     this.traceId = traceId ?? generateTraceId();
   }
 
-  /** Start a new span */
-  startSpan(name: string, kind: SpanKind, parentId?: string): Span {
-    const span = createSpan(name, kind, parentId ?? this.spans[this.spans.length - 1]?.id, this.traceId);
+  /** Start a new span — `startTimeMs` optionally back-dates the start. */
+  startSpan(name: string, kind: SpanKind, parentId?: string, startTimeMs?: number): Span {
+    const span = createSpan(name, kind, parentId ?? this.spans[this.spans.length - 1]?.id, this.traceId, startTimeMs);
     this.spans.push(span);
     return span;
   }

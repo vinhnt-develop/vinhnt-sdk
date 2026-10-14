@@ -40,6 +40,7 @@ export default defineConfig({
       'packages/plugin',
       'packages/lsp',
       'packages/provider-openai-compatible',
+      'packages/tools-browser',
       'evals',
     ],
   },

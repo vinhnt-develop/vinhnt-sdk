@@ -23,8 +23,6 @@ import {
   ToolRegistry,
   BoundedMemory,
   ContextCompressor,
-  redactSecrets,
-  detectSecrets,
 } from '../src/index.js';
 import type {
   AgentKernelConfig,

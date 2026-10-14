@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/config"
 description: "Credentials, env resolution, settings"
 lang: "en"
-version: "0.4.0"
+version: "0.4.2"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "config"
@@ -179,15 +179,15 @@ const ns = settingsNamespace("myapp");
 ## Error Handling
 
 ```typescript
-import { ConfigError } from "@vinhnt-sdk/schema";
+import { ConfigurationError } from "@vinhnt-sdk/schema";
 
 try {
   const cred = resolveCredentialMultiLayer(config, ref);
   if (!cred.value) {
-    throw new ConfigError(`Missing credential: ${ref.key}`);
+    throw new ConfigurationError(`Missing credential: ${ref.key}`);
   }
 } catch (e) {
-  if (e instanceof ConfigError) {
+  if (e instanceof ConfigurationError) {
     console.error("Configuration error:", e.message);
   }
 }

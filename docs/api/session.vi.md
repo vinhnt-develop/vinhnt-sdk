@@ -4,7 +4,7 @@ description: "Quản lý trạng thái session và store"
 lang: "vi"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.4.6"
 sidebarLabel: "session"
 ---
 

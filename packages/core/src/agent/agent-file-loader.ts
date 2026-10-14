@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { AgentDefinition, AgentDefParser } from "../agent/agent-def.js";
 import type { SkillSource } from "@vinhnt-sdk/schema";
+import { getLogger } from "@vinhnt-sdk/schema";
 import { AgentParser } from "../agent/agent-parser.js";
 
 /**
@@ -39,7 +40,7 @@ export class AgentFileLoader {
           const agent = this.parser.parse(raw, source);
           agents.push(agent);
         } catch (error) {
-          console.error(`[AgentFileLoader] Failed to load agent from ${filePath}:`, error);
+          getLogger().error(`[AgentFileLoader] Failed to load agent from ${filePath}:`, error);
         }
       }
     } catch {

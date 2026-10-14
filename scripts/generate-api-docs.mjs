@@ -18,7 +18,6 @@ const PKG_META = {
   "core":                    { icon: "C",   tag: "Core",      desc: "Core agent kernel - lifecycle, tool execution, permissions, LLM interactions." },
   "plugin":                  { icon: "P",   tag: "Core",      desc: "Plugin system with definePlugin, lifecycle hooks, and registry." },
   "provider-openai-compatible": { icon: "O",  tag: "Core",   desc: "OpenAI-compatible provider with streaming, retry, presets for DeepSeek, Anthropic, Ollama." },
-  "provider-spec":           { icon: "Ps",  tag: "Core",      desc: "Provider specification - LanguageModelV1, RunUsage, Tool, ChatMessage, ContentBlock, errors." },
   "step-executor":           { icon: "S",   tag: "Core",      desc: "Step execution: tool lifecycle, timeouts, permission gating, doom-loop, circuit breaker." },
   "session":                 { icon: "Se",  tag: "Core",      desc: "Session persistence, conversation compaction, title generation." },
   "event":                   { icon: "E",   tag: "Core",      desc: "Event bus, definitions, migration, global event system." },

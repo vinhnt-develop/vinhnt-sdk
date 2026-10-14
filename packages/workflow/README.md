@@ -1,6 +1,6 @@
 # @vinhnt-sdk/workflow
 
-> Version: 0.4.0 | Status: BETA
+> Status: BETA
 
 Workflow primitives for agent orchestration — parallel, sequential, conditional execution.
 

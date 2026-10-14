@@ -7,7 +7,6 @@ category: "Getting Started"
 sidebarPosition: 1
 sidebarLabel: "Installation"
 tags: [setup, install]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 

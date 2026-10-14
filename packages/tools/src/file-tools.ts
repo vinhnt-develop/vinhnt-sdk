@@ -6,6 +6,8 @@ import { generateDiff, defineTool } from "./index.js";
 import { z } from "zod";
 import { sanitizeForLLM } from "@vinhnt-sdk/guard";
 import { ValidationError, ToolPermissionDenied } from "@vinhnt-sdk/schema";
+import { parseApplyPatch, detectApplyPatchFormat, applyHunkToContent } from "./apply-patch-grammar.js";
+import type { ApplyPatchOp, ApplyPatchProgram } from "./apply-patch-grammar.js";
 
 const filePathField = z.string().min(1);
 
@@ -31,7 +33,7 @@ const EditFileSchema = z.object({
   { message: "Either oldString+newString or edits array is required" },
 );
 const ApplyPatchSchema = z.object({
-  filePath: filePathField,
+  filePath: filePathField.optional(),
   patch: z.string().min(1),
 });
 const ListDirectorySchema = z.object({
@@ -70,9 +72,9 @@ const EDIT_FILE_SCHEMA = {
 const APPLY_PATCH_SCHEMA = {
   type: "object" as const,
   properties: {
-    filePath: { type: "string" as const, description: "Path relative to workspace root (or use 'path' alias)" },
+    filePath: { type: "string" as const, description: "Target file for SEARCH/REPLACE patches (path relative to workspace root or 'path' alias). Ignored for structured *** Begin Patch patches - their paths come from the patch." },
     path: { type: "string" as const, description: "Alias for filePath" },
-    patch: { type: "string" as const, description: "Search/replace patch with one or more SEARCH/REPLACE blocks" },
+    patch: { type: "string" as const, description: "SEARCH/REPLACE blocks (<<<<<<< SEARCH ... ======= ... >>>>>>>) or a structured *** Begin Patch patch (*** Update/Add/Delete File sections with @@ hunks)" },
   },
   required: ["patch"],
 };
@@ -217,7 +219,7 @@ export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileRead
       await tracker?.trackRead(target, st);
       const content = await readFile(target, "utf-8");
       const result = v.stripTrailingNewline ? content.replace(/\n$/, "") : content;
-      return sanitizeForLLM(result, "read_file");
+      return sanitizeForLLM(result, "read_file", ctx.sanitizeLimitChars);
     },
   }).toDefinition();
 }
@@ -571,63 +573,228 @@ function parsePatch(patch: string): { oldString: string; newString: string }[] {
   return blocks;
 }
 
+/** Parse a structured patch: strict first, lenient fallback, rethrow strict. */
+function parseStructuredPatch(patch: string): ApplyPatchProgram {
+  try {
+    return parseApplyPatch(patch, "strict");
+  } catch (strictError) {
+    try {
+      return parseApplyPatch(patch, "lenient");
+    } catch {
+      throw strictError;
+    }
+  }
+}
+
+interface PlannedPatchEntry {
+  readonly display: string;
+  /** File content before the patch (null = did not exist). */
+  readonly original: string | null;
+  /** File content after the patch (null = file is deleted). */
+  current: string | null;
+}
+
 /**
- * Create the `apply_patch` tool. Applies a SEARCH/REPLACE block patch where
- * each search string must match exactly once in the target file.
+ * Apply a structured `*** Begin Patch` patch: every path is checked against
+ * the workspace, all files are read/computed first, then committed together
+ * under one compensation, so a failure anywhere leaves every file untouched.
+ */
+async function applyStructuredPatch(
+  patch: string,
+  root: string,
+  ctx: ToolContext,
+  tracker: FileReadTracker | undefined,
+  externalDirAccess: boolean | undefined,
+): Promise<{
+  patched: string | string[]; blocks: number; diff: string;
+  additions: number; removals: number; deleted?: string[];
+}> {
+  const program = parseStructuredPatch(patch);
+  const ops: readonly ApplyPatchOp[] = program.ops;
+  const planned = new Map<string, PlannedPatchEntry>();
+
+  const load = async (real: string, display: string): Promise<PlannedPatchEntry> => {
+    const existing = planned.get(real);
+    if (existing) return existing;
+    const content = await readFile(real, "utf-8").catch((err: NodeJS.ErrnoException) => {
+      if (err && err.code === "ENOENT") return null;
+      throw err;
+    });
+    const entry: PlannedPatchEntry = { display, original: content, current: content };
+    planned.set(real, entry);
+    return entry;
+  };
+
+  for (const op of ops) {
+    const real = await ensurePathAccess(resolve(root, op.path), root, op.path, ctx, externalDirAccess);
+    if (op.kind === "update") {
+      await tracker?.assertWasRead(real);
+      const entry = await load(real, op.path);
+      if (entry.original === null) {
+        throw new ValidationError(`apply_patch: file not found: ${op.path}`);
+      }
+      if (entry.current === null) {
+        throw new ValidationError(`apply_patch: cannot update ${op.path} -- it is deleted earlier in this patch`);
+      }
+      let content = entry.current;
+      for (const hunk of op.hunks) {
+        content = applyHunkToContent(content, hunk, op.path);
+      }
+      if (op.moveTo !== undefined && op.moveTo !== op.path) {
+        const destReal = await ensurePathAccess(resolve(root, op.moveTo), root, op.moveTo, ctx, externalDirAccess);
+        if (planned.has(destReal)) {
+          throw new ValidationError(`apply_patch: ${op.moveTo} has multiple operations in one patch`);
+        }
+        const destExists = await stat(destReal).then(() => true, () => false);
+        if (destExists) {
+          throw new ValidationError(`apply_patch: move target already exists: ${op.moveTo}`);
+        }
+        planned.set(destReal, { display: op.moveTo, original: null, current: content });
+        entry.current = null;
+      } else {
+        entry.current = content;
+      }
+    } else if (op.kind === "add") {
+      if (planned.has(real)) {
+        throw new ValidationError(`apply_patch: ${op.path} has multiple operations in one patch`);
+      }
+      const exists = await stat(real).then(() => true, () => false);
+      if (exists) {
+        throw new ValidationError(`apply_patch: cannot add ${op.path} -- file already exists`);
+      }
+      planned.set(real, { display: op.path, original: null, current: op.content });
+    } else {
+      await tracker?.assertWasRead(real);
+      const entry = await load(real, op.path);
+      if (entry.original === null) {
+        throw new ValidationError(`apply_patch: cannot delete ${op.path} -- file not found`);
+      }
+      if (entry.current === null) {
+        throw new ValidationError(`apply_patch: cannot delete ${op.path} -- it is deleted earlier in this patch`);
+      }
+      entry.current = null;
+    }
+  }
+
+  const committed: { real: string; display: string; original: string | null; next: string | null }[] = [];
+  for (const [real, entry] of planned) {
+    if (entry.current === entry.original) continue;
+    committed.push({ real, display: entry.display, original: entry.original, next: entry.current });
+  }
+
+  if (committed.length > 0) {
+    ctx.setCompensation(async () => {
+      for (const c of [...committed].reverse()) {
+        if (c.original !== null) await atomicWriteFile(c.real, c.original);
+        else await rm(c.real, { force: true });
+      }
+    });
+    for (const c of committed) {
+      if (c.next === null) {
+        await rm(c.real, { force: true });
+      } else {
+        await mkdir(dirname(c.real), { recursive: true });
+        await atomicWriteFile(c.real, c.next);
+      }
+    }
+  }
+
+  let additions = 0;
+  let removals = 0;
+  const diffs: string[] = [];
+  const patchedPaths: string[] = [];
+  const deletedPaths: string[] = [];
+  for (const c of committed) {
+    const d = generateDiff(c.display, c.original ?? "", c.next ?? "");
+    if (d.diff) diffs.push(d.diff);
+    additions += d.additions;
+    removals += d.removals;
+    if (c.next === null) deletedPaths.push(c.display);
+    else patchedPaths.push(c.display);
+  }
+  const blocks = ops.reduce(
+    (n, op) => n + (op.kind === "update" ? Math.max(op.hunks.length, 1) : 1),
+    0,
+  );
+  return {
+    patched: patchedPaths.length === 1 ? patchedPaths[0]! : patchedPaths,
+    blocks,
+    diff: diffs.join("\n"),
+    additions,
+    removals,
+    ...(deletedPaths.length > 0 ? { deleted: deletedPaths } : {}),
+  };
+}
+
+/**
+ * Create the `apply_patch` tool. Two wire formats: legacy SEARCH/REPLACE
+ * blocks (requires `filePath`, each search string must match exactly once)
+ * and the structured `*** Begin Patch` grammar (paths come from the patch;
+ * multi-file edits are transactional - any failure leaves files untouched).
  */
 export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean) {
-  return defineTool<{ filePath: string; patch: string }, {
-    patched: string; blocks: number; diff: string; additions: number; removals: number;
+  return defineTool<{ filePath?: string | undefined; patch: string }, {
+    patched: string | string[]; blocks: number; diff: string;
+    additions: number; removals: number; deleted?: string[] | undefined;
   }>({
     name: "apply_patch",
-    description: "Apply a search/replace patch to an existing file. The patch must contain one or more search/replace blocks in the format: <<<<<<< SEARCH followed by the exact text to find, then =======, then the replacement text, then >>>>>>>. Each search string must match exactly once in the file.",
+    description: "Apply a patch to files: SEARCH/REPLACE blocks (<<<<<<< SEARCH ... ======= ... >>>>>>>) with filePath, or a structured *** Begin Patch patch (Update/Add/Delete File sections). Each search block must match exactly once.",
     risk: "write",
     input: ApplyPatchSchema,
     jsonSchema: APPLY_PATCH_SCHEMA,
     normalize: normalizeInput,
     async execute(v, ctx) {
       const root = resolveToolRoot(workspaceRoot, ctx);
-      const target = await ensurePathAccess(resolve(root, v.filePath), root, v.filePath, ctx, externalDirAccess);
-      await tracker?.assertWasRead(target);
-      const oldContent = await readFile(target, "utf-8");
-      const blocks = parsePatch(v.patch);
-      let content = oldContent;
-      const totalAdditions: number[] = [];
-      const totalRemovals: number[] = [];
-
-      for (const block of blocks) {
-        if (!content.includes(block.oldString)) {
-          const snippet = content.length > 400 ? content.slice(0, 200) + "\n...\n" + content.slice(-200) : content;
+      const filePath = v.filePath;
+      if (detectApplyPatchFormat(v.patch) === "legacy") {
+        if (!filePath) {
           throw new ValidationError(
-            `Search string not found in ${v.filePath} (${content.length} chars). ` +
-            `File content:\n---\n${snippet}\n---\n` +
-            `Searched for:\n---\n${block.oldString.slice(0, 200)}${block.oldString.length > 200 ? "..." : ""}\n---`
+            "apply_patch: filePath is required for SEARCH/REPLACE patches (or send a structured *** Begin Patch patch)",
           );
         }
-        const firstIdx = content.indexOf(block.oldString);
-        const lastIdx = content.lastIndexOf(block.oldString);
-        if (firstIdx !== lastIdx) {
-          const count = content.split(block.oldString).length - 1;
-          throw new ValidationError(`Search string found ${count} times in ${v.filePath} — each block must match exactly once`);
-        }
-        const newContent = content.replace(block.oldString, block.newString);
-        content = newContent;
-        totalAdditions.push(block.newString.length);
-        totalRemovals.push(block.oldString.length);
-      }
+        const target = await ensurePathAccess(resolve(root, filePath), root, filePath, ctx, externalDirAccess);
+        await tracker?.assertWasRead(target);
+        const oldContent = await readFile(target, "utf-8");
+        const blocks = parsePatch(v.patch);
+        let content = oldContent;
+        const totalAdditions: number[] = [];
+        const totalRemovals: number[] = [];
 
-      ctx.setCompensation(async () => {
-        await atomicWriteFile(target, oldContent);
-      });
-      await atomicWriteFile(target, content);
-      const diff = generateDiff(v.filePath, oldContent, content);
-      return {
-        patched: v.filePath,
-        blocks: blocks.length,
-        diff: diff.diff,
-        additions: totalAdditions.reduce((a, b) => a + b, 0),
-        removals: totalRemovals.reduce((a, b) => a + b, 0),
-      };
+        for (const block of blocks) {
+          if (!content.includes(block.oldString)) {
+            const snippet = content.length > 400 ? content.slice(0, 200) + "\n...\n" + content.slice(-200) : content;
+            throw new ValidationError(
+              `Search string not found in ${filePath} (${content.length} chars). ` +
+              `File content:\n---\n${snippet}\n---\n` +
+              `Searched for:\n---\n${block.oldString.slice(0, 200)}${block.oldString.length > 200 ? "..." : ""}\n---`
+            );
+          }
+          const firstIdx = content.indexOf(block.oldString);
+          const lastIdx = content.lastIndexOf(block.oldString);
+          if (firstIdx !== lastIdx) {
+            const count = content.split(block.oldString).length - 1;
+            throw new ValidationError(`Search string found ${count} times in ${filePath} -- each block must match exactly once`);
+          }
+          const newContent = content.replace(block.oldString, block.newString);
+          content = newContent;
+          totalAdditions.push(block.newString.length);
+          totalRemovals.push(block.oldString.length);
+        }
+
+        ctx.setCompensation(async () => {
+          await atomicWriteFile(target, oldContent);
+        });
+        await atomicWriteFile(target, content);
+        const diff = generateDiff(filePath, oldContent, content);
+        return {
+          patched: filePath,
+          blocks: blocks.length,
+          diff: diff.diff,
+          additions: totalAdditions.reduce((a, b) => a + b, 0),
+          removals: totalRemovals.reduce((a, b) => a + b, 0),
+        };
+      }
+      return applyStructuredPatch(v.patch, root, ctx, tracker, externalDirAccess);
     },
   }).toDefinition();
 }

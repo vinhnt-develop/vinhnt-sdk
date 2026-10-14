@@ -34,11 +34,7 @@ export type {
  * }
  * ```
  */
-export {
-  isAgentId, isRunId, isSessionId, isMessageId, isToolCallId,
-  isTraceId, isRequestId, isRecord, isWorkspaceId, isModelId,
-  assertAgentId, assertRunId, assertSessionId, assertMessageId, assertWorkspaceId, assertModelId,
-} from "./contracts/index.js";
+export { isAgentId, isRunId, isSessionId, isMessageId, isTraceId, isRequestId, isWorkspaceId, isModelId, assertAgentId, assertRunId, assertSessionId, assertModelId } from "./contracts/index.js";
 
 /**
  * Event system for run lifecycle events.
@@ -69,10 +65,8 @@ export type {
 /**
  * Stable RespondToModel tool-failure envelope (P1-4).
  */
-export {
-  formatToolFailure, isToolFailureEnvelope, TOOL_FAILURE_HINTS,
-} from "./contracts/index.js";
-export type { ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from "./contracts/index.js";
+export { formatToolFailure, isToolFailureEnvelope, TOOL_FAILURE_HINTS } from "./contracts/index.js";
+export type { ToolFailureResult, ToolSuccessResult } from "./contracts/index.js";
 
 /**
  * Agent event types for all agent lifecycle events.
@@ -86,8 +80,8 @@ export type { ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from ".
  *     case "agent.started":
  *       console.log(`Agent started: ${event.prompt}`);
  *       break;
- *     case "tool.start":
- *       console.log(`Tool started: ${event.tool}`);
+ *     case "agent.error":
+ *       console.log(`Agent error: ${event.error}`);
  *       break;
  *     case "agent.completed":
  *       console.log(`Agent completed: ${event.status}`);
@@ -100,14 +94,8 @@ export type {
   AgentEvent,
   AgentEventBase,
   AgentStartedEvent,
-  ModelRequestEvent,
-  ModelResponseEvent,
-  ToolStartEvent,
-  ToolEndEvent,
-  AgentThinkingEvent,
   AgentCompletedEvent,
   AgentErrorEvent,
-  PermissionEvent,
 } from "./contracts/index.js";
 
 /**
@@ -134,13 +122,13 @@ export type {
 
 /**
  * Base error class for all SDK errors.
+ * Typed kernel-level failures carry a {@link KernelErrorCode}.
  */
 export {
   VntError,
   AgentNotFoundError, AgentValidationError, AgentPermissionDenied,
   ToolNotFoundError, ToolExecutionError, ToolPermissionDenied,
   RunNotFoundError, RunAbortedError, RunTimeoutError,
-  /** @deprecated Use KernelError from @vinhnt-sdk/step-executor instead */
   KernelError,
   CircuitBreakerOpenError, ToolInputError,
   PermissionDeniedError, ValidationError, TimeoutError,
@@ -149,9 +137,9 @@ export {
 } from "./contracts/index.js";
 
 /**
- * Error context type.
+ * Error context + typed kernel failure codes.
  */
-export type { VntErrorCtx } from "./contracts/index.js";
+export type { VntErrorCtx, KernelErrorCode } from "./contracts/index.js";
 
 /**
  * Core types for the SDK.
@@ -164,53 +152,13 @@ export type { VntErrorCtx } from "./contracts/index.js";
 /**
  * Core types for runs, sessions, agents, and more.
  */
-export type {
-  RunStatus, RequestContext, Result,
-  Session, Message, MessageTokens, SessionStats,
-  AgentProfile, AgentConfig, AgentPermissions,
-  AgentMode, AgentBehaviourMode, AgentCapabilities, AgentRule, AgentRuleset,
-  MemoryEntry,
-  SkillManifest, SkillDefinition,
-  SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue,
-  ChatMessage, ChatMessageRole, ContentPart, MessageContentPart,
-  CompressionSummary,
-  ApprovalRequest,
-  ConversationCompactor,
-  ModelProvider,
-  PromptAssembly,
-  SessionStore, MessageSeqUpdates, AddMessageOptions,
-  ToolDefinitionLike,
-  ToolCall, ToolCallResult,
-  PermissionRequest, PermissionReply, SavedApproval,
-  ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ModelPricing, ModelCapabilities, ModelRegistry,
-  RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore,
-  SessionNode, SessionTreeSnapshot, SessionTreeEvent,
-  // New types
-  TokenLogprob, TopLogprob, Logprobs,
-  ResponseFormat, ResponseFormatJsonSchema,
-  ToolChoice, WireToolChoice, StreamOptions, StreamingToolCallState, JsonSchema,
-  // Additional exports for API integration
-  TreeCursor, SessionTreeEventType,
-  ApprovalCategory, ApprovalStatus, ApprovalContext, PolicyEffect, ApprovalPolicy,
-  SkillMode,
-  PromptTier,
-  AgentStepType,
-  // Projection types (real-time stats)
-  SessionProjection, RunProjection, ProviderCost, TurnSnapshot, ProjectionStore,
-  // LlmFailure (structured error)
-  LlmFailure, LlmFailureKind,
-} from "./types/index.js";
+export type { RunStatus, RequestContext, Result, Session, Message, MessageTokens, SessionStats, AgentProfile, AgentConfig, AgentPermissions, AgentMode, AgentBehaviourMode, AgentCapabilities, AgentRule, AgentRuleset, MemoryEntry, SkillManifest, SkillDefinition, SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue, ChatMessage, ChatMessageRole, ContentPart, MessageContentPart, CompressionSummary, ApprovalRequest, ConversationCompactor, ModelProvider, PromptAssembly, SessionStore, MessageSeqUpdates, AddMessageOptions, ToolDefinitionLike, ToolCall, ToolCallResult, PermissionRequest, PermissionReply, SavedApproval, ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ModelPricing, ModelCapabilities, ModelRegistry, RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore, SessionNode, SessionTreeSnapshot, SessionTreeEvent, TokenLogprob, TopLogprob, Logprobs, ResponseFormat, ResponseFormatJsonSchema, ToolChoice, WireToolChoice, StreamOptions, StreamingToolCallState, JsonSchema, SessionTreeEventType, ApprovalCategory, ApprovalStatus, ApprovalContext, PolicyEffect, SkillMode, PromptTier, AgentStepType, SessionProjection, RunProjection, ProviderCost, TurnSnapshot, LlmFailure, LlmFailureKind } from "./types/index.js";
 
-export { getTextContent, toWireToolChoice, KNOWN_FINISH_REASONS, KNOWN_REASONING_EFFORTS } from "./types/index.js";
-export {
-  KNOWN_AGENT_MODES,
-  KNOWN_SESSION_TREE_EVENT_TYPES,
-  KNOWN_APPROVAL_CATEGORIES,
-  KNOWN_SKILL_MODES,
-  KNOWN_PROMPT_TIERS,
-  KNOWN_AGENT_STEP_TYPES,
-  COMPACTION_SUMMARY_PREFIX,
-} from "./types/index.js";
+export { getTextContent, toWireToolChoice } from "./types/index.js";
+export { COMPACTION_SUMMARY_PREFIX } from "./types/index.js";
+export { approximateTokens, approximateTokensFromCharCount } from "./token-utils.js";
+export { setLogger, setLogLevel, getLogger } from "./logger.js";
+export type { Logger, LogLevel } from "./logger.js";
 
 // === Adapters (interface-only; conversion functions live in provider packages) ===
 

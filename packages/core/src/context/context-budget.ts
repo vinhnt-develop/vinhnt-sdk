@@ -23,13 +23,20 @@ export interface ContextBudget {
   readonly compactionThreshold: number;
 }
 
+/**
+ * Single owner of the compaction-threshold default (P6.6) — kernel config,
+ * context budget, and the run loop all reference THIS instead of scattering
+ * silent `?? 0.75` literals. Ratio unit (0-1) end-to-end.
+ */
+export const DEFAULT_COMPACTION_THRESHOLD = 0.75;
+
 /** Default ratios derived from `maxContextTokens` (chars ≈ tokens * 4). */
 export const DEFAULT_CONTEXT_BUDGET: ContextBudget = {
   maxContextTokens: 128_000,
   maxToolOutputChars: 500,
   maxSubagentOutputChars: 4096,
   sanitizeLimitChars: 128_000,
-  compactionThreshold: 0.75,
+  compactionThreshold: DEFAULT_COMPACTION_THRESHOLD,
 };
 
 /**

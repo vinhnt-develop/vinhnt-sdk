@@ -1,4 +1,6 @@
-import { VntError } from "@vinhnt-sdk/schema";
+import { VntError, CircuitBreakerOpenError } from "@vinhnt-sdk/schema";
+
+export { CircuitBreakerOpenError };
 
 /** Current circuit breaker state — open for extension (custom states). */
 export type CircuitState = "closed" | "open" | "half_open" | (string & {});
@@ -254,16 +256,5 @@ export class CircuitBreaker {
 
   getOptions(): Readonly<Required<CircuitBreakerOptions>> {
     return this.options;
-  }
-}
-
-/** Thrown when a call is rejected because the breaker is open. */
-export class CircuitBreakerOpenError extends VntError {
-  readonly remainingMs: number;
-
-  constructor(resetTimeoutMs: number) {
-    super(`Circuit breaker is open — too many consecutive failures. Will retry in ${resetTimeoutMs}ms`, { code: "CIRCUIT_BREAKER_OPEN", retryable: true });
-    this.name = "CircuitBreakerOpenError";
-    this.remainingMs = resetTimeoutMs;
   }
 }

@@ -4,7 +4,7 @@ description: "Redact bí mật và phát hiện injection"
 lang: "vi"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.4.2"
 sidebarLabel: "security"
 ---
 
@@ -104,14 +104,14 @@ safeLogger.info("Connecting with token=sk-abc123");
 
 ### `SecretRedactor`
 
-Lớp với các mẫu có thể inject cho các trường hợp sử dụng nâng cao.
+Lớp với các mẫu có thể inject cho các trường hợp sử dụng nâng cao. Định nghĩa trong `@vinhnt-sdk/guard` (gói này chỉ re-exports một tập con an toàn của guard).
 
 ```ts
-import { SecretRedactor } from "@vinhnt-sdk/security";
+import { SecretRedactor } from "@vinhnt-sdk/guard";
 
 const redactor = new SecretRedactor({
-  customPatterns: [
-    { name: "internal_id", regex: /INT-\d{6}/g, replacement: "[REDACTED:id]" },
+  patterns: [
+    { name: "internal_id", pattern: /INT-\d{6}/g, replacement: "[REDACTED:id]" },
   ],
 });
 
@@ -125,8 +125,8 @@ redactor.redact("User INT-000123 logged in");
 | --- | --- |
 | `redact(text)` | Redact bí mật bằng tất cả mẫu đã cấu hình |
 | `detect(text)` | Phát hiện bí mật mà không redact |
-| `addPattern(pattern)` | Thêm mẫu tùy chỉnh khi chạy |
-| `removePattern(name)` | Xóa mẫu theo tên |
+| `register(pattern)` | Thêm `SecretPattern` tùy chỉnh (`name`, `pattern`, `replacement`) khi chạy |
+| `unregister(name)` | Xóa mẫu theo tên |
 
 ---
 

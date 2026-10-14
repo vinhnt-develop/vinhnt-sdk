@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/event"
 description: "Bus sự kiện có kiểu với khả năng phát lại bền bỉ cho workflow agent"
-version: "0.4.0"
+version: "0.4.5"
 lang: "vi"
 type: "reference"
 category: "API Reference"
@@ -20,21 +20,51 @@ npm install @vinhnt-sdk/event
 
 ## Các xuất (Exports)
 
-### `InMemoryEventBus`
+### `defineEvent`
 
-Bus sự kiện trong bộ đầy đủ tính năng, triển khai giao diện `EventBus`. Hỗ trợ xuất, băng, phát trực tuyến và phát lại bền bỉ.
+Định nghĩa (và đăng ký) một loại sự kiện; loại trùng lặp sẽ ném lỗi.
 
 ```ts
-import { InMemoryEventBus } from "@vinhnt-sdk/event";
+import { defineEvent } from "@vinhnt-sdk/event";
+import { z } from "zod";
+
+const UserCreated = defineEvent({
+  type: "user.created",
+  schema: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string().email(),
+  }),
+});
+
+// Sự kiện durable có thể phát lại từ event store
+const OrderCompleted = defineEvent({
+  type: "order.completed",
+  durable: { version: 1, aggregate: "order" },
+});
+```
+
+**Chữ ký:** `defineEvent<T>(def: EventDefinition<T>): EventDefinition<T>`
+
+---
+
+### `InMemoryEventBus`
+
+Bus sự kiện trong bộ đầy đủ tính năng, triển khai giao diện `EventBus`.
+
+```ts
+import { InMemoryEventBus, defineEvent } from "@vinhnt-sdk/event";
 
 const bus = new InMemoryEventBus();
 
-// Xuất một sự kiện
-bus.publish({ type: "user.created", payload: { id: "123", name: "Alice" } });
+const UserCreated = defineEvent({ type: "user.created" });
 
-// Băng sự kiện
-const unsub = bus.subscribe("user.created", (event) => {
-  console.log("Người dùng đã tạo:", event.payload);
+// Xuất — trình xử lý nhận TypedEvent<T>
+bus.publish(UserCreated, { id: "123", name: "Alice" });
+
+// Băng — trình xử lý có kiểu
+const unsub = bus.subscribe(UserCreated, (event) => {
+  console.log("Người dùng đã tạo:", event.data);
 });
 
 // Hủy băng
@@ -42,12 +72,13 @@ unsub();
 ```
 
 **Phương thức:**
-- `publish(event: TypedEvent): void` — Phát sự kiện đến tất cả người nghe.
-- `subscribe(type: string, handler: EventHandler): Unsubscribe` — Lắng nghe một loại sự kiện cụ thể. Trả về hàm hủy băng.
-- `subscribeAll(handler: EventHandler): Unsubscribe` — Lắng nghe tất cả loại sự kiện.
-- `stream(type?: string): AsyncIterable<TypedEvent>` — Trả về iterator bất đồng bộ sẽ tạo ra sự kiện khi chúng xảy ra.
-- `streamWithReplay(type?: string, options?: ReplayOptions): AsyncIterable<TypedEvent>` — Phát trực tuyến với phát lại lịch sử trước sự kiện trực tiếp.
-- `durable(subscriberId: string, type?: string): DurableSubscription` — Tạo đăng ký bền bỉ theo dõi vị trí và hỗ trợ phát lại.
+- `publish(def, data, meta?)` — Phát sự kiện đến tất cả người nghe phù hợp. `meta` nhận `traceId` / `aggregateId`.
+- `subscribe(def, handler)` — Lắng nghe một định nghĩa sự kiện cụ thể. Trả về hàm hủy băng.
+- `subscribeAll(handler, namespace?)` — Lắng nghe tất cả loại sự kiện.
+- `project(def, handler)` — Đăng ký trình xử lý projection cho một định nghĩa sự kiện.
+- `stream(def, signal?)` — Async iterable tạo ra sự kiện khi chúng được xuất.
+- `streamWithReplay(def, aggregateId, after?, signal?)` — Phát lại lịch sử của một aggregate, sau đó trộn sự kiện trực tiếp.
+- `durable(def, aggregateId, after?)` — Async iterable cho một định nghĩa durable, tiếp tục từ số sequence.
 
 ---
 
@@ -56,128 +87,85 @@ unsub();
 Instance `InMemoryEventBus` singleton được chia sẻ trong toàn ứng dụng.
 
 ```ts
-import { GlobalEventBus } from "@vinhnt-sdk/event";
+import { GlobalEventBus, defineEvent } from "@vinhnt-sdk/event";
 
-GlobalEventBus.publish({ type: "app.started", payload: {} });
-GlobalEventBus.subscribe("app.started", () => console.log("Ứng dụng đã khởi động"));
+const AppStarted = defineEvent({ type: "app.started" });
+
+GlobalEventBus.publish(AppStarted, {});
+GlobalEventBus.subscribe(AppStarted, () => console.log("Ứng dụng đã khởi động"));
 ```
 
 Hữu ích cho việc phân phối sự kiện toàn ứng dụng mà không cần khởi tạo thủ công.
 
 ---
 
-### `createEventDefinition`
-
-Hàm nhà máy để định nghĩa sự kiện có kiểu mạnh với schema Zod.
-
-```ts
-import { createEventDefinition } from "@vinhnt-sdk/event";
-import { z } from "zod";
-
-const UserCreated = createEventDefinition("user.created", z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-}));
-
-// Xuất có kiểu
-bus.publish(UserCreated.create({ id: "1", name: "Alice", email: "alice@example.com" }));
-
-// Băng có kiểu
-bus.subscribe(UserCreated.type, (event) => {
-  // event.payload có kiểu { id: string; name: string; email: string }
-});
-```
-
-**Ký hiệu:** `createEventDefinition<T>(type: string, schema: ZodSchema<T>): EventDefinition<T>`
-
----
-
 ## Tham chiếu Phương thức
 
-### `publish(event)`
+### `publish(def, data, meta?)`
 
 Phát sự kiện có kiểu đến tất cả người nghe phù hợp. Đồng bộ — trình xử lý thực thi ngay lập tức.
 
 ```ts
-bus.publish({ type: "order.placed", payload: { orderId: "abc", total: 99.99 } });
+const OrderPlaced = defineEvent({ type: "order.placed" });
+
+bus.publish(OrderPlaced, { orderId: "abc", total: 99.99 });
 ```
 
-### `subscribe(type, handler)`
+### `subscribe(def, handler)`
 
-Đăng ký trình xử lý cho một loại sự kiện cụ thể. Trả về hàm hủy băng.
+Đăng ký trình xử lý cho một định nghĩa sự kiện cụ thể. Trả về hàm hủy băng.
 
 ```ts
-const unsub = bus.subscribe("order.placed", (event) => {
-  processOrder(event.payload.orderId);
+const unsub = bus.subscribe(OrderPlaced, (event) => {
+  processOrder(event.data.orderId);
 });
 
 // Sau đó
 unsub();
 ```
 
-### `subscribeAll(handler)`
+### `subscribeAll(handler, namespace?)`
 
 Đăng ký trình xử lý sẽ kích hoạt cho mọi sự kiện bất kể loại.
 
 ```ts
 bus.subscribeAll((event) => {
-  logger.debug(`Sự kiện: ${event.type}`, event.payload);
+  logger.debug(`Sự kiện: ${event.type}`, event.data);
 });
 ```
 
-### `stream(type?)`
+### `stream(def, signal?)`
 
 Trả về `AsyncIterable` sẽ tạo ra sự kiện theo thời gian thực. Chờ đợi cho đến khi sự kiện tiếp theo đến.
 
 ```ts
-for await (const event of bus.stream("user.updated")) {
-  handleUpdate(event.payload);
+for await (const event of bus.stream(UserCreated)) {
+  handleUpdate(event.data);
 }
 ```
 
-### `streamWithReplay(type?, options?)`
+### `streamWithReplay(def, aggregateId, after?, signal?)`
 
-Trả về `AsyncIterable` trước tiên phát lại các sự kiện lịch sử từ cửa hàng, sau đó tạo ra sự kiện trực tiếp.
+Trả về `AsyncIterable` trước tiên phát lại các sự kiện lịch sử của một aggregate từ kho lưu trữ bền bỉ, sau đó tạo ra sự kiện trực tiếp.
 
 ```ts
-for await (const event of bus.streamWithReplay("order.placed", { maxReplay: 50 })) {
-  processOrder(event.payload);
+for await (const event of bus.streamWithReplay(OrderCompleted, "order-123", lastSeen)) {
+  processOrder(event.data);
 }
 ```
 
-**Tùy chọn:**
-- `maxReplay?: number` — Số sự kiện lịch sử tối đa để phát lại (mặc định: 100).
-- `since?: Date` — Phát lại sự kiện sau mốc thời gian này.
+- `aggregateId` — Aggregate cần phát lại lịch sử.
+- `after` — Số sequence bắt đầu phát lại (mặc định: `-1`).
 
-### `durable(subscriberId, type?)`
+### `durable(def, aggregateId, after?)`
 
-Tạo đăng ký bền bỉ lưu vị trí. Hỗ trợ phát lại từ vị trí cuối cùng đã xác nhận.
-
-```ts
-const durable = bus.durable("worker-1", "task.completed");
-
-for await (const event of durable.stream()) {
-  await processTask(event.payload);
-  durable.ack(event.id);
-}
-```
-
----
-
-### `streamWithReplayMixin`
-
-Mixin chung thêm khả năng `streamWithReplay` cho bất kỳ triển khai bus sự kiện nào.
+Tạo luồng bền bỉ lưu vị trí. Tiếp tục từ số sequence cuối cùng đã xác nhận.
 
 ```ts
-import { streamWithReplayMixin } from "@vinhnt-sdk/event";
-
-class CustomEventBus {
-  // ... triển khai các phương thức cốt lõi EventBus
+for await (const event of bus.durable(OrderCompleted, "order-123", lastSeenSequence)) {
+  await processTask(event.data);
+  lastSeenSequence = event.sequence;
 }
-
-// Thêm hỗ trợ phát lại
-Object.assign(CustomEventBus.prototype, streamWithReplayMixin);
 ```
 
 ---
@@ -190,37 +178,54 @@ Giao diện cốt lõi cho tất cả triển khai bus sự kiện.
 
 ```ts
 interface EventBus {
-  publish(event: TypedEvent): void;
-  subscribe(type: string, handler: EventHandler): Unsubscribe;
-  subscribeAll(handler: EventHandler): Unsubscribe;
-  stream(type?: string): AsyncIterable<TypedEvent>;
-  streamWithReplay(type?: string, options?: ReplayOptions): AsyncIterable<TypedEvent>;
-  durable(subscriberId: string, type?: string): DurableSubscription;
+  publish<T>(def: EventDefinition<T>, data: T, meta?: { traceId?: string; aggregateId?: string }): void;
+  subscribe<T>(def: EventDefinition<T>, handler: EventHandler<T>): Unsubscribe;
+  subscribeAll(handler: EventHandler, namespace?: string): Unsubscribe;
+  project<T>(def: EventDefinition<T>, handler: (event: TypedEvent<T>) => void): Unsubscribe;
+  stream<T>(def: EventDefinition<T>, signal?: AbortSignal): AsyncIterable<TypedEvent<T>>;
+  streamWithReplay<T>(
+    def: EventDefinition<T> & { durable: NonNullable<EventDefinition["durable"]> },
+    aggregateId: string,
+    after?: number,
+    signal?: AbortSignal,
+  ): AsyncIterable<TypedEvent<T>>;
+  durable<T>(
+    def: EventDefinition<T> & { durable: NonNullable<EventDefinition["durable"]> },
+    aggregateId: string,
+    after?: number,
+  ): AsyncIterable<TypedEvent<T>>;
 }
 ```
 
 ### `EventDefinition`
 
-Định nghĩa sự kiện có kiểu được tạo qua `createEventDefinition`.
+Metadata mô tả loại sự kiện tĩnh, được tạo qua `defineEvent`.
 
 ```ts
-interface EventDefinition<T> {
-  type: string;
-  schema: ZodSchema<T>;
-  create(payload: T): TypedEvent<T>;
+interface EventDefinition<TData = unknown> {
+  readonly type: string;
+  readonly description?: string;
+  readonly durable?: {
+    readonly version: number;
+    readonly aggregate: string;
+  };
+  readonly schema?: ZodSchema<TData>;
 }
 ```
 
 ### `TypedEvent`
 
-Đại diện cho một sự kiện đã xuất.
+Instance sự kiện đã được hiện thị đầy đủ, phát cho một aggregate.
 
 ```ts
-interface TypedEvent<T = unknown> {
-  id: string;
-  type: string;
-  payload: T;
-  timestamp: Date;
+interface TypedEvent<TData = unknown> {
+  readonly id: string;
+  readonly type: string;
+  readonly occurredAt: string;
+  readonly traceId: string;
+  readonly sequence: number;
+  readonly aggregateId: string;
+  readonly data: TData;
 }
 ```
 
@@ -229,7 +234,7 @@ interface TypedEvent<T = unknown> {
 Hàm gọi lại cho người nghe sự kiện.
 
 ```ts
-type EventHandler = (event: TypedEvent) => void | Promise<void>;
+type EventHandler<T = unknown> = (event: TypedEvent<T>) => void;
 ```
 
 ### `Unsubscribe`
@@ -238,18 +243,6 @@ Hàm được trả về bởi các phương thức băng để ngắt trình x�
 
 ```ts
 type Unsubscribe = () => void;
-```
-
-### `EventBusOptions`
-
-Tùy chọn cấu hình cho việc tạo bus sự kiện.
-
-```ts
-interface EventBusOptions {
-  maxEvents?: number;       // Số sự kiện tối đa giữ lại (mặc định: 1000)
-  enableReplay?: boolean;   // Bật lưu trữ phát lại (mặc định: true)
-  storage?: EventStorage;   // Backend lưu trữ tùy chỉnh
-}
 ```
 
 ## Phụ thuộc

@@ -84,11 +84,24 @@ function execAsync(
  * timeout, tree-scoped kill-on-abort, and optional permission prompting.
  */
 export function createShellTool(config: ShellToolConfig) {
-  const sandbox = createSandbox({
-    defaultTimeoutMs: config.defaultTimeoutMs,
-    scope: config.sandboxScope ?? "process",
-    ...(config.allowedPaths !== undefined ? { allowedPaths: config.allowedPaths } : {}),
-  });
+  // P3.3: scope is resolved per call (ToolContext.sandboxScope from kernel
+  // config wins over the tool's own config), so sandboxes are created lazily
+  // and cached per scope. Host/process/container backends are wired; any other
+  // scope fails closed with SandboxUnavailableError at execute time instead of
+  // breaking registration, and the container scope fails closed (exit 127)
+  // when the docker CLI is missing rather than downgrading to host.
+  const sandboxes = new Map<string, ReturnType<typeof createSandbox>>();
+  const getSandbox = (scope: string): ReturnType<typeof createSandbox> => {
+    const cached = sandboxes.get(scope);
+    if (cached) return cached;
+    const created = createSandbox({
+      defaultTimeoutMs: config.defaultTimeoutMs,
+      scope,
+      ...(config.allowedPaths !== undefined ? { allowedPaths: config.allowedPaths } : {}),
+    });
+    sandboxes.set(scope, created);
+    return created;
+  };
 
   return defineTool<{ command: string; timeoutMs?: number | undefined }, ExecResult>({
     name: "execute_command",
@@ -132,8 +145,9 @@ export function createShellTool(config: ShellToolConfig) {
         }
       }
 
-      // Use sandbox for execution
-      const result = await sandbox.execute({
+      // Use sandbox for execution — kernel-provided scope wins (P3.3)
+      const scope = ctx.sandboxScope ?? config.sandboxScope ?? "process";
+      const result = await getSandbox(scope).execute({
         command: v.command,
         cwd: root,
         timeoutMs: timeout,

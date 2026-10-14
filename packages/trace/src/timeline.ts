@@ -8,53 +8,70 @@
  * to reconstruct the full conversation history.
  */
 
-/** Timeline event types — maps to KnownRunEvent from schema */
-export type TimelineEventType =
-  | "run.started"
-  | "run.completed"
-  | "run.failed"
-  | "step.started"
-  | "step.completed"
-  | "step.failed"
-  | "turn.started"
-  | "turn.ended"
-  | "tool.invoked"
-  | "tool.completed"
-  | "tool.failed"
-  | "tool.cancelled"
-  | "approval.asked"
-  | "approval.decided"
-  | "llm.retry"
-  | "llm.retry_started"
-  | "assistant.chunk"
-  | "token.compressed"
-  | "context.compressed"
-  | "permission.asked"
-  | "permission.decided"
-  | (string & {});
-export const KNOWN_TIMELINE_EVENT_TYPES: readonly TimelineEventType[] = [
+import type { KnownRunEvent } from "@vinhnt-sdk/schema";
+
+/**
+ * Timeline event types — DERIVED from `KnownRunEvent["type"]` (the canonical
+ * run-event vocabulary). There is intentionally no `(string & {})` escape
+ * hatch: a name that is not emitted by the SDK cannot enter the timeline, so
+ * phantom names (`turn.ended`, `permission.asked`, `assistant.chunk`, …) are
+ * rejected at compile time.
+ */
+export type TimelineEventType = KnownRunEvent["type"];
+
+/**
+ * Every timeline event type the SDK emits, in emission order.
+ *
+ * Checked both ways at compile time:
+ * - `satisfies` → an unknown name fails typecheck (no phantoms);
+ * - {@link TimelineCoversAllRunEvents} → a missing name fails typecheck
+ *   (adding a `KnownRunEvent` without updating this list is a build error).
+ */
+export const KNOWN_TIMELINE_EVENT_TYPES = [
   "run.started",
-  "run.completed",
-  "run.failed",
   "step.started",
-  "step.completed",
-  "step.failed",
-  "turn.started",
-  "turn.ended",
+  "token.streamed",
+  "thinking.started",
+  "thinking.content",
+  "thinking.completed",
+  "context.compressed",
+  "token.counted",
   "tool.invoked",
   "tool.completed",
   "tool.failed",
   "tool.cancelled",
-  "approval.asked",
-  "approval.decided",
+  "tool.self_correcting",
+  "step.completed",
+  "step.failed",
+  "run.completed",
+  "permission.requested",
+  "permission.replied",
+  "step.type_changed",
+  "model.cost",
+  "turn.started",
+  "turn.end",
+  "agent.handoff",
   "llm.retry",
   "llm.retry_started",
-  "assistant.chunk",
-  "token.compressed",
-  "context.compressed",
-  "permission.asked",
-  "permission.decided",
-];
+  "llm.failover",
+  "approval.asked",
+  "approval.decided",
+  "request.header",
+  "request.context",
+  "llm.request",
+  "llm.response",
+] as const satisfies readonly KnownRunEvent["type"][];
+
+/** Compile-time helper: constrains `T` to `never` (errors on anything else). */
+type AssertNever<T extends never> = T;
+
+/**
+ * Compile-time drift check: fails to typecheck when a `KnownRunEvent` type
+ * is missing from {@link KNOWN_TIMELINE_EVENT_TYPES}.
+ */
+export type TimelineCoversAllRunEvents = AssertNever<
+  Exclude<KnownRunEvent["type"], (typeof KNOWN_TIMELINE_EVENT_TYPES)[number]>
+>;
 
 /** A single timeline event */
 export interface TimelineEvent {
@@ -151,7 +168,7 @@ export function buildTranscript(events: readonly TimelineEvent[]): TranscriptEnt
           timestampMs: event.timestampMs,
         });
         break;
-      case "assistant.chunk":
+      case "token.streamed":
         entries.push({
           type: "assistant",
           content: event.data.content as string,

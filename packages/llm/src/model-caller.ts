@@ -5,7 +5,7 @@
  */
 
 import type { RunId, RequestContext, KnownRunEvent, ToolChoice, ResponseFormat, StreamOptions } from "@vinhnt-sdk/schema";
-import { VntError, ConfigurationError } from "@vinhnt-sdk/schema";
+import { VntError, ConfigurationError, approximateTokens } from "@vinhnt-sdk/schema";
 import type {
   ChatMessage,
   ModelProvider,
@@ -32,7 +32,7 @@ const MIN_COMPLETION_TOKENS = 256;
 /** Rough prompt-size estimate: provider tokenizer when available, else 4 chars/token. */
 function estimateInputTokens(request: ModelRequest, model: ModelProvider): number {
   const count = (text: string): number =>
-    model.countTokens ? model.countTokens(text) : Math.ceil(text.length / 4);
+    model.countTokens ? model.countTokens(text) : approximateTokens(text);
   let total = 0;
   for (const m of request.messages ?? []) {
     total += count(getTextContent(m.content));

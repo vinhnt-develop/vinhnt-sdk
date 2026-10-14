@@ -1,6 +1,6 @@
 # @vinhnt-sdk/tools
 
-> Version: 0.4.2 | Status: STABLE
+> Status: STABLE
 
 Tool framework and built-in tools for vinhnt-sdk — file, shell, git, web, search, middleware, and more.
 

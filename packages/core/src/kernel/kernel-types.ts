@@ -7,19 +7,15 @@ import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt
 import type { PluginManager } from "../plugin.js";
 import type { ConversationCompactor } from "@vinhnt-sdk/session";
 import type { ContextRegistry } from "../system-context/types.js";
-import type { ApprovalStore } from "@vinhnt-sdk/permission";
+import type { ApprovalStore, PermissionMode, PermissionClassifier } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
-import type { CircuitBreaker, CircuitBreakerOptions, TerminationPolicy } from "@vinhnt-sdk/step-executor";
+import type { CircuitBreaker, CircuitBreakerOptions, TerminationPolicy, FileSnapshotConfig } from "@vinhnt-sdk/step-executor";
 import type { z } from "zod";
 
 /** Sandbox configuration for shell command execution. */
 export interface KernelSandboxConfig {
   /** Sandbox mode: "host" (default), "process", or "container". */
   readonly mode?: string;
-  /** Sandbox scope for permission checking. */
-  readonly scope?: string;
-  /** Timeout in ms for sandboxed operations. */
-  readonly timeoutMs?: number;
 }
 
 /** Permission configuration for tool execution and file access. */
@@ -28,6 +24,17 @@ export interface PermissionConfig {
   readonly approvalStore?: ApprovalStore;
   /** If true, auto-approve low-risk operations without user confirmation. */
   readonly autoApprovalEnabled?: boolean;
+  /**
+   * G5: Claude-style approval mode (`default`/`acceptEdits`/`plan`/`bypass`/
+   * `auto` + legacy `ask`/`edit`/`full` aliases). Applied by the permission
+   * gate on top of the rule pipeline; undefined = legacy behavior (no overlay).
+   */
+  readonly permissionMode?: PermissionMode;
+  /**
+   * G5: classifier consulted by `permissionMode: "auto"` for risk-floor asks.
+   * Defaults to the built-in risk classifier (pure, fail-closed).
+   */
+  readonly permissionClassifier?: PermissionClassifier;
   /**
    * Hard timeout (ms) for a single approval wait. Defaults to 120_000 (2 min)
    * inside PermissionGate — independent of agent stale-run threshold.
@@ -59,18 +66,6 @@ export interface PermissionConfig {
 export interface ModelRoutingConfig {
   /** Fallback models to try if the primary model fails. */
   readonly failoverModels?: string[];
-  /** Model ID for advisory/evaluation tasks. */
-  readonly advisorModel?: string;
-  /** Per-feature model overrides (e.g. { "code-review": "gpt-4" }). */
-  readonly perFeatureModels?: Record<string, string>;
-  /** Whitelist of allowed model IDs (empty = all allowed). */
-  readonly allowedModels?: string[];
-}
-
-/** Hook configuration for plugin system. */
-export interface HookConfig {
-  /** Custom hook handlers keyed by hook name. */
-  readonly hooks?: Record<string, unknown>;
 }
 
 /**
@@ -104,6 +99,13 @@ export interface ModelSettings {
   readonly presencePenalty?: number;
   /** Controls tool calling behavior. 'auto' = model decides, 'required' = must call, 'none' = no tools. */
   readonly toolChoice?: ToolChoice;
+  /**
+   * reset_tool_choice semantics (Phase 7 group 2): when toolChoice='required',
+   * after the first successful tool execution in a run, subsequent model calls
+   * downgrade to 'auto' so the model can finish (anti forced-loop). One-shot
+   * claim-repair `forceToolChoice` overrides this. Default: true.
+   */
+  readonly resetToolChoice?: boolean;
   /** Allow the model to call multiple tools in parallel. Default: true. */
   readonly parallelToolCalls?: boolean;
   /** Response format constraint (e.g., JSON mode). */
@@ -156,8 +158,6 @@ export interface AgentKernelConfig {
   readonly maxSubAgentDepth?: number;
   /** Session store for durable session persistence. */
   readonly sessionStore?: SessionStore;
-  /** Session ID for resuming an existing session. */
-  readonly sessionId?: string;
   /** Agent registry for sub-agent spawning. */
   readonly agentRegistry?: AgentRegistry;
   /** Plugin manager for hook execution. */
@@ -205,6 +205,21 @@ export interface AgentKernelConfig {
    * Scrub secrets from tool outputs before persist/send (P1-7). Default: true.
    */
   readonly redactToolOutputs?: boolean;
+  /**
+   * GenAI tracing (G3.1) — OTel `gen_ai.*` span recording + optional OTLP export.
+   * Defaults: recording ON (in-memory), export only when `tracing.otlp.endpoint`
+   * or standard `OTEL_EXPORTER_OTLP_*` env vars resolve. `enabled: false` opts out.
+   */
+  readonly tracing?: import("./run-tracing.js").TracingConfig;
+  /**
+   * G7.2 (P2-3): per-step file snapshot → undo. Omit or `false` = off
+   * (default — zero behavior change); `true` = on with defaults; object =
+   * on + seam overrides (`toolIds`, `pathArgs`, `maxContentBytes`,
+   * `maxSnapshots`, `workspaceRoot`, `fs`). Mutating file tools are
+   * pre-imaged before execution; read back via `getFileSnapshots()` /
+   * restore via `undoFileSnapshots()`.
+   */
+  readonly fileSnapshot?: boolean | FileSnapshotConfig;
   /** If true, disable event persistence (ephemeral runs). */
   readonly noStore?: boolean;
   /** Termination policy for advanced stop conditions. */
@@ -237,8 +252,9 @@ export interface AgentKernelConfig {
    *   }),
    * });
    *
-   * const result = await kernel.run('Extract event from "Meeting with Alice on March 5"');
-   * // result.output is typed as { name: string; date: string; participants: string[] }
+    * const handle = kernel.createRunHandle('Extract event from "Meeting with Alice on March 5"', ctx);
+    * const result = await handle.completed;
+    * // result.structuredOutput is typed as { name: string; date: string; participants: string[] }
    * ```
    */
   readonly outputType?: 'text' | z.ZodTypeAny;
@@ -249,14 +265,15 @@ export interface AgentKernelConfig {
   readonly permissions?: PermissionConfig;
   /** Model routing configuration for multi-model setups. */
   readonly modelRouting?: ModelRoutingConfig;
-  /** Hook configuration for plugin system. */
-  readonly hooks?: HookConfig;
   /** Input guardrails — run before model calls. */
   readonly inputGuardrails?: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
   /** Output guardrails — run after model responses. */
   readonly outputGuardrails?: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
-  /** Enterprise managed configuration. */
-  readonly managedConfig?: Record<string, unknown>;
+  /**
+   * P3.1: monotonic tool guards — evaluated before each tool execution.
+   * `deny` fails the call; `escalate` forces a user approval ask.
+   */
+  readonly guards?: readonly import("@vinhnt-sdk/guard").ToolGuard[];
   /** Logger for kernel events. */
   readonly logger?: import("../logger.js").Logger;
 }
@@ -278,14 +295,14 @@ export interface RunHandle {
  * 
  * @example
  * ```typescript
- * const handle = kernel.run("Write a hello world program");
- * 
+ * const handle = kernel.createRunHandle("Write a hello world program", ctx);
+ *
  * // Wait for completion
- * await handle.completed;
- * 
+ * const result = await handle.completed;
+ *
  * // Or cancel
  * handle.cancel();
- * 
+ *
  * // Listen to events
  * for await (const event of handle.events()) {
  *   console.log(event.type);
@@ -306,12 +323,15 @@ export interface AgentRunHandle {
   /** Check if the run is running. */
   readonly isRunning: boolean;
   /**
-   * Stream events from this run.
-   * @yields Agent events as they occur
+   * Stream lifecycle events from this run.
+   * @yields Only the `AgentEvent` lifecycle vocabulary: `agent.started`,
+   *   `agent.completed`, `agent.error`. For full run telemetry (steps, tools,
+   *   tokens, permissions, …) use `kernel.streamRun()` (yields `KnownRunEvent`)
+   *   or an `EventBus` passed in the kernel config.
    */
   events(): AsyncIterable<AgentEvent>;
   /**
-   * Subscribe to events from this run.
+   * Subscribe to lifecycle events from this run (same vocabulary as `events()`).
    * @param handler - Event handler
    * @returns Unsubscribe function
    */
@@ -386,7 +406,7 @@ export interface AgentRunResult {
  *   sandboxScope: "process",
  * });
  * // config.permissions.autoApprovalEnabled === true
- * // config.sandbox.scope === "process"
+ * // config.sandbox.mode === "process"
  * ```
  */
 export function normalizeConfig(config: Record<string, unknown>): AgentKernelConfig {
@@ -394,9 +414,7 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
 
   if (!normalized.sandbox) {
     normalized.sandbox = {
-      mode: normalized.sandboxMode,
-      scope: normalized.sandboxScope,
-      timeoutMs: normalized.sandboxTimeoutMs,
+      mode: normalized.sandboxMode ?? normalized.sandboxScope,
     };
     delete normalized.sandboxMode;
     delete normalized.sandboxScope;
@@ -427,9 +445,6 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
   if (!normalized.modelRouting) {
     normalized.modelRouting = {
       failoverModels: normalized.failoverModels,
-      advisorModel: normalized.advisorModel,
-      perFeatureModels: normalized.perFeatureModels,
-      allowedModels: normalized.allowedModels,
     };
     delete normalized.failoverModels;
     delete normalized.advisorModel;
@@ -437,12 +452,9 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
     delete normalized.allowedModels;
   }
 
-  if (!normalized.hooks) {
-    normalized.hooks = {
-      hooks: normalized.hooksConfig,
-    };
-    delete normalized.hooksConfig;
-  }
+  // Legacy hook knobs — hooks live on pluginManager; strip stragglers.
+  delete normalized.hooksConfig;
+  delete normalized.hooks;
 
   return normalized as unknown as AgentKernelConfig;
 }

@@ -85,14 +85,23 @@ export class AgentService implements OnModuleInit {
     });
   }
 
+  private makeCtx() {
+    return {
+      requestId: crypto.randomUUID(),
+      traceId: crypto.randomUUID(),
+      actorId: "user",
+      tenantId: "default",
+    };
+  }
+
   async run(prompt: string, sessionId?: string) {
-    const handle = this.kernel.run(prompt, { sessionId });
+    const handle = this.kernel.run(prompt, this.makeCtx(), sessionId);
     return await handle.completed;
   }
 
   async *stream(prompt: string, sessionId?: string) {
-    const handle = this.kernel.run(prompt, { sessionId });
-    for await (const event of handle.events) {
+    const { events } = this.kernel.streamRun(prompt, this.makeCtx(), sessionId);
+    for await (const event of events) {
       yield event;
     }
   }
@@ -122,13 +131,16 @@ export class AgentController {
   @Sse("stream")
   stream(@Body() body: { prompt: string }): Observable<any> {
     return new Observable((subscriber) => {
-      this.agentService
-        .stream(body.prompt)
-        .then(async (gen) => {
-          for await (const event of gen) subscriber.next(event);
+      (async () => {
+        try {
+          for await (const event of this.agentService.stream(body.prompt)) {
+            subscriber.next(event);
+          }
           subscriber.complete();
-        })
-        .catch((err) => subscriber.error(err));
+        } catch (err) {
+          subscriber.error(err);
+        }
+      })();
     });
   }
 }

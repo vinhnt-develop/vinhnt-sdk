@@ -1,8 +1,11 @@
 import type { EventDefinition, TypedEvent } from "./definition.js";
 import type { EventBus, EventHandler, Unsubscribe } from "./types.js";
 import { streamWithReplayMixin } from "./stream-mixin.js";
+import { getLogger } from "@vinhnt-sdk/schema";
 
 const MAX_DURABLE_EVENTS = 10_000;
+/** Bound for per-subscriber stream() queues — a slow consumer must not grow memory without limit. */
+const MAX_STREAM_QUEUE = 10_000;
 
 type ListenerEntry = {
   type: string | "*";
@@ -20,15 +23,11 @@ function callHandler(handler: EventHandler, event: TypedEvent<unknown>): void {
         result,
         new Promise((_, reject) => setTimeout(() => reject(new Error("Subscriber timed out")), SUBSCRIBER_TIMEOUT_MS)),
       ]).catch((err) => {
-        if (typeof console !== "undefined") {
-          console.warn("[EventBus] Subscriber error:", err instanceof Error ? err.message : String(err));
-        }
+        getLogger().warn("[EventBus] Subscriber error:", err instanceof Error ? err.message : String(err));
       });
     }
   } catch (err) {
-    if (typeof console !== "undefined") {
-      console.warn("[EventBus] Subscriber threw:", err instanceof Error ? err.message : String(err));
-    }
+    getLogger().warn("[EventBus] Subscriber threw:", err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -37,6 +36,7 @@ export class InMemoryEventBus implements EventBus {
   private listeners: ListenerEntry[] = [];
   private projectors: Map<string, Set<EventHandler>> = new Map();
   private durableEvents: Map<string, TypedEvent<unknown>[]> = new Map();
+  private sequence = 0;
 
   publish<T>(def: EventDefinition<T>, data: T, meta?: { traceId?: string; aggregateId?: string }): void {
     const event: TypedEvent<T> = {
@@ -45,7 +45,7 @@ export class InMemoryEventBus implements EventBus {
       occurredAt: new Date().toISOString(),
       traceId: meta?.traceId ?? crypto.randomUUID(),
       aggregateId: meta?.aggregateId ?? "",
-      sequence: 0,
+      sequence: this.sequence++,
       data,
     };
 
@@ -53,7 +53,7 @@ export class InMemoryEventBus implements EventBus {
     if (def.durable && meta?.aggregateId) {
       const key = `${def.durable.aggregate}:${meta.aggregateId}`;
       const list = this.durableEvents.get(key) ?? [];
-      list.push({ ...event, sequence: list.length });
+      list.push(event);
       if (list.length > MAX_DURABLE_EVENTS) {
         list.splice(0, list.length - MAX_DURABLE_EVENTS);
       }
@@ -86,8 +86,8 @@ export class InMemoryEventBus implements EventBus {
     };
   }
 
-  subscribeAll(handler: EventHandler, namespace?: string): Unsubscribe {
-    const entry: ListenerEntry = { type: "*", handler, namespace };
+  subscribeAll<T = unknown>(handler: EventHandler<T>, namespace?: string): Unsubscribe {
+    const entry: ListenerEntry = { type: "*", handler: handler as EventHandler, namespace };
     this.listeners.push(entry);
     return () => {
       const idx = this.listeners.indexOf(entry);
@@ -113,8 +113,11 @@ export class InMemoryEventBus implements EventBus {
     const key = `${def.durable.aggregate}:${aggregateId}`;
     const events = this.durableEvents.get(key) ?? [];
 
-    const startSeq = (after ?? -1) + 1;
-    for (let i = startSeq; i < events.length; i++) {
+    // Sequence-based resume: real per-bus sequences (not list positions), so
+    // trimming the bounded durable list cannot shift the resume point.
+    const first = events.findIndex((e) => e.sequence > (after ?? -1));
+    const start = first === -1 ? events.length : first;
+    for (let i = start; i < events.length; i++) {
       yield events[i] as TypedEvent<T>;
     }
   }
@@ -126,8 +129,16 @@ export class InMemoryEventBus implements EventBus {
     const queue: TypedEvent<T>[] = [];
     let resolve: (() => void) | null = null;
     let done = false;
+    let warnedOverflow = false;
 
     const unsubscribe = this.subscribe(def, (event) => {
+      if (queue.length >= MAX_STREAM_QUEUE) {
+        queue.shift();
+        if (!warnedOverflow) {
+          warnedOverflow = true;
+          getLogger().warn(`[EventBus] stream() queue full (${MAX_STREAM_QUEUE}) — dropping oldest events`);
+        }
+      }
       queue.push(event as TypedEvent<T>);
       if (resolve) {
         resolve();
@@ -189,5 +200,6 @@ export class InMemoryEventBus implements EventBus {
     this.listeners = [];
     this.projectors.clear();
     this.durableEvents.clear();
+    this.sequence = 0;
   }
 }

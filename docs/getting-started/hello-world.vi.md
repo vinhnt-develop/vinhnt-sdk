@@ -7,7 +7,6 @@ category: "Getting Started"
 sidebarPosition: 2
 sidebarLabel: "Hello World"
 tags: [quickstart, core, tools]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 
@@ -165,7 +164,7 @@ Xong!
 1. **`defineTool()`** — Tạo tool với Zod schema để validate input
 2. **`OpenAICompatibleProvider`** — Kết nối API OpenAI (hoặc bất kỳ nhà cung cấp tương thích nào)
 3. **`AgentKernel`** — Điều phối vòng lặp agent: prompt → LLM → tool calls → response
-4. **`kernel.run()`** — Bắt đầu agent và chờ hoàn thành
+4. **`kernel.run()`** — Bắt đầu run và trả về `RunHandle` (await `handle.completed` để chờ)
 
 ## Sử Dụng Nhà Cung Cấp Khác
 

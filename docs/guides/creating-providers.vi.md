@@ -144,12 +144,13 @@ function taoNhaCungCapHttp(baseUrl: string, apiKey: string): ModelProvider {
 Thêm theo dõi chi phí vào nhà cung cấp:
 
 ```typescript
-import { ModelProvider, ModelRequest, PricingConfig } from "@vinhnt-sdk/core";
+import { ModelProvider, ModelRequest } from "@vinhnt-sdk/core";
+import { ModelPricing } from "@vinhnt-sdk/schema";
 
 function taoNhaCungCapGia(
   baseUrl: string,
   apiKey: string,
-  gia: PricingConfig
+  gia: ModelPricing
 ): ModelProvider {
   return {
     id: "nha-cung-cap-gia",

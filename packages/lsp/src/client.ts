@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { createInterface, type Interface as ReadlineInterface } from "node:readline";
-import { KernelError } from "@vinhnt-sdk/schema";
+import { KernelError, getLogger } from "@vinhnt-sdk/schema";
 import type {
   JsonRpcRequest, JsonRpcResponse, JsonRpcNotification,
   LspInitializeResult, LspDiagnostic, LspDiagnosticParams,
@@ -47,7 +47,7 @@ export class LspClient {
     this.spawnedAt = Date.now();
     this.events = {
       onDiagnostics: events?.onDiagnostics ?? (() => {}),
-      onError: events?.onError ?? ((err) => console.warn(`[LSP ${definition.id}]`, err.message)),
+      onError: events?.onError ?? ((err) => getLogger().warn(`[LSP ${definition.id}]`, err.message)),
       onExit: events?.onExit ?? (() => {}),
     };
   }

@@ -1,7 +1,7 @@
 /**
  * JSONC (JSON with Comments) parser.
  *
- * Strips single-line (//) and multi-line (/* *​/) comments from JSON strings
+ * Strips single-line (//) and multi-line block comments from JSON strings
  * before parsing. Also handles trailing commas.
  *
  * @example
@@ -84,7 +84,7 @@ function stripJsonc(input: string): string {
  *
  * Supports:
  * - Single-line comments (`//`)
- * - Multi-line comments (`/* *​/`)
+ * - Multi-line comments (block)
  * - Trailing commas
  *
  * @param input - JSONC string to parse

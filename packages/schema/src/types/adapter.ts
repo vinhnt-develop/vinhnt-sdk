@@ -21,6 +21,12 @@ export interface OpenAIMessage {
   readonly tool_call_id?: string;
   readonly tool_calls?: readonly OpenAIToolCall[];
   readonly refusal?: string | null;
+  /**
+   * Prompt-cache breakpoint (Anthropic-style, `{"type":"ephemeral"}`) marking
+   * the end of the stable prefix. Set only when prompt-cache shaping is
+   * opted in (`PromptCacheShaping` in provider-openai-compatible).
+   */
+  readonly cache_control?: { readonly type: "ephemeral" };
 }
 
 /** OpenAI content part. */

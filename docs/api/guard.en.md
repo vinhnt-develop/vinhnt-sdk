@@ -5,7 +5,7 @@ lang: en
 type: "reference"
 category: "API Reference"
 sidebarLabel: guard
-version: "0.4.0"
+version: "0.4.4"
 ---
 
 # @vinhnt-sdk/guard
@@ -113,34 +113,31 @@ if (detector.isLoopDetected()) {
 - `getLoopInfo()` — Return details about detected loop
 - `reset()` — Clear all recorded calls
 
-### `ToolTimeout`
+### `withToolTimeout`
 
 Wrap tool execution with a timeout. Automatically aborts if execution exceeds the limit.
 
 ```ts
-import { ToolTimeout } from "@vinhnt-sdk/guard";
+import { withToolTimeout } from "@vinhnt-sdk/guard";
 
-const timeout = new ToolTimeout(10000); // 10 seconds
-
-const result = await timeout.execute(async (signal) => {
+const result = await withToolTimeout("long-running-tool", 10_000, async (signal) => {
   return await longRunningTool(params, { abortSignal: signal });
 });
 ```
 
-**Methods:**
+**Signature:** `withToolTimeout<T>(toolId: string, timeoutMs: number, fn: (signal: AbortSignal) => Promise<T>): Promise<T>`
 
-- `execute(fn)` — Execute function with timeout. Throws `ToolTimeoutError` on timeout.
-- `getRemainingTime()` — Return remaining time in ms
+Throws `ToolTimeoutError` when the limit is exceeded.
 
 ### `ToolTimeoutError`
 
 Error thrown when tool execution exceeds timeout. This error is non-retryable — retrying immediately will likely timeout again.
 
 ```ts
-import { ToolTimeoutError } from "@vinhnt-sdk/guard";
+import { ToolTimeoutError, withToolTimeout } from "@vinhnt-sdk/guard";
 
 try {
-  await timeout.execute(fn);
+  await withToolTimeout("my-tool", 10_000, fn);
 } catch (e) {
   if (e instanceof ToolTimeoutError) {
     // Non-retryable
@@ -207,15 +204,14 @@ interface LoopDetectorConfig {
 ### Combining Guards
 
 ```ts
-import { CircuitBreaker, LoopDetector, ToolTimeout } from "@vinhnt-sdk/guard";
+import { CircuitBreaker, LoopDetector, withToolTimeout } from "@vinhnt-sdk/guard";
 
 const breaker = new CircuitBreaker({ failureThreshold: 3, recoveryTimeout: 30000 });
 const detector = new LoopDetector({ maxRepetitions: 5, windowMs: 60000 });
-const timeout = new ToolTimeout(15000);
 
-async function safeToolCall(toolFn) {
+async function safeToolCall(toolId, toolFn) {
   if (detector.isLoopDetected()) throw new Error("Loop detected");
-  return breaker.execute(() => timeout.execute(toolFn));
+  return breaker.execute(() => withToolTimeout(toolId, 15_000, () => toolFn()));
 }
 ```
 

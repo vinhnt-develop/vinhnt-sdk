@@ -1,6 +1,6 @@
 # @vinhnt-sdk/plugin
 
-> Version: 0.1.2-beta.0 | Status: BETA
+> Status: BETA
 
 Plugin SDK for vinhnt-sdk — define plugins with TypeScript hooks and auto-install support.
 

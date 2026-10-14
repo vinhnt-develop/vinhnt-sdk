@@ -10,6 +10,23 @@ import type { McpTool, CallToolResult } from "./types.js";
 import type { McpConnection } from "./client.js";
 
 /**
+ * Inverse mapper: SDK `ToolDefinition` → MCP `McpTool` for `tools/list`.
+ *
+ * Wire invariant (AGENTS.md §2b): provenance (`risk`, `metadata.source`,
+ * icons, category) NEVER crosses the wire — only name/description/schema.
+ */
+export function mapToolDefinitionToMcp(tool: ToolDefinition): McpTool {
+  return {
+    name: tool.name !== undefined && tool.name.length > 0 ? tool.name : tool.id,
+    ...(tool.description.length > 0 ? { description: tool.description } : {}),
+    inputSchema: (tool.inputSchema ?? { type: "object" }) as Record<string, unknown>,
+    ...(tool.annotations !== undefined
+      ? { annotations: tool.annotations as unknown as Record<string, unknown> }
+      : {}),
+  };
+}
+
+/**
  * Derive the MCP domain from a server name.
  * Convention: `mcp__<server>__<tool>` → domain `"mcp:<server>"`
  */

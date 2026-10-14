@@ -90,6 +90,21 @@ export interface PluginHooks {
   onStepFailed?(data: { step: number; reason: string; error?: string }): Promise<void>;
   onRunCompleted?(data: { status: string; output?: string; error?: string; stopCondition?: string }): Promise<void>;
 
+  // Lifecycle hooks (G5) — PreCompact/SessionEnd close the lifecycle gaps
+  // called out in the SDK review ("hooks lifecycle còn thiếu").
+  /**
+   * Fired BEFORE the context compactor runs (auto-compaction, after the
+   * token threshold is exceeded). Read-only — compaction still proceeds;
+   * `onContextCompressed` reports the result afterwards.
+   */
+  onPreCompact?(data: { trigger: "auto" | "manual"; messageCount: number; sessionId?: string }): Promise<void>;
+  /**
+   * Fired when a session is ended via `kernel.endSession(sessionId)` — the
+   * host decides when a session is over (the SDK is a library, so unlike
+   * Claude Code's process-exit trigger there is no implicit site).
+   */
+  onSessionEnd?(data: { sessionId: string }): Promise<void>;
+
   // Mutation hooks (can modify data flowing through the pipeline)
   onToolInvoked?(data: { toolId: string; toolName: string; input: unknown }): Promise<HookResult<{ input: unknown }>>;
   onPermissionAsk?(data: { permission: string; resource: string; reason: string }): Promise<HookResult<{ reply: "once" | "always" | "reject" } | null>>;

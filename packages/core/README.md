@@ -1,6 +1,6 @@
 # @vinhnt-sdk/core
 
-> Version: 0.6.1 | Status: STABLE
+> Status: STABLE
 
 Core agent engine for vinhnt-sdk — kernel, orchestration, streaming, event bus, and workflows.
 

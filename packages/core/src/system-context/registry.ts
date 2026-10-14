@@ -64,6 +64,10 @@ export function createContextRegistry(): ContextRegistry {
         return { type: "unchanged" };
       }
 
+      // Persist the new snapshots so the next reconcile diffs against the
+      // latest values (otherwise every step re-emits the same update).
+      snapshots = newSnapshots;
+
       return {
         type: "updated",
         update: updates.join("\n\n"),

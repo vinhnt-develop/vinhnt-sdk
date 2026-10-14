@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/plugin"
-description: "Plugin hooks and npm loader"
-version: "0.4.0"
+description: "Plugin hooks and lifecycle"
+version: "0.4.2"
 lang: "en"
 type: "reference"
 category: "API Reference"
@@ -10,15 +10,13 @@ sidebarLabel: "plugin"
 
 # @vinhnt-sdk/plugin
 
-Defines the plugin system for vinhnt-sdk. Provides utilities for creating plugins with lifecycle hooks and loading them from npm packages.
+Defines the plugin system for vinhnt-sdk. Provides utilities for creating plugins with lifecycle hooks.
 
 ## Imports
 
 ```ts
 import {
   definePlugin,
-  loadPluginFromNpm,
-  loadNpmPlugins,
 } from "@vinhnt-sdk/plugin";
 ```
 
@@ -86,47 +84,6 @@ export default definePlugin(
   })
 );
 ```
-
----
-
-## loadPluginFromNpm
-
-Load a single plugin from an npm package.
-
-```ts
-const plugin = await loadPluginFromNpm("@vinhnt-sdk/plugin-search", process.cwd());
-```
-
-### Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `spec` | `string` | npm package name or spec (e.g., `@scope/package@version`) |
-| `cwd` | `string` | Working directory for resolution |
-
-### Returns
-
-Returns a `Plugin` instance ready for registration with `DefaultPluginManager`.
-
----
-
-## loadNpmPlugins
-
-Load multiple plugins from npm packages concurrently.
-
-```ts
-const plugins = await loadNpmPlugins(
-  ["@vinhnt-sdk/plugin-search", "@vinhnt-sdk/plugin-analytics"],
-  process.cwd()
-);
-```
-
-### Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `specs` | `string[]` | Array of npm package specs |
-| `cwd` | `string` | Working directory for resolution |
 
 ---
 
@@ -242,30 +199,3 @@ export default definePlugin(
 );
 ```
 
-## Example: Loading Plugins
-
-```ts
-import { loadPluginFromNpm, loadNpmPlugins } from "@vinhnt-sdk/plugin";
-import { AgentKernel, DefaultPluginManager } from "@vinhnt-sdk/core";
-
-const manager = new DefaultPluginManager();
-
-// Load single plugin
-const searchPlugin = await loadPluginFromNpm(
-  "@vinhnt-sdk/plugin-search",
-  process.cwd()
-);
-
-// Or load multiple at once
-const plugins = await loadNpmPlugins(
-  ["@vinhnt-sdk/plugin-search", "@vinhnt-sdk/plugin-analytics"],
-  process.cwd()
-);
-
-manager.register(searchPlugin);
-manager.registerAll(plugins);
-
-const kernel = new AgentKernel({
-  plugins: manager.getAll(),
-});
-```

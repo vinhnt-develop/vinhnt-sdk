@@ -1,5 +1,5 @@
 import type { RunId, RequestContext, AgentConfig } from "@vinhnt-sdk/schema";
-import { getTextContent } from "@vinhnt-sdk/schema";
+import { getTextContent, getLogger } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import type { RecentCall } from "./kernel-utils.js";
@@ -140,6 +140,7 @@ export async function runSelfCorrection(
                 cpermResult.reason ?? `Tool "${ct.name}" requires approval for self-correction`,
                 deps.currentAgent?.id ?? "", ctx.traceId, deps.pluginManager,
                 undefined, runAbort.signal,
+                { risk: ctool.risk, args: ct.args as Record<string, unknown> | undefined, source: cpermResult.source },
               );
               if (reply === "reject") {
                 messages.push({ role: "tool", toolCallId: ct.id, content: `Error: Tool "${ct.name}" rejected by user` });
@@ -209,12 +210,12 @@ export async function runSelfCorrection(
         corrected = true;
       }
     } catch (err) {
-      console.warn(`[kernel] Self-correction attempt ${attempt}/${deps.maxSelfCorrectAttempts} failed:`, err instanceof Error ? err.message : String(err));
+      getLogger().warn(`[kernel] Self-correction attempt ${attempt}/${deps.maxSelfCorrectAttempts} failed:`, err instanceof Error ? err.message : String(err));
     }
     if (corrected) break;
   }
 
   if (!corrected) {
-    console.warn(`[kernel] Self-correction exhausted after ${deps.maxSelfCorrectAttempts} attempts for tool "${tc.toolName}"`);
+    getLogger().warn(`[kernel] Self-correction exhausted after ${deps.maxSelfCorrectAttempts} attempts for tool "${tc.toolName}"`);
   }
 }

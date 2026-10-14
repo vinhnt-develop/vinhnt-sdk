@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/core"
 description: "AgentKernel, plugin manager, orchestration"
-version: "0.4.0"
+version: "0.10.9"
 lang: "en"
 type: "reference"
 category: "API Reference"
@@ -24,7 +24,7 @@ import {
   DefaultPluginManager,
   InMemoryEventBus,
   InMemoryModelRegistry,
-  SystemContextRegistry,
+  ContextRegistry,
 } from "@vinhnt-sdk/core";
 ```
 
@@ -46,43 +46,43 @@ new AgentKernel(config: AgentKernelConfig)
 
 ### Methods
 
-#### `run(input)`
+#### `run(prompt, ctx, sessionId?)`
 
-Execute a full agent run and return the final result.
+Start a new agent run and return a `RunHandle` (`runId`, `completed` promise, `abort()`). The second argument is the request context (`requestId`, `traceId`, `actorId`, `tenantId`).
 
 ```ts
-const result = await kernel.run({
-  messages: [{ role: "user", content: "Summarize this file" }],
-});
+const handle = kernel.run('Summarize this file', ctx);
+await handle.completed;
 ```
 
-#### `createRunHandle(input)`
+#### `createRunHandle(prompt, ctx, sessionId?)`
 
-Create a handle for controlling a run (pause, resume, cancel).
+Create an `AgentRunHandle` with lifecycle control: `completed` (resolves to `AgentRunResult`), `cancel()`, `events()`, and `onEvent()`.
 
 ```ts
-const handle = kernel.createRunHandle({ messages });
-await handle.start();
+const handle = kernel.createRunHandle('Summarize this file', ctx);
+const result = await handle.completed;
+console.log(result.status);
 ```
 
-#### `cancel()`
+#### `cancelCurrentRun()`
 
-Cancel the currently running agent task.
+Abort all currently running sessions.
 
 ```ts
-kernel.cancel();
+kernel.cancelCurrentRun();
 ```
 
 ### Event Streaming
 
 ```ts
-const handle = kernel.createRunHandle(input);
+const handle = kernel.createRunHandle('Summarize this file', ctx);
 for await (const event of handle.events()) {
-  console.log(event.type, event.data);
+  console.log(event.type);
 }
 ```
 
-The `events()` method returns an `AsyncIterable<AgentEvent>` yielding real-time updates including tool calls, model responses, and status changes.
+The `events()` method returns an `AsyncIterable<AgentEvent>` yielding lifecycle updates (`agent.started`, `agent.completed`, `agent.error`). For the full run event stream (steps, tools, tokens), see `streamRun`.
 
 ---
 
@@ -94,7 +94,8 @@ Re-exported from `@vinhnt-sdk/tools`. Defines a tool that the agent can invoke.
 const myTool = defineTool({
   name: "my_tool",
   description: "Does something useful",
-  parameters: z.object({ input: z.string() }),
+  risk: "read",
+  input: z.object({ input: z.string() }),
   execute: async (params) => {
     return { result: `Processed: ${params.input}` };
   },
@@ -159,13 +160,16 @@ const model = registry.get("gpt-4");
 
 ---
 
-## SystemContextRegistry
+## ContextRegistry
 
 Manages prompt sources and system context injection for agent sessions.
 
 ```ts
-const ctx = new SystemContextRegistry();
-ctx.addSource("project-info", () => getProjectMetadata());
+import { createContextRegistry } from "@vinhnt-sdk/core";
+
+const registry = createContextRegistry();
+registry.register(source); // ContextSourceValue: { key, load, renderBaseline, renderUpdate, renderRemoval }
+const context = await registry.initialize(); // resolves the SystemContext
 ```
 
 ---
@@ -223,24 +227,31 @@ The core module depends on the following vinhnt-sdk packages:
 
 ```ts
 import { AgentKernel } from "@vinhnt-sdk/core";
+import { NullRunEventStore } from "@vinhnt-sdk/session";
+import { createDeepSeekProvider } from "@vinhnt-sdk/provider-openai-compatible";
 
+const model = createDeepSeekProvider({ apiKey: process.env.DEEPSEEK_API_KEY! });
 const kernel = new AgentKernel({
-  model: "gpt-4",
-  plugins: [],
-  permissions: { file: "readwrite", shell: "restricted" },
+  model,
+  store: new NullRunEventStore(),
 });
 
-const handle = kernel.createRunHandle({
-  messages: [
-    { role: "user", content: "Create a hello world script" },
-  ],
-});
+const ctx = {
+  requestId: "req-1",
+  traceId: "trace-1",
+  actorId: "user-1",
+  tenantId: "default",
+};
 
-for await (const event of handle.events()) {
-  if (event.type === "text_delta") {
-    process.stdout.write(event.data);
+// Full run event stream (KnownRunEvent) — stream generated text to stdout:
+const { runId, events } = kernel.streamRun("Create a hello world script", ctx);
+
+for await (const event of events) {
+  if (event.type === "token.streamed") {
+    process.stdout.write(event.data.content);
+  }
+  if (event.type === "run.completed") {
+    console.log(`\nRun ${runId} finished: ${event.data.status}`);
   }
 }
-
-const result = await handle.result();
 ```

@@ -17,17 +17,36 @@ export type { McpConnection } from "./client.js";
 export { McpToolProvider } from "./mcp-provider.js";
 export type { McpToolProviderConfig } from "./mcp-provider.js";
 
-export { mapMcpTool, discoverMcpTools, mcpDomain, mcpToolId } from "./tool-mapper.js";
+export { mapMcpTool, mapToolDefinitionToMcp, discoverMcpTools, mcpDomain, mcpToolId } from "./tool-mapper.js";
 
+export type { McpServerConfig, McpTool, McpResource, McpTransportType, McpTransport, CallToolResult } from "./types.js";
+
+export { McpServer, MCP_DEFAULT_PROTOCOL_VERSION } from "./server/mcp-server.js";
+export type { McpServerOptions, McpToolExecutor } from "./server/mcp-server.js";
+
+export { McpStdioServer } from "./server/stdio-server.js";
+export type { McpStdioServerOptions } from "./server/stdio-server.js";
+
+export {
+  discoverAgentCard,
+  A2A_AGENT_CARD_WELL_KNOWN_PATH,
+} from "./a2a/discovery.js";
 export type {
-  McpServerConfig,
-  McpTool,
-  McpResource,
-  McpTransportType,
-  McpTransport,
-  CallToolResult,
-  ListToolsResult,
-  InitializeRequest,
-  InitializeResult,
-  ReadResourceResult,
-} from "./types.js";
+  AgentCardDocument,
+  DiscoverAgentCardOptions,
+} from "./a2a/discovery.js";
+
+export {
+  KNOWN_TASK_STATES,
+  isKnownTaskState,
+  isTerminalTaskState,
+} from "./a2a/types.js";
+export type {
+  AgentCard,
+  AgentInterface,
+  AgentCapabilities,
+  AgentSkill,
+  AgentSecurityScheme,
+  A2AProtocolBinding,
+  TaskState,
+} from "./a2a/types.js";

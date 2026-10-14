@@ -13,7 +13,7 @@ export interface EventBus {
 
   subscribe<T>(def: EventDefinition<T>, handler: EventHandler<T>): Unsubscribe;
 
-  subscribeAll(handler: EventHandler, namespace?: string): Unsubscribe;
+  subscribeAll<T = unknown>(handler: EventHandler<T>, namespace?: string): Unsubscribe;
 
   durable<T>(def: EventDefinition<T> & { durable: NonNullable<EventDefinition["durable"]> }, aggregateId: string, after?: number): AsyncIterable<TypedEvent<T>>;
 

@@ -1,5 +1,5 @@
-import type { RequestContext, RunId, AgentConfig, ContentPart } from "@vinhnt-sdk/schema";
-import { getTextContent, COMPACTION_SUMMARY_PREFIX } from "@vinhnt-sdk/schema";
+import type { RequestContext, RunId, AgentConfig, ContentPart, ToolChoice } from "@vinhnt-sdk/schema";
+import { getTextContent, COMPACTION_SUMMARY_PREFIX, approximateTokensFromCharCount, getLogger } from "@vinhnt-sdk/schema";
 import type { ChatMessage, MessageContentPart, ModelProvider, ModelResponse } from "../model.js";
 import type { ContextRegistry } from "../system-context/types.js";
 import type { ConversationCompactor } from "@vinhnt-sdk/session";
@@ -21,6 +21,9 @@ import type { RecentCall } from "@vinhnt-sdk/guard";
 import type { z } from "zod";
 import type { ResponseFormat } from "@vinhnt-sdk/schema";
 import { zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
+import { DEFAULT_COMPACTION_THRESHOLD } from "../context/context-budget.js";
+import type { TracingConfig, RunTrace, RunTraceStatus } from "./run-tracing.js";
+import { createRunTrace, recordChatSpan, startToolSpans, endToolSpans, finishRunTrace } from "./run-tracing.js";
 
 /**
  * Convert a Zod schema to ResponseFormat for structured output.
@@ -84,10 +87,16 @@ export interface RunLoopDeps {
   readonly modelRegistry?: import("../model.js").ModelRegistry;
   /** Unified context budget (P1-1). */
   readonly contextBudget?: import("../context/context-budget.js").ContextBudget;
+  /** Configured model tool_choice ('required' etc.) — used for reset_tool_choice downgrade (group 2). */
+  readonly toolChoice?: ToolChoice;
+  /** reset_tool_choice: downgrade 'required' → 'auto' after tools ran this run. Default true. */
+  readonly resetToolChoice?: boolean;
   /** Await once before the loop starts, e.g. re-queuing persisted pending inputs (RV-21). */
   readonly beforeRun?: (runId: RunId) => Promise<void> | void;
   /** Called with the texts drained from the input queue after a step drains it (RV-21). */
   readonly onInputsDrained?: (runId: RunId, texts: string[]) => Promise<void> | void;
+  /** GenAI tracing (G3.1) — span recording config; omitted/undefined still records (defaults on). */
+  readonly tracing?: TracingConfig;
 }
 
 export interface RunLoopInput {
@@ -144,6 +153,8 @@ export interface RunLoopResult {
   readonly error?: string;
   /** Validated structured output (when outputType is Zod schema). */
   readonly structuredOutput?: unknown;
+  /** Final assistant output text on success (mirrors `run.completed` event data.output). */
+  readonly output?: string;
   /** If set, a handoff was detected — kernel should transfer control. */
   readonly handoff?: {
     readonly targetAgentId: string;
@@ -254,7 +265,12 @@ async function maybeCompact(
     }, 0);
     // E5a: context window ≠ 4×max output — fall back to DEFAULT_CONTEXT_WINDOW.
     const contextWindow = runModel.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
-    const ratio = deps.compactionThreshold ?? 0.75;
+    // P7.1: unified precedence — contextBudget (single source) > legacy
+    // compactionThreshold dep > default.
+    const ratio =
+      deps.contextBudget?.compactionThreshold ??
+      deps.compactionThreshold ??
+      DEFAULT_COMPACTION_THRESHOLD;
     const threshold = Math.floor(contextWindow * ratio);
     shouldCompact = estimatedInput > threshold;
   } else {
@@ -267,11 +283,22 @@ async function maybeCompact(
     }
     // E5a: context window ≠ 4×max output — fall back to DEFAULT_CONTEXT_WINDOW.
     const contextWindow = runModel.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
-    const ratio = deps.compactionThreshold ?? 0.75;
-    shouldCompact = Math.ceil(chars / 4) > Math.floor(contextWindow * ratio);
+    const ratio =
+      deps.contextBudget?.compactionThreshold ??
+      deps.compactionThreshold ??
+      DEFAULT_COMPACTION_THRESHOLD;
+    shouldCompact = approximateTokensFromCharCount(chars) > Math.floor(contextWindow * ratio);
   }
 
   if (!shouldCompact) return { messages, didCompact: false };
+
+  // G5 lifecycle: PreCompact fires BEFORE the compactor runs (read-only —
+  // fireHook swallows per-plugin errors, so a bad hook cannot break the run).
+  await deps.pluginManager?.fireHook("onPreCompact", {
+    trigger: "auto",
+    messageCount: messages.length,
+    ...(sessionId !== undefined ? { sessionId } : {}),
+  });
 
   const compacted = await deps.compactor.compact(messages, signal);
   if (compacted.summary.compressedMessageCount < compacted.summary.originalMessageCount) {
@@ -296,9 +323,7 @@ async function maybeCompact(
       try {
         await deps.addSessionMessage(sessionId, "system", summaryText);
       } catch (err) {
-        if (typeof console !== "undefined") {
-          console.warn("[run-loop] Failed to persist compaction summary:", err instanceof Error ? err.message : String(err));
-        }
+        getLogger().warn("[run-loop] Failed to persist compaction summary:", err instanceof Error ? err.message : String(err));
       }
     }
 
@@ -327,9 +352,7 @@ async function compactOnOverflow(
     try {
       await addSessionMessage(sessionId, "system", summaryText);
     } catch (err) {
-      if (typeof console !== "undefined") {
-        console.warn("[run-loop] Failed to persist overflow compaction summary:", err instanceof Error ? err.message : String(err));
-      }
+      getLogger().warn("[run-loop] Failed to persist overflow compaction summary:", err instanceof Error ? err.message : String(err));
     }
   }
   return [...compacted.messages];
@@ -371,12 +394,16 @@ interface StepInput {
   suppressedRepairAttempts?: number;
   /** Force tool_choice=required on the next model call (set after claim repair). */
   forceToolChoice?: boolean;
+  /** A tool already executed earlier this run — reset_tool_choice may downgrade required→auto. */
+  toolsHaveRun?: boolean;
   /** A file-mutating tool already succeeded earlier this run — claim-repair must not re-fire. */
   fileActionSucceeded?: boolean;
   /** Run-scoped doom-loop history seeded into step tool execution. */
   priorRecentCalls?: readonly RecentCall[];
   /** Emit a run event (wired from RunLoopInput.emitEvent — used by failover). */
   emitEvent?: (event: { id: string; runId: RunId; type: string; occurredAt: string; traceId: string; data: Record<string, unknown> }, persist?: boolean) => Promise<void>;
+  /** Per-run GenAI trace (G3.1) — records chat/execute_tool spans. */
+  trace?: RunTrace;
 }
 
 interface StepOutput {
@@ -482,6 +509,11 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
   const stepTimer = setTimeout(() => stepTimeoutController.abort(), deps.stepTimeout);
   const onRunAbort = () => { clearTimeout(stepTimer); stepTimeoutController.abort(); };
   runAbort.signal.addEventListener("abort", onRunAbort, { once: true });
+  // G3.1 — chat-span timing: set right before the model call; the
+  // function-level finally records the failed/timeout call if no response
+  // ever resolved (guardrail/max-token failures above never start it).
+  let chatStartMs = 0;
+  let chatRecorded = false;
 
   try {
     if (runAbort.signal.aborted) {
@@ -525,6 +557,22 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       await deps.modelCaller.doThinkingStep(messages, input.step, runId, ctx, stepTimeoutController.signal);
     }
 
+    // Phase 7 group 2 — reset_tool_choice (OpenAI Agents parity): a configured
+    // tool_choice='required' would stay forced for the whole run (forced-tool
+    // infinite loop). After any tool actually executed this run, downgrade the
+    // next call to 'auto' so the model can finish. One-shot claim-repair
+    // forceToolChoice wins over the downgrade; resetToolChoice=false opts out.
+    // Never on the last/no-tools step — disableTools must keep tool_choice=none.
+    const toolChoiceOverride: ToolChoice | undefined = input.forceToolChoice
+      ? "required"
+      : !input.disableTools &&
+ deps.resetToolChoice !== false &&
+        deps.toolChoice === "required" &&
+        input.toolsHaveRun === true
+        ? "auto"
+        : undefined;
+
+    chatStartMs = Date.now();
     let response: ModelResponse;
     try {
       response = await deps.circuitBreaker.call(() =>
@@ -532,7 +580,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           messages, input.step, runId, ctx, stepTimeoutController.signal,
           deps.currentAgent?.permissions?.maxTokens,
           input.disableTools,
-          input.forceToolChoice ? "required" : undefined,
+          toolChoiceOverride,
         ), stepTimeoutController.signal);
     } catch (err: unknown) {
       if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
@@ -596,7 +644,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
                 messages, input.step, runId, ctx, stepTimeoutController.signal,
                 deps.currentAgent?.permissions?.maxTokens,
                 input.disableTools,
-                input.forceToolChoice ? "required" : undefined,
+                toolChoiceOverride,
               ), stepTimeoutController.signal);
             break;
           } catch {
@@ -642,7 +690,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
               messages, input.step, runId, ctx, stepTimeoutController.signal,
               deps.currentAgent?.permissions?.maxTokens,
               input.disableTools,
-              input.forceToolChoice ? "required" : undefined,
+              toolChoiceOverride,
             ),
             stepTimeoutController.signal,
           );
@@ -650,6 +698,25 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           throw err;
         }
       }
+    }
+
+    // G3.1 — record the chat span for this step's model call (success path;
+    // failed/timeout paths are recorded by the function-level finally).
+    if (input.trace) {
+      recordChatSpan(input.trace, {
+        step: input.step,
+        startMs: chatStartMs,
+        request: { provider: input.runModel.provider, model: input.runModel.model },
+        response: {
+          provider: response.provider,
+          model: response.model,
+          usage: response.usage,
+          finishReason: response.finishReason,
+          content: response.content,
+          inputMessages: messages,
+        },
+      });
+      chatRecorded = true;
     }
 
     // RV-42: single authoritative token accounting — prefer the provider's usage
@@ -858,11 +925,24 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       };
     }
 
-    const { toolCallCount, selfCorrectTokens, toolResults, recentCalls, handoff } = await deps.stepExecutor.executeToolCalls(
-      effectiveToolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
-      messages, input.step, runId, ctx, stepTimeoutController, sessionId, runModel,
-      input.priorRecentCalls,
-    );
+    // G3.1 — execute_tool spans: start before the batch, end with per-call
+    // status after (finally covers a throwing executeToolCalls).
+    const toolSpans = input.trace
+      ? startToolSpans(input.trace, input.step, effectiveToolCalls, Date.now())
+      : [];
+    let execOutcome: Awaited<ReturnType<StepExecutor["executeToolCalls"]>> | undefined;
+    try {
+      execOutcome = await deps.stepExecutor.executeToolCalls(
+        effectiveToolCalls.map((tc) => ({ toolId: tc.id, toolName: tc.name, args: tc.args })),
+        messages, input.step, runId, ctx, stepTimeoutController, sessionId, runModel,
+        input.priorRecentCalls,
+      );
+    } finally {
+      if (input.trace && toolSpans.length > 0) {
+        endToolSpans(input.trace, toolSpans, execOutcome?.toolResults ?? []);
+      }
+    }
+    const { toolCallCount, selfCorrectTokens, toolResults, recentCalls, handoff } = execOutcome!;
 
     // Handle handoff — transfer control to target agent
     if (handoff) {
@@ -934,9 +1014,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         sessionId,
       });
     } catch (err) {
-      if (typeof console !== "undefined") {
-        console.warn("[run-loop] Failed to save snapshot:", err instanceof Error ? err.message : String(err));
-      }
+      getLogger().warn("[run-loop] Failed to save snapshot:", err instanceof Error ? err.message : String(err));
     }
 
     return {
@@ -953,6 +1031,16 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       ...(validatedOutput !== undefined ? { structuredOutput: validatedOutput } : {}),
     };
   } finally {
+    // G3.1 — a model call that started but never resolved (step timeout,
+    // abort, failover exhaust) still gets its chat span, marked failed.
+    if (input.trace && chatStartMs > 0 && !chatRecorded) {
+      recordChatSpan(input.trace, {
+        step: input.step,
+        startMs: chatStartMs,
+        status: stepTimeoutController.signal.aborted ? "timeout" : "error",
+        request: { provider: input.runModel.provider, model: input.runModel.model },
+      });
+    }
     clearTimeout(stepTimer);
     runAbort.signal.removeEventListener("abort", onRunAbort);
   }
@@ -962,6 +1050,27 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
 // Run loop
 // ---------------------------------------------------------------------------
 
+/**
+ * Give the session a generated title while it is still unset or holds the
+ * "New Session" placeholder (called after a successful run). Store/generator
+ * failures are swallowed — a title must never fail the run (P5.9 dedup: the
+ * previous identical blocks lived at both success exits of `runLoop`).
+ */
+async function finalizeSessionTitle(
+  deps: RunLoopDeps,
+  sessionId: string | undefined,
+  prompt: string,
+): Promise<void> {
+  if (!deps.sessionStore || !deps.sessionTitleGenerator || !sessionId) return;
+  const session = await deps.sessionStore.getSession(sessionId).catch(() => null);
+  if (!session || (session.title && session.title !== "New Session")) return;
+  const title = await deps.sessionTitleGenerator(prompt).catch(() => "");
+  if (!title) return;
+  await deps.sessionStore.updateSession(sessionId, { title }).catch((err) => {
+    getLogger().warn("[run-loop] Failed to update session title:", err instanceof Error ? err.message : String(err));
+  });
+}
+
 export async function runLoop(
   deps: RunLoopDeps,
   input: RunLoopInput,
@@ -969,6 +1078,15 @@ export async function runLoop(
   const { prompt, runId, ctx, runAbort, sessionId, userContentParts, runModel, runSessionState, addSessionMessage, emitEvent, setState, emitCompleted, emitFail } = input;
 
   const startTime = Date.now();
+  // G3.1 — per-run GenAI trace (invoke_agent root; chat/tool spans added per step).
+  const runTrace = createRunTrace(deps.tracing, {
+    runId,
+    requestTraceId: ctx.traceId,
+    sessionId,
+    agentId: deps.currentAgent?.id,
+    agentName: deps.currentAgent?.profile.name,
+  });
+  let runTraceStatus: RunTraceStatus = "ok";
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
   let messages: ChatMessage[] = [];
@@ -981,6 +1099,9 @@ export async function runLoop(
   let claimRepairAttempts = 0;
   let suppressedRepairAttempts = 0;
   let forceToolChoiceNext = false;
+  // Phase 7 group 2 — reset_tool_choice: any executed tool this run unlocks
+  // the required→auto downgrade on subsequent model calls.
+  let toolsHaveRun = false;
   // E4 live fix: a successful file-mutating tool this run makes later prose
   // claims truthful — claim-repair must not force another tool turn.
   let fileActionSucceeded = false;
@@ -1021,9 +1142,7 @@ export async function runLoop(
         status,
       });
     } catch (err) {
-      if (typeof console !== "undefined") {
-        console.warn("[run-loop] Failed to save final snapshot:", err instanceof Error ? err.message : String(err));
-      }
+      getLogger().warn("[run-loop] Failed to save final snapshot:", err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -1064,6 +1183,10 @@ export async function runLoop(
         ...(startedModel ? { model: startedModel } : {}),
         ...(startedAgentName ? { agentName: startedAgentName } : {}),
         ...(startedAgentId ? { agentId: startedAgentId } : {}),
+        // G4.1: durable sessionId on the run log so event replay can group a
+        // session's runs without an O(runs) snapshot lookup (legacy runs fall
+        // back to snapshot.state.sessionId).
+        ...(sessionId !== undefined ? { sessionId } : {}),
       });
 
       await deps.pluginManager?.fireHook("onRunStarted", { runId, prompt });
@@ -1153,9 +1276,7 @@ export async function runLoop(
             stepModel = prepareResult.model;
           }
         } catch (err) {
-          if (typeof console !== "undefined") {
-            console.warn("[run-loop] prepareStep failed, using default model:", err instanceof Error ? err.message : String(err));
-          }
+          getLogger().warn("[run-loop] prepareStep failed, using default model:", err instanceof Error ? err.message : String(err));
         }
       }
 
@@ -1195,9 +1316,11 @@ export async function runLoop(
         claimRepairAttempts,
         suppressedRepairAttempts,
         forceToolChoice: forceToolChoiceNext,
+        toolsHaveRun,
         fileActionSucceeded,
         priorRecentCalls: runRecentCalls,
         emitEvent,
+        ...(runTrace ? { trace: runTrace } : {}),
       });
 
       messages = stepResult.messages;
@@ -1214,6 +1337,9 @@ export async function runLoop(
         suppressedRepairAttempts = stepResult.suppressedRepairAttempts;
       }
       forceToolChoiceNext = stepResult.forceToolChoiceNext === true;
+      if (stepResult.toolCallCount > 0) {
+        toolsHaveRun = true;
+      }
       if (stepResult.recentCalls) {
         // Cap run-scoped history so long runs stay bounded.
         runRecentCalls = stepResult.recentCalls.length > 100
@@ -1237,15 +1363,11 @@ export async function runLoop(
 
       // Handle handoff — transfer control to target agent
       if (stepResult.handoff) {
-        // Emit handoff event
-        const currentAgentId = deps.currentAgent?.id ?? "unknown";
-        await emitEvt("agent.handoff", {
-          fromAgentId: currentAgentId,
-          toAgentId: stepResult.handoff.targetAgentId,
-          reason: stepResult.handoff.reason,
-          summary: stepResult.handoff.summary,
-        });
-
+        // P2.x: do NOT announce agent.handoff here — the kernel validates the
+        // swap (target exists, no cycle/depth violation) and emits the event
+        // only when the swap actually happens. Detection alone returns in
+        // `handoffResult` below.
+        //
         // Break out of the loop — kernel will handle agent swap
         finalOutput = `Handoff to agent "${stepResult.handoff.targetAgentId}": ${stepResult.handoff.reason}`;
         handoffResult = stepResult.handoff;
@@ -1274,6 +1396,7 @@ export async function runLoop(
             await emitFail(runId, ctx, reason, step, sessionId, totalInputTokens, totalOutputTokens);
             await deps.saga.rollbackAll();
             setState(runId, "failed");
+            runTraceStatus = "error";
             return { totalSteps: step + 1, status: "failed", error: reason, totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
           }
         }
@@ -1345,13 +1468,43 @@ export async function runLoop(
       return {
         totalSteps: step + 1,
         status: "succeeded",
+        output: finalOutput,
         totalInputTokens,
         totalOutputTokens,
         durationMs: Date.now() - startTime,
         ...(structuredOutput !== undefined ? { structuredOutput } : {}),
+        // P2.1: never lose a handoff on this exit path either.
+        ...(handoffResult ? { handoff: handoffResult } : {}),
       };
         }
       }
+    }
+
+    // ── P2.1 (S1+S2): handoff is an IN-PROGRESS outcome, not a terminal one ──
+    // The kernel swaps the agent and re-enters runLoop for the same runId.
+    // Emitting run.completed / firing onRunCompleted / marking the state
+    // "completed" here would end the consumer's event stream and lie about the
+    // run's final state mid-swap. Return the handoff immediately instead.
+    if (handoffResult) {
+      if (runSessionState) {
+        // Sync the pre-handoff transcript so the continued run replays it.
+        runSessionState.resetMessages(messages);
+        runSessionState.step = step + 1;
+        // isRunning intentionally stays true — the run is still live.
+      }
+      // Not a terminal snapshot: durable reload must not treat a mid-swap run
+      // as finished (durable-reload marks "succeeded"/"failed" as terminal).
+      await saveFinalSnapshot("running");
+      return {
+        totalSteps: step + 1,
+        status: "succeeded",
+        output: finalOutput,
+        totalInputTokens,
+        totalOutputTokens,
+        durationMs: Date.now() - startTime,
+        handoff: handoffResult,
+        ...(structuredOutput !== undefined ? { structuredOutput } : {}),
+      };
     }
 
     const durationMs = Date.now() - startTime;
@@ -1370,27 +1523,16 @@ export async function runLoop(
           },
         }, sessionId, runId, totalInputTokens, totalOutputTokens, "succeeded");
         await deps.pluginManager?.fireHook("onRunCompleted", { status: "succeeded", output: finalOutput });
-        if (deps.sessionStore && deps.sessionTitleGenerator && sessionId) {
-          const session = await deps.sessionStore.getSession(sessionId).catch(() => null);
-          if (session && (!session.title || session.title === "New Session")) {
-            const title = await deps.sessionTitleGenerator(prompt).catch(() => "");
-            if (title) {
-              await deps.sessionStore.updateSession(sessionId, { title }).catch((err) => {
-                if (typeof console !== "undefined") {
-                  console.warn("[run-loop] Failed to update session title:", err instanceof Error ? err.message : String(err));
-                }
-              });
-            }
-          }
-        }
+        await finalizeSessionTitle(deps, sessionId, prompt);
         setState(runId, "completed");
         await saveFinalSnapshot("succeeded");
-        return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs, ...(handoffResult ? { handoff: handoffResult } : {}) };
+        return { totalSteps: step + 1, status: "succeeded", output: finalOutput, totalInputTokens, totalOutputTokens, durationMs, ...(handoffResult ? { handoff: handoffResult } : {}) };
       }
       if (runAbort.signal.aborted) return cancelRun(step + 1);
       await emitFail(runId, ctx, `Exceeded max steps (${runMaxSteps})`, step, sessionId, totalInputTokens, totalOutputTokens, durationMs);
       await deps.saga.rollbackAll();
       setState(runId, "failed");
+      runTraceStatus = "error";
       return { totalSteps: step, status: "failed", error: `Exceeded max steps (${runMaxSteps})`, totalInputTokens, totalOutputTokens, durationMs };
     } else {
       if (runAbort.signal.aborted) return cancelRun(step + 1);
@@ -1408,19 +1550,7 @@ export async function runLoop(
 
       await deps.pluginManager?.fireHook("onRunCompleted", { status: "succeeded", output: finalOutput });
 
-      if (deps.sessionStore && deps.sessionTitleGenerator && sessionId) {
-        const session = await deps.sessionStore.getSession(sessionId).catch(() => null);
-        if (session && (!session.title || session.title === "New Session")) {
-          const title = await deps.sessionTitleGenerator(prompt).catch(() => "");
-          if (title) {
-            await deps.sessionStore.updateSession(sessionId, { title }).catch((err) => {
-              if (typeof console !== "undefined") {
-                console.warn("[run-loop] Failed to update session title:", err instanceof Error ? err.message : String(err));
-              }
-            });
-          }
-        }
-      }
+      await finalizeSessionTitle(deps, sessionId, prompt);
     }
 
     setState(runId, "completed");
@@ -1432,8 +1562,9 @@ export async function runLoop(
     }
 
     await saveFinalSnapshot("succeeded");
-    return { totalSteps: step + 1, status: "succeeded", totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
+    return { totalSteps: step + 1, status: "succeeded", output: finalOutput, totalInputTokens, totalOutputTokens, durationMs: Date.now() - startTime };
   } catch (err: unknown) {
+    runTraceStatus = "error";
     // A cancellation that surfaced as an abort (e.g. the model call rejecting
     // with AbortError, or the step-start guard) must converge on the single
     // `cancelled` terminal outcome — never a confusing `failed`.
@@ -1449,7 +1580,21 @@ export async function runLoop(
     if (runSessionState) runSessionState.isRunning = false;
     return { totalSteps: step + 1, status: "failed", error: errorMsg, totalInputTokens, totalOutputTokens, durationMs: failDurationMs };
   } finally {
-    deps.saga.clear();
-    deps.stateMachine.cleanupRun(runId, sessionId);
+    // G3.1 — end the root span with the run's terminal status and ship the
+    // span list (onSpans seam + fire-and-forget OTLP when an endpoint exists).
+    if (runTrace) {
+      await finishRunTrace(
+        runTrace,
+        runAbort.signal.aborted ? "cancelled" : runTraceStatus,
+      );
+    }
+    // A handoff hands control back to the kernel, which either continues this
+    // run (agent swap) or fails it (rejected handoff). Keep the per-run saga
+    // and the state-machine registration (busy session, abort map, model
+    // binding) alive across that boundary — the FINAL exit cleans them up.
+    if (!handoffResult) {
+      deps.saga.clear();
+      deps.stateMachine.cleanupRun(runId, sessionId);
+    }
   }
 }

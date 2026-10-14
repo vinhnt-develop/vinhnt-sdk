@@ -1,6 +1,36 @@
+import type { RequestId, TraceId } from "../contracts/branded.js";
+
+/**
+ * Error domain — which subsystem caused the error.
+ */
+export type ErrorDomain =
+  | "llm"
+  | "tool"
+  | "kernel"
+  | "config"
+  | "permission"
+  | "sandbox"
+  | "mcp"
+  | "lsp"
+  | "session"
+  | "plugin";
+
+/**
+ * Error category — who is responsible.
+ */
+export type ErrorCategory =
+  | "user"       // bad input from developer/user
+  | "system"     // internal SDK error
+  | "dependency" // external service failure
+  | "config";    // misconfiguration
+
 /**
  * Base error class for all vinhnt-sdk errors.
  * Provides a stable machine-routable `code` field for programmatic error handling.
+ *
+ * This is THE single base of the SDK error taxonomy: `VntError` and every
+ * typed subclass (`KernelError`, `ToolInputError`, `RunNotFoundError`, …)
+ * extends `SdkError`.
  *
  * @example
  * ```typescript
@@ -9,18 +39,46 @@
  * ```
  */
 export class SdkError extends Error {
+  /** Machine-readable error code. */
   readonly code: string;
+  /** Whether a retry may succeed. */
   readonly retryable: boolean;
+  /** Error domain — which subsystem caused the error. */
+  readonly domain: ErrorDomain | undefined;
+  /** Error category — who is responsible. */
+  readonly category: ErrorCategory | undefined;
+  /** Correlation id of the originating request, when known. */
+  readonly requestId: RequestId | undefined;
+  /** Trace id of the originating request, when known. */
+  readonly traceId: TraceId | undefined;
 
   constructor(
     code: string,
     message: string,
-    options?: { retryable?: boolean; cause?: unknown },
+    options?: {
+      retryable?: boolean | undefined;
+      cause?: unknown;
+      domain?: ErrorDomain | undefined;
+      category?: ErrorCategory | undefined;
+      requestId?: RequestId | undefined;
+      traceId?: TraceId | undefined;
+    },
   ) {
     super(message, { cause: options?.cause });
     this.name = 'SdkError';
     this.code = code;
     this.retryable = options?.retryable ?? false;
+    this.domain = options?.domain;
+    this.category = options?.category;
+    this.requestId = options?.requestId;
+    this.traceId = options?.traceId;
+  }
+
+  /**
+   * Type-safe error checking (works across module boundaries).
+   */
+  static isInstance(error: unknown): error is SdkError {
+    return error instanceof SdkError;
   }
 }
 

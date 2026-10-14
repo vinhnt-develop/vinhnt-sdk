@@ -8,7 +8,7 @@ category: Getting Started
 
 # Build AI agents with TypeScript
 
-vinhnt-sdk is a modular, extensible SDK for building AI agents in TypeScript. It provides 18 packages that work together to give you a complete toolkit for creating, deploying, and managing intelligent agents.
+vinhnt-sdk is a modular, extensible SDK for building AI agents in TypeScript. It provides 21 packages that work together to give you a complete toolkit for creating, deploying, and managing intelligent agents.
 
 ## What is vinhnt-sdk?
 
@@ -25,32 +25,44 @@ vinhnt-sdk is designed from the ground up for TypeScript developers. It offers a
 ## Quick Install
 
 ```bash
-pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools
+pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools @vinhnt-sdk/session @vinhnt-sdk/provider-openai-compatible zod
 ```
 
 ## 5-Minute Example
 
 ```typescript
 import { AgentKernel, defineTool } from '@vinhnt-sdk/core'
+import { NullRunEventStore } from '@vinhnt-sdk/session'
+import { OpenAICompatibleProvider } from '@vinhnt-sdk/provider-openai-compatible'
+import { z } from 'zod'
 
 const calculator = defineTool({
   name: 'calculator',
   description: 'Perform basic calculations',
-  parameters: {
-    expression: { type: 'string', description: 'Math expression' }
-  },
-  handler: async ({ expression }) => {
+  risk: 'read',
+  input: z.object({ expression: z.string().describe('Math expression') }),
+  async execute({ expression }) {
     return eval(expression)
-  }
+  },
 })
 
 const kernel = new AgentKernel({
-  model: 'gpt-4',
-  tools: [calculator]
+  model: new OpenAICompatibleProvider({
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: process.env.OPENAI_API_KEY!,
+    defaultModel: 'gpt-4o-mini',
+  }),
+  store: new NullRunEventStore(),
+  tools: [calculator.toDefinition()],
 })
 
-const result = await kernel.run('Calculate 15 * 23')
-console.log(result)
+const handle = kernel.run('Calculate 15 * 23', {
+  requestId: 'req-1',
+  traceId: 'trace-1',
+  actorId: 'user-1',
+  tenantId: 'default',
+})
+await handle.completed
 ```
 
 ## Next Steps

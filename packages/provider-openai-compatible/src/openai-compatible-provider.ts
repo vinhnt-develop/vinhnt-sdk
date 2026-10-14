@@ -20,6 +20,7 @@ import type {
 import { ConfigurationError, NetworkError, TimeoutError } from "@vinhnt-sdk/schema";
 import { buildRequest } from "./build-request.js";
 import type { BuildRequestOptions, OpenAICompatibleRequestBody } from "./build-request.js";
+import type { PromptCacheShaping } from "./prompt-cache.js";
 import { toModelStreamEvents } from "./sse.js";
 import { fromOpenAIResponse } from "./convert.js";
 import type { RetryOptions } from "./error.js";
@@ -62,6 +63,12 @@ export interface OpenAICompatibleProviderOptions {
    * `request.streamOptions.includeUsage`. Default: true.
    */
   readonly includeUsage?: boolean;
+  /**
+   * Prompt-cache request shaping (P2-9): `cache_control` breakpoints or an
+   * OpenAI `prompt_cache_key`. Default: none. Applied to every request this
+   * provider builds.
+   */
+  readonly promptCache?: PromptCacheShaping;
   /** Injectable fetch implementation (defaults to the global `fetch`). */
   readonly fetchImpl?: typeof fetch;
   /**
@@ -109,6 +116,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
   private readonly retry: RetryOptions | undefined;
   private readonly timeoutMs: number;
   private readonly includeUsage: boolean;
+  private readonly promptCache: PromptCacheShaping | undefined;
   private readonly fetchImpl: typeof fetch;
   private readonly onWireRequest?: ((url: string, body: OpenAICompatibleRequestBody) => void) | undefined;
 
@@ -129,6 +137,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
     this.retry = opts.retry;
     this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.includeUsage = opts.includeUsage ?? true;
+    this.promptCache = opts.promptCache;
     this.onWireRequest = opts.onWireRequest;
     const globalFetch = (globalThis as { fetch?: typeof fetch }).fetch;
     if (opts.fetchImpl) {
@@ -178,6 +187,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
       model: request.model ?? this.model,
       stream: opts.stream,
       includeUsage: opts.includeUsage,
+      ...(this.promptCache !== undefined ? { promptCache: this.promptCache } : {}),
     } satisfies BuildRequestOptions);
     try {
       this.onWireRequest?.(url, body);

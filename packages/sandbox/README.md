@@ -3,9 +3,7 @@
 Sandbox primitives + fail-closed factory for isolated tool/command execution.
 
 ```typescript
-import { createSandbox, SandboxUnavailableError } from "@vinhnt-sdk/sandbox";
-import { createHostSandbox } from "@vinhnt-sdk/sandbox-host";
-import { createProcessSandbox } from "@vinhnt-sdk/sandbox-process";
+import { createSandbox, SandboxUnavailableError, createHostSandbox, createProcessSandbox } from "@vinhnt-sdk/sandbox";
 
 const sandbox = createSandbox({ defaultTimeoutMs: 30_000, scope: "process" }, {
   host: createHostSandbox,
@@ -33,4 +31,5 @@ Wire only the backends your application actually supports.
 - `createSandbox(config, backends)` — fail-closed factory.
 - `parseCommand` — shell command tokenizer.
 - `killProcessTree` / `isPidAlive` / `treeKillSpawnOptions` — tree-scoped termination.
-- Backend packages: `@vinhnt-sdk/sandbox-host`, `@vinhnt-sdk/sandbox-process`, `@vinhnt-sdk/sandbox-container`.
+- Backend factories in-package: `createHostSandbox` (host), `createProcessSandbox` (process), `createContainerSandbox` (container/Docker — G17).
+- Container scope: `allowNetwork: false` → `--network none`; `metadata.egressProxyUrl` injects an allowlisting proxy; missing docker CLI fails closed (exit 127), never downgrades.

@@ -24,6 +24,44 @@ export interface Plan {
 }
 
 /**
+ * Holds the current plan so `update_plan` writes and `get_plan` reads the
+ * same state. One instance per provider/kernel (no module-level global —
+ * concurrent agents must not share plans).
+ */
+export class PlanStore {
+  private plan: Plan | undefined;
+
+  get(): Plan | undefined {
+    return this.plan;
+  }
+
+  set(plan: Plan): void {
+    this.plan = plan;
+  }
+}
+
+function formatPlan(plan: Plan): string {
+  const lines = plan.steps.map((s, i) => {
+    const icon = s.status === "completed" ? "✅"
+      : s.status === "in_progress" ? "🔄"
+      : s.status === "failed" ? "❌"
+      : "⏳";
+    return `${icon} ${i + 1}. ${s.text}`;
+  });
+
+  const completed = plan.steps.filter((s) => s.status === "completed").length;
+  const total = plan.steps.length;
+
+  return [
+    `Plan (${completed}/${total} completed):`,
+    "",
+    ...lines,
+    "",
+    plan.explanation ? `Note: ${plan.explanation}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+/**
  * Create an update_plan tool that lets agents track their task progress.
  *
  * The agent calls this tool to:
@@ -31,24 +69,30 @@ export interface Plan {
  * 2. Mark steps as in_progress or completed
  * 3. Add explanation for each update
  *
+ * Pass a shared {@link PlanStore} to `createUpdatePlanTool` and
+ * `createGetPlanTool` so `get_plan` can return the stored plan.
+ *
  * @example
  * ```typescript
- * const tool = createUpdatePlanTool();
- * toolRegistry.register(tool);
+ * const store = new PlanStore();
+ * toolRegistry.register(createUpdatePlanTool(store));
+ * toolRegistry.register(createGetPlanTool(store));
  *
  * // Agent calls:
  * // update_plan({ steps: [
- *   // { text: "Read codebase", status: "completed" },
- *   // { text: "Implement feature", status: "in_progress" },
- *   // { text: "Write tests", status: "pending" },
+ * //   { text: "Read codebase", status: "completed" },
+ * //   { text: "Implement feature", status: "in_progress" },
+ * //   { text: "Write tests", status: "pending" },
  * // ], explanation: "Starting implementation" })
  * ```
  */
-export function createUpdatePlanTool(): ToolDefinition {
+export function createUpdatePlanTool(store: PlanStore = new PlanStore()): ToolDefinition {
   return defineTool({
     name: "update_plan",
     description: "Update the task plan with steps and their status. Use this to track your progress on multi-step tasks.",
-    risk: "none" as const,
+    // "read" like todowrite — pure in-memory bookkeeping, no fs/network side
+    // effects. (Was "none"; unknown risks fail closed to approval_required.)
+    risk: "read" as const,
     input: z.object({
       steps: z.array(z.object({
         text: z.string().describe("Description of the step"),
@@ -56,7 +100,7 @@ export function createUpdatePlanTool(): ToolDefinition {
       })).describe("Updated list of plan steps"),
       explanation: z.string().optional().describe("Explanation for this plan update"),
     }),
-    execute: async (input, ctx) => {
+    execute: async (input) => {
       const now = new Date().toISOString();
 
       const inProgressCount = input.steps.filter((s) => s.status === "in_progress").length;
@@ -78,39 +122,29 @@ export function createUpdatePlanTool(): ToolDefinition {
         explanation: input.explanation,
       };
 
-      const lines = plan.steps.map((s, i) => {
-        const icon = s.status === "completed" ? "✅"
-          : s.status === "in_progress" ? "🔄"
-          : s.status === "failed" ? "❌"
-          : "⏳";
-        return `${icon} ${i + 1}. ${s.text}`;
-      });
-
-      const completed = plan.steps.filter((s) => s.status === "completed").length;
-      const total = plan.steps.length;
-
-      return [
-        `Plan (${completed}/${total} completed):`,
-        "",
-        ...lines,
-        "",
-        plan.explanation ? `Note: ${plan.explanation}` : "",
-      ].filter(Boolean).join("\n");
+      store.set(plan);
+      return formatPlan(plan);
     },
   }).toDefinition();
 }
 
 /**
- * Create a get_plan tool — returns the current plan state.
+ * Create a get_plan tool — returns the current plan state from a shared
+ * {@link PlanStore}. Wire it with `createUpdatePlanTool` using the same store.
  */
-export function createGetPlanTool(): ToolDefinition {
+export function createGetPlanTool(store: PlanStore = new PlanStore()): ToolDefinition {
   return defineTool({
     name: "get_plan",
     description: "Get the current task plan and its progress.",
-    risk: "none" as const,
+    // See update_plan — "read" keeps the fail-closed gate from prompting.
+    risk: "read" as const,
     input: z.object({}),
     execute: async () => {
-      return "No active plan. Use update_plan to create one.";
+      const plan = store.get();
+      if (!plan) {
+        return "No active plan. Use update_plan to create one.";
+      }
+      return formatPlan(plan);
     },
   }).toDefinition();
 }

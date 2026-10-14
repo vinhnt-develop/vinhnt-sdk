@@ -1,6 +1,6 @@
-﻿# @vinhnt-sdk/test-utils
+# @vinhnt-sdk/test-utils
 
-> Version: 0.6.1 | Status: STABLE
+> Status: STABLE
 
 Shared test utilities for vinhnt-sdk packages — mock factories, assertion helpers, and test patterns.
 

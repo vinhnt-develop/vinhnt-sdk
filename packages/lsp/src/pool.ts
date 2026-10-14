@@ -4,6 +4,7 @@ import { uriFromPath } from "./file-sync.js";
 import { findServerByExtension, BUILTIN_SERVERS } from "./server-registry.js";
 import type { LspServerDefinition, LspServerStatus, LspPoolConfig, LspDiagnostic } from "./types.js";
 import { DEFAULT_LSP_POOL_CONFIG } from "./types.js";
+import { getLogger } from "@vinhnt-sdk/schema";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
@@ -315,7 +316,7 @@ export class LspPool {
         this.diagnostics.set(uri, diagnostics);
       },
       onError: (err) => {
-        console.warn(`[LSP ${definition.id}] ${err.message}`);
+        getLogger().warn(`[LSP ${definition.id}] ${err.message}`);
       },
       onExit: (code, signal) => {
         this.entries.delete(key);

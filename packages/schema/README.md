@@ -1,6 +1,6 @@
 # @vinhnt-sdk/schema
 
-> Version: 0.5.0 | Status: STABLE
+> Status: STABLE
 
 Shared types and contracts for vinhnt-sdk — branded IDs, event types, error classes, Zod schemas, and API contracts.
 

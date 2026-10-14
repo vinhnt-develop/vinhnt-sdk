@@ -66,19 +66,13 @@ const calculatorTool = defineTool({
   name: "calculator",
   description: "Thực hiện phép tính cơ bản. Dùng cho các câu hỏi về toán học.",
   risk: "read",
-  parameters: {
-    type: "object",
-    properties: {
-      operation: {
-        type: "string",
-        enum: ["add", "subtract", "multiply", "divide"],
-        description: "Phép tính cần thực hiện",
-      },
-      a: { type: "number", description: "Số hạng thứ nhất" },
-      b: { type: "number", description: "Số hạng thứ hai" },
-    },
-    required: ["operation", "a", "b"],
-  },
+  input: z.object({
+    operation: z
+      .enum(["add", "subtract", "multiply", "divide"])
+      .describe("Phép tính cần thực hiện"),
+    a: z.number().describe("Số hạng thứ nhất"),
+    b: z.number().describe("Số hạng thứ hai"),
+  }),
   execute: async (params) => {
     const results: Record<string, number> = {
       add: params.a + params.b,
@@ -111,7 +105,7 @@ const model = {
 // 3. Tạo kernel
 const kernel = new AgentKernel({
   model,
-  tools: [calculatorTool],
+  tools: [calculatorTool.toDefinition()],
   store: new NullRunEventStore(),
 });
 
@@ -120,17 +114,20 @@ async function main() {
   const prompt = process.argv[2] || "42 * 17 bằng bao nhiêu?";
   console.log(`Prompt: ${prompt}\n`);
 
-  // Cách 1: Chạy đơn giản
-  const result = await kernel.run(prompt);
-  console.log(`Câu trả lời: ${result}`);
-
-  // Cách 2: Chạy với streaming sự kiện
-  const runHandle = kernel.createRunHandle(prompt, {
+  const ctx = {
     requestId: "req-1",
     traceId: "trace-1",
     actorId: "user-1",
     tenantId: "tenant-1",
-  });
+  };
+
+  // Cách 1: Chạy đơn giản
+  const handle = kernel.run(prompt, ctx);
+  await handle.completed;
+  console.log(`Run hoàn thành: ${handle.runId}`);
+
+  // Cách 2: Chạy với streaming sự kiện
+  const runHandle = kernel.createRunHandle(prompt, ctx);
 
   runHandle.onEvent((event) => {
     if (event.type === "agent.completed") {
@@ -146,7 +143,7 @@ async function main() {
   }
 
   const runResult = await runHandle.completed;
-  console.log(`\nCâu trả lời: ${runResult.output}`);
+  console.log(`\nTrạng thái: ${runResult.status}`);
 }
 
 main();

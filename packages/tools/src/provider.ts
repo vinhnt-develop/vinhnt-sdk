@@ -1,6 +1,6 @@
 import type { ToolDefinition } from "./definitions.js";
 import type { ToolRegistry } from "./registry.js";
-import { ValidationError } from "@vinhnt-sdk/schema";
+import { ValidationError, getLogger } from "@vinhnt-sdk/schema";
 
 /**
  * ToolProvider — Interface for providing tools to the kernel.
@@ -61,7 +61,7 @@ export class ToolProviderRegistry {
     for (const tool of provider.tools) {
       if (this.tools.has(tool.id)) {
         // Workspace/global tools override built-in tools
-        console.log(`[ToolProvider] Overriding tool "${tool.id}" (provider: ${provider.id})`);
+        getLogger().info(`[ToolProvider] Overriding tool "${tool.id}" (provider: ${provider.id})`);
       }
       this.tools.set(tool.id, tool);
     }

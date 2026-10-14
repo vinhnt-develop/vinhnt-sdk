@@ -120,6 +120,7 @@ export async function tryReadFileFallback(
         "read_file", tc.toolId, runId, sessionId ?? "",
         `Fallback read_file for edit_file after error: ${errorMsg.substring(0, 100)}`,
         deps.currentAgent?.id ?? "", ctx.traceId, undefined, undefined, runAbort.signal,
+        { risk: fallbackTool.risk, source: fbPermResult.source },
       );
       if (reply === "reject") return false;
     }
@@ -134,6 +135,7 @@ export async function tryReadFileFallback(
           "read_file", tc.toolId, runId, sessionId ?? "",
           input.reason, deps.currentAgent?.id ?? "",
           ctx.traceId, deps.pluginManager, undefined, runAbort.signal,
+          { risk: fallbackTool.risk },
         );
       },
       metadata: () => {},

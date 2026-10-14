@@ -12,6 +12,8 @@ import type {
   OpenAIMessage,
 } from "@vinhnt-sdk/schema";
 import { toOpenAIMessage } from "./convert.js";
+import { applyPromptCacheShaping } from "./prompt-cache.js";
+import type { PromptCacheShaping } from "./prompt-cache.js";
 import { ConfigurationError } from "@vinhnt-sdk/schema";
 
 /** OpenAI Chat Completions request body (as POSTed to /chat/completions). */
@@ -28,6 +30,8 @@ export interface OpenAICompatibleRequestBody {
       readonly parameters?: unknown;
       readonly strict?: boolean;
     };
+    /** Prompt-cache breakpoint on the last tool (shaping opt-in — P2-9). */
+    readonly cache_control?: { readonly type: "ephemeral" };
   }[];
   tool_choice?: "auto" | "required" | "none" | { readonly type: "function"; readonly function: { readonly name: string } };
   parallel_tool_calls?: boolean;
@@ -44,6 +48,10 @@ export interface OpenAICompatibleRequestBody {
   logprobs?: boolean;
   top_logprobs?: number;
   reasoning_effort?: string;
+  /** Opaque prompt-cache key for automatic prefix caching (P2-9, opt-in). */
+  prompt_cache_key?: string;
+  /** Cache retention hint (provider support varies — forwarded verbatim). */
+  prompt_cache_retention?: string;
   response_format?:
     | { readonly type: "json_object" }
     | { readonly type: "json_schema"; readonly json_schema: { readonly name: string; readonly schema: unknown; readonly strict?: boolean } };
@@ -57,6 +65,12 @@ export interface BuildRequestOptions {
   readonly stream?: boolean;
   /** Track request/response token usage in streamed responses. */
   readonly includeUsage?: boolean;
+  /**
+   * Prompt-cache request shaping (P2-9): `cache_control` breakpoints on the
+   * stable prefix or an OpenAI `prompt_cache_key`. Default: none — the body
+   * is unchanged (unknown fields would break strict OpenAI endpoints).
+   */
+  readonly promptCache?: PromptCacheShaping;
 }
 
 function toToolChoice(choice: ToolChoice | undefined): OpenAICompatibleRequestBody["tool_choice"] {
@@ -118,10 +132,19 @@ export function buildRequest(request: ModelRequest, opts?: BuildRequestOptions):
   if (!model.trim()) {
     throw new ConfigurationError("Model identifier is required (either in request or provider default)");
   }
-  const messages = request.messages.map((m: ChatMessage) => toOpenAIMessage(m));
+  let messages = request.messages.map((m: ChatMessage) => toOpenAIMessage(m));
   if (request.system) {
     messages.unshift({ role: "system" as const, content: request.system });
   }
+  let tools: OpenAICompatibleRequestBody["tools"];
+  if (request.tools && request.tools.length > 0) {
+    tools = request.tools.map(toOpenAITool);
+  }
+
+  // Prompt-cache shaping (P2-9) — opt-in; default path leaves the body as-is.
+  const shaping = applyPromptCacheShaping(messages, tools, opts?.promptCache);
+  messages = [...shaping.messages];
+  tools = shaping.tools as OpenAICompatibleRequestBody["tools"] | undefined;
 
   const body: OpenAICompatibleRequestBody = {
     model,
@@ -135,8 +158,8 @@ export function buildRequest(request: ModelRequest, opts?: BuildRequestOptions):
     }
   }
 
-  if (request.tools && request.tools.length > 0) {
-    body.tools = request.tools.map(toOpenAITool);
+  if (tools !== undefined) {
+    body.tools = tools;
   }
 
   const toolChoice = toToolChoice(request.toolChoice);
@@ -165,6 +188,13 @@ export function buildRequest(request: ModelRequest, opts?: BuildRequestOptions):
 
   const responseFormat = toResponseFormat(request.responseFormat);
   if (responseFormat !== undefined) body.response_format = responseFormat;
+
+  if (opts?.promptCache?.mode === "prompt_cache_key") {
+    body.prompt_cache_key = opts.promptCache.key;
+    if (opts.promptCache.retention !== undefined) {
+      body.prompt_cache_retention = opts.promptCache.retention;
+    }
+  }
 
   return body;
 }

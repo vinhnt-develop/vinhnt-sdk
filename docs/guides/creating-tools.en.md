@@ -7,7 +7,6 @@ category: "Guides"
 sidebarPosition: 1
 sidebarLabel: "Creating Tools"
 tags: [tools, define-tool, zod]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 
@@ -157,7 +156,7 @@ import {
   createShellTool,
   createWebSearchTool,
   createGitStatusTool,
-} from "@vinhnt-sdk/core";
+} from "@vinhnt-sdk/tools";
 
 const kernel = new AgentKernel({
   model,

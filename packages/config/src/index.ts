@@ -40,9 +40,4 @@ export {
   type FileSettingsProviderOptions,
 } from "./file-settings-provider.js";
 
-export {
-  ConfigMigrator,
-  defineMigration,
-  type ConfigMigration,
-  WORKSPACE_V1_TO_V2,
-} from "./config-migrator.js";
+export { ConfigMigrator, defineMigration, type ConfigMigration } from "./config-migrator.js";

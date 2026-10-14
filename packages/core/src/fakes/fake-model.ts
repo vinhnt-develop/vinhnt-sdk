@@ -1,6 +1,7 @@
 import type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing } from "../model.js";
 import { getTextContent } from "../model.js";
 import type { ModelId } from "@vinhnt-sdk/schema";
+import { approximateTokens } from "@vinhnt-sdk/schema";
 
 /**
  * FakeModelProvider — Mock LLM provider for unit tests.
@@ -59,7 +60,7 @@ export class FakeModelProvider implements ModelProvider {
   }
 
   countTokens(text: string): number {
-    return Math.ceil(text.length / 4);
+    return approximateTokens(text);
   }
 
   async generate(request: ModelRequest, _signal?: AbortSignal): Promise<ModelResponse> {

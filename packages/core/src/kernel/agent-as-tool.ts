@@ -18,7 +18,11 @@ export interface AgentAsToolOptions {
   readonly toolName?: string;
   /** Tool description for the LLM */
   readonly toolDescription: string;
-  /** Max output length to return to parent (default: 4096) */
+  /**
+   * Max output length to return to parent (default: 4096).
+   * P7.1: pass `kernel.getContextBudget().maxSubagentOutputChars` to coordinate
+   * with the unified context budget instead of relying on the hardcoded default.
+   */
   readonly maxOutputLength?: number;
 }
 
@@ -74,51 +78,6 @@ export function agentAsTool(options: AgentAsToolOptions): ToolDefinition {
         result = result.slice(0, maxOutputLength) + "\n... [subagent output truncated]";
       }
       return result;
-    },
-  }).toDefinition();
-}
-
-/**
- * Create a handoff tool — transfers control to another agent.
- *
- * Unlike agent-as-tool, handoff gives full control to the target agent.
- * The original agent pauses until the target agent completes or transfers back.
- *
- * @example
- * ```typescript
- * const handoffTool = createHandoffTool({
- *   agentId: "billing" as AgentId,
- *   toolDescription: "Transfer to billing specialist",
- *   onHandoff: (reason) => console.log("Handing off:", reason),
- * });
- * ```
- */
-export function createHandoffTool(options: {
-  readonly agentId: AgentId;
-  readonly toolName?: string;
-  readonly toolDescription: string;
-  readonly onHandoff?: (reason: string) => void | Promise<void>;
-}): ToolDefinition {
-  const {
-    agentId,
-    toolName = `transfer_to_${agentId}`,
-    toolDescription,
-    onHandoff,
-  } = options;
-
-  return defineTool({
-    name: toolName,
-    description: toolDescription,
-    risk: "write" as const,
-    input: z.object({
-      reason: z.string().describe("Reason for the handoff"),
-      summary: z.string().optional().describe("Summary of conversation so far"),
-    }),
-    execute: async (input, ctx) => {
-      if (onHandoff) {
-        await onHandoff(input.reason);
-      }
-      return `[HANDOFF:${agentId}] reason=${input.reason}${input.summary ? ` summary=${input.summary}` : ""}`;
     },
   }).toDefinition();
 }

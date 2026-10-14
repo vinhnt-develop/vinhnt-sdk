@@ -1,6 +1,6 @@
 # @vinhnt-sdk/mcp
 
-> Version: 0.4.2 | Status: stable (MCP 2026-07-28)
+> Status: stable (MCP 2026-07-28)
 
 Model Context Protocol (MCP) client for vinhnt-sdk — stateless by default, MRTR, tools-first interface.
 
@@ -39,6 +39,28 @@ await conn.close();
 - **Resources and Prompts** are tools (unified interface)
 - **Sampling and Roots** are deprecated (use tool calls instead)
 
+## A2A v1.0 interop (discovery)
+
+Agent-to-agent discovery per A2A v1.0 (Linux Foundation): Agent Card types,
+`/.well-known/agent-card.json` fetch with ETag/304 caching, and the strict
+7-state task lifecycle. Streaming/push-notification bindings are not yet
+implemented (deferred).
+
+```typescript
+import { discoverAgentCard, KNOWN_TASK_STATES } from "@vinhnt-sdk/mcp";
+import type { AgentCard, TaskState } from "@vinhnt-sdk/mcp";
+
+const { card, etag, notModified } = await discoverAgentCard(
+  "https://agent.example.com/", // → /.well-known/agent-card.json
+);
+if (notModified) {
+  // reuse cached card (304)
+} else {
+  console.log(card?.name, card?.skills);
+}
+const state: TaskState = "TASK_STATE_WORKING";
+```
+
 ## API Reference
 
 Full export list, types, and examples: [docs/api/mcp.en.md](../../docs/api/mcp.en.md) · [docs/api/mcp.vi.md](../../docs/api/mcp.vi.md)
@@ -51,6 +73,9 @@ Full export list, types, and examples: [docs/api/mcp.en.md](../../docs/api/mcp.e
 | `McpClientPool` | class | Pool of clients with retry and load balancing |
 | `McpServerConfig` | type | Server config: transport, command, args, protocol version |
 | `McpTool` | type | Tool definition discovered from a server |
+| `discoverAgentCard` | function | A2A v1.0 Agent Card discovery with ETag/304 caching |
+| `AgentCard` | type | A2A v1.0 canonical Agent Card data model |
+| `TaskState` | type | A2A task lifecycle (7 strict states) |
 
 ## Dependencies
 

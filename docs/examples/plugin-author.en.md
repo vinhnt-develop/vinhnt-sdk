@@ -15,12 +15,11 @@ sidebarPosition: 6
 
 ## Plugin Structure
 
-A plugin is an npm package that exports a plugin definition and manifest.
+A plugin is an npm package whose default export is a `Plugin` built with `definePlugin` (manifest + hooks + lifecycle declared in code — there is no separate manifest file).
 
 ```
 my-plugin/
 ├── package.json
-├── manifest.json
 ├── src/
 │   └── index.ts
 ├── tsconfig.json
@@ -43,7 +42,8 @@ my-plugin/
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "@vinhnt-sdk/core": "^0.1.1"
+    "@vinhnt-sdk/core": "^0.10.9",
+    "@vinhnt-sdk/plugin": "^0.4.2"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
@@ -52,161 +52,144 @@ my-plugin/
 }
 ```
 
-## manifest.json
-
-```json
-{
-  "name": "weather",
-  "version": "1.0.0",
-  "description": "Weather lookup tools for vinhnt-sdk agents",
-  "author": "your-name",
-  "hooks": ["onInit", "onToolRegister", "onToolExecute"],
-  "tools": ["get_weather", "get_forecast"],
-  "config": {
-    "apiKey": {
-      "type": "string",
-      "required": true,
-      "description": "OpenWeatherMap API key"
-    }
-  }
-}
-```
-
 ## Plugin Source (src/index.ts)
 
 ```typescript
-import { definePlugin, defineTool } from "@vinhnt-sdk/core";
+import { definePlugin } from "@vinhnt-sdk/plugin";
+import { defineTool } from "@vinhnt-sdk/core";
 import { z } from "zod";
 
 const WEATHER_API = "https://api.openweathermap.org/data/2.5";
 
-export const plugin = definePlugin({
-  name: "weather",
-  version: "1.0.0",
-  description: "Weather lookup tools",
-
-  hooks: {
-    onInit: async (ctx) => {
-      console.log(`[weather] Plugin initialized for tenant ${ctx.tenantId}`);
-    },
-
-    onToolRegister: async (ctx) => {
-      ctx.registerTool(defineTool({
-        name: "get_weather",
-        description: "Get current weather for a city",
-        risk: "low",
-        input: z.object({
-          city: z.string().describe("City name"),
-        }),
-        execute: async (input) => {
-          const apiKey = ctx.getConfig("apiKey");
-          const response = await fetch(
-            `${WEATHER_API}/weather?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
-          );
-          if (!response.ok) return { error: "City not found" };
-          const data = await response.json();
-          return {
-            city: data.name,
-            temp: data.main.temp,
-            condition: data.weather[0].main,
-          };
-        },
-      }));
-
-      ctx.registerTool(defineTool({
-        name: "get_forecast",
-        description: "Get 5-day forecast for a city",
-        risk: "low",
-        input: z.object({ city: z.string() }),
-        execute: async (input) => {
-          const apiKey = ctx.getConfig("apiKey");
-          const response = await fetch(
-            `${WEATHER_API}/forecast?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
-          );
-          const data = await response.json();
-          return {
-            city: data.city.name,
-            forecast: data.list.slice(0, 5).map((item: any) => ({
-              time: item.dt_txt,
-              temp: item.main.temp,
-              condition: item.weather[0].main,
-            })),
-          };
-        },
-      }));
-    },
-
-    onToolExecute: async (ctx, toolName, input, output) => {
-      console.log(`[weather] Tool ${toolName} executed`);
-    },
+const getWeatherTool = defineTool({
+  name: "get_weather",
+  description: "Get current weather for a city",
+  risk: "external",
+  input: z.object({
+    city: z.string().describe("City name"),
+  }),
+  execute: async (input) => {
+    const apiKey = process.env.WEATHER_API_KEY;
+    const response = await fetch(
+      `${WEATHER_API}/weather?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
+    );
+    if (!response.ok) return { error: "City not found" };
+    const data = await response.json();
+    return {
+      city: data.name,
+      temp: data.main.temp,
+      condition: data.weather[0].main,
+    };
   },
 });
+
+const getForecastTool = defineTool({
+  name: "get_forecast",
+  description: "Get 5-day forecast for a city",
+  risk: "external",
+  input: z.object({ city: z.string() }),
+  execute: async (input) => {
+    const apiKey = process.env.WEATHER_API_KEY;
+    const response = await fetch(
+      `${WEATHER_API}/forecast?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
+    );
+    const data = await response.json();
+    return {
+      city: data.city.name,
+      forecast: data.list.slice(0, 5).map((item: any) => ({
+        time: item.dt_txt,
+        temp: item.main.temp,
+        condition: item.weather[0].main,
+      })),
+    };
+  },
+});
+
+export const plugin = definePlugin(
+  {
+    id: "weather",
+    name: "Weather",
+    version: "1.0.0",
+    description: "Weather lookup tools",
+    metadata: {
+      tools: ["get_weather", "get_forecast"],
+      configEnv: ["WEATHER_API_KEY"],
+    },
+  },
+  {
+    hooks: {
+      onRunStarted: async ({ prompt }) => {
+        console.log(`[weather] run started: ${prompt.slice(0, 40)}`);
+      },
+      onToolCompleted: async ({ toolName, output }) => {
+        console.log(`[weather] ${toolName} completed`);
+      },
+    },
+    activate: async (ctx) => {
+      ctx.registerTool(getWeatherTool);
+      ctx.registerTool(getForecastTool);
+    },
+    deactivate: async () => {
+      console.log("[weather] plugin deactivated");
+    },
+  }
+);
 ```
 
-## Plugin Setup Function
+## Hooks
+
+Observation hooks are read-only; mutation hooks return `{ modified: value }` or `null` to leave the value untouched.
 
 ```typescript
-import { definePlugin } from "@vinhnt-sdk/core";
+import { definePlugin } from "@vinhnt-sdk/plugin";
 
-export const plugin = definePlugin({
-  name: "weather",
-  version: "1.0.0",
+export const plugin = definePlugin(
+  { id: "weather", name: "Weather", version: "1.0.0" },
+  {
+    hooks: {
+      // Observe tool execution (read-only)
+      onAfterToolExecution: async ({ toolName, output }) => {
+        console.log(`[weather] ${toolName} ->`, output);
+      },
 
-  setup: async (api) => {
-    // Register tools
-    api.registerTool(weatherTool);
-    api.registerTool(forecastTool);
+      // Mutate the LLM request before the model call
+      onBeforeModelCall: async ({ request }) => ({ modified: { request } }),
 
-    // Register hooks
-    api.onInit(async (ctx) => {
-      console.log("Weather plugin ready");
-    });
-
-    api.onToolExecute(async (ctx, toolName, input, output) => {
-      // Log or transform results
-    });
-
-    // Access plugin config
-    const apiKey = api.getConfig("apiKey");
-    console.log(`API key configured: ${!!apiKey}`);
-  },
-});
+      // Answer permission prompts from the plugin (or return null to defer)
+      onPermissionAsk: async ({ resource, reason }) =>
+        resource.startsWith("weather.") ? { modified: { reply: "once" } } : null,
+    },
+  }
+);
 ```
+
+Available hooks: `onRunStarted`, `onStepStarted`, `onTokenStreamed`, `onToolCompleted`, `onToolFailed`, `onContextCompressed`, `onStepCompleted`, `onStepFailed`, `onRunCompleted`, `onToolInvoked`, `onPermissionAsk`, `onChatParams`, `onShellEnv`, `onBeforeModelCall`, `onAfterModelCall`, `onBeforeToolExecution`, `onAfterToolExecution`.
 
 ## Testing the Plugin
 
 ```typescript
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import type { PluginContext } from "@vinhnt-sdk/core";
 import { plugin } from "../src/index";
 
 describe("weather plugin", () => {
-  it("registers tools on setup", async () => {
-    const registeredTools: string[] = [];
-    const mockApi = {
-      registerTool: (tool: any) => registeredTools.push(tool.name),
-      onInit: vi.fn(),
-      onToolExecute: vi.fn(),
-      getConfig: vi.fn().mockReturnValue("test-key"),
-    };
+  it("registers tools on activate", async () => {
+    const registered: string[] = [];
+    const ctx = {
+      registerTool: (tool: { name: string }) => {
+        registered.push(tool.name);
+        return { dispose: async () => {} };
+      },
+    } as unknown as PluginContext;
 
-    await plugin.setup!(mockApi);
-    expect(registeredTools).toContain("get_weather");
-    expect(registeredTools).toContain("get_forecast");
+    await plugin.activate(ctx);
+    expect(registered).toContain("get_weather");
+    expect(registered).toContain("get_forecast");
   });
 
-  it("returns weather data", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        name: "Hanoi",
-        main: { temp: 28 },
-        weather: [{ main: "Sunny" }],
-      }),
-    });
-    global.fetch = mockFetch;
-
-    const tool = plugin.hooks.onToolRegister;
-    expect(tool).toBeDefined();
+  it("exposes its manifest", () => {
+    expect(plugin.manifest.id).toBe("weather");
+    expect(plugin.manifest.version).toBe("1.0.0");
   });
 });
 ```
@@ -230,31 +213,61 @@ npm publish --access public
 ## Using the Plugin
 
 ```typescript
-import { AgentKernel, NullRunEventStore, loadPluginFromNpm } from "@vinhnt-sdk/core";
+import {
+  AgentKernel,
+  DefaultPluginManager,
+  InMemoryAgentRegistry,
+  InMemoryEventBus,
+  createToolProviderRegistry,
+} from "@vinhnt-sdk/core";
+import { NullRunEventStore } from "@vinhnt-sdk/session";
+import weatherPlugin from "./dist/index.js";
 
 const model = {
-  id: "openai-gpt4o",
   provider: "openai",
   model: "gpt-4o",
-  capabilities: { streaming: true, toolCalling: true, vision: false },
-  async *stream(request) {
+  contextLimit: 128_000,
+  capabilities: {
+    streaming: true,
+    toolCalling: true,
+    imageInput: false,
+    thinking: false,
+    structuredOutput: true,
+  },
+  async generate(request) {
     // Implement with your preferred AI SDK
+    throw new Error("implement me");
   },
 };
 
-// Load plugin from npm
-const weatherPlugin = await loadPluginFromNpm("@vinhnt-sdk/plugin-weather", {
-  config: { apiKey: process.env.WEATHER_API_KEY },
+const toolProviderRegistry = await createToolProviderRegistry({
+  workspaceRoot: process.cwd(),
+  shell: { workspaceRoot: process.cwd(), defaultTimeoutMs: 30_000 },
 });
+
+const manager = new DefaultPluginManager({
+  agentRegistry: new InMemoryAgentRegistry(),
+  toolProviderRegistry,
+  eventBus: new InMemoryEventBus(),
+});
+
+// Register the plugin you just built
+await manager.register(weatherPlugin);
+await manager.activate(weatherPlugin.manifest.id);
 
 const kernel = new AgentKernel({
   model,
-  plugins: [weatherPlugin],
   store: new NullRunEventStore(),
+  pluginManager: manager,
 });
 
-const result = await kernel.run("What's the weather in Hanoi?");
-console.log(result);
+const handle = kernel.run("What's the weather in Hanoi?", {
+  requestId: "req-1",
+  traceId: "trace-1",
+  actorId: "user-1",
+  tenantId: "tenant-1",
+});
+await handle.completed;
 ```
 
 ## Plugin Lifecycle
@@ -265,11 +278,10 @@ sequenceDiagram
     participant P as Plugin
     participant T as Tools
 
-    A->>P: loadPluginFromNpm()
-    A->>P: onInit(ctx)
-    A->>P: onToolRegister(ctx)
-    P->>T: registerTool(weather)
-    P->>T: registerTool(forecast)
+    A->>P: import("./dist/index.js")
+    A->>P: manager.register + activate(ctx)
+    P->>T: ctx.registerTool(get_weather)
+    P->>T: ctx.registerTool(get_forecast)
     A->>A: Agent ready with tools
-    A->>P: onToolExecute(ctx, toolName, input, output)
+    A->>P: onRunStarted / onToolCompleted hooks
 ```

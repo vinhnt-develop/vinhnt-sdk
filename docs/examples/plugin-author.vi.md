@@ -15,12 +15,11 @@ sidebarPosition: 6
 
 ## Cấu Trúc Plugin
 
-Plugin là một package npm xuất ra định nghĩa plugin và manifest.
+Plugin là một package npm có default export là một `Plugin` xây bằng `definePlugin` (manifest + hooks + lifecycle khai báo trong code — không có file manifest riêng).
 
 ```
 my-plugin/
 ├── package.json
-├── manifest.json
 ├── src/
 │   └── index.ts
 ├── tsconfig.json
@@ -43,7 +42,8 @@ my-plugin/
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "@vinhnt-sdk/core": "^0.1.1"
+    "@vinhnt-sdk/core": "^0.10.9",
+    "@vinhnt-sdk/plugin": "^0.4.2"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
@@ -52,161 +52,144 @@ my-plugin/
 }
 ```
 
-## manifest.json
-
-```json
-{
-  "name": "weather",
-  "version": "1.0.0",
-  "description": "Công cụ tra cứu thời tiết cho vinhnt-sdk agents",
-  "author": "ten-cua-ban",
-  "hooks": ["onInit", "onToolRegister", "onToolExecute"],
-  "tools": ["get_weather", "get_forecast"],
-  "config": {
-    "apiKey": {
-      "type": "string",
-      "required": true,
-      "description": "Khóa API OpenWeatherMap"
-    }
-  }
-}
-```
-
 ## Mã Nguồn Plugin (src/index.ts)
 
 ```typescript
-import { definePlugin, defineTool } from "@vinhnt-sdk/core";
+import { definePlugin } from "@vinhnt-sdk/plugin";
+import { defineTool } from "@vinhnt-sdk/core";
 import { z } from "zod";
 
 const WEATHER_API = "https://api.openweathermap.org/data/2.5";
 
-export const plugin = definePlugin({
-  name: "weather",
-  version: "1.0.0",
-  description: "Công cụ tra cứu thời tiết",
-
-  hooks: {
-    onInit: async (ctx) => {
-      console.log(`[weather] Plugin đã khởi tạo cho tenant ${ctx.tenantId}`);
-    },
-
-    onToolRegister: async (ctx) => {
-      ctx.registerTool(defineTool({
-        name: "get_weather",
-        description: "Lấy thời tiết hiện tại của thành phố",
-        risk: "low",
-        input: z.object({
-          city: z.string().describe("Tên thành phố"),
-        }),
-        execute: async (input) => {
-          const apiKey = ctx.getConfig("apiKey");
-          const response = await fetch(
-            `${WEATHER_API}/weather?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
-          );
-          if (!response.ok) return { error: "Không tìm thấy thành phố" };
-          const data = await response.json();
-          return {
-            city: data.name,
-            temp: data.main.temp,
-            condition: data.weather[0].main,
-          };
-        },
-      }));
-
-      ctx.registerTool(defineTool({
-        name: "get_forecast",
-        description: "Lấy dự báo 5 ngày cho thành phố",
-        risk: "low",
-        input: z.object({ city: z.string() }),
-        execute: async (input) => {
-          const apiKey = ctx.getConfig("apiKey");
-          const response = await fetch(
-            `${WEATHER_API}/forecast?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
-          );
-          const data = await response.json();
-          return {
-            city: data.city.name,
-            forecast: data.list.slice(0, 5).map((item: any) => ({
-              time: item.dt_txt,
-              temp: item.main.temp,
-              condition: item.weather[0].main,
-            })),
-          };
-        },
-      }));
-    },
-
-    onToolExecute: async (ctx, toolName, input, output) => {
-      console.log(`[weather] Công cụ ${toolName} đã thực thi`);
-    },
+const getWeatherTool = defineTool({
+  name: "get_weather",
+  description: "Lấy thời tiết hiện tại của thành phố",
+  risk: "external",
+  input: z.object({
+    city: z.string().describe("Tên thành phố"),
+  }),
+  execute: async (input) => {
+    const apiKey = process.env.WEATHER_API_KEY;
+    const response = await fetch(
+      `${WEATHER_API}/weather?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
+    );
+    if (!response.ok) return { error: "Không tìm thấy thành phố" };
+    const data = await response.json();
+    return {
+      city: data.name,
+      temp: data.main.temp,
+      condition: data.weather[0].main,
+    };
   },
 });
+
+const getForecastTool = defineTool({
+  name: "get_forecast",
+  description: "Lấy dự báo 5 ngày cho thành phố",
+  risk: "external",
+  input: z.object({ city: z.string() }),
+  execute: async (input) => {
+    const apiKey = process.env.WEATHER_API_KEY;
+    const response = await fetch(
+      `${WEATHER_API}/forecast?q=${encodeURIComponent(input.city)}&appid=${apiKey}`
+    );
+    const data = await response.json();
+    return {
+      city: data.city.name,
+      forecast: data.list.slice(0, 5).map((item: any) => ({
+        time: item.dt_txt,
+        temp: item.main.temp,
+        condition: item.weather[0].main,
+      })),
+    };
+  },
+});
+
+export const plugin = definePlugin(
+  {
+    id: "weather",
+    name: "Weather",
+    version: "1.0.0",
+    description: "Công cụ tra cứu thời tiết",
+    metadata: {
+      tools: ["get_weather", "get_forecast"],
+      configEnv: ["WEATHER_API_KEY"],
+    },
+  },
+  {
+    hooks: {
+      onRunStarted: async ({ prompt }) => {
+        console.log(`[weather] run bắt đầu: ${prompt.slice(0, 40)}`);
+      },
+      onToolCompleted: async ({ toolName, output }) => {
+        console.log(`[weather] ${toolName} hoàn tất`);
+      },
+    },
+    activate: async (ctx) => {
+      ctx.registerTool(getWeatherTool);
+      ctx.registerTool(getForecastTool);
+    },
+    deactivate: async () => {
+      console.log("[weather] plugin đã deactivate");
+    },
+  }
+);
 ```
 
-## Hàm Setup Plugin
+## Hooks
+
+Hook quan sát chỉ đọc; hook biến đổi trả về `{ modified: value }` hoặc `null` để giữ nguyên giá trị.
 
 ```typescript
-import { definePlugin } from "@vinhnt-sdk/core";
+import { definePlugin } from "@vinhnt-sdk/plugin";
 
-export const plugin = definePlugin({
-  name: "weather",
-  version: "1.0.0",
+export const plugin = definePlugin(
+  { id: "weather", name: "Weather", version: "1.0.0" },
+  {
+    hooks: {
+      // Quan sát thực thi tool (chỉ đọc)
+      onAfterToolExecution: async ({ toolName, output }) => {
+        console.log(`[weather] ${toolName} ->`, output);
+      },
 
-  setup: async (api) => {
-    // Đăng ký công cụ
-    api.registerTool(weatherTool);
-    api.registerTool(forecastTool);
+      // Biến đổi request gửi tới model
+      onBeforeModelCall: async ({ request }) => ({ modified: { request } }),
 
-    // Đăng ký hook
-    api.onInit(async (ctx) => {
-      console.log("Plugin thời tiết sẵn sàng");
-    });
-
-    api.onToolExecute(async (ctx, toolName, input, output) => {
-      // Ghi nhật ký hoặc chuyển đổi kết quả
-    });
-
-    // Truy cập cấu hình plugin
-    const apiKey = api.getConfig("apiKey");
-    console.log(`Khóa API đã cấu hình: ${!!apiKey}`);
-  },
-});
+      // Trả lời prompt quyền hạn từ plugin (hoặc null để chuyển tiếp)
+      onPermissionAsk: async ({ resource, reason }) =>
+        resource.startsWith("weather.") ? { modified: { reply: "once" } } : null,
+    },
+  }
+);
 ```
+
+Các hook khả dụng: `onRunStarted`, `onStepStarted`, `onTokenStreamed`, `onToolCompleted`, `onToolFailed`, `onContextCompressed`, `onStepCompleted`, `onStepFailed`, `onRunCompleted`, `onToolInvoked`, `onPermissionAsk`, `onChatParams`, `onShellEnv`, `onBeforeModelCall`, `onAfterModelCall`, `onBeforeToolExecution`, `onAfterToolExecution`.
 
 ## Kiểm Tra Plugin
 
 ```typescript
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import type { PluginContext } from "@vinhnt-sdk/core";
 import { plugin } from "../src/index";
 
 describe("plugin weather", () => {
-  it("đăng ký công cụ khi setup", async () => {
-    const registeredTools: string[] = [];
-    const mockApi = {
-      registerTool: (tool: any) => registeredTools.push(tool.name),
-      onInit: vi.fn(),
-      onToolExecute: vi.fn(),
-      getConfig: vi.fn().mockReturnValue("test-key"),
-    };
+  it("đăng ký công cụ khi activate", async () => {
+    const registered: string[] = [];
+    const ctx = {
+      registerTool: (tool: { name: string }) => {
+        registered.push(tool.name);
+        return { dispose: async () => {} };
+      },
+    } as unknown as PluginContext;
 
-    await plugin.setup!(mockApi);
-    expect(registeredTools).toContain("get_weather");
-    expect(registeredTools).toContain("get_forecast");
+    await plugin.activate(ctx);
+    expect(registered).toContain("get_weather");
+    expect(registered).toContain("get_forecast");
   });
 
-  it("trả về dữ liệu thời tiết", async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        name: "Hanoi",
-        main: { temp: 28 },
-        weather: [{ main: "Sunny" }],
-      }),
-    });
-    global.fetch = mockFetch;
-
-    const tool = plugin.hooks.onToolRegister;
-    expect(tool).toBeDefined();
+  it("expose manifest", () => {
+    expect(plugin.manifest.id).toBe("weather");
+    expect(plugin.manifest.version).toBe("1.0.0");
   });
 });
 ```
@@ -230,31 +213,61 @@ npm publish --access public
 ## Sử Dụng Plugin
 
 ```typescript
-import { AgentKernel, NullRunEventStore, loadPluginFromNpm } from "@vinhnt-sdk/core";
+import {
+  AgentKernel,
+  DefaultPluginManager,
+  InMemoryAgentRegistry,
+  InMemoryEventBus,
+  createToolProviderRegistry,
+} from "@vinhnt-sdk/core";
+import { NullRunEventStore } from "@vinhnt-sdk/session";
+import weatherPlugin from "./dist/index.js";
 
 const model = {
-  id: "openai-gpt4o",
   provider: "openai",
   model: "gpt-4o",
-  capabilities: { streaming: true, toolCalling: true, vision: false },
-  async *stream(request) {
+  contextLimit: 128_000,
+  capabilities: {
+    streaming: true,
+    toolCalling: true,
+    imageInput: false,
+    thinking: false,
+    structuredOutput: true,
+  },
+  async generate(request) {
     // Triển khai với SDK AI ưa thích
+    throw new Error("implement me");
   },
 };
 
-// Tải plugin từ npm
-const weatherPlugin = await loadPluginFromNpm("@vinhnt-sdk/plugin-weather", {
-  config: { apiKey: process.env.WEATHER_API_KEY },
+const toolProviderRegistry = await createToolProviderRegistry({
+  workspaceRoot: process.cwd(),
+  shell: { workspaceRoot: process.cwd(), defaultTimeoutMs: 30_000 },
 });
+
+const manager = new DefaultPluginManager({
+  agentRegistry: new InMemoryAgentRegistry(),
+  toolProviderRegistry,
+  eventBus: new InMemoryEventBus(),
+});
+
+// Đăng ký plugin bạn vừa build
+await manager.register(weatherPlugin);
+await manager.activate(weatherPlugin.manifest.id);
 
 const kernel = new AgentKernel({
   model,
-  plugins: [weatherPlugin],
   store: new NullRunEventStore(),
+  pluginManager: manager,
 });
 
-const result = await kernel.run("Thời tiết ở Hà Nội như thế nào?");
-console.log(result);
+const handle = kernel.run("Thời tiết ở Hà Nội như thế nào?", {
+  requestId: "req-1",
+  traceId: "trace-1",
+  actorId: "user-1",
+  tenantId: "tenant-1",
+});
+await handle.completed;
 ```
 
 ## Vòng Đời Plugin
@@ -265,11 +278,10 @@ sequenceDiagram
     participant P as Plugin
     participant T as Tools
 
-    A->>P: loadPluginFromNpm()
-    A->>P: onInit(ctx)
-    A->>P: onToolRegister(ctx)
-    P->>T: registerTool(weather)
-    P->>T: registerTool(forecast)
+    A->>P: import("./dist/index.js")
+    A->>P: manager.register + activate(ctx)
+    P->>T: ctx.registerTool(get_weather)
+    P->>T: ctx.registerTool(get_forecast)
     A->>A: Agent sẵn sàng với công cụ
-    A->>P: onToolExecute(ctx, toolName, input, output)
+    A->>P: onRunStarted / onToolCompleted hooks
 ```

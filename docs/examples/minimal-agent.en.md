@@ -66,19 +66,13 @@ const calculatorTool = defineTool({
   name: "calculator",
   description: "Perform basic arithmetic. Use this for math questions.",
   risk: "read",
-  parameters: {
-    type: "object",
-    properties: {
-      operation: {
-        type: "string",
-        enum: ["add", "subtract", "multiply", "divide"],
-        description: "The arithmetic operation to perform",
-      },
-      a: { type: "number", description: "First operand" },
-      b: { type: "number", description: "Second operand" },
-    },
-    required: ["operation", "a", "b"],
-  },
+  input: z.object({
+    operation: z
+      .enum(["add", "subtract", "multiply", "divide"])
+      .describe("The arithmetic operation to perform"),
+    a: z.number().describe("First operand"),
+    b: z.number().describe("Second operand"),
+  }),
   execute: async (params) => {
     const results: Record<string, number> = {
       add: params.a + params.b,
@@ -111,7 +105,7 @@ const model = {
 // 3. Create kernel
 const kernel = new AgentKernel({
   model,
-  tools: [calculatorTool],
+  tools: [calculatorTool.toDefinition()],
   store: new NullRunEventStore(),
 });
 
@@ -120,17 +114,20 @@ async function main() {
   const prompt = process.argv[2] || "What is 42 * 17?";
   console.log(`Prompt: ${prompt}\n`);
 
-  // Option 1: Simple run
-  const result = await kernel.run(prompt);
-  console.log(`Answer: ${result}`);
-
-  // Option 2: Run with event streaming
-  const runHandle = kernel.createRunHandle(prompt, {
+  const ctx = {
     requestId: "req-1",
     traceId: "trace-1",
     actorId: "user-1",
     tenantId: "tenant-1",
-  });
+  };
+
+  // Option 1: Simple run
+  const handle = kernel.run(prompt, ctx);
+  await handle.completed;
+  console.log(`Run completed: ${handle.runId}`);
+
+  // Option 2: Run with event streaming
+  const runHandle = kernel.createRunHandle(prompt, ctx);
 
   runHandle.onEvent((event) => {
     if (event.type === "agent.completed") {
@@ -146,7 +143,7 @@ async function main() {
   }
 
   const runResult = await runHandle.completed;
-  console.log(`\nAnswer: ${runResult.output}`);
+  console.log(`\nStatus: ${runResult.status}`);
 }
 
 main();

@@ -119,7 +119,12 @@ export { kernel };
 ```typescript
 // src/main.ts
 import { kernel } from "./kernel.js";
-const ctx = { requestId: "req-1" as import("@vinhnt-sdk/schema").RequestId };
+const ctx = {
+  requestId: "req-1",
+  traceId: "trace-1",
+  actorId: "user-1",
+  tenantId: "default",
+};
 const handle = kernel.run("42 * 37 bao nhiêu? Hãy dùng tool calculator.", ctx);
 await handle.completed;
 console.log("Hoàn thành:", handle.runId);
@@ -130,7 +135,12 @@ console.log("Hoàn thành:", handle.runId);
 ```typescript
 // src/stream.ts
 import { kernel } from "./kernel.js";
-const ctx = { requestId: "req-2" as import("@vinhnt-sdk/schema").RequestId };
+const ctx = {
+  requestId: "req-2",
+  traceId: "trace-2",
+  actorId: "user-1",
+  tenantId: "default",
+};
 
 const handle = kernel.createRunHandle(
   "Tính (15 + 27) rồi nhân 3",
@@ -139,9 +149,9 @@ const handle = kernel.createRunHandle(
 
 for await (const event of handle.events()) {
   switch (event.type) {
-    case "tool.calling":  console.log(`Tool: ${event.toolId}`); break;
-    case "tool.completed": console.log(`Kết quả: ${event.result}`); break;
-    case "model.thinking": console.log("Agent đang suy luận..."); break;
+    case "agent.started":   console.log("Agent đã bắt đầu"); break;
+    case "agent.completed": console.log(`Hoàn thành: ${event.status}`); break;
+    case "agent.error":     console.log(`Lỗi: ${event.error}`); break;
   }
 }
 
@@ -158,7 +168,6 @@ import { NullRunEventStore } from "@vinhnt-sdk/session";
 import { createDeepSeekProvider } from "@vinhnt-sdk/provider-openai-compatible";
 import { defineTool } from "@vinhnt-sdk/tools";
 import { z } from "zod";
-import type { RequestId } from "@vinhnt-sdk/schema";
 const calculator = defineTool({
   name: "calculator",
   description: "Perform basic arithmetic operations",
@@ -183,7 +192,12 @@ const kernel = new AgentKernel({
   store: new NullRunEventStore(),
   tools: [calculator.toDefinition()],
 });
-const ctx = { requestId: "quickstart" as RequestId };
+const ctx = {
+  requestId: "quickstart",
+  traceId: "trace-1",
+  actorId: "user-1",
+  tenantId: "default",
+};
 const handle = kernel.run("42 * 37 bao nhiêu?", ctx);
 await handle.completed;
 console.log("Xong! Run ID:", handle.runId);

@@ -34,7 +34,7 @@ export function createWebFetchTool(config?: WebFetchToolConfig) {
       },
       required: ["url"],
     },
-    async execute(v, _ctx) {
+    async execute(v, ctx) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), v.timeout ?? 15000);
       try {
@@ -50,7 +50,7 @@ export function createWebFetchTool(config?: WebFetchToolConfig) {
         const raw = text.length > maxSize
           ? text.slice(0, maxSize) + `\n\n[truncated: response exceeds ${maxSize} bytes]`
           : v.format === "html" ? text : stripHtml(text);
-        return sanitizeForLLM(raw, "web_fetch");
+        return sanitizeForLLM(raw, "web_fetch", ctx.sanitizeLimitChars);
       } finally {
         clearTimeout(timeout);
       }

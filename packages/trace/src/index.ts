@@ -15,6 +15,39 @@ export {
 } from "./tracing.js";
 export type { Span, SpanKind, SpanStatus, SpanEvent, SpanNode, TraceContext } from "./tracing.js";
 
+// ── GenAI semantic conventions (OTel gen_ai.*, ADK profile) ──
+export {
+  GEN_AI_OPERATION_NAME,
+  GEN_AI_PROVIDER_NAME,
+  GEN_AI_REQUEST_MODEL,
+  GEN_AI_RESPONSE_MODEL,
+  GEN_AI_USAGE_INPUT_TOKENS,
+  GEN_AI_USAGE_OUTPUT_TOKENS,
+  GEN_AI_USAGE_REASONING_TOKENS,
+  GEN_AI_RESPONSE_FINISH_REASONS,
+  GEN_AI_CONVERSATION_ID,
+  GEN_AI_TOOL_NAME,
+  GEN_AI_TOOL_CALL_ID,
+  GEN_AI_INPUT_MESSAGES,
+  GEN_AI_OUTPUT_MESSAGES,
+  GEN_AI_OPERATIONS,
+  DEFAULT_GEN_AI_MAX_CONTENT_LENGTH,
+  VNT_TRACE_CONTENT_TRUNCATED,
+  genAiConversationAttributes,
+  genAiChatRequestAttributes,
+  genAiResponseAttributes,
+  genAiUsageAttributes,
+  genAiContentAttributes,
+  genAiToolAttributes,
+  genAiInvokeAgentAttributes,
+} from "./gen-ai-attributes.js";
+export type {
+  GenAiOperation,
+  GenAiContentMode,
+  GenAiUsage,
+  GenAiContentOptions,
+} from "./gen-ai-attributes.js";
+
 // ── Timeline ──
 export { Timeline, buildTranscript } from "./timeline.js";
 export type { TimelineEvent, TimelineEventType, TranscriptEntry } from "./timeline.js";

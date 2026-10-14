@@ -1,4 +1,8 @@
+import { SdkError } from "../../errors/sdk-error.js";
+import type { ErrorDomain, ErrorCategory } from "../../errors/sdk-error.js";
 import type { RequestId, TraceId } from "../branded.js";
+
+export type { ErrorDomain, ErrorCategory } from "../../errors/sdk-error.js";
 
 /** Options for VntError construction */
 export type VntErrorCtx = {
@@ -9,61 +13,36 @@ export type VntErrorCtx = {
   cause?: unknown | undefined;
 };
 
-/**
- * Error domain — which subsystem caused the error.
- */
-export type ErrorDomain =
-  | "llm"
-  | "tool"
-  | "kernel"
-  | "config"
-  | "permission"
-  | "sandbox"
-  | "mcp"
-  | "lsp"
-  | "session"
-  | "plugin";
-
-/**
- * Error category — who is responsible.
- */
-export type ErrorCategory =
-  | "user"       // bad input from developer/user
-  | "system"     // internal SDK error
-  | "dependency" // external service failure
-  | "config";    // misconfiguration
+/** Fallback code for a bare `VntError` thrown without an explicit `ctx.code`. */
+const DEFAULT_VNT_CODE = "VNT_ERROR";
 
 /**
  * Base error for all VNT Agent errors.
  * Carries correlation IDs so every throw is traceable.
  *
  * Follows Mastra's error taxonomy pattern: Domain + Category + machine-readable ID.
+ *
+ * `VntError` is a subclass alias of {@link SdkError} — `SdkError` is the single
+ * base of the SDK error hierarchy; `VntError` keeps its historical
+ * `(message, ctx)` constructor so existing subclasses/call sites are unchanged.
  */
-export class VntError extends Error {
-  public readonly requestId: RequestId | undefined;
-  public readonly traceId: TraceId | undefined;
-  public readonly code: string | undefined;
-  public readonly retryable: boolean;
-  /** Error domain — which subsystem caused the error. */
-  public readonly domain: ErrorDomain | undefined;
-  /** Error category — who is responsible. */
-  public readonly category: ErrorCategory | undefined;
-
+export class VntError extends SdkError {
   constructor(message: string, ctx?: VntErrorCtx & { domain?: ErrorDomain; category?: ErrorCategory }) {
-    super(message, { cause: ctx?.cause });
+    super(ctx?.code ?? DEFAULT_VNT_CODE, message, {
+      retryable: ctx?.retryable,
+      cause: ctx?.cause,
+      domain: ctx?.domain,
+      category: ctx?.category,
+      requestId: ctx?.requestId,
+      traceId: ctx?.traceId,
+    });
     this.name = "VntError";
-    this.requestId = ctx?.requestId;
-    this.traceId = ctx?.traceId;
-    this.code = ctx?.code;
-    this.retryable = ctx?.retryable ?? false;
-    this.domain = ctx?.domain;
-    this.category = ctx?.category;
   }
 
   /**
    * Type-safe error checking (works across module boundaries).
    */
-  static isInstance(error: unknown): error is VntError {
+  static override isInstance(error: unknown): error is VntError {
     return error instanceof VntError;
   }
 }

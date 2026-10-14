@@ -15,6 +15,10 @@ export interface ToolContextBuilderDeps {
   readonly toolRisk: ToolRisk;
   /** Resolved workspace root for this run (per-run override or kernel default). */
   readonly workspaceRoot: string | undefined;
+  /** P3.3: effective sandbox scope from kernel config (`sandbox.mode`). */
+  readonly sandboxScope?: string | undefined;
+  /** P7.1: sanitizer truncation cap from `ContextBudget.sanitizeLimitChars`. */
+  readonly sanitizeLimitChars?: number | undefined;
 }
 
 /** Mutable ref through which tools attach observability metadata. */
@@ -48,6 +52,8 @@ export async function buildToolContext(
     env: shellEnv,
     parentContext: ctx,
     ...(deps.workspaceRoot !== undefined ? { workspaceRoot: deps.workspaceRoot } : {}),
+    ...(deps.sandboxScope !== undefined ? { sandboxScope: deps.sandboxScope } : {}),
+    ...(deps.sanitizeLimitChars !== undefined ? { sanitizeLimitChars: deps.sanitizeLimitChars } : {}),
     // P1-H: single approval path — gate decide first (saved patterns / rules),
     // then prompt via the approval store passing savePatterns for "always".
     ask: async (askInput) => {
@@ -66,6 +72,9 @@ export async function buildToolContext(
         askInput.reason, deps.currentAgent?.id ?? "",
         ctx.traceId, deps.pluginManager,
         askInput.savePatterns, runAbort.signal,
+        // G5: hand the classifier what it needs (risk floor asks only —
+        // `source` comes from the checkTool result above).
+        { risk: deps.toolRisk, args: tc.args as Record<string, unknown>, source: decision.source },
       );
     },
     metadata: (input) => {

@@ -23,11 +23,16 @@ export interface TypedEvent<TData = unknown> {
 }
 
 
-/** Global registry mapping event type strings to their {@link EventDefinition}s. */
+/**
+ * Registry mapping event type strings to their {@link EventDefinition}s.
+ * Instance-based (AGENTS.md #18): construct your own for isolated
+ * registries (tests); the process-wide {@link eventRegistry} backs
+ * {@link defineEvent}.
+ */
 export class EventRegistry {
-  private static definitions = new Map<string, EventDefinition>();
+  private readonly definitions = new Map<string, EventDefinition>();
 
-  static register<T>(def: EventDefinition<T>): EventDefinition<T> {
+  register<T>(def: EventDefinition<T>): EventDefinition<T> {
     if (this.definitions.has(def.type)) {
       throw new Error(`Event type "${def.type}" already registered`);
     }
@@ -35,20 +40,23 @@ export class EventRegistry {
     return def;
   }
 
-  static get(type: string): EventDefinition | undefined {
+  get(type: string): EventDefinition | undefined {
     return this.definitions.get(type);
   }
 
-  static getAll(): readonly EventDefinition[] {
+  getAll(): readonly EventDefinition[] {
     return Array.from(this.definitions.values());
   }
 
-  static clear(): void {
+  clear(): void {
     this.definitions.clear();
   }
 }
 
-/** Define (and register) an event type; duplicate types throw. */
+/** Process-wide default registry used by {@link defineEvent}. */
+export const eventRegistry = new EventRegistry();
+
+/** Define (and register in the default {@link eventRegistry}) an event type; duplicate types throw. */
 export function defineEvent<T>(def: EventDefinition<T>): EventDefinition<T> {
-  return EventRegistry.register(def);
+  return eventRegistry.register(def);
 }

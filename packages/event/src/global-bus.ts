@@ -2,8 +2,11 @@ import { EventEmitter } from "node:events";
 import type { TypedEvent, EventDefinition } from "./definition.js";
 import type { EventBus, EventHandler, Unsubscribe } from "./types.js";
 import { streamWithReplayMixin } from "./stream-mixin.js";
+import { getLogger } from "@vinhnt-sdk/schema";
 
 const MAX_DURABLE_EVENTS = 10_000;
+/** Bound for per-subscriber stream() queues — a slow consumer must not grow memory without limit. */
+const MAX_STREAM_QUEUE = 10_000;
 
 /** Minimal Redis pub/sub adapter contract used to bridge the global bus across processes. */
 export interface RedisAdapter {
@@ -34,6 +37,7 @@ export class GlobalEventBus implements EventBus {
   private durableEvents = new Map<string, TypedEvent<unknown>[]>();
   private redisAdapter: RedisAdapter | null = null;
   private readonly id: string;
+  private sequence = 0;
 
   constructor(id?: string) {
     this.id = id ?? `global-${crypto.randomUUID().slice(0, 8)}`;
@@ -66,7 +70,7 @@ export class GlobalEventBus implements EventBus {
       occurredAt: new Date().toISOString(),
       traceId: meta?.traceId ?? crypto.randomUUID(),
       aggregateId: meta?.aggregateId ?? "",
-      sequence: 0,
+      sequence: this.sequence++,
       data,
     };
 
@@ -76,7 +80,7 @@ export class GlobalEventBus implements EventBus {
     if (def.durable && meta?.aggregateId) {
       const key = `${def.durable.aggregate}:${meta.aggregateId}`;
       const list = this.durableEvents.get(key) ?? [];
-      list.push({ ...event, sequence: list.length });
+      list.push(event);
       if (list.length > MAX_DURABLE_EVENTS) {
         list.splice(0, list.length - MAX_DURABLE_EVENTS);
       }
@@ -93,17 +97,17 @@ export class GlobalEventBus implements EventBus {
     };
   }
 
-  subscribeAll(handler: EventHandler, namespace?: string): Unsubscribe {
+  subscribeAll<T = unknown>(handler: EventHandler<T>, namespace?: string): Unsubscribe {
     if (namespace) {
       const namespaced: EventHandler = (event) => {
-        if (event.type.startsWith(namespace)) handler(event);
+        if (event.type.startsWith(namespace)) handler(event as TypedEvent<T>);
       };
       this.emitter.on("*", namespaced);
       return () => { this.emitter.off("*", namespaced); };
     }
-    this.emitter.on("*", handler);
+    this.emitter.on("*", handler as EventHandler);
     return () => {
-      this.emitter.off("*", handler);
+      this.emitter.off("*", handler as EventHandler);
     };
   }
 
@@ -118,7 +122,10 @@ export class GlobalEventBus implements EventBus {
   ): AsyncIterable<TypedEvent<T>> {
     const key = `${def.durable.aggregate}:${aggregateId}`;
     const list = this.durableEvents.get(key) ?? [];
-    const start = (after ?? -1) + 1;
+    // Sequence-based resume: real per-bus sequences (not list positions), so
+    // trimming the bounded durable list cannot shift the resume point.
+    const first = list.findIndex((e) => e.sequence > (after ?? -1));
+    const start = first === -1 ? list.length : first;
     for (let i = start; i < list.length; i++) {
       yield list[i] as TypedEvent<T>;
     }
@@ -131,8 +138,16 @@ export class GlobalEventBus implements EventBus {
     const queue: TypedEvent<T>[] = [];
     let resolve: (() => void) | null = null;
     let done = false;
+    let warnedOverflow = false;
 
     const handler: EventHandler<T> = (event) => {
+      if (queue.length >= MAX_STREAM_QUEUE) {
+        queue.shift();
+        if (!warnedOverflow) {
+          warnedOverflow = true;
+          getLogger().warn(`[EventBus] stream() queue full (${MAX_STREAM_QUEUE}) — dropping oldest events`);
+        }
+      }
       queue.push(event as TypedEvent<T>);
       if (resolve) {
         resolve();
@@ -189,6 +204,7 @@ export class GlobalEventBus implements EventBus {
   reset(): void {
     this.emitter.removeAllListeners();
     this.durableEvents.clear();
+    this.sequence = 0;
     globalThis.__vnt_global_event_bus__ = undefined;
   }
 }

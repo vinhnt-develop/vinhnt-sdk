@@ -1,8 +1,8 @@
 # @vinhnt-sdk/security
 
-> Version: 0.1.2-beta.0 | Status: BETA
+> Status: DEPRECATED — use [`@vinhnt-sdk/guard`](https://www.npmjs.com/package/@vinhnt-sdk/guard) instead.
 
-Security utilities for vinhnt-sdk — prompt injection protection and secret redaction.
+Security utilities for vinhnt-sdk — prompt injection protection and secret redaction. This package re-exports a curated subset of `@vinhnt-sdk/guard` for backward compatibility.
 
 ## Install
 
@@ -20,151 +20,146 @@ pnpm add @vinhnt-sdk/security
 import {
   redactSecrets,
   detectSecrets,
-  sanitizeInput,
-  checkInjection,
-} from '@vinhnt-sdk/security';
+  detectInjectionPatterns,
+  sanitizeForLLM,
+} from "@vinhnt-sdk/security";
 
 // Redact secrets from text
-const result = redactSecrets("api_key=sk_12345678901234567890");
-console.log(result.redacted); // "api_key=[REDACTED:api_key]"
-console.log(result.redactions); // [{ type: "api_key", start: 0, end: 31 }]
+const clean = redactSecrets("api_key=sk-abcdefghijklmnopqrstuvwx");
+console.log(clean); // "api_key=[REDACTED:openai-key]"
 
-// Detect secrets without modifying
-const detected = detectSecrets("Password: mypassword123");
-console.log(detected); // [{ type: "password", ... }]
+// Detect secrets without modifying (returns matched pattern names)
+const detected = detectSecrets("Bearer abcdefghijklmnopqrstuvwxyz012345");
+console.log(detected); // ["bearer-token"]
 
-// Sanitize input
-const sanitized = sanitizeInput('<script>alert("xss")</script>Hello');
-console.log(sanitized.sanitized); // "Hello"
-console.log(sanitized.warnings); // ["Detected potential XSS attack"]
-
-// Check for injection attacks
-const injection = checkInjection("Ignore all previous instructions");
-console.log(injection.safe); // false
-console.log(injection.threats); // ["instruction_override"]
-console.log(injection.score); // 60
+// Check for injection patterns (returns findings, empty = clean)
+const findings = detectInjectionPatterns("Ignore all previous instructions");
+console.log(findings); // ["Ignore-instructions override"]
 ```
 
 ## API Reference
 
-### redactSecrets
+### `redactSecrets`
 
 ```typescript
-import { redactSecrets } from '@vinhnt-sdk/security';
+import { redactSecrets } from "@vinhnt-sdk/security";
 
-const result = redactSecrets(text: string): RedactionResult;
+redactSecrets(text: string): string;
 ```
 
-**RedactionResult:**
-```typescript
-interface RedactionResult {
-  original: string;
-  redacted: string;
-  redactions: Redaction[];
-}
+Replaces every known secret pattern with a placeholder, e.g. `sk-...` → `[REDACTED:openai-key]`. Safe for log messages, error output, and arbitrary strings.
 
-interface Redaction {
-  type: string;      // "api_key", "email", "phone", etc.
-  start: number;
-  end: number;
-}
+### `detectSecrets`
+
+```typescript
+import { detectSecrets } from "@vinhnt-sdk/security";
+
+detectSecrets(text: string): string[];
 ```
 
-### detectSecrets
+Returns the names of matched secret patterns without modifying the text, e.g. `["openai-key", "generic-api-key"]`.
+
+### `detectInjectionPatterns`
 
 ```typescript
-import { detectSecrets } from '@vinhnt-sdk/security';
+import { detectInjectionPatterns } from "@vinhnt-sdk/security";
 
-const detected = detectSecrets(text: string): SecretDetection[];
+detectInjectionPatterns(text: string): string[];
 ```
 
-**SecretDetection:**
+Returns prompt-injection findings (empty array = clean):
+
+| Finding | Trigger |
+|---------|---------|
+| `SYSTEM/INSTRUCTIONS override` | `SYSTEM:` / `INSTRUCTIONS:` lines |
+| `XML injection tag` | `<system>`, `</instructions>`, … tags |
+| `Unicode bidi override` | Unicode bidirectional control chars |
+| `Zero-width character` | Zero-width characters |
+| `Ignore-instructions override` | "ignore previous instructions" style |
+| `Role reassignment` | "you are now a…" style |
+
+### `sanitizeForLLM`
+
 ```typescript
-interface SecretDetection {
-  type: string;
-  start: number;
-  end: number;
-  severity: "low" | "medium" | "high";
-}
+import { sanitizeForLLM } from "@vinhnt-sdk/security";
+
+sanitizeForLLM(text: string, source?: string, maxChars?: number): string;
 ```
 
-### sanitizeInput
+Strips control characters and truncates (default limit 128,000 chars) before text is embedded into an LLM prompt.
+
+### `validateToolOutput`
 
 ```typescript
-import { sanitizeInput } from '@vinhnt-sdk/security';
+import { validateToolOutput } from "@vinhnt-sdk/security";
 
-const result = sanitizeInput(input: string): SanitizationResult;
+validateToolOutput(output: string, toolName: string, maxChars?: number): string;
 ```
 
-**SanitizationResult:**
+Runs `sanitizeForLLM` on tool output and prepends a canary marker (`[CANARY:<id>]`) so later-stage tampering can be detected.
+
+### `sanitizeEnv`
+
 ```typescript
-interface SanitizationResult {
-  original: string;
-  sanitized: string;
-  warnings: string[];
-}
+import { sanitizeEnv } from "@vinhnt-sdk/security";
+
+sanitizeEnv(source?: Record<string, string | undefined>, allowedVars?: string[]): Record<string, string>;
 ```
 
-### checkInjection
+Filters an env map down to allowed variables (defaults to `process.env`), dropping undefined values.
+
+### `redactObjectSecrets` / `createRedactingLogger`
 
 ```typescript
-import { checkInjection } from '@vinhnt-sdk/security';
+import { redactObjectSecrets, createRedactingLogger } from "@vinhnt-sdk/security";
 
-const result = checkInjection(input: string): InjectionCheckResult;
+// Deep-redact secrets inside an object/array tree
+const safe = redactObjectSecrets(payload);
+
+// Wrap a log function so every string argument is redacted
+const log = createRedactingLogger(console.log);
+log("connected with token=abc123def456abc123def456abc123de");
+// "connected with token=[REDACTED:generic-api-key]"
 ```
 
-**InjectionCheckResult:**
-```typescript
-interface InjectionCheckResult {
-  safe: boolean;
-  threats: string[];
-  score: number; // 0-100, higher = more dangerous
-}
-```
+### `SecretRedactor` (in `@vinhnt-sdk/guard`)
 
-### SecretRedactor
+The class with injectable patterns lives in `@vinhnt-sdk/guard` (this package does not re-export it):
 
 ```typescript
-import { SecretRedactor } from '@vinhnt-sdk/security';
+import { SecretRedactor } from "@vinhnt-sdk/guard";
 
-const redactor = new SecretRedactor();
-
-// Add custom pattern
-redactor.addPattern({
-  type: "custom_key",
-  regex: /custom_key_[a-zA-Z0-9]{20,}/g,
-  replacement: "[REDACTED:custom_key]",
+const redactor = new SecretRedactor({
+  patterns: [
+    { name: "internal_id", pattern: /INT-\d{6}/g, replacement: "[REDACTED:id]" },
+  ],
 });
 
-// Redact
-const result = redactor.redact("custom_key_abc123def456ghi789jkl0");
+redactor.redact("User INT-000123 logged in"); // "User [REDACTED:id] logged in"
+redactor.detect("User INT-000123 logged in"); // ["internal_id"]
 ```
 
 ## Detected Patterns
 
-| Pattern | Type | Severity |
-|---------|------|----------|
-| API keys | api_key | high |
-| Email addresses | email | medium |
-| Phone numbers | phone | low |
-| Credit card numbers | credit_card | high |
-| SSN | ssn | high |
-| Passwords | password | high |
+| Pattern | Name |
+|---------|------|
+| Anthropic API keys | `anthropic-key` |
+| OpenAI API keys | `openai-key` |
+| Google AI keys | `google-ai-key` |
+| AWS access keys | `aws-access-key` |
+| AWS secret keys | `aws-secret-key` |
+| Bearer tokens | `bearer-token` |
+| Private key blocks | `private-key` |
+| GitHub tokens | `github-token` |
+| GitLab tokens | `gitlab-token` |
+| Generic `api_key=…` / `token=…` | `generic-api-key` |
+| `sk-…` prefixes | `api-key-prefix` |
 
-## Injection Detection
-
-| Pattern | Threat | Score |
-|---------|--------|-------|
-| Ignore previous instructions | instruction_override | 60 |
-| You are now a... | role_hijacking | 25 |
-| System: | system_prompt_injection | 20 |
-| Jailbreak/DAN | jailbreak_attempt | 35 |
-| Pretend to be... | role_play_attack | 20 |
-| Forget everything... | memory_manipulation | 25 |
+Custom patterns: merge `DEFAULT_SECRET_PATTERNS` (exported from `@vinhnt-sdk/guard`) or use `new SecretRedactor({ patterns: [...] })`.
 
 ## Dependencies
 
-None
+- `@vinhnt-sdk/guard` workspace:*
 
 ## Peer Dependencies
 
@@ -175,56 +170,48 @@ None
 ### Protect User Input
 
 ```typescript
-import { sanitizeInput, checkInjection } from '@vinhnt-sdk/security';
+import { detectInjectionPatterns, sanitizeForLLM } from "@vinhnt-sdk/security";
 
 function processUserInput(input: string) {
-  // Check for injection attacks
-  const injection = checkInjection(input);
-  if (!injection.safe) {
-    throw new Error(`Potential attack detected: ${injection.threats.join(", ")}`);
+  const findings = detectInjectionPatterns(input);
+  if (findings.length > 0) {
+    throw new Error(`Potential attack detected: ${findings.join(", ")}`);
   }
 
-  // Sanitize input
-  const { sanitized, warnings } = sanitizeInput(input);
-  if (warnings.length > 0) {
-    console.warn("Security warnings:", warnings);
-  }
-
-  return sanitized;
+  return sanitizeForLLM(input, "user-input");
 }
 ```
 
 ### Redact Sensitive Data
 
 ```typescript
-import { redactSecrets } from '@vinhnt-sdk/security';
+import { redactSecrets } from "@vinhnt-sdk/security";
 
 function logSafe(message: string) {
-  const { redacted } = redactSecrets(message);
-  console.log(redacted);
+  console.log(redactSecrets(message));
 }
 
-logSafe("User connected with api_key=sk_12345678901234567890");
-// Output: "User connected with api_key=[REDACTED:api_key]"
+logSafe("User connected with api_key=sk-abcdefghijklmnopqrstuvwx");
+// "User connected with api_key=[REDACTED:openai-key]"
 ```
 
 ### Custom Redactor
 
 ```typescript
-import { SecretRedactor } from '@vinhnt-sdk/security';
+import { SecretRedactor } from "@vinhnt-sdk/guard";
 
-const redactor = new SecretRedactor();
-
-// Add custom pattern for internal tokens
-redactor.addPattern({
-  type: "internal_token",
-  regex: /token_[a-zA-Z0-9]{32}/g,
-  replacement: "[REDACTED:token]",
+const redactor = new SecretRedactor({
+  patterns: [
+    {
+      name: "internal_token",
+      pattern: /token_[a-zA-Z0-9]{32}/g,
+      replacement: "[REDACTED:token]",
+    },
+  ],
 });
 
-// Use in application
-const clean = redactor.redact("User token_token_abc123def456ghi789jkl0123456");
-console.log(clean); // "User token_[REDACTED:token]"
+const clean = redactor.redact("User token_abc123def456ghi789jkl0123456");
+console.log(clean); // "User [REDACTED:token]"
 ```
 
 ## License

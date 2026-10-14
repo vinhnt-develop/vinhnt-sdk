@@ -199,8 +199,9 @@ const tripPlannerTool = defineTool({
   },
 });
 
-const weather = await kernel.run("What's the weather in Hanoi?");
-const repos = await kernel.run("Find popular Rust projects for web servers");
+const ctx = { requestId: "req-1", traceId: "trace-1", actorId: "user-1", tenantId: "default" };
+await kernel.run("What's the weather in Hanoi?", ctx).completed;
+await kernel.run("Find popular Rust projects for web servers", ctx).completed;
 ```
 
 ## Key Concepts

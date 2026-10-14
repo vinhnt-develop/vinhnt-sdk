@@ -7,7 +7,6 @@ category: "Getting Started"
 sidebarPosition: 3
 sidebarLabel: "Configuration"
 tags: [config, env, credentials]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 
@@ -209,7 +208,7 @@ const kernel = new AgentKernel({
 
 ## Multi-Model Routing
 
-Sử dụng model khác nhau cho các task khác nhau:
+Fallback sang model khác khi primary fail:
 
 ```typescript
 const kernel = new AgentKernel({
@@ -217,10 +216,6 @@ const kernel = new AgentKernel({
   store: new NullRunEventStore(),
   modelRouting: {
     failoverModels: ["gpt-4o"],  // Fallback nếu primary fail
-    perFeatureModels: {
-      "code-review": "gpt-4o",   // Dùng GPT-4 cho code review
-      "summarization": "gpt-4o-mini",  // Dùng mini cho tóm tắt
-    },
   },
 });
 ```

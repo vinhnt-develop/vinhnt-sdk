@@ -33,10 +33,18 @@ for (const dir of readdirSync(PKGS_DIR)) {
         for (const [name, version] of Object.entries(pkg[depType])) {
           if (typeof version === 'string' && version.startsWith('workspace:')) {
             if (versions[name]) {
-              pkg[depType][name] = versions[name];
+              const range = version.slice('workspace:'.length);
+              // Preserve explicit semver ranges (e.g. workspace:>=0.4.10 -> >=0.4.10);
+              // bare workspace:*, ^, ~ resolve to the current workspace version.
+              const resolved =
+                range === '*' ? versions[name] :
+                range === '^' ? '^' + versions[name] :
+                range === '~' ? '~' + versions[name] :
+                range;
+              pkg[depType][name] = resolved;
               changed = true;
               totalFixed++;
-              console.log(`  ${pkg.name}: ${name} ${version} -> ${versions[name]}`);
+              console.log(`  ${pkg.name}: ${name} ${version} -> ${resolved}`);
             } else {
               console.warn(`  WARNING: ${pkg.name} depends on ${name} but version not found!`);
             }

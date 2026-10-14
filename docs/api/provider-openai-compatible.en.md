@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/provider-openai-compatible"
 description: "OpenAI-compatible provider + presets"
-version: "0.4.0"
+version: "0.4.6"
 lang: "en"
 type: "reference"
 category: "API Reference"
@@ -17,10 +17,11 @@ A model provider for any API compatible with the OpenAI chat completions format.
 ```ts
 import {
   OpenAICompatibleProvider,
-  PRESETS,
+  createDeepSeekProvider,
+  createOllamaProvider,
   buildRequest,
-  convertStreamChunk,
-  SSE,
+  fromOpenAIStreamChunk,
+  createSSEStream,
 } from "@vinhnt-sdk/provider-openai-compatible";
 ```
 
@@ -33,7 +34,7 @@ Model provider that implements the vinhnt-sdk LLM provider interface for OpenAI-
 ### Constructor
 
 ```ts
-new OpenAICompatibleProvider(config: OpenAICompatibleConfig)
+new OpenAICompatibleProvider(config: OpenAICompatibleProviderOptions)
 ```
 
 ### Configuration
@@ -42,7 +43,7 @@ new OpenAICompatibleProvider(config: OpenAICompatibleConfig)
 const provider = new OpenAICompatibleProvider({
   baseUrl: "https://api.deepseek.com/v1",
   apiKey: process.env.DEEPSEEK_API_KEY,
-  model: "deepseek-chat",
+  defaultModel: "deepseek-chat",
   headers: { "X-Custom": "value" },
 });
 ```
@@ -77,34 +78,29 @@ for await (const chunk of stream) {
 
 ---
 
-## PRESETS
+## Preset Helpers
 
-Pre-configured settings for popular OpenAI-compatible providers.
+Pre-configured factories for popular OpenAI-compatible providers.
 
 ### Available Presets
 
-| Preset | Base URL | Notes |
+| Helper | Base URL | Notes |
 |--------|----------|-------|
-| `deepseek` | `https://api.deepseek.com/v1` | DeepSeek V2/V3 models |
-| `anthropic` | Configured via proxy | Anthropic Claude via OpenAI-compatible proxy |
-| `ollama` | `http://localhost:11434/v1` | Local Ollama instance |
+| `createDeepSeekProvider(opts)` | `https://api.deepseek.com/v1` | DeepSeek V2/V3 models (`DEEPSEEK_*` constants exported) |
+| `createAnthropicProvider(opts)` | `https://api.anthropic.com/v1` | Anthropic Claude via OpenAI-compatible endpoint |
+| `createOllamaProvider(opts?)` | `http://localhost:11434/v1` | Local Ollama instance |
+| `createProviderFromPreset(preset, opts?)` | — | Build a provider from a custom `ProviderPreset` |
 
 ### Usage
 
 ```ts
-import { OpenAICompatibleProvider, PRESETS } from "@vinhnt-sdk/provider-openai-compatible";
+import { createDeepSeekProvider, createOllamaProvider } from "@vinhnt-sdk/provider-openai-compatible";
 
 // DeepSeek
-const deepseek = new OpenAICompatibleProvider({
-  ...PRESETS.deepseek,
-  apiKey: process.env.DEEPSEEK_API_KEY,
-});
+const deepseek = createDeepSeekProvider({ apiKey: process.env.DEEPSEEK_API_KEY });
 
 // Ollama (local, no API key needed)
-const ollama = new OpenAICompatibleProvider({
-  ...PRESETS.ollama,
-  model: "llama3",
-});
+const ollama = createOllamaProvider({ model: "llama3" });
 ```
 
 ---
@@ -137,65 +133,68 @@ const body = buildRequest({
 
 ---
 
-## convertStreamChunk
+## fromOpenAIStreamChunk
 
-Convert raw SSE chunks from the OpenAI completions stream into typed `StreamChunkEvent` objects.
+Convert raw OpenAI stream chunks into typed stream events.
 
 ```ts
 const rawChunk = { choices: [{ delta: { content: "Hello" } }] };
-const event = convertStreamChunk(rawChunk);
-// { type: "content", content: "Hello" }
+const events = fromOpenAIStreamChunk(rawChunk);
+// [{ type: "text", content: "Hello" }]
 ```
 
 ### Return Value
 
-| Chunk Type | Event Type | Description |
+| Chunk Field | Event Type | Description |
 |------------|------------|-------------|
-| `delta.content` | `content` | Text content chunk |
-| `delta.tool_calls` | `tool_call` | Tool call chunk |
-| `[DONE]` | `done` | Stream finished |
-| Error | `error` | Stream error |
+| `delta.content` | `text` | Text content chunk |
+| `delta.reasoning_content` | `thinking` | DeepSeek reasoner chain-of-thought |
+| `delta.tool_calls` | `tool_call` | Tool call chunk (`id`, `name`, `args`; deltas use `__delta`) |
+| `finish_reason` | `finish` | Stream finished |
+| `logprobs` | `logprobs` | Token logprobs |
+| `usage` | `usage` | Token usage (final chunk) |
 
 ---
 
-## SSE
+## createSSEStream
 
-Server-Sent Events parser for handling streaming HTTP responses.
+Server-Sent Events parser for handling streaming HTTP responses. An async generator of parsed `OpenAIStreamChunk`s.
 
 ```ts
-const sse = new SSE(response.body);
-
-for await (const event of sse) {
-  if (event.data === "[DONE]") break;
-  const chunk = JSON.parse(event.data);
+for await (const chunk of createSSEStream(response.body)) {
   console.log(chunk.choices[0]?.delta?.content);
 }
 ```
 
-### Methods
-
-#### `static parse(text)`
-
-Parse a raw SSE text string into events.
+### Signature
 
 ```ts
-const events = SSE.parse("data: {\"hello\":\"world\"}\n\n");
+createSSEStream(body, signal?, state?): AsyncIterable<OpenAIStreamChunk>
 ```
+
+- `body` — Response body (bytes/async iterable).
+- `signal` — Optional `AbortSignal` to stop parsing.
+- `state` — Optional parse state; lets the consumer distinguish a clean `[DONE]` completion from a truncated stream.
 
 ---
 
 ## Types
 
-### OpenAICompatibleConfig
+### OpenAICompatibleProviderOptions
 
 ```ts
-interface OpenAICompatibleConfig {
+interface OpenAICompatibleProviderOptions {
   baseUrl: string;
   apiKey?: string;
-  model?: string;
+  defaultModel: string;
+  providerName?: string;
   headers?: Record<string, string>;
-  timeout?: number;
-  maxRetries?: number;
+  contextLimit?: number;
+  pricing?: ModelPricing;
+  capabilities?: Partial<ModelCapabilities>;
+  retry?: RetryOptions;
+  timeoutMs?: number;
+  includeUsage?: boolean;
 }
 ```
 
@@ -217,14 +216,18 @@ interface OpenAICompatibleRequestBody {
 }
 ```
 
-### StreamChunkEvent
+### Stream Events
+
+Returned by `fromOpenAIStreamChunk`:
 
 ```ts
 type StreamChunkEvent =
-  | { type: "content"; content: string }
-  | { type: "tool_call"; toolCall: ToolCall }
-  | { type: "done"; usage: TokenUsage }
-  | { type: "error"; error: Error };
+  | { type: "text"; content: string }
+  | { type: "thinking"; content: string }
+  | { type: "tool_call"; id?: string; name?: string; args?: Record<string, unknown> }
+  | { type: "finish"; reason: string }
+  | { type: "logprobs"; logprobs: unknown }
+  | { type: "usage"; inputTokens: number; outputTokens: number; reasoningTokens?: number };
 ```
 
 ---
@@ -242,13 +245,9 @@ type StreamChunkEvent =
 ## Example: Full Provider Setup
 
 ```ts
-import {
-  OpenAICompatibleProvider,
-  PRESETS,
-} from "@vinhnt-sdk/provider-openai-compatible";
+import { createDeepSeekProvider } from "@vinhnt-sdk/provider-openai-compatible";
 
-const provider = new OpenAICompatibleProvider({
-  ...PRESETS.deepseek,
+const provider = createDeepSeekProvider({
   apiKey: process.env.DEEPSEEK_API_KEY,
   model: "deepseek-chat",
 });

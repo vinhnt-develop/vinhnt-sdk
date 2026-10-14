@@ -13,37 +13,63 @@ Quan sát là cách bạn hiểu agent đang làm gì tại thời điểm chạ
 
 ## Lắng Nghe Sự Kiện Run
 
-Phương thức `handle.events()` trả về một async iterable chứa tất cả sự kiện được phát trong một lần chạy. Đây là hook chính để xây dựng khả năng quan sát cho agent của bạn.
+Có hai bề mặt sự kiện bổ sung cho nhau, mỗi bề mặt dùng một từ vựng khác nhau:
+
+- **`kernel.streamRun(prompt, ctx, sessionId)`** trả về `{ runId, events }`, trong đó `events` là `AsyncIterable<KnownRunEvent>` — **luồng quan sát run đầy đủ** (step, tool, yêu cầu/phản hồi LLM, token, quyền duyệt, failover, …). Đây là hook chính để quan sát.
+- **`handle.events()`** chỉ phát các sự kiện **vòng đời** của run (`agent.started`, `agent.completed`, `agent.error`) — dùng nó (hoặc `handle.onEvent(handler)`) để điều phối bắt đầu/kết thúc/lỗi, không dùng cho quan sát chi tiết.
 
 ```ts
-const handle = kernel.createRunHandle({ messages });
+const { runId, events } = kernel.streamRun(prompt, ctx, sessionId);
 
-for await (const event of handle.events()) {
-  console.log(`[${event.type}]`, event.data);
+for await (const event of events) {
+  console.log(`[${runId}] [${event.type}]`, event.data);
 }
 ```
 
-### Các Loại Sự Kiện Có Sẵn
+Điều phối vòng đời trên handle đã có:
+
+```ts
+for await (const event of handle.events()) {
+  switch (event.type) {
+    case "agent.started":   console.log("Bắt đầu run", event.runId); break;
+    case "agent.completed": console.log("Hoàn thành", event.status); break;
+    case "agent.error":     console.error("Thất bại", event.error); break;
+  }
+}
+```
+
+Để quan sát **tất cả run** trên kernel, truyền một `EventBus` trong kernel config và đăng ký bằng `eventBus.subscribeAll(...)` — mọi sự kiện run được phát với `aggregateId = runId`.
+
+### Các Loại Sự Kiện Run
+
+Các thành viên tiêu biểu của union `KnownRunEvent` (`@vinhnt-sdk/schema`):
 
 | Loại Sự Kiện | Thời Điểm Phát | Dữ Liệu Chính |
 |---------------|----------------|----------------|
-| `run.start` | Bắt đầu chạy | `sessionId`, `runId` |
-| `llm.call` | Trước yêu cầu LLM | `model`, `messageCount` |
-| `llm.response` | Sau phản hồi LLM | `model`, `tokens`, `duration` |
-| `tool.call` | Trước thực thi công cụ | `toolName`, `input` |
-| `tool.result` | Sau thực thi công cụ | `toolName`, `output`, `duration` |
-| `run.end` | Hoàn thành chạy | `sessionId`, `runId`, `status` |
-| `error` | Xảy ra lỗi | `error`, `phase` |
+| `run.started` | Bắt đầu chạy | `prompt`, `model`, `provider`, `agentName?`, `agentId?` |
+| `step.started` / `step.completed` | Mỗi agent step | `turn`, `step` |
+| `llm.request` | Trước yêu cầu LLM | `step`, `model`, `provider?`, `params` |
+| `llm.response` | Sau phản hồi LLM | `content`, `toolCalls?`, `usage` (token input/output/reasoning/cache), `durationMs` |
+| `token.streamed` | Chunk văn bản streaming | `content`, `step` |
+| `token.counted` | Usage cuối mỗi request | `inputTokens`, `outputTokens`, `model`, `provider`, `step` |
+| `tool.invoked` | Trước thực thi công cụ | `toolId`, `toolName`, `input`, `decision?`, `risk?`, `source?` |
+| `tool.completed` / `tool.failed` | Sau thực thi công cụ | `toolId`, `toolName`, `output?` / `error?`, `durationMs?` |
+| `permission.requested` / `permission.replied` | Luồng phê duyệt | `requestId`, `toolName`, `resource` / `reply` |
+| `llm.failover` | Failover nhà cung cấp | `fromProvider`, `fromModel`, `toProvider`, `toModel`, `reason` |
+| `context.compressed` | Nén ngữ cảnh | `originalCount`, `compressedCount`, `summary?` |
+| `run.completed` | Kết thúc chạy | `status`, `totalSteps`, `durationMs?`, `stopReason?` |
 
 ### Lọc Sự Kiện
 
 ```ts
-for await (const event of handle.events()) {
-  if (event.type === "tool.call") {
+const { events } = kernel.streamRun(prompt, ctx, sessionId);
+
+for await (const event of events) {
+  if (event.type === "tool.invoked") {
     console.log(`Công cụ: ${event.data.toolName}`);
   }
-  if (event.type === "error") {
-    console.error(`Lỗi tại ${event.data.phase}:`, event.data.error);
+  if (event.type === "step.failed") {
+    console.error(`Step ${event.data.step} thất bại:`, event.data.reason);
   }
 }
 ```
@@ -131,33 +157,33 @@ class ConsoleTracer implements Tracer {
 
 ## Triển Khai AuditLog
 
-Kết hợp logger và event listener để tạo nhật ký kiểm tra hoàn chỉnh:
+Kết hợp logger với luồng sự kiện `streamRun` để tạo nhật ký kiểm tra hoàn chỉnh:
 
 ```ts
 class AuditLog {
   private logger: Logger;
   constructor(logger: Logger) { this.logger = logger; }
 
-  async trackRun(handle: RunHandle) {
-    for await (const event of handle.events()) {
+  async trackRun(events: AsyncIterable<KnownRunEvent>) {
+    for await (const event of events) {
       switch (event.type) {
-        case "run.start":
-          this.logger.info("Bắt đầu chạy", { sessionId: event.data.sessionId, runId: event.data.runId });
+        case "run.started":
+          this.logger.info("Bắt đầu chạy", { runId: event.runId, model: event.data.model, provider: event.data.provider });
           break;
-        case "llm.call":
-          this.logger.info("Yêu cầu LLM", { model: event.data.model, messageCount: event.data.messageCount });
+        case "llm.request":
+          this.logger.info("Yêu cầu LLM", { model: event.data.model, step: event.data.step });
           break;
-        case "tool.call":
+        case "tool.invoked":
           this.logger.info("Gọi công cụ", { toolName: event.data.toolName, input: event.data.input });
           break;
-        case "tool.result":
-          this.logger.info("Công cụ hoàn thành", { toolName: event.data.toolName, duration: event.data.duration });
+        case "tool.completed":
+          this.logger.info("Công cụ hoàn thành", { toolName: event.data.toolName, durationMs: event.data.durationMs });
           break;
-        case "error":
-          this.logger.error("Xảy ra lỗi", { phase: event.data.phase, error: event.data.error });
+        case "step.failed":
+          this.logger.error("Step thất bại", { step: event.data.step, reason: event.data.reason });
           break;
-        case "run.end":
-          this.logger.info("Hoàn thành chạy", { sessionId: event.data.sessionId, status: event.data.status });
+        case "run.completed":
+          this.logger.info("Hoàn thành chạy", { status: event.data.status, totalSteps: event.data.totalSteps });
           break;
       }
     }
@@ -165,25 +191,31 @@ class AuditLog {
 }
 
 const audit = new AuditLog(new FileLogger("./audit.log"));
-await audit.trackRun(handle);
+const { events } = kernel.streamRun(prompt, ctx, sessionId);
+await audit.trackRun(events);
 ```
 
 ## Tích Hợp OpenTelemetry SDK
 
-`Tracer` bọc OpenTelemetry. Cấu hình nó để xuất span đến bất kỳ OTLP collector tương thích nào:
+`SpanRecorder` + `createOtlpSpanExporter` đẩy span đến bất kỳ OTLP/HTTP collector tương thích nào:
 
 ```ts
-import { Tracer } from "@vinhnt-sdk/trace";
+import { SpanRecorder, createOtlpSpanExporter } from "@vinhnt-sdk/trace";
 
-const tracer = new Tracer({
-  serviceName: "vinhnt-agent",
-  endpoint: "http://localhost:4318",
-  exporters: "otlp",
-  sampleRate: 0.5,
+const recorder = new SpanRecorder();
+const span = recorder.startSpan("agent.run", "internal");
+// ... làm việc ...
+recorder.endSpan(span, "ok");
+
+const exporter = createOtlpSpanExporter({
+  endpoint: "http://localhost:4318/v1/traces",
+  resourceAttributes: { "service.name": "vinhnt-agent" },
 });
+await exporter.export(recorder.getSpans());
+await exporter.shutdown();
 ```
 
-Với cấu hình này, span được tự động xuất đến OpenTelemetry collector của bạn và có thể xem trong các công cụ như Jaeger, Zipkin hoặc Grafana Tempo.
+Endpoint cũng có thể lấy từ `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` hoặc `OTEL_EXPORTER_OTLP_ENDPOINT` (config ưu tiên hơn). Span đã xuất có thể xem trong các công cụ như Jaeger, Zipkin hoặc Grafana Tempo.
 
 ## Bảng Dữ Liệu Sự Kiện Được Theo Dõi
 
@@ -191,13 +223,13 @@ Bảng dưới đây tóm tắt dữ liệu có sẵn tại mỗi điểm sự k
 
 | Sự Kiện | Dữ Liệu Có Sẵn |
 |---------|-----------------|
-| `run.start` | `sessionId`, `runId`, `timestamp` |
-| `llm.call` | `model`, `messageCount`, `systemPrompt` |
-| `llm.response` | `model`, `inputTokens`, `outputTokens`, `duration` |
-| `tool.call` | `toolName`, `input`, `risk` |
-| `tool.result` | `toolName`, `output`, `duration`, `success` |
-| `run.end` | `sessionId`, `runId`, `status`, `totalDuration` |
-| `error` | `phase`, `error`, `recoverable` |
+| `run.started` | `prompt`, `model`, `provider`, `agentName?`, `agentId?` |
+| `llm.request` | `step`, `model`, `provider?`, `params` (temperature, maxTokens, …) |
+| `llm.response` | `content`, `toolCalls?`, `usage` (inputTokens, outputTokens), `durationMs` |
+| `token.streamed` | `content`, `step` |
+| `tool.invoked` | `toolId`, `toolName`, `input`, `risk?`, `decision?`, `source?` |
+| `tool.completed` | `toolId`, `toolName`, `output`, `durationMs?`, `risk?` |
+| `run.completed` | `status`, `totalSteps`, `durationMs?`, `inputTokens?`, `outputTokens?`, `error?` |
 
 ## Theo Dõi Chi Phí Với CostMeter
 
@@ -206,33 +238,32 @@ Theo dõi sử dụng thực tế tính phí trên các nhà cung cấp và mô 
 ```ts
 import { CostMeter } from "@vinhnt-sdk/trace";
 
+// Giá được tra theo mô hình từ DEFAULT_MODEL_PRICING.
+// Truyền bảng tùy chỉnh để mở rộng: new CostMeter({ ...DEFAULT_MODEL_PRICING, "my-model": { inputPer1M, outputPer1M } })
 const meter = new CostMeter();
 
-for await (const event of handle.events()) {
+const { events } = kernel.streamRun(prompt, ctx, sessionId);
+
+for await (const event of events) {
   if (event.type === "llm.response") {
-    meter.record({
-      provider: event.data.provider,
-      model: event.data.model,
-      inputTokens: event.data.inputTokens,
-      outputTokens: event.data.outputTokens,
-      costUsd: calculateCost(event.data),
-      timestamp: Date.now(),
-    });
+    const { usage, model } = event.data;
+    meter.record(usage.inputTokens, usage.outputTokens, model);
   }
 }
 
-console.log("Tổng chi phí:", meter.totalCost());
-console.log("Tổng token:", meter.totalTokens());
-console.log("Phân theo mô hình:", meter.breakdown());
+const total = meter.getTotal();
+console.log("Tổng chi phí (USD):", total.costUsd);
+console.log("Tổng token:", total.totalTokens);
+console.log("Phân theo từng request:", meter.getOperations());
 ```
 
-Phương thức `breakdown()` trả về bản đồ được nhóm theo mô hình:
+Phương thức `getOperations()` trả về usage stats từng request (`inputTokens`, `outputTokens`, `totalTokens`, `costUsd`) để bạn tự nhóm theo mô hình:
 
 ```ts
-{
-  "gpt-4": { cost: 0.15, tokens: 5000 },
-  "gpt-3.5-turbo": { cost: 0.002, tokens: 12000 },
-}
+[
+  { inputTokens: 4000, outputTokens: 1000, totalTokens: 5000, costUsd: 0.15 },
+  { inputTokens: 11000, outputTokens: 1000, totalTokens: 12000, costUsd: 0.002 },
+]
 ```
 
 ## Bước Tiếp Theo

@@ -54,7 +54,7 @@
     "@vinhnt-sdk/schema": "workspace:*"
   },
   "peerDependencies": {
-    "@vinhnt-sdk/tools": "workspace:*"
+    "@vinhnt-sdk/tools": "workspace:>=0.4.10"
   },
   "peerDependenciesMeta": {
     "@vinhnt-sdk/tools": {

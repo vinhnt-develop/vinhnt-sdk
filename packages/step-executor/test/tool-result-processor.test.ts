@@ -78,17 +78,18 @@ describe("processToolResults (P1-4 + P1-7)", () => {
     expect(messages[2]!.content).toBe("done");
   });
 
-  it("formats rejected promise as envelope", async () => {
+  it("D4: rejected settled results are skipped — never an empty-toolCallId message", async () => {
     const messages: ChatMessage[] = [];
+    const calls: unknown[][] = [];
+    const add = async (...args: unknown[]) => { calls.push(args); };
     const rejected = { status: "rejected" as const, reason: new Error("worker crashed") };
     await processToolResults(
       [rejected as never],
-      3, messages, undefined, { model: "m" }, 0, [], [],
-      { addSessionMessage: noopAdd },
+      3, messages, "sid-1", { model: "m1" }, 0, [], [],
+      { addSessionMessage: add },
     );
-    const parsed = JSON.parse(messages[0]!.content as string);
-    expect(parsed.ok).toBe(false);
-    expect(parsed.error).toContain("worker crashed");
+    expect(messages).toHaveLength(0);
+    expect(calls).toHaveLength(0);
   });
 
   it("redacts secrets from successful tool output by default (P1-7)", async () => {

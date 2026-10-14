@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  DEFAULT_COMPACTION_THRESHOLD,
   DEFAULT_CONTEXT_BUDGET,
   deriveContextBudget,
   budgetToCompressorFields,
@@ -13,6 +14,11 @@ describe("ContextBudget", () => {
       expect(DEFAULT_CONTEXT_BUDGET.maxSubagentOutputChars).toBe(4096);
       expect(DEFAULT_CONTEXT_BUDGET.sanitizeLimitChars).toBe(128_000);
       expect(DEFAULT_CONTEXT_BUDGET.compactionThreshold).toBe(0.75);
+    });
+
+    it("P6.6: single owner of the compaction-threshold default (ratio 0-1)", () => {
+      expect(DEFAULT_COMPACTION_THRESHOLD).toBe(0.75);
+      expect(DEFAULT_CONTEXT_BUDGET.compactionThreshold).toBe(DEFAULT_COMPACTION_THRESHOLD);
     });
   });
 

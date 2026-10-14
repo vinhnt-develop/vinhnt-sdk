@@ -131,21 +131,26 @@ npm install \
 
 1. Tạo `packages/<name>` với `package.json` thuộc scope `@vinhnt-sdk/<name>`.
 2. Chỉ import từ các package Core Layer. Không bao giờ import từ extension anh em.
-3. Xuất hàm `register(plugin)` hook vào kernel Core.
+3. Export mặc định một `Plugin` xây bằng `definePlugin` hook vào kernel Core.
 4. Thêm test bao phủ hợp đồng hook.
 
 ```ts
 // packages/my-ext/src/index.ts
-import { defineExtension } from "@vinhnt-sdk/core";
+import { definePlugin } from "@vinhnt-sdk/plugin";
 
-export default defineExtension({
-  name: "my-ext",
-  setup(kernel) {
-    kernel.hook("beforeStep", async (ctx) => {
-      // logic tùy chỉnh
-    });
+export default definePlugin(
+  { id: "my-ext", name: "My Extension", version: "0.1.0" },
+  {
+    hooks: {
+      onRunStarted: async (data) => {
+        // logic tùy chỉnh
+      },
+    },
+    activate: async (ctx) => {
+      ctx.registerTool(myTool);
+    },
   },
-});
+);
 ```
 
 ## Quy Tắc Phụ Thuộc

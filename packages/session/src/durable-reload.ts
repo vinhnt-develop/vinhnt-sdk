@@ -141,6 +141,11 @@ function collapseCompactedMessages(dbMessages: readonly Message[]): Message[] {
  *
  * - Collapses everything before the last compaction summary marker (RV-15) so
  *   the reloaded context equals the post-compaction conversation.
+ * - Optionally keeps only the last `limit` messages (P4.1 historyLimit) —
+ *   applied AFTER collapse (the summary marker is never the cut point) and
+ *   BEFORE tool-pair repair so orphaned `tool` rows at the window head are
+ *   dropped rather than sent to the provider. Nothing is deleted from the
+ *   store; the trim only affects what this turn's context sees.
  * - Repairs tool pairing (P1.2): orphan `tool` rows are dropped and dangling
  *   assistant `toolCalls` entries are stripped so providers never reject the
  *   reloaded transcript.
@@ -153,12 +158,20 @@ function collapseCompactedMessages(dbMessages: readonly Message[]): Message[] {
 export async function loadSessionHistory(
   sessionStore: SessionStore | undefined,
   sessionId: string,
+  options?: { readonly limit?: number },
 ): Promise<ChatMessage[]> {
   if (!sessionStore) return [];
   const dbMessages = await sessionStore.listMessages(sessionId);
-  // Collapse first (RV-15), then repair tool pairing (P1.2) — the compaction
+  let rows = collapseCompactedMessages(dbMessages);
+  const limit = options?.limit !== undefined && Number.isFinite(options.limit) && options.limit > 0
+    ? Math.floor(options.limit)
+    : undefined;
+  if (limit !== undefined && rows.length > limit) {
+    rows = rows.slice(-limit);
+  }
+  // Collapse first (RV-15), then repair tool pairing (P1.2) - the compaction
   // summary may itself subsume the assistant that declared a tool call.
-  return repairToolPairing(collapseCompactedMessages(dbMessages)).map(messageToChatMessage);
+  return repairToolPairing(rows).map(messageToChatMessage);
 }
 
 /**

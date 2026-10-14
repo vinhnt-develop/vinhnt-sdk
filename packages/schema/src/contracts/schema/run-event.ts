@@ -68,6 +68,7 @@ export const RunStartedDataSchema = z.object({
   provider: z.string(),
   agentName: z.string().optional(),
   agentId: z.string().optional(),
+  sessionId: z.string().optional(),
   maxSteps: z.number().optional(),
   ctx: RequestContextSchema.optional(),
 });

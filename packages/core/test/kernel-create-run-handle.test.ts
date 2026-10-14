@@ -36,6 +36,7 @@ describe("AgentKernel.createRunHandle", () => {
     const result = await handle.completed;
 
     expect(result.status).toBe("succeeded");
+    expect(result.output).toBe("Response");
     expect(result.runId).toBe(handle.runId);
     expect(handle.isCompleted).toBe(true);
     expect(handle.isRunning).toBe(false);

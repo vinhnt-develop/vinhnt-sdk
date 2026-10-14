@@ -13,6 +13,30 @@ export type { StepExecutorPluginHooks } from "./hooks.js";
 export { StepExecutor } from "./step-executor.js";
 export type { StepExecutorDeps, ToolExecutionPlan, HandoffSignal } from "./step-executor.js";
 
+// === File snapshots → undo (G7.2 / P2-3) ===
+
+export {
+  FileSnapshotRecorder,
+  createFileSnapshotRecorder,
+  createNodeFileSnapshotFs,
+  extractSnapshotPaths,
+  DEFAULT_SNAPSHOT_TOOL_IDS,
+  DEFAULT_SNAPSHOT_PATH_ARGS,
+  DEFAULT_SNAPSHOT_MAX_CONTENT_BYTES,
+  DEFAULT_SNAPSHOT_MAX_COUNT,
+} from "./file-snapshot.js";
+export type {
+  FileSnapshot,
+  FileSnapshotRef,
+  FileSnapshotFs,
+  FileSnapshotConfig,
+  FileSnapshotFilter,
+  FileSnapshotCaptureParams,
+  FileSnapshotUndoEntry,
+  FileSnapshotUndoSkipped,
+  FileSnapshotUndoResult,
+} from "./file-snapshot.js";
+
 // === Kernel Utils (public subset) ===
 
 export {
@@ -54,5 +78,5 @@ export type { CircuitState, CircuitBreakerOptions } from "@vinhnt-sdk/guard";
 
 // === Run State ===
 
-export { RunStateMachine } from "./run-state.js";
-export type { RunState } from "./run-state.js";
+export { RunStateMachine, MAX_RETAINED_RUN_STATES } from "./run-state.js";
+export type { RunState, RunStateMachineOptions } from "./run-state.js";

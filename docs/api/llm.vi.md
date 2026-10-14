@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/llm"
 description: "Trừu tượng hóa adapter LLM, registry, thử lại"
 lang: "vi"
-version: "0.4.0"
+version: "0.5.10"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "llm"
@@ -49,8 +49,8 @@ class LlmRegistry {
 
 | Phương thức | Ném lỗi | Mô tả |
 |-------------|---------|-------|
-| `register(provider, adapter)` | `ConfigError` | Đăng ký adapter cho nhà cung cấp |
-| `get(provider)` | `ModelNotFoundError` | Lấy adapter theo nhà cung cấp |
+| `register(provider, adapter)` | `AdapterRegistrationError` | Đăng ký adapter cho nhà cung cấp |
+| `get(provider)` | `undefined` | Lấy adapter theo nhà cung cấp |
 | `has(provider)` | — | Kiểm tra nhà cung cấp đã được đăng ký |
 | `list()` | — | Trả về tất cả nhà cung cấp đã đăng ký |
 
@@ -194,7 +194,7 @@ if (meter.fitsContext("Xin chào thế giới", 4096)) {
 ## Xử lý lỗi
 
 ```typescript
-import { RateLimitError, TimeoutError, ModelNotFoundError } from "@vinhnt-sdk/schema";
+import { RateLimitError, TimeoutError, NetworkError } from "@vinhnt-sdk/schema";
 
 async function callWithRetry(request: GenerateOptions, policy: RetryPolicy) {
   let attempt = 0;

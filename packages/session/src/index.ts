@@ -10,20 +10,16 @@
  */
 
 // Re-export store interfaces from schema (single source of truth)
-export type {
-  RunEventSnapshot,
-  RunEventListener,
-  SessionUpdates,
-  RunEventStore,
-  SessionStore,
-  MessageSeqUpdates,
-} from "@vinhnt-sdk/schema";
+export type { RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore, SessionStore } from "@vinhnt-sdk/schema";
 
 // Service Definition — SessionProvider
 export type { SessionProvider, SessionProviderConfig } from "./provider.js";
 
 // Re-export store implementations (for backward compatibility)
 export { NullRunEventStore, NullSessionStore } from "./null-store.js";
+
+// In-memory reference stores (G4.1)
+export { InMemorySessionStore, InMemoryRunEventStore } from "./in-memory-session-store.js";
 
 // Runtime session state
 export type { SessionRuntimeState, SessionRuntimeSnapshot } from "./session-state.js";
@@ -32,6 +28,25 @@ export { InMemorySessionState } from "./in-memory-session-state.js";
 // Durable reload
 export type { RestoredRun } from "./durable-reload.js";
 export { restoreRunFromStore, findActiveSessionIds, loadSessionHistory } from "./durable-reload.js";
+
+// Event replay (G4.1)
+export type { ReplayOptions } from "./event-replay.js";
+export { replayRunToMessages, replayRunFromStore, replaySessionToMessages } from "./event-replay.js";
+
+// Serialized run state (G4.1)
+export type { SerializedRunState, SerializedRunStateInit } from "./run-state.js";
+export {
+  RUN_STATE_VERSION,
+  createRunState,
+  serializeRunState,
+  parseRunState,
+  runStateFromSessionState,
+  sessionStateFromRunState,
+} from "./run-state.js";
+
+// Session fork with history copy (G4.1)
+export type { ForkSessionHistoryOptions, ForkSessionHistoryResult } from "./session-fork.js";
+export { forkSessionHistory } from "./session-fork.js";
 
 // Session tree
 export type { SessionTree } from "./session-tree.js";

@@ -1,6 +1,7 @@
 {
   "name": "@vinhnt-sdk/test-utils",
   "version": "0.6.1",
+  "private": true,
   "type": "module",
   "exports": {
     ".": {
@@ -23,7 +24,6 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
-    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts"
   },

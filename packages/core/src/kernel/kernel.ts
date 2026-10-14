@@ -1,9 +1,10 @@
 import type { RequestContext, RunId, AgentId, AgentConfig, AgentBehaviourMode, KnownRunEvent, AgentEvent } from "@vinhnt-sdk/schema";
-import { ValidationError, AgentNotFoundError, ConfigurationError } from "@vinhnt-sdk/schema";
+import { ValidationError, AgentNotFoundError, ConfigurationError, RunNotFoundError, getLogger } from "@vinhnt-sdk/schema";
 import type { MessageContentPart } from "../model.js";
 import type { ModelProvider } from "../model.js";
 import type { SessionRuntimeState } from "@vinhnt-sdk/session";
-import { restoreRunFromStore, findActiveSessionIds } from "@vinhnt-sdk/session";
+import { restoreRunFromStore, findActiveSessionIds, sessionStateFromRunState } from "@vinhnt-sdk/session";
+import type { SerializedRunState } from "@vinhnt-sdk/session";
 import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { AgentRegistry } from "../agent/agent-registry.js";
 import type { ToolDefinition, ToolRegistry, ToolProviderRegistry } from "@vinhnt-sdk/tools";
@@ -34,13 +35,18 @@ export const DEFAULT_MAX_SELF_CORRECT_ATTEMPTS = 3;
 /** Default maximum sub-agent nesting depth. */
 export const DEFAULT_MAX_SUB_AGENT_DEPTH = 3;
 /** Default compaction threshold ratio (0-1). */
-export const DEFAULT_COMPACTION_THRESHOLD = 0.75;
+// P6.6: single owner of the default lives in context-budget; re-exported here
+// for backwards compatibility with kernel.js importers.
+import { DEFAULT_COMPACTION_THRESHOLD, DEFAULT_CONTEXT_BUDGET } from "../context/context-budget.js";
+export { DEFAULT_COMPACTION_THRESHOLD };
 
 import { RunStateMachine } from "@vinhnt-sdk/step-executor";
 import type { RunState } from "@vinhnt-sdk/step-executor";
 import { PermissionGate, type ApprovalDecision } from "@vinhnt-sdk/step-executor";
+import type { PermissionMode, PermissionClassifier } from "@vinhnt-sdk/permission";
 import { ModelCaller } from "@vinhnt-sdk/llm";
 import { StepExecutor } from "@vinhnt-sdk/step-executor";
+import { FileSnapshotRecorder } from "@vinhnt-sdk/step-executor";
 import { ToolSaga } from "@vinhnt-sdk/tools";
 import { createRunContext, type RunContext } from "@vinhnt-sdk/step-executor";
 import { CircuitBreaker } from "@vinhnt-sdk/step-executor";
@@ -48,6 +54,7 @@ import { KernelError } from "@vinhnt-sdk/step-executor";
 import type { KernelErrorCode } from "@vinhnt-sdk/step-executor";
 import { runLoop as executeRunLoop } from "./run-loop.js";
 import type { RunLoopDeps, RunLoopResult } from "./run-loop.js";
+import { HandoffTracker } from "./handoff.js";
 import { LifecycleManager, type LifecycleResource } from "./lifecycle-manager.js";
 import {
   emitEvent as sessionEmit,
@@ -84,6 +91,7 @@ interface PendingInputEntry {
 export class AgentKernel {
   private readonly modelCaller: ModelCaller;
   private readonly permissionGate: PermissionGate;
+  private readonly fileSnapshots: import("@vinhnt-sdk/step-executor").FileSnapshotRecorder | undefined;
   private readonly stateMachine: RunStateMachine;
   private readonly store: RunEventStore;
   private readonly tools: ToolDefinition[] = [];
@@ -107,9 +115,17 @@ export class AgentKernel {
   private readonly modelRegistry: ModelRegistry | undefined;
   private readonly modelRouting: import("./kernel-types.js").ModelRoutingConfig | undefined;
   private readonly contextBudget: import("../context/context-budget.js").ContextBudget | undefined;
+  /** Configured modelSettings.toolChoice — surfaced to the run-loop for reset_tool_choice. */
+  private readonly toolChoice: import("@vinhnt-sdk/schema").ToolChoice | undefined;
+  /** reset_tool_choice (default true): after tools ran, downgrade required→auto. */
+  private readonly resetToolChoice: boolean;
+  /** G3.1 — GenAI tracing config (span recording + optional OTLP export). */
+  private readonly tracing: import("./run-tracing.js").TracingConfig | undefined;
   private readonly sessionTitleGenerator: ((prompt: string) => Promise<string>) | undefined;
   private saga: ToolSaga;
   private readonly runSagas = new Map<RunId, ToolSaga>();
+  /** Per-run handoff tracker — cycle + max-depth guard for agent swaps. */
+  private readonly handoffTrackers = new Map<RunId, HandoffTracker>();
   private readonly stepExecutor: StepExecutor;
   private currentAgent: AgentConfig | undefined;
   private currentDepth = 0;
@@ -127,6 +143,10 @@ export class AgentKernel {
   private circuitBreaker: CircuitBreaker;
   private readonly inputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
   private readonly outputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
+  /** P3.1: monotonic tool guards wired into the step executor. */
+  private readonly toolGuards: readonly import("@vinhnt-sdk/guard").ToolGuard[];
+  /** P3.3: sandbox mode (`sandbox.mode`) forwarded to tools via ToolContext.sandboxScope. */
+  private readonly sandboxMode: string | undefined;
   private readonly outputType: 'text' | import("zod").ZodTypeAny;
   private readonly workspaceRoot: string | undefined;
   private readonly sessionDeps: KernelSessionDeps;
@@ -191,9 +211,21 @@ export class AgentKernel {
           maxToolOutputChars: normalized.contextBudget.maxToolOutputChars ?? 500,
           maxSubagentOutputChars: normalized.contextBudget.maxSubagentOutputChars ?? 4096,
           sanitizeLimitChars: normalized.contextBudget.sanitizeLimitChars ?? 128_000,
-          compactionThreshold: normalized.contextBudget.compactionThreshold ?? 0.75,
+          // P7.1: legacy top-level compactionThreshold seeds the budget when
+          // the partial budget omits it (unified precedence without breaking
+          // mixed configs that set only the legacy field).
+          compactionThreshold:
+            normalized.contextBudget.compactionThreshold ??
+            normalized.compactionThreshold ??
+            DEFAULT_COMPACTION_THRESHOLD,
         }) as import("../context/context-budget.js").ContextBudget)
       : undefined;
+    this.toolChoice = normalized.modelSettings?.toolChoice;
+    // Phase 7 group 2: reset_tool_choice defaults to on (OpenAI Agents parity).
+    this.resetToolChoice = normalized.modelSettings?.resetToolChoice !== false;
+    // G3.1: gen_ai.* span recording (defaults on inside the run-loop; this
+    // carries config such as contentMode/otlp/onSpans through to each run).
+    this.tracing = normalized.tracing;
     this.sessionTitleGenerator = normalized.sessionTitleGenerator;
     this.stepTimeout = normalized.stepTimeout ?? DEFAULT_STEP_TIMEOUT;
     this.doomLoopThreshold = normalized.doomLoopThreshold ?? DOOM_LOOP_THRESHOLD;
@@ -218,6 +250,8 @@ export class AgentKernel {
     });
     this.inputGuardrails = normalized.inputGuardrails ?? [];
     this.outputGuardrails = normalized.outputGuardrails ?? [];
+    this.toolGuards = normalized.guards ?? [];
+    this.sandboxMode = normalized.sandbox?.mode;
     this.outputType = normalized.outputType ?? 'text';
     this.workspaceRoot = normalized.workspaceRoot;
 
@@ -246,6 +280,12 @@ export class AgentKernel {
       approvalStore: normalized.permissions?.approvalStore,
       ...(normalized.permissions?.autoApprovalEnabled !== undefined
         ? { autoApprovalEnabled: normalized.permissions.autoApprovalEnabled }
+        : {}),
+      ...(normalized.permissions?.permissionMode !== undefined
+        ? { permissionMode: normalized.permissions.permissionMode }
+        : {}),
+      ...(normalized.permissions?.permissionClassifier !== undefined
+        ? { permissionClassifier: normalized.permissions.permissionClassifier }
         : {}),
       ...(normalized.permissions?.approvalTimeoutMs !== undefined
         ? { approvalTimeoutMs: normalized.permissions.approvalTimeoutMs }
@@ -305,6 +345,16 @@ export class AgentKernel {
     if (!defaultModel?.model?.trim()) {
       throw new ConfigurationError("AgentKernel requires a defaultModel with non-empty model string");
     }
+    // G7.2: per-step file snapshots (opt-in — omit/false = off).
+    if (normalized.fileSnapshot !== undefined && normalized.fileSnapshot !== false) {
+      const cfg = typeof normalized.fileSnapshot === "object" ? normalized.fileSnapshot : {};
+      this.fileSnapshots = new FileSnapshotRecorder({
+        ...cfg,
+        ...(cfg.workspaceRoot === undefined && normalized.workspaceRoot !== undefined
+          ? { workspaceRoot: normalized.workspaceRoot }
+          : {}),
+      });
+    }
     const self = this;
 this.stepExecutor = new StepExecutor({
       store: { emitEvent: (event, persist) => this.emitEvent(event, persist) },
@@ -327,7 +377,14 @@ this.stepExecutor = new StepExecutor({
       findTool: (name, runId) => self.findTool(name, runId),
       hasTool: (name) => self.hasTool(name),
       ...(normalized.redactToolOutputs !== undefined ? { redactToolOutputs: normalized.redactToolOutputs } : {}),
-      ...(this.contextBudget !== undefined ? { maxToolOutputChars: this.contextBudget.maxToolOutputChars } : {}),
+      ...(this.toolGuards.length > 0 ? { guards: this.toolGuards } : {}),
+      ...(this.fileSnapshots !== undefined ? { fileSnapshots: this.fileSnapshots } : {}),
+      ...(this.sandboxMode !== undefined ? { sandboxMode: this.sandboxMode } : {}),
+      // P7.1: contextBudget.maxToolOutputChars is COMPRESSOR-oriented (500,
+      // via budgetToCompressorFields → maxToolOutputLength) — do NOT wire it
+      // to step-executor's live tool-output cap (default 100_000): conflating
+      // the two would truncate live tool output 200× when a budget is passed.
+      ...(this.contextBudget !== undefined ? { sanitizeLimitChars: this.contextBudget.sanitizeLimitChars } : {}),
     });
     if (normalized.tools) {
       this.tools = [...normalized.tools];
@@ -374,12 +431,9 @@ this.stepExecutor = new StepExecutor({
           else self.agentChain = v;
         },
       },
-      sessionStateRef: {
-        get value() { return self["sessionState"]; },
-        set value(v) { self["sessionState"] = v; },
-      },
-      runFn: (prompt, ctx, sessionId, _agentOverride) => this.run(prompt, ctx, sessionId, undefined, _agentOverride),
+      runFn: (prompt, ctx, sessionId, _agentOverride, sessionState) => this.run(prompt, ctx, sessionId, undefined, _agentOverride, sessionState),
       runContextFor: (runId) => this.runContexts.get(runId),
+      runSessionStateFor: (runId) => this.runSessionStates.get(runId),
     };
 
     this.lifecycleManager = new LifecycleManager();
@@ -593,6 +647,21 @@ this.stepExecutor = new StepExecutor({
     this.permissionGate.setAutoApprovalEnabled(enabled);
   }
 
+  /**
+   * G5: set/replace the permission mode at runtime (undefined = no overlay).
+   * Invalidates the cached tools[] snapshot — the mode changes which tools
+   * survive the permission check (e.g. `plan` hides mutating tools).
+   */
+  setPermissionMode(mode: PermissionMode | undefined): void {
+    this.permissionGate.setPermissionMode(mode);
+    this.cachedTools = null;
+  }
+
+  /** G5: set/replace the `auto` classifier at runtime (undefined = risk default). */
+  setPermissionClassifier(classifier: PermissionClassifier | undefined): void {
+    this.permissionGate.setPermissionClassifier(classifier);
+  }
+
   /** Get the current agent's behaviour mode (defaults to "build"). */
   getBehaviourMode(): AgentBehaviourMode {
     return this.currentAgent?.behaviourMode ?? "build";
@@ -626,22 +695,34 @@ this.stepExecutor = new StepExecutor({
    * Start a new agent run. Creates a run ID, wires abort + session, and returns
    * a `RunHandle` (runId + completed promise + abort). The run loop executes
    * asynchronously — the promise resolves when the run finishes (or fails).
+   *
+   * An optional `sessionState` gives the run its own runtime session state
+   * instead of the kernel-level one (sub-agent children fork a fresh state
+   * from their parent this way, so parallel/concurrent runs never share or
+   * clobber a single mutable object — P5.5).
    */
-  run(prompt: string, ctx: RequestContext, sessionId?: string, userContentParts?: readonly MessageContentPart[], agentOverride?: AgentConfig): RunHandle {
+  run(prompt: string, ctx: RequestContext, sessionId?: string, userContentParts?: readonly MessageContentPart[], agentOverride?: AgentConfig, sessionState?: SessionRuntimeState): RunHandle {
     const runId = crypto.randomUUID() as RunId;
     this.stateMachine.runIdStack.push(runId);
     try {
-      const parentRunId = this.stateMachine.runIdStack.at(-2);
+      // S3: parent comes from the EXPLICIT ctx.parentRunId (set by sub-agent /
+      // graph callers), never from stack position — a concurrent sibling at
+      // at(-2) would be mistaken for a parent and bypass the session-busy
+      // check via createRun's child-run rule.
+      const parentRunId = ctx.parentRunId;
       const abort = this.stateMachine.createRun(runId, sessionId, parentRunId);
       if (!abort) {
+        // Busy rejection — we pushed runId above, so remove it by identity
+        // (a plain pop() could discard a concurrent run's entry).
+        this.stateMachine.exitRun(runId);
         return {
           runId,
-          completed: Promise.reject(new Error(`Session "${sessionId}" is busy — concurrent run rejected`)),
+          completed: Promise.reject(new KernelError("session_busy", `Session "${sessionId}" is busy — concurrent run rejected`)),
           abort: () => {},
         };
       }
 
-      this.runSessionStates.set(runId, this.sessionState);
+      this.runSessionStates.set(runId, sessionState ?? this.sessionState);
 
         if (sessionId) this.runSessionIds.set(runId, sessionId);
 
@@ -660,7 +741,7 @@ this.stepExecutor = new StepExecutor({
       const promise = this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt)
         .then(() => undefined)
         .finally(() => {
-          this.stateMachine.runIdStack.pop();
+          this.stateMachine.exitRun(runId);
           this.runSessionStates.delete(runId);
         });
 
@@ -670,9 +751,38 @@ this.stepExecutor = new StepExecutor({
         abort: () => { abort.abort(); },
       };
     } catch (err) {
-      this.stateMachine.runIdStack.pop();
+      this.stateMachine.exitRun(runId);
       throw err;
     }
+  }
+
+  /**
+   * Start a run from a serialized checkpoint (G4.1 — opencode-style
+   * serialize/resume). Rebuilds the runtime session state from
+   * `state.messages`/`step`/`toolCallCount` and delegates to {@link run},
+   * so the loop seeds `system + history + prompt`, restores step accounting
+   * and persists the prompt exactly like a fresh run would.
+   *
+   * `state.messages` must be history BEFORE `state.prompt` (the contract of
+   * `sessionState` in {@link run} — see `SerializedRunState.messages`).
+   *
+   * @param state   Parsed {@link SerializedRunState} checkpoint.
+   * @param ctx     Request context.
+   * @param options Optional agent override for this run.
+   */
+  runFromState(
+    state: SerializedRunState,
+    ctx: RequestContext,
+    options?: { readonly agentOverride?: AgentConfig },
+  ): RunHandle {
+    return this.run(
+      state.prompt,
+      ctx,
+      state.sessionId,
+      state.userContentParts,
+      options?.agentOverride,
+      sessionStateFromRunState(state),
+    );
   }
 
   /**
@@ -698,7 +808,7 @@ this.stepExecutor = new StepExecutor({
     if (!restored) {
       return {
         runId,
-        completed: Promise.reject(new Error(`No durable state found for run "${runId}" — nothing to resume`)),
+        completed: Promise.reject(new RunNotFoundError(runId)),
         abort: () => {},
       };
     }
@@ -706,12 +816,15 @@ this.stepExecutor = new StepExecutor({
     const resolvedSessionId = restored.sessionId ?? sessionId;
     this.stateMachine.runIdStack.push(runId);
     try {
-      const parentRunId = this.stateMachine.runIdStack.at(-2);
+      // S3: explicit parent only — see run() above.
+      const parentRunId = ctx.parentRunId;
       const abort = this.stateMachine.createRun(runId, resolvedSessionId, parentRunId);
       if (!abort) {
+        // Busy rejection — drop OUR entry by identity (no blind pop).
+        this.stateMachine.exitRun(runId);
         return {
           runId,
-          completed: Promise.reject(new Error(`Session "${resolvedSessionId}" is busy — concurrent run rejected`)),
+          completed: Promise.reject(new KernelError("session_busy", `Session "${resolvedSessionId}" is busy — concurrent run rejected`)),
           abort: () => {},
         };
       }
@@ -733,7 +846,7 @@ this.stepExecutor = new StepExecutor({
       const promise = this.runLoop(prompt, runId, ctx, abort, resolvedSessionId, undefined, agentOverride, runSaga, true, systemPrompt)
         .then(() => undefined)
         .finally(() => {
-          this.stateMachine.runIdStack.pop();
+          this.stateMachine.exitRun(runId);
           this.runSessionStates.delete(runId);
         });
 
@@ -743,7 +856,7 @@ this.stepExecutor = new StepExecutor({
         abort: () => { abort.abort(); },
       };
     } catch (err) {
-      this.stateMachine.runIdStack.pop();
+      this.stateMachine.exitRun(runId);
       throw err;
     }
   }
@@ -754,11 +867,43 @@ this.stepExecutor = new StepExecutor({
   }
 
   /**
+   * G5 lifecycle: end a session — fires the `onSessionEnd` plugin hook so
+   * plugins can flush memory/cleanup. The host application decides when a
+   * session is over (session persistence lives in the app's SessionStore);
+   * a missing plugin manager is a no-op.
+   */
+  async endSession(sessionId: string): Promise<void> {
+    await this.pluginManager?.fireHook("onSessionEnd", { sessionId });
+  }
+
+  /**
+   * G7.2: list captured file pre-images (empty when `fileSnapshot` is off).
+   * Filter by `runId`/`step`/`path`/`toolCallId`.
+   */
+  getFileSnapshots(filter?: import("@vinhnt-sdk/step-executor").FileSnapshotFilter): readonly import("@vinhnt-sdk/step-executor").FileSnapshot[] {
+    return this.fileSnapshots?.list(filter) ?? [];
+  }
+
+  /**
+   * G7.2: undo captured file pre-images newest-first (existing files restored,
+   * tool-created files removed). No-op result when `fileSnapshot` is off.
+   * Filter by `runId`/`step`/`path`/`toolCallId` — an empty filter undoes
+   * every not-yet-undone snapshot.
+   */
+  async undoFileSnapshots(
+    filter?: import("@vinhnt-sdk/step-executor").FileSnapshotFilter,
+  ): Promise<import("@vinhnt-sdk/step-executor").FileSnapshotUndoResult> {
+    if (this.fileSnapshots === undefined) return { restored: [], skipped: [] };
+    return this.fileSnapshots.undo(filter ?? {});
+  }
+
+  /**
    * Start a new agent run with full lifecycle management.
    * Returns an AgentRunHandle with cancel, status, and event streaming.
    *
    * @example
    * ```typescript
+   * const ctx = { requestId: "req-1", traceId: "trace-1", actorId: "user-1", tenantId: "default" };
    * const handle = kernel.createRunHandle("Write a hello world program", ctx);
    * 
    * // Wait for completion
@@ -795,7 +940,8 @@ this.stepExecutor = new StepExecutor({
     // Create the run promise
     const runPromise = (async () => {
       try {
-        const parentRunId = this.stateMachine.runIdStack.at(-2);
+        // S3: explicit parent only — never derive from stack position.
+        const parentRunId = ctx.parentRunId;
         const abort = this.stateMachine.createRun(runId, sessionId, parentRunId);
         if (!abort) {
           throw new KernelError("session_busy", `Session "${sessionId}" is busy`);
@@ -807,7 +953,7 @@ this.stepExecutor = new StepExecutor({
         // it so the run converges on the single `cancelled` terminal outcome.
         if (abortController.signal.aborted) abort.abort();
 
-        this.runSessionStates.set(runId, this.sessionState);
+      this.runSessionStates.set(runId, this.sessionState);
 
         if (sessionId) this.runSessionIds.set(runId, sessionId);
 
@@ -833,17 +979,20 @@ this.stepExecutor = new StepExecutor({
         eventHandlers.forEach(h => h(startEvent));
 
         // Run the loop — it reports its terminal status through the return value.
-        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs, structuredOutput, error: loopError } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
+        const { totalSteps, status: runStatus, totalInputTokens, totalOutputTokens, durationMs: loopDurationMs, structuredOutput, output: loopOutput, error: loopError } = await this.runLoop(prompt, runId, ctx, abort, sessionId, userContentParts, agentOverride, runSaga, undefined, systemPrompt);
 
         completed = true;
+        // RV-7: runLoop reports its own terminal status; the local `cancelled`
+        // flag (handle.cancel()) agrees whenever the run was cancelled. Never
+        // let a cancelled run be coerced into "succeeded".
+        const finalStatus = cancelled || runStatus === "cancelled"
+          ? "cancelled"
+          : runStatus === "failed" ? "failed" : "succeeded";
         result = {
           runId,
-          // RV-7: runLoop reports its own terminal status; the local `cancelled`
-          // flag (handle.cancel()) agrees whenever the run was cancelled. Never
-          // let a cancelled run be coerced into "succeeded".
-          status: cancelled || runStatus === "cancelled"
-            ? "cancelled"
-            : runStatus === "failed" ? "failed" : "succeeded",
+          status: finalStatus,
+          // Final assistant text — success only (mirrors run.completed data.output).
+          ...(finalStatus === "succeeded" && loopOutput !== undefined ? { output: loopOutput } : {}),
           // Surface the run-loop failure reason (HTTP 400, max steps, budget...)
           // instead of consumers falling back to a generic "Agent run failed".
           ...(loopError !== undefined ? { error: loopError } : {}),
@@ -887,7 +1036,7 @@ this.stepExecutor = new StepExecutor({
 
         throw err;
       } finally {
-        this.stateMachine.runIdStack.pop();
+        this.stateMachine.exitRun(runId);
         this.runSessionStates.delete(runId);
       }
     })();
@@ -1007,6 +1156,16 @@ this.stepExecutor = new StepExecutor({
     return this.circuitBreaker;
   }
 
+  /**
+   * P7.1: effective context budget for this kernel. Returns the normalized
+   * budget (defaults filled) or {@link DEFAULT_CONTEXT_BUDGET} when none was
+   * configured — callers (agent-as-tool factories, app wiring) can read
+   * `maxSubagentOutputChars` etc. instead of hardcoding 4096/500/128_000.
+   */
+  getContextBudget(): import("../context/context-budget.js").ContextBudget {
+    return this.contextBudget ?? DEFAULT_CONTEXT_BUDGET;
+  }
+
   /** Get the model caller for testing prompts against providers. */
   getModelCaller(): ModelCaller {
     return this.modelCaller;
@@ -1046,7 +1205,9 @@ this.stepExecutor = new StepExecutor({
       this.modelCaller.setRuntimeOptions({ thinkingPrompt: normalized.thinkingPrompt });
     }
     if (normalized.compactionThreshold !== undefined) {
-      this.compactionThreshold = normalized.compactionThreshold;
+    // P6.6: resolve the default ONCE here so the run loop never needs a
+    // silent `?? 0.75` fallback — the unit is ratio (0-1) end-to-end.
+    this.compactionThreshold = normalized.compactionThreshold ?? DEFAULT_COMPACTION_THRESHOLD;
     }
     if (normalized.maxRetries !== undefined || normalized.retryBackoffMs !== undefined || normalized.maxRetryBackoffMs !== undefined) {
       this.circuitBreaker = new CircuitBreaker({
@@ -1063,6 +1224,13 @@ this.stepExecutor = new StepExecutor({
     }
     if (normalized.permissions?.topLevelPermissionRules) {
       this.permissionGate.setTopLevelRules(normalized.permissions.topLevelPermissionRules);
+    }
+    if (normalized.permissions?.permissionMode !== undefined) {
+      // G5: mode changes which tools survive checkTool → invalidate snapshot.
+      this.setPermissionMode(normalized.permissions.permissionMode);
+    }
+    if (normalized.permissions?.permissionClassifier !== undefined) {
+      this.setPermissionClassifier(normalized.permissions.permissionClassifier);
     }
     if (normalized.permissions?.bareDenyHidesTool !== undefined) {
       this.bareDenyHidesTool = normalized.permissions.bareDenyHidesTool;
@@ -1257,6 +1425,8 @@ this.stepExecutor = new StepExecutor({
       maxTokens: this.maxTokens,
       thinkingBudget: this.thinkingBudget,
       stepTimeout: this.stepTimeout,
+      // Field stays `number | undefined` for the updateConfig path; the
+      // constructor resolves the default, so this spread always fires.
       ...(this.compactionThreshold !== undefined ? { compactionThreshold: this.compactionThreshold } : {}),
       ...(this.termination ? { termination: this.termination } : {}),
       ...(judgeModel ? { judgeModel } : {}),
@@ -1270,10 +1440,17 @@ this.stepExecutor = new StepExecutor({
         ? { failoverModels: this.modelRouting.failoverModels }
         : {}),
       ...(this.contextBudget ? { contextBudget: this.contextBudget } : {}),
+      // Phase 7 group 2 — reset_tool_choice: run-loop downgrades configured
+      // toolChoice 'required' → 'auto' after tools ran this run.
+      ...(this.toolChoice !== undefined ? { toolChoice: this.toolChoice } : {}),
+      resetToolChoice: this.resetToolChoice,
+      ...(this.tracing ? { tracing: this.tracing } : {}),
       addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as SessionMessageExtra | undefined),
       beforeRun: async () => {
-        const parentRunId = this.stateMachine.runIdStack.at(-2);
-        if (parentRunId) return;
+        // S3: a CHILD run (explicit ctx.parentRunId) shares its parent's
+        // session — skip input hydration. Positional at(-2) misclassified
+        // concurrent top-level siblings as children.
+        if (ctx.parentRunId) return;
         await this.hydratePendingInputs(runId, sessionId);
       },
       onInputsDrained: (rid, texts) => this.markInputsPromoted(rid, texts),
@@ -1297,38 +1474,80 @@ this.stepExecutor = new StepExecutor({
           this.emitFail(rid, c, reason, steps, sid, totalIn, totalOut, dur, cancelled),
       });
 
-      // Handle handoff — swap agent and continue the run
-      if (result.handoff && this.agentRegistry) {
-        const targetAgentId = result.handoff.targetAgentId as AgentId;
-        const targetAgent = await this.agentRegistry.get(targetAgentId);
+      // Handle handoff — validate the swap, then continue the run with the
+      // target agent. The run-loop suppressed its terminal emission for the
+      // handoff (P2.1), so EVERY exit below must either recurse into the
+      // continuation or terminate the run itself.
+      if (result.handoff) {
+        const guard = await this.validateHandoff(runId, result.handoff, result.totalSteps);
 
-        if (targetAgent) {
-          // Swap the active agent for this run
-          const rc = this.runContexts.get(runId);
-          if (rc) {
-            rc.agent = targetAgent;
-            rc.depth++;
-          }
-
-          // Update the step executor's current agent
-          this.stepExecutor.setCurrentAgent(targetAgent);
-
-          // Rebuild system prompt for new agent
-          const newSystemPrompt = this.buildSystemPrompt(targetAgent);
-
-          // Resolve model for new agent
-          this.modelCaller.resolveAgentModel(targetAgent as { profile: { model?: string } }, runId);
-          const newRunModel = this.modelCaller.getActiveModel(runId);
-
-          // Continue the run with the new agent
-          return this.runLoop(
-            result.handoff.summary ?? prompt, runId, ctx, runAbort,
-            sessionId, userContentParts, targetAgent, runSaga, resume, newSystemPrompt,
-          );
-        } else {
-          // Target agent not found — log warning and continue with current agent
-          console.warn(`[kernel] Handoff target agent "${targetAgentId}" not found — continuing with current agent`);
+        if (guard.rejection !== undefined) {
+          // Rejected swap — this IS the run's terminal outcome (the loop's
+          // own run.completed emission was suppressed at the handoff return).
+          const error = guard.rejection;
+          getLogger().warn(`[kernel] ${error}`);
+          await runSagaInstance.rollbackAll();
+          runSagaInstance.clear();
+          await this.emitFail(runId, ctx, error, result.totalSteps, sessionId,
+            result.totalInputTokens ?? 0, result.totalOutputTokens ?? 0);
+          this.stateMachine.setState(runId, "failed");
+          const rs = this.getRunSession(runId);
+          if (rs) rs.isRunning = false;
+          // The run-loop skipped cleanup at the handoff boundary — do it here.
+          this.stateMachine.cleanupRun(runId, sessionId);
+          return {
+            totalSteps: result.totalSteps,
+            status: "failed" as const,
+            error,
+            ...(result.totalInputTokens !== undefined ? { totalInputTokens: result.totalInputTokens } : {}),
+            ...(result.totalOutputTokens !== undefined ? { totalOutputTokens: result.totalOutputTokens } : {}),
+            ...(result.durationMs !== undefined ? { durationMs: result.durationMs } : {}),
+          };
         }
+
+        const { targetAgent, fromAgentId } = guard;
+
+        // Guard passed — announce the swap (only now is the handoff real).
+        await this.emitEvent({
+          id: crypto.randomUUID(), runId, type: "agent.handoff",
+          occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+          data: {
+            fromAgentId,
+            toAgentId: result.handoff.targetAgentId,
+            reason: result.handoff.reason,
+            ...(result.handoff.summary !== undefined ? { summary: result.handoff.summary } : {}),
+          },
+        }, true);
+
+        // P5.5: the step executor resolves the per-run agent via
+        // agentForRun(runId) → runContexts (set above), so its shared
+        // currentAgent fallback needs no swap here — the handoff is fully
+        // expressed by rc.agent for this run only.
+        const rc = this.runContexts.get(runId);
+        if (rc) {
+          rc.agent = targetAgent;
+          rc.depth++;
+        }
+
+        // Rebuild system prompt for new agent
+        const newSystemPrompt = this.buildSystemPrompt(targetAgent);
+
+        // Resolve model for new agent
+        this.modelCaller.resolveAgentModel(targetAgent as { profile: { model?: string } }, runId);
+
+        // Continue the run with the new agent. `resume: true` re-enters the
+        // loop WITHOUT re-emitting run.started or re-persisting a user turn —
+        // the handoff continuation replays the pre-handoff transcript from
+        // runSessionState and appends the handoff summary as the latest user
+        // message (one logical run, one run.started for the consumer).
+        // NOTE: `await` is load-bearing — without it this invocation's
+        // `finally` (which drops runContexts/handoffTrackers for runId) would
+        // run as soon as the recursion PROMISE is returned, wiping the state
+        // the continuation still needs (rc.agent, cycle tracker).
+        return await this.runLoop(
+          result.handoff.summary ?? prompt, runId, ctx, runAbort,
+          sessionId, userContentParts, targetAgent, runSaga, true, newSystemPrompt,
+        );
       }
 
       return result;
@@ -1338,6 +1557,7 @@ this.stepExecutor = new StepExecutor({
       this.runSagas.delete(runId);
       this.runSessionIds.delete(runId);
       this.runPendingEntries.delete(runId);
+      this.handoffTrackers.delete(runId);
     }
   }
 
@@ -1347,6 +1567,64 @@ this.stepExecutor = new StepExecutor({
 
   private emitFail(rid: RunId, c: RequestContext, reason: string, steps: number, sid?: string, totalIn = 0, totalOut = 0, dur?: number, cancelled = false): Promise<void> {
     return sessionEmitFail(this.sessionDeps, rid, c, reason, steps, sid, totalIn, totalOut, dur, cancelled);
+  }
+
+  /**
+   * Validate a detected handoff before the swap actually happens.
+   *
+   * Guards, in order:
+   * 1. an agent registry must be configured,
+   * 2. the target agent must exist,
+   * 3. an agent cannot hand off to itself,
+   * 4. no cycle and no more than `maxSubAgentDepth` handoffs per run
+   *    (tracked by the per-run {@link HandoffTracker}).
+   *
+   * Returns either the validated target (plus the initiating agent id used
+   * for the `agent.handoff` event) or the rejection reason — the caller must
+   * fail the run on rejection because the run-loop suppressed its terminal
+   * emission for this handoff.
+   */
+  private async validateHandoff(
+    runId: RunId,
+    handoff: NonNullable<RunLoopResult["handoff"]>,
+    totalSteps: number,
+  ): Promise<
+    { targetAgent: AgentConfig; fromAgentId: string; rejection?: undefined }
+    | { targetAgent?: undefined; fromAgentId?: undefined; rejection: string }
+  > {
+    const targetAgentId = handoff.targetAgentId as AgentId;
+    const rc = this.runContexts.get(runId);
+    const fromAgentId = rc?.agent?.id ?? this.currentAgent?.id ?? "default";
+
+    if (!this.agentRegistry) {
+      return { rejection: `Handoff rejected: no agent registry configured (target "${targetAgentId}")` };
+    }
+    const targetAgent = await this.agentRegistry.get(targetAgentId);
+    if (!targetAgent) {
+      return { rejection: `Handoff target agent "${targetAgentId}" not found` };
+    }
+    if (fromAgentId === handoff.targetAgentId) {
+      return { rejection: `Handoff rejected: agent "${targetAgentId}" cannot hand off to itself` };
+    }
+
+    let tracker = this.handoffTrackers.get(runId);
+    if (!tracker) {
+      tracker = new HandoffTracker(this.maxSubAgentDepth);
+      this.handoffTrackers.set(runId, tracker);
+    }
+    const allowed = tracker.record({
+      timestamp: Date.now(),
+      fromAgentId: fromAgentId as AgentId,
+      toAgentId: targetAgentId,
+      reason: handoff.reason,
+      step: totalSteps,
+    });
+    if (!allowed) {
+      return {
+        rejection: `Handoff rejected: cycle detected or max handoff depth (${this.maxSubAgentDepth}) exceeded (target "${targetAgentId}")`,
+      };
+    }
+    return { targetAgent, fromAgentId };
   }
 
 }

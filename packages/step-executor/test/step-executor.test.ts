@@ -631,6 +631,64 @@ describe("StepExecutor", () => {
       expect(typeChangedEvents).toHaveLength(1);
       expect(typeChangedEvents[0]![0].data.stepType).toBeDefined();
     });
+
+    it("D4: findTool throwing before execution produces a paired tool message (no orphan)", async () => {
+      (deps.findTool as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error("registry exploded");
+      });
+
+      const messages: ChatMessage[] = [];
+      await executor.executeToolCalls(
+        [makeToolCall()], messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]!.toolCallId).toBe("tc1");
+      expect(String(messages[0]!.content)).toContain("registry exploded");
+      expect(deps.addSessionMessage).toHaveBeenCalledWith(
+        "sess1", "tool", expect.any(String), { toolCallId: "tc1", model: "fake" },
+      );
+    });
+
+    it("D4: plugin hook throwing after tool.invoked still pairs the tool message", async () => {
+      const fireHook = vi.fn().mockImplementation((name: string) => {
+        if (name === "onToolInvoked") throw new Error("hook exploded");
+        return undefined;
+      });
+      const localDeps = makeDeps({ pluginManager: { fireHook } as never });
+      const exec2 = new StepExecutor(localDeps);
+      (localDeps.findTool as ReturnType<typeof vi.fn>).mockReturnValue({
+        execute: vi.fn().mockResolvedValue("ok"), risk: "read",
+      });
+
+      const messages: ChatMessage[] = [];
+      await exec2.executeToolCalls(
+        [makeToolCall({ toolId: "t-hook" })], messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]!.toolCallId).toBe("t-hook");
+      expect(String(messages[0]!.content)).toContain("hook exploded");
+    });
+
+    it("D4: RUN_ABORTED rejection before execution pushes no tool message", async () => {
+      (deps.findTool as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new RunAbortedError("run1" as RunId);
+      });
+
+      const messages: ChatMessage[] = [];
+      await executor.executeToolCalls(
+        [makeToolCall()], messages, 1, "run1" as RunId,
+        { traceId: "trace1" } as never,
+        new AbortController(), "sess1", { model: "fake" } as never,
+      );
+
+      expect(messages).toHaveLength(0);
+    });
   });
 
   describe("edit_file fallback", () => {
@@ -725,6 +783,7 @@ describe("StepExecutor", () => {
         "write_file", "call-sc-1", "run1", "",
         expect.stringContaining("requires approval"), expect.anything(), "trace1", expect.anything(),
         undefined, expect.any(AbortSignal),
+        { risk: "write", args: { filePath: "/tmp/x.txt" }, source: undefined },
       );
       expect(correctedExecute).not.toHaveBeenCalled();
       expect(messages.some((m) => typeof m === "object" && (m as { content?: string }).content?.includes("rejected by user"))).toBe(true);

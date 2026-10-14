@@ -1995,6 +1995,58 @@ describe("AgentKernel", () => {
       const completed = findEvent(events, "run.completed");
       expect(completed?.data.status).toBe("failed");
     });
+
+    it("TC52: kernel config guards deny tool execution (P3.1 wiring)", async () => {
+      const model = new FakeModelProvider([
+        { provider: "fake", content: "", toolCalls: [{ id: "tc1", name: "test_tool", args: { filePath: "/a.ts" } }] },
+        { provider: "fake", content: "Done" },
+      ]);
+      const store = new FakeRunEventStore();
+      let executed = 0;
+      const testTool: ToolDefinition = {
+        id: "test_tool", description: "Should be blocked by guard", risk: "write",
+        async execute() { executed += 1; return "written"; },
+      };
+      const kernel = new AgentKernel({
+        model, store, tools: [testTool], maxSteps: 10,
+        guards: [{
+          name: "plan-mode-no-write",
+          check: async () => ({ decision: "deny" as const, reason: "writes forbidden in plan mode" }),
+        }],
+      });
+
+      const handle = kernel.run("Run test", testCtx);
+      await handle.completed;
+
+      const events = await store.list(handle.runId);
+      const toolFailed = findEvent(events, "tool.failed");
+      expect(toolFailed).toBeTruthy();
+      expect(toolFailed?.data.toolName).toBe("test_tool");
+      expect(toolFailed?.data.decision).toBe("deny");
+      expect(executed).toBe(0);
+    });
+
+    it("TC53: kernel config.sandbox.mode flows into ToolContext.sandboxScope (P3.3)", async () => {
+      const model = new FakeModelProvider([
+        { provider: "fake", content: "", toolCalls: [{ id: "tc1", name: "scope_probe", args: {} }] },
+        { provider: "fake", content: "Done" },
+      ]);
+      const store = new FakeRunEventStore();
+      let seen: string | undefined;
+      const probeTool: ToolDefinition = {
+        id: "scope_probe", description: "Captures ToolContext.sandboxScope", risk: "read",
+        async execute(_v, ctx) { seen = ctx.sandboxScope; return "ok"; },
+      };
+      const kernel = new AgentKernel({
+        model, store, tools: [probeTool], maxSteps: 10,
+        sandbox: { mode: "process" },
+      });
+
+      const handle = kernel.run("Run test", testCtx);
+      await handle.completed;
+
+      expect(seen).toBe("process");
+    });
   });
 });
 

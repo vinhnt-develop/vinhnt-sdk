@@ -1,6 +1,6 @@
 # @vinhnt-sdk/llm
 
-> Version: 0.5.2 | Status: stable (TokenMeter deprecated → use `@vinhnt-sdk/trace`)
+> Status: stable (TokenMeter deprecated → use `@vinhnt-sdk/trace`)
 
 LLM adapter abstraction, registry, retry policy, and model-caller for vinhnt-sdk.
 

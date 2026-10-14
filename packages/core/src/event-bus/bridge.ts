@@ -1,4 +1,5 @@
 import type { RunEvent, RunId, TraceId } from "@vinhnt-sdk/schema";
+import { getLogger } from "@vinhnt-sdk/schema";
 import type { EventDefinition, TypedEvent, EventBus } from "@vinhnt-sdk/event";
 import { InMemoryEventBus } from "@vinhnt-sdk/event";
 import type { RunEventStore } from "@vinhnt-sdk/session";
@@ -38,7 +39,7 @@ export class EventBusBridge {
           await this.store.append({ ...event, sequence: seq });
         }
       };
-      persist().catch((err) => console.error("[EventBusBridge] Failed to persist event:", err));
+      persist().catch((err) => getLogger().error("[EventBusBridge] Failed to persist event:", err));
     }
   }
 

@@ -9,6 +9,7 @@ import { createGlobFilesTool, createGrepFilesTool } from "@vinhnt-sdk/tools";
 import { createWebFetchTool, createWebSearchTool, type WebSearchProvider, TavilySearchProvider } from "@vinhnt-sdk/tools";
 import { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool } from "@vinhnt-sdk/tools";
 import { createTodoWriteTool, createQuestionTool } from "@vinhnt-sdk/tools";
+import { createUpdatePlanTool, createGetPlanTool, PlanStore } from "../tools/update-plan.js";
 
 /** Per-tool configuration overrides. Keys are tool IDs (e.g., "shell", "web_search"). */
 export interface ToolConfigOverrides {
@@ -72,6 +73,10 @@ export class BuiltinToolProvider implements ToolProvider {
       metadata: { ...tool.metadata, source: "system" },
     });
 
+    // One store per provider instance — update_plan writes, get_plan reads.
+    // Lives as long as the provider (same lifetime as todowrite's Map).
+    const planStore = new PlanStore();
+
     const allTools: Array<ToolDefinition | null> = [
       // File tools
       this.applyConfig(asSystem(createReadFileTool(workspaceRoot)), cfg("read_file")),
@@ -101,6 +106,10 @@ export class BuiltinToolProvider implements ToolProvider {
       this.applyConfig(asSystem(createTodoWriteTool()), cfg("todowrite")),
       this.applyConfig(asSystem(createQuestionTool()), cfg("question")),
       this.applyConfig(asSystem(createReadImageTool(workspaceRoot)), cfg("read_image")),
+
+      // Plan tools (P6.7/G19 — were unreachable stubs)
+      this.applyConfig(asSystem(createUpdatePlanTool(planStore)), cfg("update_plan")),
+      this.applyConfig(asSystem(createGetPlanTool(planStore)), cfg("get_plan")),
     ];
 
     // Filter out disabled tools (null)

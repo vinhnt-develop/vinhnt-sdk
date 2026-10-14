@@ -1,21 +1,22 @@
 import type { ToolDefinition, ToolContext } from "./index.js";
-import { createSandbox as baseCreateSandbox, createHostSandbox, createProcessSandbox, type SandboxConfig, type ProcessSandbox } from "@vinhnt-sdk/sandbox";
+import { createSandbox as baseCreateSandbox, createHostSandbox, createProcessSandbox, createContainerSandbox, type SandboxConfig, type ProcessSandbox } from "@vinhnt-sdk/sandbox";
 
 /**
- * Backends wired for `@vinhnt-sdk/tools` consumers.
- *
- * `host` and `process` are available out of the box. Scopes without a backend
- * (e.g. `container`) are fail-closed: requesting them throws
- * `SandboxUnavailableError` instead of silently downgrading.
+ * Backends wired for `@vinhnt-sdk/tools` consumers (G17): `host`, `process`,
+ * and `container` (Docker). Scopes without a backend are fail-closed:
+ * requesting them throws `SandboxUnavailableError` instead of silently
+ * downgrading. The `container` scope additionally fails closed at execute
+ * time (exit 127) when the docker CLI is missing — it never runs on the host.
  */
-const TOOLS_SANDBOX_BACKENDS: Record<"host" | "process", (config: SandboxConfig) => ProcessSandbox> = {
+const TOOLS_SANDBOX_BACKENDS: Record<"host" | "process" | "container", (config: SandboxConfig) => ProcessSandbox> = {
   host: createHostSandbox,
   process: createProcessSandbox,
+  container: createContainerSandbox,
 };
 
 /**
  * Create a process sandbox using the scopes wired into `@vinhnt-sdk/tools`
- * (`host` and `process`). Unavailable scopes throw `SandboxUnavailableError`.
+ * (`host`, `process`, `container`). Unavailable scopes throw `SandboxUnavailableError`.
  */
 export function createSandbox(config: SandboxConfig): ProcessSandbox {
   return baseCreateSandbox(config, TOOLS_SANDBOX_BACKENDS);

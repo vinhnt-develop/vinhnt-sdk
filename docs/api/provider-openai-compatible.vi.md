@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/provider-openai-compatible"
 description: "Nhà cung cấp tương thích OpenAI + preset"
-version: "0.4.0"
+version: "0.4.6"
 lang: "vi"
 type: "reference"
 category: "API Reference"
@@ -17,10 +17,11 @@ Nhà cung cấp model cho bất kỳ API nào tương thích với định dạn
 ```ts
 import {
   OpenAICompatibleProvider,
-  PRESETS,
+  createDeepSeekProvider,
+  createOllamaProvider,
   buildRequest,
-  convertStreamChunk,
-  SSE,
+  fromOpenAIStreamChunk,
+  createSSEStream,
 } from "@vinhnt-sdk/provider-openai-compatible";
 ```
 
@@ -33,7 +34,7 @@ Nhà cung cấp model triển khai giao diện nhà cung cấp LLM của vinhnt-
 ### Hàm tạo
 
 ```ts
-new OpenAICompatibleProvider(config: OpenAICompatibleConfig)
+new OpenAICompatibleProvider(config: OpenAICompatibleProviderOptions)
 ```
 
 ### Cấu hình
@@ -42,7 +43,7 @@ new OpenAICompatibleProvider(config: OpenAICompatibleConfig)
 const provider = new OpenAICompatibleProvider({
   baseUrl: "https://api.deepseek.com/v1",
   apiKey: process.env.DEEPSEEK_API_KEY,
-  model: "deepseek-chat",
+  defaultModel: "deepseek-chat",
   headers: { "X-Custom": "value" },
 });
 ```
@@ -77,34 +78,29 @@ for await (const chunk of stream) {
 
 ---
 
-## PRESETS
+## Trợ giúp Preset
 
-Cấu hình sẵn cho các nhà cung cấp tương thích OpenAI phổ biến.
+Factory cấu hình sẵn cho các nhà cung cấp tương thích OpenAI phổ biến.
 
 ### Các preset có sẵn
 
-| Preset | URL cơ sở | Ghi chú |
+| Trợ giúp | URL cơ sở | Ghi chú |
 |--------|-----------|---------|
-| `deepseek` | `https://api.deepseek.com/v1` | Model DeepSeek V2/V3 |
-| `anthropic` | Cấu hình qua proxy | Anthropic Claude qua proxy tương thích OpenAI |
-| `ollama` | `http://localhost:11434/v1` | Instance Ollama cục bộ |
+| `createDeepSeekProvider(opts)` | `https://api.deepseek.com/v1` | Model DeepSeek V2/V3 (export hằng `DEEPSEEK_*`) |
+| `createAnthropicProvider(opts)` | `https://api.anthropic.com/v1` | Anthropic Claude qua endpoint tương thích OpenAI |
+| `createOllamaProvider(opts?)` | `http://localhost:11434/v1` | Instance Ollama cục bộ |
+| `createProviderFromPreset(preset, opts?)` | — | Tạo provider từ `ProviderPreset` tùy chỉnh |
 
 ### Sử dụng
 
 ```ts
-import { OpenAICompatibleProvider, PRESETS } from "@vinhnt-sdk/provider-openai-compatible";
+import { createDeepSeekProvider, createOllamaProvider } from "@vinhnt-sdk/provider-openai-compatible";
 
 // DeepSeek
-const deepseek = new OpenAICompatibleProvider({
-  ...PRESETS.deepseek,
-  apiKey: process.env.DEEPSEEK_API_KEY,
-});
+const deepseek = createDeepSeekProvider({ apiKey: process.env.DEEPSEEK_API_KEY });
 
 // Ollama (cục bộ, không cần API key)
-const ollama = new OpenAICompatibleProvider({
-  ...PRESETS.ollama,
-  model: "llama3",
-});
+const ollama = createOllamaProvider({ model: "llama3" });
 ```
 
 ---
@@ -137,65 +133,68 @@ const body = buildRequest({
 
 ---
 
-## convertStreamChunk
+## fromOpenAIStreamChunk
 
-Chuyển đổi chunk SSE thô từ stream completions của OpenAI thành đối tượng `StreamChunkEvent` có kiểu.
+Chuyển đổi chunk stream OpenAI thành các sự kiện stream có kiểu.
 
 ```ts
 const rawChunk = { choices: [{ delta: { content: "Xin chào" } }] };
-const event = convertStreamChunk(rawChunk);
-// { type: "content", content: "Xin chào" }
+const events = fromOpenAIStreamChunk(rawChunk);
+// [{ type: "text", content: "Xin chào" }]
 ```
 
 ### Giá trị trả về
 
-| Kiểu chunk | Kiểu sự kiện | Mô tả |
+| Trường chunk | Kiểu sự kiện | Mô tả |
 |------------|--------------|-------|
-| `delta.content` | `content` | Chunk nội dung văn bản |
-| `delta.tool_calls` | `tool_call` | Chunk gọi công cụ |
-| `[DONE]` | `done` | Stream hoàn thành |
-| Error | `error` | Lỗi stream |
+| `delta.content` | `text` | Chunk nội dung văn bản |
+| `delta.reasoning_content` | `thinking` | Chuỗi suy luận của DeepSeek reasoner |
+| `delta.tool_calls` | `tool_call` | Chunk gọi công cụ (`id`, `name`, `args`; delta dùng `__delta`) |
+| `finish_reason` | `finish` | Stream hoàn thành |
+| `logprobs` | `logprobs` | Logprob token |
+| `usage` | `usage` | Sử dụng token (chunk cuối) |
 
 ---
 
-## SSE`
+## createSSEStream
 
-Trình phân tích Server-Sent Events để xử lý phản hồi HTTP phát trực tuyến.
+Trình phân tích Server-Sent Events để xử lý phản hồi HTTP phát trực tuyến. Async generator sinh `OpenAIStreamChunk` đã parse.
 
 ```ts
-const sse = new SSE(response.body);
-
-for await (const event of sse) {
-  if (event.data === "[DONE]") break;
-  const chunk = JSON.parse(event.data);
+for await (const chunk of createSSEStream(response.body)) {
   console.log(chunk.choices[0]?.delta?.content);
 }
 ```
 
-### Phương thức
-
-#### `static parse(text)`
-
-Phân tích chuỗi văn bản SSE thô thành các sự kiện.
+### Chữ ký
 
 ```ts
-const events = SSE.parse("data: {\"hello\":\"world\"}\n\n");
+createSSEStream(body, signal?, state?): AsyncIterable<OpenAIStreamChunk>
 ```
+
+- `body` — Response body (bytes/async iterable).
+- `signal` — `AbortSignal` tùy chọn để dừng phân tích.
+- `state` — Trạng thái parse tùy chọn; giúp phân biệt hoàn thành `[DONE]` sạch với stream bị cắt.
 
 ---
 
 ## Kiểu
 
-### OpenAICompatibleConfig
+### OpenAICompatibleProviderOptions
 
 ```ts
-interface OpenAICompatibleConfig {
+interface OpenAICompatibleProviderOptions {
   baseUrl: string;
   apiKey?: string;
-  model?: string;
+  defaultModel: string;
+  providerName?: string;
   headers?: Record<string, string>;
-  timeout?: number;
-  maxRetries?: number;
+  contextLimit?: number;
+  pricing?: ModelPricing;
+  capabilities?: Partial<ModelCapabilities>;
+  retry?: RetryOptions;
+  timeoutMs?: number;
+  includeUsage?: boolean;
 }
 ```
 
@@ -217,14 +216,18 @@ interface OpenAICompatibleRequestBody {
 }
 ```
 
-### StreamChunkEvent
+### Sự kiện Stream
+
+Giá trị trả về của `fromOpenAIStreamChunk`:
 
 ```ts
 type StreamChunkEvent =
-  | { type: "content"; content: string }
-  | { type: "tool_call"; toolCall: ToolCall }
-  | { type: "done"; usage: TokenUsage }
-  | { type: "error"; error: Error };
+  | { type: "text"; content: string }
+  | { type: "thinking"; content: string }
+  | { type: "tool_call"; id?: string; name?: string; args?: Record<string, unknown> }
+  | { type: "finish"; reason: string }
+  | { type: "logprobs"; logprobs: unknown }
+  | { type: "usage"; inputTokens: number; outputTokens: number; reasoningTokens?: number };
 ```
 
 ---
@@ -242,13 +245,9 @@ type StreamChunkEvent =
 ## Ví dụ: Thiết lập nhà cung cấp đầy đủ
 
 ```ts
-import {
-  OpenAICompatibleProvider,
-  PRESETS,
-} from "@vinhnt-sdk/provider-openai-compatible";
+import { createDeepSeekProvider } from "@vinhnt-sdk/provider-openai-compatible";
 
-const provider = new OpenAICompatibleProvider({
-  ...PRESETS.deepseek,
+const provider = createDeepSeekProvider({
   apiKey: process.env.DEEPSEEK_API_KEY,
   model: "deepseek-chat",
 });

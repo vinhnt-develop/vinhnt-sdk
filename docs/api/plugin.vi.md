@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/plugin"
-description: "Hook plugin và trình tải npm"
-version: "0.4.0"
+description: "Hook plugin và vòng đời"
+version: "0.4.2"
 lang: "vi"
 type: "reference"
 category: "API Reference"
@@ -10,15 +10,13 @@ sidebarLabel: "plugin"
 
 # @vinhnt-sdk/plugin
 
-Định nghĩa hệ thống plugin cho vinhnt-sdk. Cung cấp tiện ích để tạo plugin với hook vòng đời và tải chúng từ gói npm.
+Định nghĩa hệ thống plugin cho vinhnt-sdk. Cung cấp tiện ích để tạo plugin với hook vòng đời.
 
 ## Nhập
 
 ```ts
 import {
   definePlugin,
-  loadPluginFromNpm,
-  loadNpmPlugins,
 } from "@vinhnt-sdk/plugin";
 ```
 
@@ -86,47 +84,6 @@ export default definePlugin(
   })
 );
 ```
-
----
-
-## loadPluginFromNpm
-
-Tải một plugin từ gói npm.
-
-```ts
-const plugin = await loadPluginFromNpm("@vinhnt-sdk/plugin-search", process.cwd());
-```
-
-### Tham số
-
-| Tham số | Kiểu | Mô tả |
-|---------|------|-------|
-| `spec` | `string` | Tên gói npm hoặc spec (ví dụ: `@scope/package@version`) |
-| `cwd` | `string` | Thư mục làm việc để phân giải |
-
-### Trả về
-
-Trả về instance `Plugin` sẵn sàng đăng ký với `DefaultPluginManager`.
-
----
-
-## loadNpmPlugins
-
-Tải nhiều plugin từ các gói npm đồng thời.
-
-```ts
-const plugins = await loadNpmPlugins(
-  ["@vinhnt-sdk/plugin-search", "@vinhnt-sdk/plugin-analytics"],
-  process.cwd()
-);
-```
-
-### Tham số
-
-| Tham số | Kiểu | Mô tả |
-|---------|------|-------|
-| `specs` | `string[]` | Mảng các spec gói npm |
-| `cwd` | `string` | Thư mục làm việc để phân giải |
 
 ---
 
@@ -242,30 +199,3 @@ export default definePlugin(
 );
 ```
 
-## Ví dụ: Tải plugin
-
-```ts
-import { loadPluginFromNpm, loadNpmPlugins } from "@vinhnt-sdk/plugin";
-import { AgentKernel, DefaultPluginManager } from "@vinhnt-sdk/core";
-
-const manager = new DefaultPluginManager();
-
-// Tải một plugin
-const searchPlugin = await loadPluginFromNpm(
-  "@vinhnt-sdk/plugin-search",
-  process.cwd()
-);
-
-// Hoặc tải nhiều plugin cùng lúc
-const plugins = await loadNpmPlugins(
-  ["@vinhnt-sdk/plugin-search", "@vinhnt-sdk/plugin-analytics"],
-  process.cwd()
-);
-
-manager.register(searchPlugin);
-manager.registerAll(plugins);
-
-const kernel = new AgentKernel({
-  plugins: manager.getAll(),
-});
-```

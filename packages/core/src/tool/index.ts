@@ -56,3 +56,4 @@ export { ToolRuntime } from "./runtime.js";
 export type { ToolRuntimeConfig } from "./runtime.js";
 export { createKernelTools, createPluginToolHook } from "./bridge.js";
 export { createToolProviderRegistry, createToolProvider, registerProviderTools, wireAgentAndSkillTools } from "./provider-helpers.js";
+export type { WireAgentAndSkillToolsOptions, WiredAgentAndSkillTools } from "./provider-helpers.js";

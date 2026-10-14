@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import type { ToolProvider } from "../provider.js";
 import type { ToolDefinition } from "../definitions.js";
 import type { ToolRegistry } from "../registry.js";
+import { getLogger } from "@vinhnt-sdk/schema";
 
 /**
  * ToolFileProvider — Loads tools from .vnt/tools/ directories.
@@ -75,7 +76,7 @@ export class ToolFileLoader {
             tools.push(tool);
           }
         } catch (error) {
-          console.error(`[ToolFileLoader] Failed to load tool from ${filePath}:`, error);
+          getLogger().error(`[ToolFileLoader] Failed to load tool from ${filePath}:`, error);
         }
       }
     } catch {

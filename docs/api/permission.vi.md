@@ -4,7 +4,7 @@ description: "Quy tắc permission và store phê duyệt"
 lang: "vi"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.5.1"
 sidebarLabel: "permission"
 ---
 
@@ -72,6 +72,24 @@ type PermissionEffect = "allow" | "deny" | "ask" | string;
 | `"deny"` | Chặn các yêu cầu phù hợp không có prompt |
 | `"ask"` | Yêu cầu người dùng phê duyệt |
 | Custom string | Hành vi mở rộng |
+
+### PermissionMode
+
+Chế độ phê duyệt cho một run — từ vựng security thuộc về SDK, ứng dụng không được sở hữu nó (P6.5).
+
+```ts
+type PermissionMode = "ask" | "edit" | "full" | string;
+const KNOWN_PERMISSION_MODES: readonly PermissionMode[]; // ["ask", "edit", "full"]
+```
+
+| Giá trị | Hành vi |
+| --- | --- |
+| `"ask"` | Hỏi trước khi thực thi tool (mặc định fail-closed) |
+| `"edit"` | Tự phê duyệt file edits; hỏi phần còn lại |
+| `"full"` | Tự phê duyệt tất cả (destructive floor được nâng lên allow) |
+| Custom string | Chế độ mở rộng do extension định nghĩa |
+
+Validation và UI list phải dùng `KNOWN_PERMISSION_MODES` (tập known đóng); type là open union để chế độ mới thêm vào không breaking.
 
 ### PermissionRuleset
 

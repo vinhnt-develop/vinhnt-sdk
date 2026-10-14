@@ -1,6 +1,6 @@
 import type { ToolDefinition, ToolContext, ToolRisk } from "./definitions.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
-import { ToolNotFoundError } from "@vinhnt-sdk/schema";
+import { ToolNotFoundError, getLogger } from "@vinhnt-sdk/schema";
 import type { DomainManifest, DomainSummary } from "./domain.js";
 import { summarizeDomains } from "./domain.js";
 import { validateInput } from "./validate.js";
@@ -41,7 +41,7 @@ export class ToolRegistry {
     // Lint description quality — warn but don't block registration
     const report = lintToolDescription(tool.id, tool.description);
     if (report.issues.length > 0) {
-      console.warn(
+      getLogger().warn(
         `[ToolRegistry] Description issues for "${tool.id}":`,
         report.issues.map((i) => i.message).join("; "),
       );

@@ -46,17 +46,44 @@ export interface Tool<TInput = unknown, TOutput = unknown> {
   toDefinition(): ToolDefinition<TInput, TOutput>;
 }
 
-type ZodLike = any;
+/**
+ * Structural view of Zod's internal `_def` bag (duck-typed, P5.11/AGENTS #17):
+ * the converter only reads `type`/`description`/wrappers, so a narrow interface
+ * replaces the former loose alias without depending on Zod internals.
+ */
+interface ZodInternalDef {
+  readonly type?: string | undefined;
+  readonly description?: string | undefined;
+  /** effects (refine/transform) wrapper target. */
+  readonly schema?: unknown;
+  /** optional/default/array wrapper target. */
+  readonly innerType?: unknown;
+  /** enum entries map. */
+  readonly entries?: Record<string, unknown> | undefined;
+  /** literal value. */
+  readonly value?: unknown;
+  /** union options. */
+  readonly options?: readonly unknown[] | undefined;
+  /** object shape: record or lazy () => record. */
+  readonly shape?: unknown;
+}
+
+/** Duck-typed Zod schema handle used by the JSON Schema converter. */
+interface ZodLike {
+  readonly _def: ZodInternalDef;
+  readonly description?: string | undefined;
+  isOptional?(): boolean;
+}
 
 /** Map a Zod schema to the codebase's `NestedJsonSchema` shape (best effort). */
-export function zodSchemaToNestedJsonSchema(schema: z.ZodTypeAny): NestedJsonSchema | undefined {
+export function zodSchemaToNestedJsonSchema(schema: z.ZodType<unknown>): NestedJsonSchema | undefined {
   if (!schema) return undefined;
-  const out = convert(schema as ZodLike);
+  const out = convert(schema as unknown as ZodLike);
   return out ? (Object.assign({}, out) as NestedJsonSchema) : undefined;
 }
 
 // Internal mutable shape for building the derived JSON Schema.
-type MutableSchema = { -readonly [K in keyof NestedJsonSchema]-?: NestedJsonSchema[K] } & Record<string, any>;
+type MutableSchema = { -readonly [K in keyof NestedJsonSchema]-?: NestedJsonSchema[K] };
 
 function convert(schema: ZodLike): MutableSchema | undefined {
   if (!schema) return undefined;
@@ -101,11 +128,13 @@ function convert(schema: ZodLike): MutableSchema | undefined {
     case "object": {
       base.type = "object";
       const raw = schema._def.shape;
-      const shape: Record<string, any> = typeof raw === "function" ? raw() : (raw ?? {});
+      const shape = (
+        typeof raw === "function" ? (raw as () => Record<string, ZodLike>)() : (raw ?? {})
+      ) as Record<string, ZodLike>;
       const properties: Record<string, NestedJsonSchema> = {};
       const required: string[] = [];
       for (const [key, child] of Object.entries(shape)) {
-        properties[key] = convert(child as ZodLike) ?? { type: "string" };
+        properties[key] = convert(child) ?? { type: "string" };
         if (!child.isOptional?.() && child._def?.type !== "optional" && child._def?.type !== "default") {
           required.push(key);
         }
@@ -116,11 +145,11 @@ function convert(schema: ZodLike): MutableSchema | undefined {
     }
     case "union": {
       const options = schema._def.options ?? [];
-      if (options.every((o: ZodLike) => o._def?.type === "string")) {
+      if (options.every((o) => (o as ZodLike)._def?.type === "string")) {
         base.type = "string";
         return base;
       }
-      if (options.every((o: ZodLike) => o._def?.type === "number")) {
+      if (options.every((o) => (o as ZodLike)._def?.type === "number")) {
         base.type = "number";
         return base;
       }
@@ -150,7 +179,9 @@ function withZodRequired(
   const schema = input as ZodLike | undefined;
   if (schema?._def?.type !== "object") return jsonSchema;
   const raw = schema._def.shape;
-  const shape: Record<string, ZodLike> = typeof raw === "function" ? raw() : (raw ?? {});
+  const shape = (
+    typeof raw === "function" ? (raw as () => Record<string, ZodLike>)() : (raw ?? {})
+  ) as Record<string, ZodLike>;
   const required = Object.entries(shape)
     .filter(
       ([, child]) =>

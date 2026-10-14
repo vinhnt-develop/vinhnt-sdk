@@ -7,7 +7,6 @@ category: "Getting Started"
 sidebarPosition: 2
 sidebarLabel: "Hello World"
 tags: [quickstart, core, tools]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 
@@ -165,7 +164,7 @@ Done!
 1. **`defineTool()`** — Creates a tool with Zod schema for input validation
 2. **`OpenAICompatibleProvider`** — Connects to OpenAI API (or any compatible provider)
 3. **`AgentKernel`** — Orchestrates the agent loop: prompt → LLM → tool calls → response
-4. **`kernel.run()`** — Starts the agent and waits for completion
+4. **`kernel.run()`** — Starts the run and returns a `RunHandle` (await `handle.completed` to wait)
 
 ## Using Other Providers
 

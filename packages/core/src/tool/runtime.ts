@@ -1,4 +1,4 @@
-import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
+import type { ToolDefinition, ToolContext, ToolExecutionResult, ToolHook } from "@vinhnt-sdk/tools";
 import { hasErrorCode } from "@vinhnt-sdk/schema";
 import { ToolRegistry } from "@vinhnt-sdk/tools";
 import { ToolSandbox } from "@vinhnt-sdk/tools";
@@ -6,29 +6,6 @@ import type { PermissionGate} from "@vinhnt-sdk/step-executor";
 import { type DynamicRule } from "@vinhnt-sdk/step-executor";
 import type { ApprovalHandler } from "@vinhnt-sdk/tools";
 import type { AgentRunContext } from "../kernel/run-context.js";
-
-/**
- * Result of executing a tool through {@link ToolRuntime}.
- * `success` carries the tool output, `denied` a policy/approval reason,
- * `error` a thrown/validation error message.
- */
-export type ToolExecutionResult =
-  | { status: "success"; output: unknown }
-  | { status: "denied"; reason: string }
-  | { status: "error"; error: string };
-
-/**
- * Lifecycle hook around tool execution.
- * `pre` can rewrite the input or deny execution; `post` can rewrite the result
- * (hooks run in reverse order on the post phase).
- */
-export interface ToolHook {
-  readonly id: string;
-  pre?(params: { toolId: string; tool: ToolDefinition; input: unknown }): 
-    Promise<{ input: unknown } | { denied: string } | null>;
-  post?(params: { toolId: string; tool: ToolDefinition; input: unknown; result: ToolExecutionResult }): 
-    Promise<ToolExecutionResult | null>;
-}
 
 /**
  * Configuration for {@link ToolRuntime}.

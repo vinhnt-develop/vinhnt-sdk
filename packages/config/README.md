@@ -1,6 +1,6 @@
 # @vinhnt-sdk/config
 
-> Version: 0.4.2 | Status: stable
+> Status: stable
 
 Credential resolution, settings, and env validation for vinhnt-sdk — zero hardcoded secrets via 4-layer credential resolution.
 

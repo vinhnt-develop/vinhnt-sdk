@@ -1,13 +1,11 @@
 import type { RunId, RequestId, AgentConfig, PermissionRequest, AgentRule, RunEvent } from "@vinhnt-sdk/schema";
 import type { ToolRisk, PermissionReply } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
-import type { ApprovalStore } from "@vinhnt-sdk/permission";
+import type { ApprovalStore, PermissionRule, PermissionMode, PermissionClassifier, PermissionClassification, ModeEffect, ModeEffectSource } from "@vinhnt-sdk/permission";
 import type { RunEventStore } from "@vinhnt-sdk/session";
-import type { PermissionRule } from "@vinhnt-sdk/permission";
 import type { EventBus } from "@vinhnt-sdk/event";
-import { evaluatePermission, checkRiskAllowed } from "@vinhnt-sdk/permission";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
-import { buildPermissionRules } from "@vinhnt-sdk/permission";
+import { evaluatePermission, checkRiskAllowed, buildPermissionRules, applyPermissionMode, createRiskPermissionClassifier } from "@vinhnt-sdk/permission";
 import { commandPattern } from "@vinhnt-sdk/tools";
 import { PermissionRequested, PermissionReplied } from "@vinhnt-sdk/event";
 
@@ -26,6 +24,12 @@ export interface PermissionCheckResult {
   allowed: boolean;
   reason?: string;
   needsApproval?: boolean;
+  /**
+   * Set on needsApproval results (G5): whether the ask came from an explicit
+   * `rules` decision or the `risk` floor. The `auto` classifier only ever
+   * auto-approves risk-floor asks — explicit rule asks always prompt.
+   */
+  source?: ModeEffectSource;
 }
 
 /** Optional ask options for non-standard permission keys (e.g. doom_loop). */
@@ -37,6 +41,18 @@ export interface AskForToolOptions {
   readonly forceAsk?: boolean;
   /** Permission key reported to hooks/events. Default: `tool.<name>`. */
   readonly permissionKey?: string;
+  /**
+   * G5: risk of the tool, passed to the `auto` classifier.
+   * Missing risk makes the default classifier fail closed to the dialog.
+   */
+  readonly risk?: string | undefined;
+  /** G5: tool args handed to the `auto` classifier (semantic classification). */
+  readonly args?: Record<string, unknown> | undefined;
+  /**
+   * G5: origin of the ask (`checkTool` result source). The classifier only
+   * runs for `"risk"` asks — absent/`"rules"` asks always open the dialog.
+   */
+  readonly source?: ModeEffectSource | undefined;
 }
 
 /** Dependencies required by {@link PermissionGate}. */
@@ -58,6 +74,16 @@ export interface PermissionGateDeps {
    * re-requesting variants after timeouts) must not run unbounded.
    */
   readonly maxApprovalAsksPerRun?: number | undefined;
+  /**
+   * G5: Claude-style approval mode (`default`/`acceptEdits`/`plan`/`bypass`/
+   * `auto` + legacy aliases). Undefined = no mode overlay (legacy behavior).
+   */
+  readonly permissionMode?: PermissionMode | undefined;
+  /**
+   * G5: classifier consulted by `auto` mode for risk-floor asks. Defaults to
+   * {@link createRiskPermissionClassifier} (pure, fail-closed).
+   */
+  readonly permissionClassifier?: PermissionClassifier | undefined;
 }
 
 const RISK_DECISIONS: Record<ToolRisk, ApprovalDecision> = {
@@ -96,6 +122,12 @@ export class PermissionGate {
   private riskOverrides?: Partial<Record<ToolRisk, ApprovalDecision>>;
   private topLevelRules: { toolName: string; pattern: string; decision: "allow" | "deny" | "ask" }[] = [];
   private autoApproval: boolean;
+  /** G5: Claude-style mode overlay (undefined = legacy pipeline, no overlay). */
+  private mode: PermissionMode | undefined;
+  /** G5: injected classifier for `auto` mode; falls back to the risk classifier. */
+  private classifier: PermissionClassifier | undefined;
+  /** G5: default `auto` classifier — pure, deterministic, fail-closed. */
+  private readonly fallbackClassifier = createRiskPermissionClassifier();
   /** Per-approval hard timeout — separate from agent stale threshold. */
   private readonly approvalTimeoutMs: number;
   /** Safety valve — max approval dialogs per run. */
@@ -107,6 +139,8 @@ export class PermissionGate {
 
   constructor(private readonly deps: PermissionGateDeps) {
     this.autoApproval = deps.autoApprovalEnabled ?? false;
+    this.mode = deps.permissionMode;
+    this.classifier = deps.permissionClassifier;
     this.approvalTimeoutMs = deps.approvalTimeoutMs ?? 120_000;
     this.maxApprovalAsksPerRun = deps.maxApprovalAsksPerRun ?? 20;
   }
@@ -114,6 +148,16 @@ export class PermissionGate {
   /** Toggle auto-approval at runtime (mirrors config.autoApprovalEnabled). */
   setAutoApprovalEnabled(enabled: boolean): void {
     this.autoApproval = enabled;
+  }
+
+  /** G5: set/replace the permission mode at runtime (undefined = no overlay). */
+  setPermissionMode(mode: PermissionMode | undefined): void {
+    this.mode = mode;
+  }
+
+  /** G5: set/replace the `auto` classifier at runtime (undefined = risk default). */
+  setPermissionClassifier(classifier: PermissionClassifier | undefined): void {
+    this.classifier = classifier;
   }
 
   /**
@@ -168,16 +212,50 @@ export class PermissionGate {
   }
 
   /**
+   * Map a final effect to the check result, applying the G5 mode overlay
+   * first. With no mode configured the overlay passes through — behavior is
+   * byte-identical to the legacy pipeline.
+   */
+  private decide(
+    effect: ModeEffect,
+    source: ModeEffectSource,
+    name: string,
+    risk: string,
+    reason?: string,
+  ): PermissionCheckResult {
+    let finalEffect = effect;
+    let finalReason = reason;
+    if (this.mode !== undefined) {
+      const decision = applyPermissionMode({ mode: this.mode, effect, source, toolName: name, risk });
+      finalEffect = decision.effect;
+      if (decision.overridden && decision.reason !== undefined) finalReason = decision.reason;
+    }
+    if (finalEffect === "allow") {
+      return { allowed: true, ...(finalReason !== undefined ? { reason: finalReason } : {}) };
+    }
+    if (finalEffect === "ask") {
+      return {
+        allowed: false,
+        needsApproval: true,
+        source,
+        ...(finalReason !== undefined ? { reason: finalReason } : {}),
+      };
+    }
+    return { allowed: false, ...(finalReason !== undefined ? { reason: finalReason } : {}) };
+  }
+
+  /**
    * Evaluate whether a tool call is allowed.
-   * 4-phase gate: global rules → agent permissions → dynamic rules → risk defaults.
-   * Returns { allowed, reason, needsApproval }.
+   * 4-phase gate: global rules → agent permissions → dynamic rules → risk defaults,
+   * then the G5 permission-mode overlay (applied inside {@link decide}).
+   * Returns { allowed, reason, needsApproval, source }.
    */
   checkTool(name: string, risk: ToolRisk, args?: Record<string, unknown>, agent?: AgentConfig): PermissionCheckResult {
     // Phase 1: Global config-level rules (OpenCode-style nested patterns)
     if (this.globalPermissionRules && this.globalPermissionRules.length > 0) {
       const globalResult = evaluatePermission({ rules: this.globalPermissionRules }, `tool.${name}`, args);
-      if (globalResult.decision === "deny") return { allowed: false, reason: globalResult.reason };
-      if (globalResult.decision === "ask") return { allowed: false, reason: globalResult.reason, needsApproval: true };
+      if (globalResult.decision === "deny") return this.decide("deny", "rules", name, risk, globalResult.reason);
+      if (globalResult.decision === "ask") return this.decide("ask", "rules", name, risk, globalResult.reason);
     }
 
     // Phase 1.5: Top-level allow/deny/ask pattern lists ("Tool(glob)")
@@ -190,9 +268,9 @@ export class PermissionGate {
         }
       }
       if (matched) {
-        if (matched.decision === "deny") return { allowed: false, reason: `Tool "${name}" is denied` };
-        if (matched.decision === "ask") return { allowed: false, reason: `Tool "${name}" requires approval`, needsApproval: true };
-        return { allowed: true, reason: "Allowed by configured rule" };
+        if (matched.decision === "deny") return this.decide("deny", "rules", name, risk, `Tool "${name}" is denied`);
+        if (matched.decision === "ask") return this.decide("ask", "rules", name, risk, `Tool "${name}" requires approval`);
+        return this.decide("allow", "rules", name, risk, "Allowed by configured rule");
       }
     }
 
@@ -201,22 +279,22 @@ export class PermissionGate {
     if (perms) {
       if (perms.ruleset) {
         const result = evaluatePermission(perms.ruleset, `tool.${name}`, args);
-        if (result.decision === "deny") return { allowed: false, reason: result.reason };
-        if (result.decision === "ask") return { allowed: false, reason: result.reason, needsApproval: true };
+        if (result.decision === "deny") return this.decide("deny", "rules", name, risk, result.reason);
+        if (result.decision === "ask") return this.decide("ask", "rules", name, risk, result.reason);
         if (perms.ruleset.allowedRisks && !checkRiskAllowed(perms.ruleset, risk)) {
-          return { allowed: false, reason: `Tool "${name}" has risk "${risk}" which exceeds agent's allowed risks` };
+          return this.decide("deny", "rules", name, risk, `Tool "${name}" has risk "${risk}" which exceeds agent's allowed risks`);
         }
-        return { allowed: true };
+        return this.decide("allow", "rules", name, risk);
       }
 
       if (perms.deniedTools?.some((p) => wildcardMatch(p, name))) {
-        return { allowed: false, reason: `Tool "${name}" is denied for this agent` };
+        return this.decide("deny", "rules", name, risk, `Tool "${name}" is denied for this agent`);
       }
       if (perms.allowedTools && !perms.allowedTools.some((p) => wildcardMatch(p, name))) {
-        return { allowed: false, reason: `Tool "${name}" is not in the allowed tools list` };
+        return this.decide("deny", "rules", name, risk, `Tool "${name}" is not in the allowed tools list`);
       }
       if (perms.allowedRisks && !perms.allowedRisks.includes(risk)) {
-        return { allowed: false, reason: `Tool "${name}" has risk "${risk}" which exceeds agent's allowed risks` };
+        return this.decide("deny", "rules", name, risk, `Tool "${name}" has risk "${risk}" which exceeds agent's allowed risks`);
       }
     }
 
@@ -226,8 +304,8 @@ export class PermissionGate {
       for (let i = this.dynamicRules.length - 1; i >= 0; i--) {
         const rule = this.dynamicRules[i]!;
         if (rule.toolName === name && wildcardMatch(rule.pattern, pattern)) {
-          if (rule.decision === "deny") return { allowed: false, reason: `Tool "${name}" denied by dynamic rule` };
-          return { allowed: true };
+          if (rule.decision === "deny") return this.decide("deny", "rules", name, risk, `Tool "${name}" denied by dynamic rule`);
+          return this.decide("allow", "rules", name, risk);
         }
       }
     }
@@ -238,9 +316,9 @@ export class PermissionGate {
       this.riskOverrides?.[risk] ??
       RISK_DECISIONS[risk] ??
       ("approval_required" as const);
-    if (decision === "deny") return { allowed: false, reason: `Tool "${name}" (risk: ${risk}) is denied` };
-    if (decision === "approval_required") return { allowed: false, needsApproval: true, reason: `Tool "${name}" (risk: ${risk}) requires approval` };
-    return { allowed: true };
+    if (decision === "deny") return this.decide("deny", "risk", name, risk, `Tool "${name}" (risk: ${risk}) is denied`);
+    if (decision === "approval_required") return this.decide("ask", "risk", name, risk, `Tool "${name}" (risk: ${risk}) requires approval`);
+    return this.decide("allow", "risk", name, risk);
   }
 
   /** Check whether combined token count stays within agent's maxTokens limit. */
@@ -278,6 +356,24 @@ export class PermissionGate {
     options?: AskForToolOptions,
   ): Promise<PermissionReply> {
     if (this.autoApproval && !options?.forceAsk) return "once";
+
+    // G5 `auto`: classify risk-floor asks before opening the dialog. Explicit
+    // rule asks (and callers that did not report a source) always prompt — a
+    // throwing classifier fails closed to the dialog.
+    if (this.mode === "auto" && options?.source === "risk" && !options?.forceAsk) {
+      let classification: PermissionClassification = "ask";
+      try {
+        classification = await (this.classifier ?? this.fallbackClassifier).classify({
+          toolName,
+          risk: options?.risk,
+          args: options?.args,
+          source: options?.source,
+        });
+      } catch {
+        classification = "ask";
+      }
+      if (classification === "allow") return "once";
+    }
 
     // Safety valve: cap the number of dialogs per run — beyond the limit the
     // ask fails fast as "reject" instead of opening yet another dialog.

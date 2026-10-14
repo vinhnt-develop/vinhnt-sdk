@@ -14,17 +14,12 @@ export type { OpenAICompatibleProviderOptions } from "./openai-compatible-provid
 export { buildRequest } from "./build-request.js";
 export type { OpenAICompatibleRequestBody, BuildRequestOptions } from "./build-request.js";
 
+export { applyPromptCacheShaping, CACHE_CONTROL_EPHEMERAL } from "./prompt-cache.js";
+export type { PromptCacheShaping, PromptCacheControlOptions, ShapedPrompt } from "./prompt-cache.js";
+
 export { createSSEStream, toModelStreamEvents } from "./sse.js";
 
-export {
-  fromOpenAIMessage,
-  toOpenAIMessage,
-  fromOpenAIResponse,
-  toOpenAIResponse,
-  fromOpenAIStreamChunk,
-  fromOpenAIError,
-  fromAnthropicMessage,
-} from "./convert.js";
+export { fromOpenAIMessage, toOpenAIMessage, fromOpenAIResponse, toOpenAIResponse, fromOpenAIStreamChunk, fromOpenAIError } from "./convert.js";
 
 export {
   UpstreamError,
@@ -41,41 +36,11 @@ export {
 export type { RetryOptions } from "./error.js";
 
 // Re-export the wire-format types for convenience (single import site).
-export type {
-  OpenAIMessage,
-  OpenAIContentPart,
-  OpenAIToolCall,
-  OpenAIResponse,
-  OpenAIChoice,
-  OpenAIUsage,
-  OpenAIStreamChunk,
-  OpenAIStreamChoice,
-  OpenAIStreamToolCallDelta,
-  OpenAIErrorResponse,
-} from "@vinhnt-sdk/schema";
+export type { OpenAIMessage, OpenAIContentPart, OpenAIToolCall, OpenAIResponse, OpenAIChoice, OpenAIStreamChunk, OpenAIStreamChoice, OpenAIErrorResponse } from "@vinhnt-sdk/schema";
 
 // ── Provider presets (DeepSeek, Anthropic, Ollama) ──
 
-export {
-  createDeepSeekProvider,
-  createAnthropicProvider,
-  createOllamaProvider,
-  createProviderFromPreset,
-  resolveDeepSeekOptions,
-  DEEPSEEK_BASE_URL,
-  DEEPSEEK_CHAT_MODEL,
-  DEEPSEEK_REASONER_MODEL,
-  DEEPSEEK_CONTEXT_LIMIT,
-  DEEPSEEK_API_KEY_REF,
-  DEEPSEEK_BASE_URL_REF,
-  ANTHROPIC_BASE_URL,
-  ANTHROPIC_VERSION,
-  ANTHROPIC_DEFAULT_MODEL,
-  ANTHROPIC_CONTEXT_LIMIT,
-  OLLAMA_BASE_URL,
-  OLLAMA_DEFAULT_MODEL,
-  OLLAMA_CONTEXT_LIMIT,
-} from "./presets.js";
+export { createDeepSeekProvider, createAnthropicProvider, createOllamaProvider, createProviderFromPreset, resolveDeepSeekOptions, DEEPSEEK_BASE_URL, DEEPSEEK_CHAT_MODEL, DEEPSEEK_CONTEXT_LIMIT, DEEPSEEK_API_KEY_REF, ANTHROPIC_BASE_URL, ANTHROPIC_VERSION, ANTHROPIC_DEFAULT_MODEL, ANTHROPIC_CONTEXT_LIMIT, OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, OLLAMA_CONTEXT_LIMIT } from "./presets.js";
 export type {
   DeepSeekProviderOptions,
   ResolvedDeepSeekConfig,

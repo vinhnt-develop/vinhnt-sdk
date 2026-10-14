@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EventRegistry } from "../src/definition.js";
+import { eventRegistry } from "../src/definition.js";
 import "../src/events.js";
 
 const EXPECTED_DURABLE_RUNID = [
@@ -22,7 +22,7 @@ const EXPECTED_DURABLE_RUNID = [
 
 describe("E2 durable runId registration", () => {
   it("TC01_all_planned_event_types_are_registered_durable_runId_with_schema", () => {
-    const all = EventRegistry.getAll();
+    const all = eventRegistry.getAll();
     for (const type of EXPECTED_DURABLE_RUNID) {
       const def = all.find((d) => d.type === type);
       expect(def, `Event "${type}" should be registered`).toBeTruthy();
@@ -41,7 +41,7 @@ describe("E2 durable runId registration", () => {
       "llm.response": { step: 1, content: "hi", usage: { inputTokens: 1, outputTokens: 2 }, durationMs: 5 },
     };
     for (const [type, data] of Object.entries(cases)) {
-      const def = EventRegistry.get(type);
+      const def = eventRegistry.get(type);
       expect(def, `Event "${type}" should be registered`).toBeTruthy();
       const parsed = def!.schema!.safeParse(data);
       expect(parsed.success, `Event "${type}" data should validate: ${JSON.stringify(parsed)}`).toBe(true);
@@ -49,13 +49,13 @@ describe("E2 durable runId registration", () => {
   });
 
   it("TC03_agent_handoff_schema_rejects_missing_fields", () => {
-    const def = EventRegistry.get("agent.handoff");
+    const def = eventRegistry.get("agent.handoff");
     expect(def).toBeTruthy();
     expect(def!.schema!.safeParse({ fromAgentId: "a1" }).success).toBe(false);
   });
 
   it("TC04_every_durable_registry_event_has_a_schema", () => {
-    const durable = EventRegistry.getAll().filter((d) => d.durable);
+    const durable = eventRegistry.getAll().filter((d) => d.durable);
     expect(durable.length).toBeGreaterThanOrEqual(20);
     for (const def of durable) {
       expect(def.schema, `Durable event "${def.type}" must link a Zod schema`).toBeTruthy();

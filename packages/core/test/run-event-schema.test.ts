@@ -123,8 +123,8 @@ describe("parseRunEvent", () => {
 
 describe("EventRegistry auto-generation", () => {
   it("ALL_EVENT_DEFS derived from registry contains all durable runId events", async () => {
-    const { EventRegistry } = await import("@vinhnt-sdk/event");
-    const all = EventRegistry.getAll();
+    const { eventRegistry } = await import("@vinhnt-sdk/event");
+    const all = eventRegistry.getAll();
     const durableRunId = all.filter((d) => d.durable?.aggregate === "runId");
     expect(durableRunId.length).toBeGreaterThanOrEqual(10);
     for (const def of durableRunId) {
@@ -136,8 +136,8 @@ describe("EventRegistry auto-generation", () => {
   });
 
   it("all durable event definitions have linked Zod schemas", async () => {
-    const { EventRegistry } = await import("@vinhnt-sdk/event");
-    const all = EventRegistry.getAll();
+    const { eventRegistry } = await import("@vinhnt-sdk/event");
+    const all = eventRegistry.getAll();
     const durable = all.filter((d) => d.durable);
     for (const def of durable) {
       expect(def.schema, `Event "${def.type}" should have a linked Zod schema`).toBeTruthy();

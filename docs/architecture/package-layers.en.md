@@ -131,21 +131,26 @@ npm install \
 
 1. Create `packages/<name>` with `package.json` scoped to `@vinhnt-sdk/<name>`.
 2. Import only from Core Layer packages. Never import from sibling extensions.
-3. Export a `register(plugin)` function that hooks into the Core kernel.
+3. Default-export a `Plugin` built with `definePlugin` that hooks into the Core kernel.
 4. Add tests covering the hook contract.
 
 ```ts
 // packages/my-ext/src/index.ts
-import { defineExtension } from "@vinhnt-sdk/core";
+import { definePlugin } from "@vinhnt-sdk/plugin";
 
-export default defineExtension({
-  name: "my-ext",
-  setup(kernel) {
-    kernel.hook("beforeStep", async (ctx) => {
-      // custom logic
-    });
+export default definePlugin(
+  { id: "my-ext", name: "My Extension", version: "0.1.0" },
+  {
+    hooks: {
+      onRunStarted: async (data) => {
+        // custom logic
+      },
+    },
+    activate: async (ctx) => {
+      ctx.registerTool(myTool);
+    },
   },
-});
+);
 ```
 
 ## Dependency Rules

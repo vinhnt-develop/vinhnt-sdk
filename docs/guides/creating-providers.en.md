@@ -144,12 +144,13 @@ function createHttpProvider(baseUrl: string, apiKey: string): ModelProvider {
 Add cost tracking to your provider:
 
 ```typescript
-import { ModelProvider, ModelRequest, PricingConfig } from "@vinhnt-sdk/core";
+import { ModelProvider, ModelRequest } from "@vinhnt-sdk/core";
+import { ModelPricing } from "@vinhnt-sdk/schema";
 
 function createPricedProvider(
   baseUrl: string,
   apiKey: string,
-  pricing: PricingConfig
+  pricing: ModelPricing
 ): ModelProvider {
   return {
     id: "priced-provider",

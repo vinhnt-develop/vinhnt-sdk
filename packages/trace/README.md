@@ -1,6 +1,6 @@
-﻿# @vinhnt-sdk/trace
+# @vinhnt-sdk/trace
 
-> Version: 0.4.3 | Status: STABLE
+> Status: STABLE
 
 Observability for vinhnt-sdk — OpenTelemetry-compatible spans, timeline replay, telemetry aggregation, and cost tracking.
 
@@ -17,6 +17,7 @@ pnpm add @vinhnt-sdk/trace
 ## Features
 
 - **SpanRecorder** — Record and query OpenTelemetry-compatible spans
+- **GenAI semconv** — OTel `gen_ai.*` attribute keys + builders for chat/tool/agent spans (ADK profile)
 - **Timeline** — Build transcripts from run events for replay
 - **CostMeter** — Track token usage and calculate costs per model
 - **ContextPressure** — Monitor context window utilization
@@ -28,19 +29,18 @@ pnpm add @vinhnt-sdk/trace
 
 `	ypescript
 import {
-  SpanRecorder, createSpan, endSpan,
+  SpanRecorder,
   CostMeter, calculateCost, DEFAULT_MODEL_PRICING,
   Timeline, buildTranscript,
 } from "@vinhnt-sdk/trace";
 
 // Create and record spans
 const recorder = new SpanRecorder();
-const span = createSpan({ name: "llm-call", kind: "client" });
-recorder.record(span);
+const span = recorder.startSpan("llm-call", "client");
 
 // ... do work ...
 
-endSpan(span, { status: "ok" });
+recorder.endSpan(span, "ok");
 
 // Calculate costs
 const meter = new CostMeter();
@@ -125,6 +125,23 @@ Endpoint resolution (first match wins):
 
 Headers: `OTEL_EXPORTER_OTLP_HEADERS` (`k1=v1,k2=v2`) merged with `config.headers`.
 Resource: `config.resourceAttributes` (default `service.name=vinhnt-sdk`, override via `OTEL_SERVICE_NAME` in attributes).
+
+### GenAI Semconv (G3.1)
+
+| Export | Type | Description |
+|--------|------|-------------|
+| GEN_AI_OPERATIONS | Constant | Operation names: `chat`, `text_completion`, `embeddings`, `invoke_agent`, `execute_tool`, `retrieve`, `invoke_workflow` |
+| GenAiOperation | Type | Union of operation names (autocomplete + extensible) |
+| GEN_AI_* | Constants | OTel `gen_ai.*` attribute keys (request/response/usage/tool/content) |
+| genAiChatRequestAttributes | Function | Request-side attrs (`operation.name`, `provider.name`, `request.model`) |
+| genAiResponseAttributes | Function | Served model + `response.finish_reasons` |
+| genAiUsageAttributes | Function | `usage.input_tokens` / `output_tokens` / `reasoning_tokens` |
+| genAiContentAttributes | Function | Opt-in message attrs — `contentMode: "full"` only (default `no_content`) |
+| genAiToolAttributes | Function | `execute_tool` span attrs (`gen_ai.tool.name` / `tool.call.id`) |
+| genAiInvokeAgentAttributes | Function | Root `invoke_agent` span attrs |
+
+Content capture is privacy-gated: without `contentMode: "full"` the builders
+return `{}` — metadata only. Custom attributes use the `vnt.` namespace.
 
 ```typescript
 import { createOtlpSpanExporter, SpanRecorder } from "@vinhnt-sdk/trace";

@@ -12,6 +12,7 @@ export type {
   WorkflowNodeStatus,
   WorkflowNodeResult,
   WorkflowResult,
+  WorkflowCondition,
 } from "./types.js";
 export { AgentGraph, type GraphExecutor, type GraphContext } from "./agent-graph.js";
 export { createSequentialWorkflow, createParallelWorkflow } from "./workflow-helpers.js";

@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/schema"
 description: "Foundational types, contracts, branded IDs"
 lang: "en"
-version: "0.4.0"
+version: "0.5.13"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "schema"
@@ -148,13 +148,34 @@ interface RunEventStore {
 ### Run Events
 
 ```typescript
-type RunEvent =
-  | { type: "run.start"; runId: RunId; sessionId: SessionId; timestamp: Date }
-  | { type: "run.end"; runId: RunId; durationMs: number; timestamp: Date }
-  | { type: "message.created"; runId: RunId; message: Message; timestamp: Date }
-  | { type: "tool.call"; runId: RunId; toolId: ToolId; input: unknown; timestamp: Date }
-  | { type: "tool.result"; runId: RunId; toolId: ToolId; output: unknown; timestamp: Date }
-  | { type: "error"; runId: RunId; error: VntError; timestamp: Date };
+// Envelope for every persisted run event
+interface RunEvent<TData = unknown> {
+  readonly id: string;
+  readonly runId: RunId;
+  readonly sequence: number;
+  readonly type: string;
+  readonly occurredAt: string;
+  readonly traceId: TraceId;
+  readonly parentRunId?: RunId;
+  readonly data: TData;
+  readonly persist?: boolean; // false = live-only (e.g. streaming tokens)
+  readonly version?: number;
+}
+
+// Typed vocabulary discriminated on `type` — KnownRunEvent (32 members, abbreviated):
+type KnownRunEvent =
+  | (RunEvent<RunStartedData> & { readonly type: "run.started" })
+  | (RunEvent<StepStartedData> & { readonly type: "step.started" })
+  | (RunEvent<LlmResponseData> & { readonly type: "llm.response" })
+  | (RunEvent<ToolInvokedData> & { readonly type: "tool.invoked" })
+  | (RunEvent<ToolCompletedData> & { readonly type: "tool.completed" })
+  | (RunEvent<ToolFailedData> & { readonly type: "tool.failed" })
+  | (RunEvent<PermissionRequestedData> & { readonly type: "permission.requested" })
+  | (RunEvent<RunCompletedData> & { readonly type: "run.completed" })
+  | /* …32 members total — see packages/schema/src/contracts/events.ts */;
+
+// Lifecycle events on the AgentRunHandle surface (handle.events() / onEvent())
+type AgentEvent = AgentStartedEvent | AgentCompletedEvent | AgentErrorEvent;
 ```
 
 ### Tool Schemas

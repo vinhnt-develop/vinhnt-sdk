@@ -1,5 +1,5 @@
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
-import { hasErrorCode } from "@vinhnt-sdk/schema";
+import { formatToolFailure, hasErrorCode, getLogger } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
 import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
 
@@ -18,9 +18,10 @@ import { buildToolContext, type MetadataRef } from "./tool-context-builder.js";
 import { handleApproval as handleApprovalFn } from "./approval-handler.js";
 import { handleToolError as handleToolErrorFn } from "./tool-error-router.js";
 import { runSelfCorrection as runSelfCorrectionFn } from "./self-correction.js";
-import { redactObjectSecrets } from "@vinhnt-sdk/guard";
+import { redactObjectSecrets, evaluateGuards, type ToolGuard } from "@vinhnt-sdk/guard";
 import { processToolResults } from "./tool-result-processor.js";
 import { checkExternalPaths, PATH_AWARE_TOOLS } from "./path-policy.js";
+import type { FileSnapshotRecorder, FileSnapshotRef } from "./file-snapshot.js";
 
 /**
  * Handoff signal — returned by a tool to transfer control to another agent.
@@ -37,7 +38,7 @@ export interface HandoffSignal {
 import type { AgentId } from "@vinhnt-sdk/schema";
 
 async function safeEmit(store: StepExecutorDeps["store"], event: Omit<KnownRunEvent, "sequence">): Promise<void> {
-  try { await store.emitEvent(event); } catch (err) { console.warn("[safeEmit] Failed to emit event:", err); }
+  try { await store.emitEvent(event); } catch (err) { getLogger().warn("[safeEmit] Failed to emit event:", err); }
 }
 
 /** Dependencies required by {@link StepExecutor}. */
@@ -62,12 +63,32 @@ export interface StepExecutorDeps {
   readonly loopDetection?: LoopDetectionConfig;
   readonly externalDirectoryAccess?: boolean;
   readonly workspaceRoot?: string;
+  /**
+   * P3.3: sandbox mode from kernel config (`sandbox.mode`) — surfaced to
+   * tools through `ToolContext.sandboxScope` (shell tool honors it over
+   * its own `sandboxScope` config).
+   */
+  readonly sandboxMode?: string;
   readonly findTool: (name: string, runId?: RunId) => ToolDefinition | undefined;
   readonly hasTool: (name: string) => boolean;
   /** P1-7: scrub secrets from tool outputs before persist/send (default true). */
   readonly redactToolOutputs?: boolean;
   /** Max chars of a single tool output the model sees (head+tail kept; default 100_000). */
   readonly maxToolOutputChars?: number;
+  /** P7.1: sanitizer truncation cap from `ContextBudget.sanitizeLimitChars`. */
+  readonly sanitizeLimitChars?: number;
+  /**
+   * P3.1: monotonic tool guards evaluated before every tool execution.
+   * `deny` fails the call outright; `escalate` forces a user approval ask
+   * (bypasses auto-approval) — see {@link evaluateGuards}.
+   */
+  readonly guards?: readonly ToolGuard[];
+  /**
+   * G7.2: per-step file snapshot recorder (P2-3). When set, mutating file
+   * tools are pre-imaged right before execution and refs ride the
+   * `tool.completed` event as `metadata.fileSnapshots`. Omit = off.
+   */
+  readonly fileSnapshots?: FileSnapshotRecorder;
 }
 
 /** One planned tool invocation within a step. */
@@ -310,6 +331,56 @@ export class StepExecutor {
           return { tc, result: "not-found" as const };
         }
 
+        // P3.1: monotonic tool guards — evaluate BEFORE the permission gate so
+        // a guard `deny` cannot be resurrected by a saved approval, and an
+        // `escalate` forces a real user ask (forceAsk bypasses auto-approval).
+        if (this.deps.guards && this.deps.guards.length > 0) {
+          const guardDecision = await evaluateGuards(
+            [...this.deps.guards],
+            {
+              toolId: tc.toolId,
+              ...(sessionId !== undefined ? { sessionId } : {}),
+              runId,
+            },
+            { toolName: tc.toolName, input: tc.args, risk: tool.risk },
+          );
+          if (guardDecision.decision === "deny") {
+            const guardReason = `Guard denied tool "${tc.toolName}": ${guardDecision.reason ?? "policy violation"}`;
+            await safeEmit(this.deps.store, {
+              id: crypto.randomUUID(), runId, type: "tool.failed",
+              occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+              data: {
+                toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName),
+                decision: "deny", error: guardReason,
+                ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}), risk: tool.risk,
+              },
+            });
+            return { tc, result: "denied" as const, reason: guardReason };
+          }
+          if (guardDecision.decision === "escalate") {
+            const escalateReason = guardDecision.reason ?? `Guard escalated tool "${tc.toolName}" for approval`;
+            const reply = await this.deps.permissionGate.askForTool(
+              tc.toolName, tc.toolId, runId, sessionId ?? "",
+              escalateReason, this.agentFor(runId)?.id ?? "", ctx.traceId,
+              this.deps.pluginManager, undefined, runAbort.signal,
+              { forceAsk: true, permissionKey: "guard_escalate" },
+            );
+            if (reply === "reject") {
+              const guardReason = `Guard escalation rejected by user for tool "${tc.toolName}"`;
+              await safeEmit(this.deps.store, {
+                id: crypto.randomUUID(), runId, type: "tool.failed",
+                occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+                data: {
+                  toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName),
+                  decision: "deny", error: guardReason,
+                  ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}), risk: tool.risk,
+                },
+              });
+              return { tc, result: "denied" as const, reason: guardReason };
+            }
+          }
+        }
+
         // P1-F: onBeforeToolExecution fired below — right before tool.execute.
         const permResult = this.deps.permissionGate.checkTool(
           tc.toolName, tool.risk, tc.args as Record<string, unknown>, this.agentFor(runId),
@@ -376,6 +447,18 @@ export class StepExecutor {
           }
         }
 
+        // G7.2: capture file pre-images right before execution (post-approval,
+        // post-hooks — best-effort, never throws; [] when not a snapshot tool).
+        const fileSnapRefs: readonly FileSnapshotRef[] = this.deps.fileSnapshots
+          ? await this.deps.fileSnapshots.capture({
+              toolName: tc.toolName,
+              input: execInput,
+              toolCallId: tc.toolId,
+              step,
+              runId,
+            })
+          : [];
+
         const execStartedAt = Date.now();
         const toolTimeout = tool.timeoutMs;
         // RV-19: cooperative timeout — the tool's context signal is replaced
@@ -417,13 +500,19 @@ export class StepExecutor {
             });
           }
 
+          // G7.2: merge snapshot refs into the event metadata (never content).
+          const completedMetadata: Record<string, unknown> = {
+            ...(metadataRef.current ?? {}),
+            ...(fileSnapRefs.length > 0 ? { fileSnapshots: fileSnapRefs } : {}),
+          };
+
           await safeEmit(this.deps.store, {
             id: crypto.randomUUID(), runId, type: "tool.completed",
             occurredAt: new Date().toISOString(), traceId: ctx.traceId,
             data: {
               toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName),
               output: effectiveOutput,
-              ...(metadataRef.current ? { metadata: metadataRef.current } : {}),
+              ...(Object.keys(completedMetadata).length > 0 ? { metadata: completedMetadata } : {}),
               ...(toolSource(tool) !== undefined ? { source: toolSource(tool)! } : {}),
               risk: tool.risk,
               durationMs: Date.now() - execStartedAt,
@@ -434,7 +523,7 @@ export class StepExecutor {
         } catch (err) {
           if (!hasErrorCode(err, "RUN_ABORTED")) {
             // P1-N: never log raw tool args — they may contain apiKeys/secrets.
-            console.error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: redactObjectSecrets(tc.args) });
+            getLogger().error("[step-executor] Tool execution error", { toolId: tc.toolId, toolName: tc.toolName, error: err instanceof Error ? err.message : String(err), input: redactObjectSecrets(tc.args) });
           }
           await handleToolErrorFn(err, tc, tool, messages, step, runId, ctx, runAbort, toolCtx, sessionId, recentCalls, runModel, {
             store: this.deps.store,
@@ -455,10 +544,41 @@ export class StepExecutor {
         }
       });
 
+      // D4: a task can reject OUTSIDE its inner try (findTool, guards,
+      // permission, approval, context build, plugin hooks, rollback). Convert
+      // rejections into a fulfilled "failed" result with a proper toolCallId
+      // tool message, so the assistant's toolCalls declaration is never left
+      // without a matching tool message (orphan / provider pairing error).
+      const guardedTasks = tasks.map((task, i) => {
+        const tc = execBatch[i]!;
+        return async () => {
+          try {
+            return await task();
+          } catch (err) {
+            const reasonStr = err instanceof Error ? err.message : String(err);
+            if (!hasErrorCode(err, "RUN_ABORTED")) {
+              getLogger().error("[step-executor] Tool task failed before execution", {
+                toolId: tc.toolId, toolName: tc.toolName, error: reasonStr,
+                input: redactObjectSecrets(tc.args),
+              });
+              const answered = messages.some((m) => m.role === "tool" && m.toolCallId === tc.toolId);
+              if (!answered) {
+                const content = formatToolFailure(reasonStr);
+                messages.push({ role: "tool", toolCallId: tc.toolId, content });
+                await this.deps.addSessionMessage(sessionId, "tool", content, {
+                  toolCallId: tc.toolId, model: runModel.model ?? "",
+                });
+              }
+            }
+            return { tc, result: "failed" as const, reason: reasonStr };
+          }
+        };
+      });
+
       await Promise.all(pendingEmits);
 
       const concurrency = this.deps.maxConcurrentToolCalls ?? 5;
-      const taskResults = await this.runConcurrent(tasks, concurrency);
+      const taskResults = await this.runConcurrent(guardedTasks, concurrency);
       if (runAbort.signal.aborted) break;
 
       // Merge pre-classified doom outcomes with concurrent task results.
@@ -518,6 +638,8 @@ export class StepExecutor {
       currentAgent: this.agentFor(runId),
       toolRisk: tool.risk,
       workspaceRoot: resolvedWorkspaceRoot,
+      ...(this.deps.sandboxMode !== undefined ? { sandboxScope: this.deps.sandboxMode } : {}),
+      ...(this.deps.sanitizeLimitChars !== undefined ? { sanitizeLimitChars: this.deps.sanitizeLimitChars } : {}),
     });
   }
 
@@ -533,9 +655,13 @@ export class StepExecutor {
       const r = settled.value;
       if (r.result !== "success" || !r.output) continue;
 
-      // Check for HANDOFF_SYMBOL on the output object
+      // Check for the handoff marker on the output object. `createHandoff`
+      // (core) sets a symbol-keyed flag AND a plain `__handoff` data field.
+      // The symbol resolves via the global Symbol.for registry, so this check
+      // works across the package boundary without importing core.
       const output = r.output as Record<string, unknown>;
-      if (output && typeof output === "object" && output["__@vinhnt-sdk/core/handoff"] === true) {
+      const symbolFlag = (r.output as Record<PropertyKey, unknown>)[Symbol.for("@vinhnt-sdk/core/handoff")];
+      if (output && typeof output === "object" && (symbolFlag === true || output.__handoff === true)) {
         return {
           tc: r.tc,
           signal: {

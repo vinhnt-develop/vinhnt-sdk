@@ -29,6 +29,22 @@ export interface ToolContext {
   readonly workspaceRoot?: string;
 
   /**
+   * Effective sandbox scope for shell execution (P3.3), sourced from
+   * `AgentKernelConfig.sandbox.mode`. When set, it overrides the tool's
+   * own `sandboxScope` config. Unknown scopes (e.g. `container`) fail
+   * closed at execute time with `SandboxUnavailableError`.
+   */
+  readonly sandboxScope?: string;
+
+  /**
+   * P7.1: sanitizer truncation cap (chars) from `ContextBudget.sanitizeLimitChars`.
+   * Tools that call `sanitizeForLLM` before returning content should pass this
+   * as the limit so guard truncation stays coordinated with the kernel budget
+   * instead of the hardcoded 128_000 default.
+   */
+  readonly sanitizeLimitChars?: number;
+
+  /**
    * Request human approval for a permission-bound operation.
    * Returns the user's decision: "once" (allow once), "always" (approve forever), or "reject".
    * When reply is "always", savePatterns are persisted as allow rules for future requests.

@@ -7,7 +7,6 @@ category: "Guides"
 sidebarPosition: 3
 sidebarLabel: "Creating Plugins"
 tags: [plugins, hooks, lifecycle]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 

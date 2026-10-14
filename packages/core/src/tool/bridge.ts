@@ -1,8 +1,7 @@
 import type { PluginManager } from "../plugin.js";
-import type { ToolDefinition, ToolContext } from "@vinhnt-sdk/tools";
+import type { ToolDefinition, ToolContext, ToolHook } from "@vinhnt-sdk/tools";
 import { ToolPermissionDenied } from "@vinhnt-sdk/schema";
 import type { ToolRuntime} from "./runtime.js";
-import { type ToolHook } from "./runtime.js";
 
 /**
  * Adapt a {@link ToolRuntime} into kernel-consumable {@link ToolDefinition}s.

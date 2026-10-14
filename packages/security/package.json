@@ -1,6 +1,7 @@
 {
   "name": "@vinhnt-sdk/security",
   "version": "0.4.2",
+  "private": true,
   "description": "Security utilities for VNT Agent - prompt injection protection and secret redaction",
   "license": "MIT",
   "type": "module",

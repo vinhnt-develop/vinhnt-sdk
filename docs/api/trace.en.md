@@ -4,35 +4,32 @@ description: "Telemetry, timeline, cost tracking"
 lang: "en"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.4.4"
 sidebarLabel: "trace"
 ---
 
 # @vinhnt-sdk/trace
 
-Telemetry, timeline recording, and cost tracking for agent execution. Provides OpenTelemetry integration for distributed tracing.
+Telemetry, timeline recording, and cost tracking for agent execution. Provides an OpenTelemetry-compatible OTLP/HTTP exporter for distributed tracing.
 
 ## Exports
 
-### `Tracer`
+### `SpanRecorder`
 
-Trace agent execution with hierarchical spans.
+Records hierarchical spans. `startSpan` parents each new span under the previous one unless an explicit `parentId` is given.
 
 ```ts
-import { Tracer } from "@vinhnt-sdk/trace";
+import { SpanRecorder } from "@vinhnt-sdk/trace";
 
-const tracer = new Tracer({ serviceName: "my-agent" });
-
-const span = tracer.startSpan("process-query");
+const recorder = new SpanRecorder();
+const span = recorder.startSpan("process-query", "internal");
 try {
   const result = await doWork();
-  span.setStatus({ code: "OK" });
+  recorder.endSpan(span, "ok");
   return result;
 } catch (err) {
-  span.setStatus({ code: "ERROR", message: err.message });
+  recorder.endSpan(span, "error");
   throw err;
-} finally {
-  span.end();
 }
 ```
 
@@ -40,76 +37,91 @@ try {
 
 | Method | Description |
 | --- | --- |
-| `startSpan(name, attributes?)` | Start a new span and return it |
-| `withSpan(name, fn, attributes?)` | Execute a function within a span context |
-| `getContext()` | Get current active span context |
-| `shutdown()` | Flush pending spans and shut down |
+| `startSpan(name, kind, parentId?)` | Start a new span (auto-parented) and return it |
+| `endSpan(span, status?)` | Mark a span finished (`"ok"` by default) |
+| `getSpans()` | Get all recorded spans |
+| `getSpanTree()` | Get the root → children span tree |
+| `getTotalDurationMs()` | Total duration from first start to last end |
+
+**Related functions:** `createSpan(name, kind, parentId?, traceId?)`, `endSpan(span, status?)`, `addSpanEvent(span, name, attributes?)`, `generateTraceId()`.
 
 ---
 
 ### `Timeline`
 
-Record and replay execution timeline for debugging and analysis.
+Record and query the execution timeline. Event types are constrained to the canonical run-event vocabulary (`KnownRunEvent` from `@vinhnt-sdk/schema`) — e.g. `run.started`, `llm.request`, `tool.completed`, `run.completed`.
 
 ```ts
-import { Timeline } from "@vinhnt-sdk/trace";
+import { Timeline, buildTranscript } from "@vinhnt-sdk/trace";
 
 const timeline = new Timeline();
 
-timeline.record({
-  timestamp: Date.now(),
-  event: "llm.call",
-  data: { model: "gpt-4", tokens: 150 },
-});
+timeline.record("llm.request", { step: 1, model: "gpt-4o" });
 
-const entries = timeline.getEntries();
-const filtered = timeline.getEntries({ event: "llm.call" });
+const entries = timeline.getEvents();
+const llmCalls = timeline.getEventsByType("llm.request");
+const recent = timeline.getEventsInRange(startMs, endMs);
+const transcript = buildTranscript(timeline.getEvents());
 ```
 
 **Methods:**
 
 | Method | Description |
 | --- | --- |
-| `record(entry)` | Record a timeline entry |
-| `getEntries(filter?)` | Get entries, optionally filtered |
-| `clear()` | Clear all recorded entries |
-| `toJSON()` | Serialize timeline to JSON |
-| `replay(onEntry?)` | Replay entries, calling callback for each |
+| `record(type, data)` | Record a timeline event |
+| `getEvents()` | Get all events |
+| `getEventsByType(type)` | Get events filtered by canonical type |
+| `getEventsInRange(startMs, endMs)` | Get events in a time range |
+| `count()` | Number of recorded events |
+| `getDurationMs()` | Duration from first to last event |
+| `export()` | Return events as a plain array |
+| `import(events)` | Import events (e.g. replay from disk) |
 
 ---
 
 ### `CostMeter`
 
-Track actual usage and cost. This differs from `TokenMeter` in `@vinhnt-sdk/llm` which uses heuristic estimates — `CostMeter` records real billable usage.
+Track real billable usage and cost. Different from heuristic token estimates — `CostMeter` records actual usage with per-model pricing (default table: `DEFAULT_MODEL_PRICING`).
 
 ```ts
 import { CostMeter } from "@vinhnt-sdk/trace";
 
 const meter = new CostMeter();
 
-meter.record({
-  provider: "openai",
-  model: "gpt-4",
-  inputTokens: 500,
-  outputTokens: 200,
-  costUsd: 0.032,
-  timestamp: Date.now(),
-});
+const usage = meter.record(500, 200, "gpt-4o");
+// { inputTokens: 500, outputTokens: 200, totalTokens: 700, costUsd: ... }
 
-console.log(meter.totalCost()); // 0.032
-console.log(meter.totalTokens()); // 700
-console.log(meter.breakdown()); // grouped by model
+console.log(meter.getTotal().costUsd);
+console.log(meter.getOperationCount());
 ```
 
 **Methods:**
 
 | Method | Description |
 | --- | --- |
-| `record(costRecord)` | Record a cost entry |
-| `totalCost()` | Get total cost in USD |
-| `totalTokens()` | Get total token count |
-| `breakdown()` | Get cost grouped by model |
-| `reset()` | Reset all counters |
+| `record(inputTokens, outputTokens, modelId?)` | Record a usage event, returns `UsageStats` |
+| `getTotal()` | Total `UsageStats` across operations |
+| `getOperationCount()` | Number of recorded operations |
+| `getOperations()` | All per-operation `UsageStats` |
+
+**Related functions:** `calculateCost(inputTokens, outputTokens, pricing?)`, `calculateContextPressure(currentTokens, maxTokens, compactThreshold?)`.
+
+---
+
+### OTLP Export
+
+```ts
+import { createOtlpSpanExporter } from "@vinhnt-sdk/trace";
+
+const exporter = createOtlpSpanExporter({
+  endpoint: "http://localhost:4318/v1/traces",
+  resourceAttributes: { "service.name": "vinhnt-agent" },
+});
+await exporter.export(recorder.getSpans());
+await exporter.shutdown();
+```
+
+`createOtlpSpanExporter(config?)` posts spans as OTLP/HTTP JSON. The endpoint resolves from `config.endpoint`, then `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` (throws `ConfigurationError` if none). Also exports `resolveOtlpEndpoint`, `parseOtlpHeaders`, `mapSpanToOtlp`, `buildOtlpExportRequest`.
 
 ---
 
@@ -119,77 +131,83 @@ console.log(meter.breakdown()); // grouped by model
 
 ```ts
 interface Span {
-  traceId: string;
-  spanId: string;
-  parentSpanId?: string;
-  name: string;
-  startTime: number;
-  endTime?: number;
+  readonly id: string;
+  readonly traceId: string | undefined;
+  readonly parentId: string | undefined;
+  readonly name: string;
+  readonly kind: SpanKind;
+  readonly startTimeMs: number;
+  endTimeMs: number;
   status: SpanStatus;
-  attributes?: Record<string, unknown>;
+  attributes: Record<string, unknown>;
+  events: SpanEvent[];
 }
 ```
 
-### `SpanStatus`
+### `SpanKind` / `SpanStatus`
 
 ```ts
-interface SpanStatus {
-  code: "OK" | "ERROR" | "UNSET";
-  message?: string;
+type SpanKind = "internal" | "client" | "server" | "producer" | "consumer";
+type SpanStatus = "ok" | "error" | "cancelled" | "timeout" | (string & {});
+```
+
+### `TimelineEvent`
+
+```ts
+interface TimelineEvent {
+  readonly type: TimelineEventType; // KnownRunEvent["type"] (32 canonical names)
+  readonly timestampMs: number;
+  readonly data: Record<string, unknown>;
+  readonly seq: number; // monotonic within a session
 }
 ```
 
-### `TimelineEntry`
+### `TranscriptEntry`
 
 ```ts
-interface TimelineEntry {
-  timestamp: number;
-  event: string;
-  data?: Record<string, unknown>;
-  traceId?: string;
-  spanId?: string;
+interface TranscriptEntry {
+  type: "user" | "assistant" | "tool_call" | "tool_result";
+  content?: string;
+  toolName?: string;
+  input?: unknown;
+  output?: unknown;
+  timestampMs: number;
 }
 ```
 
-### `CostRecord`
+### `UsageStats` / `ModelPricing`
 
 ```ts
-interface CostRecord {
-  provider: string;
-  model: string;
+interface UsageStats {
   inputTokens: number;
   outputTokens: number;
+  totalTokens: number;
   costUsd: number;
-  timestamp: number;
-  metadata?: Record<string, unknown>;
+}
+
+interface ModelPricing {
+  inputPer1M: number;
+  outputPer1M: number;
 }
 ```
 
-### `TelemetryConfig`
+### `ContextPressure`
 
 ```ts
-interface TelemetryConfig {
-  serviceName: string;
-  endpoint?: string;
-  headers?: Record<string, string>;
-  sampleRate?: number;
-  exporters?: "console" | "otlp" | "custom";
+interface ContextPressure {
+  currentTokens: number;
+  maxTokens: number;
+  pressure: number; // 0.0 = empty, 1.0 = full
+  shouldCompact: boolean;
+  readonly metadata?: Record<string, unknown>;
 }
 ```
 
-## OpenTelemetry Integration
+## Other Exports
 
-`Tracer` wraps OpenTelemetry's tracer API. Set the `endpoint` in `TelemetryConfig` to export spans to an OTLP-compatible collector:
-
-```ts
-const tracer = new Tracer({
-  serviceName: "vinhnt-agent",
-  endpoint: "http://localhost:4318",
-  exporters: "otlp",
-  sampleRate: 0.5,
-});
-```
+- `ConsoleTelemetryProvider` — `TelemetryProvider` implementation that logs traces/metrics to the console.
+- `DEFAULT_MODEL_PRICING` — `Record<string, ModelPricing>` default price table (`MODEL_PRICING` is a deprecated alias).
 
 ## Dependencies
 
-- `@vinhnt-sdk/schema` — used for type validation of configuration and records.
+- `@vinhnt-sdk/schema` — canonical run-event types (`KnownRunEvent`) and wire contracts.

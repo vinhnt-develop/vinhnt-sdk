@@ -70,6 +70,11 @@ export {
   ensurePathAccess, DEFAULT_EXCLUDED_DIRS,
 } from "./file-tools.js";
 
+// === apply_patch structured grammar (Phase 7 group 2) ===
+
+export { parseApplyPatch, detectApplyPatchFormat, applyHunkToContent } from "./apply-patch-grammar.js";
+export type { ApplyPatchMode, ApplyPatchFormat, ApplyPatchHunk, ApplyPatchOp, ApplyPatchProgram } from "./apply-patch-grammar.js";
+
 // === Root resolver (shared by file, git, search tools) ===
 
 export { resolveRoot, resolveToolRoot } from "./root-resolver.js";

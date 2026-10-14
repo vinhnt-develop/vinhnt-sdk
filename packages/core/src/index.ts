@@ -9,6 +9,13 @@
 export { AgentKernel, KernelError } from "./kernel/kernel.js";
 export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
 export { RunStateMachine } from "@vinhnt-sdk/step-executor";
+export type {
+  FileSnapshot,
+  FileSnapshotRef,
+  FileSnapshotConfig,
+  FileSnapshotFilter,
+  FileSnapshotUndoResult,
+} from "@vinhnt-sdk/step-executor";
 
 export type { AgentKernelConfig, ModelSettings, RunHandle, AgentRunHandle, AgentRunResult, RunUsage } from "./kernel/kernel-types.js";
 export { AgentRunContext } from "./kernel/run-context.js";
@@ -16,10 +23,29 @@ export type { ApprovalRecord } from "./kernel/run-context.js";
 
 // === Context budget ===
 
-export { DEFAULT_CONTEXT_BUDGET, deriveContextBudget, budgetToCompressorFields } from "./context/context-budget.js";
+export {
+  DEFAULT_CONTEXT_BUDGET,
+  deriveContextBudget,
+  budgetToCompressorFields,
+} from "./context/context-budget.js";
 export type { ContextBudget } from "./context/context-budget.js";
 // E5: default context window (fallback when the provider declares none).
 export { DEFAULT_CONTEXT_WINDOW } from "@vinhnt-sdk/llm";
+
+// === WorldState (Codex-style context diff, RFC 7386) ===
+
+export {
+  createWorldState,
+  applyWorldStatePatch,
+  diffWorldStateSnapshots,
+} from "./context/world-state.js";
+export type {
+  WorldState,
+  WorldStateSection,
+  WorldStateSnapshot,
+  WorldStateAdvance,
+} from "./context/world-state.js";
+export { createMergePatch, applyMergePatch } from "./context/merge-patch.js";
 
 // === Agent system ===
 
@@ -28,17 +54,17 @@ export type { CreateAgentParams } from "./agent/agent-factory.js";
 
 // === Agent-as-Tool ===
 
-export { agentAsTool, createHandoffTool } from "./kernel/agent-as-tool.js";
+export { agentAsTool } from "./kernel/agent-as-tool.js";
 export type { AgentAsToolOptions } from "./kernel/agent-as-tool.js";
 
 // === Handoff ===
 
-export { createHandoff, isHandoff, HANDOFF_SYMBOL, HandoffTracker } from "./kernel/handoff.js";
+export { createHandoff, createHandoffTool, isHandoff, HANDOFF_SYMBOL, HandoffTracker } from "./kernel/handoff.js";
 export type { Handoff, HandoffToolOptions, HandoffRecord } from "./kernel/handoff.js";
 
 // === Plan tracking ===
 
-export { createUpdatePlanTool, createGetPlanTool } from "./tools/update-plan.js";
+export { createUpdatePlanTool, createGetPlanTool, PlanStore } from "./tools/update-plan.js";
 export type { Plan, PlanStep } from "./tools/update-plan.js";
 
 // === Event bus ===
@@ -60,7 +86,7 @@ export type { AgentRegistry } from "./agent/agent-registry.js";
 // === Model registry ===
 
 export { InMemoryModelRegistry } from "./model.js";
-export type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ContentPart, ToolCallResult } from "./model.js";
+export type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ContentPart, ToolCallResult } from "./model.js";
 export { getTextContent } from "./model.js";
 
 // === Permission stores ===
@@ -79,6 +105,7 @@ export { InMemorySkillDefRegistry } from "./skill/skill-def-registry.js";
 // === Tracing ===
 
 export { Tracer } from "./tracer.js";
+export type { TracingConfig, RunTrace, RunTraceStatus } from "./kernel/run-tracing.js";
 
 // === Logger ===
 
@@ -98,14 +125,41 @@ export { createSystemPromptSource } from "./system-context/prompts/system-prompt
 export { createDateSource } from "./system-context/sources/date-source.js";
 export { createWorkspaceSource } from "./system-context/sources/workspace-source.js";
 export { createInstructionsSource } from "./system-context/sources/instructions-source.js";
+export {
+  DEFAULT_INSTRUCTIONS_MAX_BYTES,
+  DEFAULT_INSTRUCTIONS_ROOT_MARKERS,
+} from "./system-context/sources/instructions-source.js";
+export type { InstructionsInfo, InstructionsSourceOptions } from "./system-context/sources/instructions-source.js";
 export { createAgentSource } from "./system-context/sources/agent-source.js";
-export { createSkillGuidanceSource } from "./system-context/sources/skill-guidance-source.js";
+
 export { createToolContextSource } from "./system-context/sources/tool-context-source.js";
 export { createCustomSource } from "./system-context/sources/custom-source.js";
+export { createMemorySource, DEFAULT_MEMORY_SOURCE_PRIORITY } from "./system-context/sources/memory-source.js";
+export type { MemorySourceOptions, MemorySourceLoader } from "./system-context/sources/memory-source.js";
+
+// === Workflow graphs (G6.3 — edge-driven AgentGraph) ===
+export { AgentGraph, createSequentialWorkflow, createParallelWorkflow } from "./workflow/index.js";
+export type {
+  GraphExecutor,
+  GraphContext,
+  WorkflowNodeType,
+  WorkflowNode,
+  AgentNode,
+  ConditionNode,
+  TransformNode,
+  ParallelNode,
+  SequentialNode,
+  AnyWorkflowNode,
+  WorkflowEdge,
+  Workflow,
+  WorkflowNodeStatus,
+  WorkflowNodeResult,
+  WorkflowResult,
+  WorkflowCondition,
+} from "./workflow/index.js";
 export { PromptRegistry, defaultPromptRegistry, selectPrompt } from "./system-context/prompts/index.js";
-export type { PromptRegistryConfig, PromptVariant } from "./system-context/prompts/index.js";
+export type { PromptRegistryConfig } from "./system-context/prompts/index.js";
 export type { WorkspaceInfo } from "./system-context/sources/workspace-source.js";
-export type { InstructionsInfo } from "./system-context/sources/instructions-source.js";
 export type { AgentContextInfo } from "./system-context/sources/agent-source.js";
 export type { SkillGuidanceInfo } from "./system-context/sources/skill-guidance-source.js";
 export type { ToolContextInfo } from "./system-context/sources/tool-context-source.js";
@@ -145,7 +199,7 @@ export {
   ConfigurationError, PluginError,
 } from "@vinhnt-sdk/schema";
 
-export type { VntErrorCtx } from "@vinhnt-sdk/schema";
+
 
 // === Essential tool types ===
 
@@ -161,16 +215,17 @@ export type {
 // === Tool providers (built-in) ===
 
 export {
-  createReadFileTool, createWriteFileTool, createEditFileTool,
+  createReadFileTool, createWriteFileTool, createEditFileTool, createApplyPatchTool,
   createShellTool, createGlobFilesTool, createGrepFilesTool,
   createWebSearchTool,
 } from "@vinhnt-sdk/tools";
+
+// === Tool provider bootstrap ===
+
+export { createToolProviderRegistry, wireAgentAndSkillTools } from "./tool/provider-helpers.js";
+export type { WireAgentAndSkillToolsOptions, WiredAgentAndSkillTools } from "./tool/provider-helpers.js";
 
 // === Knowledge ===
 
 export { BoundedMemory, ContextCompressor } from "@vinhnt-sdk/knowledge";
 export type { MemoryItem, MemoryStore } from "@vinhnt-sdk/knowledge";
-
-// === Security (deprecated — use @vinhnt-sdk/guard) ===
-
-export { redactSecrets, detectSecrets } from "@vinhnt-sdk/guard";

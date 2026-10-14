@@ -69,11 +69,11 @@ export async function processToolResults(
   };
 
   for (const settled of results) {
-    if (settled.status === "rejected") {
-      const reasonStr = settled.reason instanceof Error ? settled.reason.message : String(settled.reason);
-      messages.push({ role: "tool", toolCallId: "", content: formatToolFailure(reasonStr) });
-      continue;
-    }
+    // D4: unreachable in practice — executeToolCalls wraps every task so
+    // rejections become fulfilled "failed" results carrying the real
+    // toolCallId. Never push a tool message with an empty toolCallId
+    // (providers reject the next request on unpaired tool results).
+    if (settled.status === "rejected") continue;
     const r = settled.value;
     if (r.result === "doom") {
       const errorMsg = r.reason ?? `Tool "${r.tc.toolName}" called with identical arguments ${doomThreshold} consecutive times. Aborting to prevent infinite loop.`;

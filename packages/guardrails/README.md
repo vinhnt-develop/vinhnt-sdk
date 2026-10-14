@@ -1,6 +1,6 @@
 # @vinhnt-sdk/guardrails
 
-> Version: 0.4.0 | Status: BETA
+> Status: BETA
 
 Guardrail tripwires for agent inputs/outputs — pattern-based safety checks.
 

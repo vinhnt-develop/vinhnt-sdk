@@ -7,6 +7,10 @@ import { createSpawnAgentTool } from "../agent/spawn-agent-tool.js";
 import { createDelegateTool } from "../agent/delegate-tool.js";
 import { createCreateAgentTool } from "../agent/create-agent-tool.js";
 import { createListAgentsTool } from "../agent/list-agents-tool.js";
+import { InMemorySkillDefRegistry } from "../skill/skill-def-registry.js";
+import type { SkillDefRegistry } from "../skill/skill-def-registry.js";
+import { SkillParser } from "../skill/skill-parser.js";
+import { createSkillTool, createSkillSearchTool } from "../skill/skill-tool.js";
 
 /**
  * Create a ToolProviderRegistry with all built-in providers.
@@ -51,22 +55,45 @@ export async function createToolProviderRegistry(config: {
   return registry;
 }
 
+export interface WireAgentAndSkillToolsOptions {
+  /**
+   * Skill registry backing the wired `skill` / `skill_search` tools.
+   * Defaults to a fresh in-memory registry (with a real {@link SkillParser}).
+   * Pass your own to control skill loading (e.g. `loadFromSources()`).
+   */
+  readonly skillRegistry?: SkillDefRegistry;
+}
+
+export interface WiredAgentAndSkillTools {
+  /**
+   * The registry the skill tools read from. After `wire`, call
+   * `await skillRegistry.load([...])` (or `reload()`) to expose skills —
+   * without this handle the skill tools would be a silent dead-end.
+   */
+  readonly skillRegistry: SkillDefRegistry;
+}
+
 /**
  * Wire agent tools and skill tools into the provider registry.
  *
- * Call this AFTER the kernel is created — agent tools need the kernel instance.
+ * Explicit opt-in: agent-capability tools (`spawn_agent`, `delegate`,
+ * `create_agent`, `list_agents`) are NOT registered by default — the library
+ * never grants sub-agent powers implicitly. Call this AFTER the kernel is
+ * created (agent tools need the kernel instance), before the first run.
  *
  * @example
  * ```ts
  * const registry = await createToolProviderRegistry(config);
  * const kernel = new AgentKernel({ ...config, toolProviderRegistry: registry });
- * wireAgentAndSkillTools(kernel, registry);
+ * const { skillRegistry } = wireAgentAndSkillTools(kernel, registry);
+ * await skillRegistry.load([mySkillDefinition]);
  * ```
  */
-export async function wireAgentAndSkillTools(
+export function wireAgentAndSkillTools(
   kernel: AgentKernel,
   registry: ToolProviderRegistry,
-): Promise<void> {
+  options?: WireAgentAndSkillToolsOptions,
+): WiredAgentAndSkillTools {
   // Wire agent tools
   const agentProvider = new AgentToolProvider();
   agentProvider.addTools([
@@ -77,21 +104,17 @@ export async function wireAgentAndSkillTools(
   ]);
   registry.registerProvider(agentProvider);
 
-  // Wire skill tools (if available)
-  try {
-    const { InMemorySkillDefRegistry } = await import("../skill/skill-def-registry.js");
-    const { createSkillTool, createSkillSearchTool } = await import("../skill/skill-tool.js");
+  // Wire skill tools against an injectable/returned registry (P2.6: the
+  // previous version created a private registry nobody could populate).
+  const skillRegistry = options?.skillRegistry ?? new InMemorySkillDefRegistry(new SkillParser());
+  const skillProvider = new SkillToolProvider();
+  skillProvider.addTools([
+    createSkillTool(skillRegistry),
+    createSkillSearchTool(skillRegistry),
+  ]);
+  registry.registerProvider(skillProvider);
 
-    const skillRegistry = new InMemorySkillDefRegistry(/* parser */ undefined as never, []);
-    const skillProvider = new SkillToolProvider();
-    skillProvider.addTools([
-      createSkillTool(skillRegistry),
-      createSkillSearchTool(skillRegistry),
-    ]);
-    registry.registerProvider(skillProvider);
-  } catch {
-    // Skill system not available, skip
-  }
+  return { skillRegistry };
 }
 
 /**

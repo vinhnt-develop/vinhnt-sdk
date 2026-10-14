@@ -22,14 +22,21 @@ export interface AgentNode extends WorkflowNode {
   readonly inputTemplate?: string;
 }
 
+/**
+ * Condition predicate — receives the workflow variables (read-only) and
+ * decides the branch. Replaces the old `eval()`-based string condition
+ * (security: expressions are code, never evaluated from data).
+ */
+export type WorkflowCondition = (variables: Readonly<Record<string, string>>) => boolean | Promise<boolean>;
+
 /** Condition node — branches based on a predicate. */
 export interface ConditionNode extends WorkflowNode {
   readonly type: "condition";
-  /** Condition expression (e.g. "{{prev.output}}.includes('error')"). */
-  readonly condition: string;
-  /** Node ID to follow if true. */
+  /** Predicate evaluated against the workflow variables. */
+  readonly condition: WorkflowCondition;
+  /** Node ID to follow if true (used when no `"true"`-labeled edge exists). */
   readonly trueEdge: string;
-  /** Node ID to follow if false. */
+  /** Node ID to follow if false (used when no `"false"`-labeled edge exists). */
   readonly falseEdge: string;
 }
 

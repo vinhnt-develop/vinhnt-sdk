@@ -4,7 +4,7 @@ description: "Tích hợp LSP và chẩn đoán"
 lang: "vi"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.4.3"
 sidebarLabel: "lsp"
 ---
 
@@ -141,16 +141,20 @@ agent.registerTools(tools);
 
 ---
 
-### `DEFAULT_LSP_SERVERS`
+### `BUILTIN_SERVERS`
 
 Định nghĩa server tích hợp sẵn cho các ngôn ngữ phổ biến.
 
 ```ts
-import { DEFAULT_LSP_SERVERS } from "@vinhnt-sdk/lsp";
+import { BUILTIN_SERVERS, LspServerRegistry } from "@vinhnt-sdk/lsp";
 
 // Các server có sẵn:
 // typescript, python, go, rust, java, csharp, ruby, php, swift, kotlin
-const tsServer = DEFAULT_LSP_SERVERS.typescript;
+const tsServer = BUILTIN_SERVERS.find((s) => s.name === "typescript");
+
+// Ưu tiên: tra cứu qua registry
+const registry = new LspServerRegistry();
+const ts = registry.findByExtension(".ts");
 ```
 
 ---

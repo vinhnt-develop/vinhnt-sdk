@@ -13,37 +13,63 @@ Observability is how you understand what your agent is doing at runtime. This gu
 
 ## Run Event Listening
 
-The `handle.events()` method returns an async iterable of all events emitted during a run. This is the primary hook for building observability into your agent.
+There are two complementary event surfaces, and they carry different vocabularies:
+
+- **`kernel.streamRun(prompt, ctx, sessionId)`** returns `{ runId, events }`, where `events` is an `AsyncIterable<KnownRunEvent>` — the **full run telemetry stream** (steps, tools, LLM requests/responses, tokens, permissions, failovers, …). This is the primary hook for observability.
+- **`handle.events()`** yields the run **lifecycle** events only (`agent.started`, `agent.completed`, `agent.error`) — use it (or `handle.onEvent(handler)`) to coordinate start/finish/error handling, not for telemetry.
 
 ```ts
-const handle = kernel.createRunHandle({ messages });
+const { runId, events } = kernel.streamRun(prompt, ctx, sessionId);
 
-for await (const event of handle.events()) {
-  console.log(`[${event.type}]`, event.data);
+for await (const event of events) {
+  console.log(`[${runId}] [${event.type}]`, event.data);
 }
 ```
 
-### Available Event Types
+Lifecycle coordination on an existing handle:
+
+```ts
+for await (const event of handle.events()) {
+  switch (event.type) {
+    case "agent.started":   console.log("Run started", event.runId); break;
+    case "agent.completed": console.log("Completed", event.status); break;
+    case "agent.error":     console.error("Failed", event.error); break;
+  }
+}
+```
+
+To observe **all runs** across the kernel, pass an `EventBus` in the kernel config and subscribe with `eventBus.subscribeAll(...)` — every run event is published with `aggregateId = runId`.
+
+### Available Run Event Types
+
+Selected members of the `KnownRunEvent` union (`@vinhnt-sdk/schema`):
 
 | Event Type | When Emitted | Key Data |
 |------------|--------------|----------|
-| `run.start` | Run begins | `sessionId`, `runId` |
-| `llm.call` | Before LLM request | `model`, `messageCount` |
-| `llm.response` | After LLM response | `model`, `tokens`, `duration` |
-| `tool.call` | Before tool execution | `toolName`, `input` |
-| `tool.result` | After tool execution | `toolName`, `output`, `duration` |
-| `run.end` | Run completes | `sessionId`, `runId`, `status` |
-| `error` | Error occurred | `error`, `phase` |
+| `run.started` | Run begins | `prompt`, `model`, `provider`, `agentName?`, `agentId?` |
+| `step.started` / `step.completed` | Each agent step | `turn`, `step` |
+| `llm.request` | Before LLM request | `step`, `model`, `provider?`, `params` |
+| `llm.response` | After LLM response | `content`, `toolCalls?`, `usage` (input/output/reasoning/cache tokens), `durationMs` |
+| `token.streamed` | Streaming text chunk | `content`, `step` |
+| `token.counted` | Final usage per request | `inputTokens`, `outputTokens`, `model`, `provider`, `step` |
+| `tool.invoked` | Before tool execution | `toolId`, `toolName`, `input`, `decision?`, `risk?`, `source?` |
+| `tool.completed` / `tool.failed` | After tool execution | `toolId`, `toolName`, `output?` / `error?`, `durationMs?` |
+| `permission.requested` / `permission.replied` | Approval flow | `requestId`, `toolName`, `resource` / `reply` |
+| `llm.failover` | Provider failover | `fromProvider`, `fromModel`, `toProvider`, `toModel`, `reason` |
+| `context.compressed` | Context compression | `originalCount`, `compressedCount`, `summary?` |
+| `run.completed` | Run ends | `status`, `totalSteps`, `durationMs?`, `stopReason?` |
 
 ### Filtering Events
 
 ```ts
-for await (const event of handle.events()) {
-  if (event.type === "tool.call") {
+const { events } = kernel.streamRun(prompt, ctx, sessionId);
+
+for await (const event of events) {
+  if (event.type === "tool.invoked") {
     console.log(`Tool: ${event.data.toolName}`);
   }
-  if (event.type === "error") {
-    console.error(`Error in ${event.data.phase}:`, event.data.error);
+  if (event.type === "step.failed") {
+    console.error(`Step ${event.data.step} failed:`, event.data.reason);
   }
 }
 ```
@@ -131,33 +157,33 @@ class ConsoleTracer implements Tracer {
 
 ## AuditLog Implementation
 
-Combine the logger and event listener for a complete audit trail:
+Combine the logger with the `streamRun` event stream for a complete audit trail:
 
 ```ts
 class AuditLog {
   private logger: Logger;
   constructor(logger: Logger) { this.logger = logger; }
 
-  async trackRun(handle: RunHandle) {
-    for await (const event of handle.events()) {
+  async trackRun(events: AsyncIterable<KnownRunEvent>) {
+    for await (const event of events) {
       switch (event.type) {
-        case "run.start":
-          this.logger.info("Run started", { sessionId: event.data.sessionId, runId: event.data.runId });
+        case "run.started":
+          this.logger.info("Run started", { runId: event.runId, model: event.data.model, provider: event.data.provider });
           break;
-        case "llm.call":
-          this.logger.info("LLM requested", { model: event.data.model, messageCount: event.data.messageCount });
+        case "llm.request":
+          this.logger.info("LLM requested", { model: event.data.model, step: event.data.step });
           break;
-        case "tool.call":
+        case "tool.invoked":
           this.logger.info("Tool invoked", { toolName: event.data.toolName, input: event.data.input });
           break;
-        case "tool.result":
-          this.logger.info("Tool completed", { toolName: event.data.toolName, duration: event.data.duration });
+        case "tool.completed":
+          this.logger.info("Tool completed", { toolName: event.data.toolName, durationMs: event.data.durationMs });
           break;
-        case "error":
-          this.logger.error("Error occurred", { phase: event.data.phase, error: event.data.error });
+        case "step.failed":
+          this.logger.error("Step failed", { step: event.data.step, reason: event.data.reason });
           break;
-        case "run.end":
-          this.logger.info("Run completed", { sessionId: event.data.sessionId, status: event.data.status });
+        case "run.completed":
+          this.logger.info("Run completed", { status: event.data.status, totalSteps: event.data.totalSteps });
           break;
       }
     }
@@ -165,25 +191,31 @@ class AuditLog {
 }
 
 const audit = new AuditLog(new FileLogger("./audit.log"));
-await audit.trackRun(handle);
+const { events } = kernel.streamRun(prompt, ctx, sessionId);
+await audit.trackRun(events);
 ```
 
 ## OpenTelemetry SDK Integration
 
-`Tracer` wraps OpenTelemetry. Configure it to export spans to any OTLP-compatible collector:
+`SpanRecorder` + `createOtlpSpanExporter` post spans to any OTLP/HTTP-compatible collector:
 
 ```ts
-import { Tracer } from "@vinhnt-sdk/trace";
+import { SpanRecorder, createOtlpSpanExporter } from "@vinhnt-sdk/trace";
 
-const tracer = new Tracer({
-  serviceName: "vinhnt-agent",
-  endpoint: "http://localhost:4318",
-  exporters: "otlp",
-  sampleRate: 0.5,
+const recorder = new SpanRecorder();
+const span = recorder.startSpan("agent.run", "internal");
+// ... do work ...
+recorder.endSpan(span, "ok");
+
+const exporter = createOtlpSpanExporter({
+  endpoint: "http://localhost:4318/v1/traces",
+  resourceAttributes: { "service.name": "vinhnt-agent" },
 });
+await exporter.export(recorder.getSpans());
+await exporter.shutdown();
 ```
 
-With this configuration, spans are automatically exported to your OpenTelemetry collector and can be viewed in tools like Jaeger, Zipkin, or Grafana Tempo.
+The endpoint may also come from `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (config takes precedence). Exported spans can be viewed in tools like Jaeger, Zipkin, or Grafana Tempo.
 
 ## Tracked Events and Data
 
@@ -191,13 +223,13 @@ The following table summarizes what data is available at each event point:
 
 | Event | Available Data |
 |-------|---------------|
-| `run.start` | `sessionId`, `runId`, `timestamp` |
-| `llm.call` | `model`, `messageCount`, `systemPrompt` |
-| `llm.response` | `model`, `inputTokens`, `outputTokens`, `duration` |
-| `tool.call` | `toolName`, `input`, `risk` |
-| `tool.result` | `toolName`, `output`, `duration`, `success` |
-| `run.end` | `sessionId`, `runId`, `status`, `totalDuration` |
-| `error` | `phase`, `error`, `recoverable` |
+| `run.started` | `prompt`, `model`, `provider`, `agentName?`, `agentId?` |
+| `llm.request` | `step`, `model`, `provider?`, `params` (temperature, maxTokens, …) |
+| `llm.response` | `content`, `toolCalls?`, `usage` (inputTokens, outputTokens), `durationMs` |
+| `token.streamed` | `content`, `step` |
+| `tool.invoked` | `toolId`, `toolName`, `input`, `risk?`, `decision?`, `source?` |
+| `tool.completed` | `toolId`, `toolName`, `output`, `durationMs?`, `risk?` |
+| `run.completed` | `status`, `totalSteps`, `durationMs?`, `inputTokens?`, `outputTokens?`, `error?` |
 
 ## Cost Tracking with CostMeter
 
@@ -206,33 +238,32 @@ Track real billable usage across providers and models:
 ```ts
 import { CostMeter } from "@vinhnt-sdk/trace";
 
+// Pricing is looked up per model from DEFAULT_MODEL_PRICING.
+// Pass a custom table to extend: new CostMeter({ ...DEFAULT_MODEL_PRICING, "my-model": { inputPer1M, outputPer1M } })
 const meter = new CostMeter();
 
-for await (const event of handle.events()) {
+const { events } = kernel.streamRun(prompt, ctx, sessionId);
+
+for await (const event of events) {
   if (event.type === "llm.response") {
-    meter.record({
-      provider: event.data.provider,
-      model: event.data.model,
-      inputTokens: event.data.inputTokens,
-      outputTokens: event.data.outputTokens,
-      costUsd: calculateCost(event.data),
-      timestamp: Date.now(),
-    });
+    const { usage, model } = event.data;
+    meter.record(usage.inputTokens, usage.outputTokens, model);
   }
 }
 
-console.log("Total cost:", meter.totalCost());
-console.log("Total tokens:", meter.totalTokens());
-console.log("Per-model breakdown:", meter.breakdown());
+const total = meter.getTotal();
+console.log("Total cost (USD):", total.costUsd);
+console.log("Total tokens:", total.totalTokens);
+console.log("Per-request breakdown:", meter.getOperations());
 ```
 
-The `breakdown()` method returns a map grouped by model:
+The `getOperations()` method returns the recorded per-request usage stats (`inputTokens`, `outputTokens`, `totalTokens`, `costUsd`) for building your own per-model breakdown:
 
 ```ts
-{
-  "gpt-4": { cost: 0.15, tokens: 5000 },
-  "gpt-3.5-turbo": { cost: 0.002, tokens: 12000 },
-}
+[
+  { inputTokens: 4000, outputTokens: 1000, totalTokens: 5000, costUsd: 0.15 },
+  { inputTokens: 11000, outputTokens: 1000, totalTokens: 12000, costUsd: 0.002 },
+]
 ```
 
 ## Next Steps

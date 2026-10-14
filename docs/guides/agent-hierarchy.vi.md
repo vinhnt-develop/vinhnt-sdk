@@ -7,7 +7,6 @@ category: "Guides"
 sidebarPosition: 6
 sidebarLabel: "Agent Hierarchy"
 tags: [agents, sub-agents, delegation]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 
@@ -116,6 +115,12 @@ const kernel = new AgentKernel({
 
 // Coordinator delegate cho specialists
 await kernel.useAgent("coordinator");
+const ctx = {
+  requestId: "req-1",
+  traceId: "trace-1",
+  actorId: "user",
+  tenantId: "default",
+};
 const handle = kernel.run(
   "Write a blog post about TypeScript 5.4",
   ctx
@@ -182,6 +187,13 @@ const kernel = new AgentKernel({
 
 // Chạy workflow
 async function workflow(task: string) {
+  const ctx = {
+    requestId: "req-1",
+    traceId: "trace-1",
+    actorId: "user",
+    tenantId: "default",
+  };
+
   // Planner tạo plan
   await kernel.useAgent("planner");
   const planHandle = kernel.run(`Break down this task: ${task}`, ctx);

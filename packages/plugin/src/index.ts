@@ -42,7 +42,7 @@ export { createDisposable };
 /**
  * Tool-related types.
  */
-export type { ToolDefinition, ToolRisk, ContextSourceValue, ContextSourceKey } from "@vinhnt-sdk/core";
+export type { ToolDefinition, ToolRisk, ContextSourceValue } from "@vinhnt-sdk/core";
 
 /**
  * Plugin registry interface for managing plugins.

@@ -11,7 +11,7 @@ pnpm add @vinhnt-sdk/step-executor
 ## Usage
 
 ```ts
-import { StepExecutor, PermissionGate, runLoop, RunStateMachine } from "@vinhnt-sdk/step-executor";
+import { StepExecutor, PermissionGate, RunStateMachine } from "@vinhnt-sdk/step-executor";
 ```
 
 ## Contents
@@ -22,7 +22,8 @@ import { StepExecutor, PermissionGate, runLoop, RunStateMachine } from "@vinhnt-
 - `termination` — stop-condition evaluation and judge-based loop termination
 - `kernel-utils` — doom-loop detection, arg hashing, timeouts, tool domains, defaults
 - `run-state` / `run-context` — per-run state machine and context
-- `circuit-breaker` / `kernel-error` — failure isolation and typed errors
+- `loop-policy` / `path-policy` — loop/path safety policies
+- `kernel-error` — typed step errors; failure isolation via `@vinhnt-sdk/guard` circuit breaker
 
 ## Hooks
 

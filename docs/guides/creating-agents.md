@@ -7,7 +7,6 @@ category: "Guides"
 sidebarPosition: 5
 sidebarLabel: "Creating Agents"
 tags: [agents, create-agent, config]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 
@@ -116,6 +115,12 @@ const kernel = new AgentKernel({
 
 // Switch between agents
 await kernel.useAgent("coder");
+const ctx = {
+  requestId: "req-1",
+  traceId: "trace-1",
+  actorId: "user",
+  tenantId: "default",
+};
 const handle = kernel.run("Write a hello world", ctx);
 
 // Or spawn sub-agents

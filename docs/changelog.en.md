@@ -9,7 +9,9 @@ sidebarPosition: 1
 
 # Changelog
 
-## v0.1.3 (Current)
+> **Note:** Since the 2026-10 hardening release, packages are versioned independently — see each package's package.json / README for its current version. Entries below cover the unified pre-0.4 era.
+
+## v0.1.3
 
 ### Added
 - `CircuitBreakerOpenError` — extends `VntError` with `code: "CIRCUIT_BREAKER_OPEN"`, retryable

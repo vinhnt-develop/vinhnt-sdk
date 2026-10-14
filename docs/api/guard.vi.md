@@ -5,7 +5,7 @@ lang: vi
 type: "reference"
 category: "API Reference"
 sidebarLabel: guard
-version: "0.4.0"
+version: "0.4.4"
 ---
 
 # @vinhnt-sdk/guard
@@ -115,34 +115,31 @@ if (detector.isLoopDetected()) {
 - `getLoopInfo()` — Trả về chi tiết về vòng lặp đã phát hiện
 - `reset()` — Xóa tất cả các lệnh gọi đã ghi lại
 
-### `ToolTimeout`
+### `withToolTimeout`
 
 Bọc thực thi công cụ với timeout. Tự động hủy nếu thực thi vượt quá giới hạn.
 
 ```ts
-import { ToolTimeout } from "@vinhnt-sdk/guard";
+import { withToolTimeout } from "@vinhnt-sdk/guard";
 
-const timeout = new ToolTimeout(10000); // 10 giây
-
-const result = await timeout.execute(async (signal) => {
+const result = await withToolTimeout("long-running-tool", 10_000, async (signal) => {
   return await longRunningTool(params, { abortSignal: signal });
 });
 ```
 
-**Phương thức:**
+**Chữ ký:** `withToolTimeout<T>(toolId: string, timeoutMs: number, fn: (signal: AbortSignal) => Promise<T>): Promise<T>`
 
-- `execute(fn)` — Thực thi hàm với timeout. Ném `ToolTimeoutError` khi hết thời gian.
-- `getRemainingTime()` — Trả về thời gian còn lại (ms)
+Ném `ToolTimeoutError` khi vượt quá giới hạn thời gian.
 
 ### `ToolTimeoutError`
 
 Lỗi bị ném khi thực thi công cụ vượt quá timeout. Lỗi này không thể retry — retry ngay lập tức có thể sẽ timeout lại.
 
 ```ts
-import { ToolTimeoutError } from "@vinhnt-sdk/guard";
+import { ToolTimeoutError, withToolTimeout } from "@vinhnt-sdk/guard";
 
 try {
-  await timeout.execute(fn);
+  await withToolTimeout("my-tool", 10_000, fn);
 } catch (e) {
   if (e instanceof ToolTimeoutError) {
     // Không thể retry
@@ -194,15 +191,14 @@ interface LoopDetectorConfig {
 ### Kết hợp các Guard
 
 ```ts
-import { CircuitBreaker, LoopDetector, ToolTimeout } from "@vinhnt-sdk/guard";
+import { CircuitBreaker, LoopDetector, withToolTimeout } from "@vinhnt-sdk/guard";
 
 const breaker = new CircuitBreaker({ failureThreshold: 3, recoveryTimeout: 30000 });
 const detector = new LoopDetector({ maxRepetitions: 5, windowMs: 60000 });
-const timeout = new ToolTimeout(15000);
 
-async function safeToolCall(toolFn) {
+async function safeToolCall(toolId, toolFn) {
   if (detector.isLoopDetected()) throw new Error("Phát hiện vòng lặp");
-  return breaker.execute(() => timeout.execute(toolFn));
+  return breaker.execute(() => withToolTimeout(toolId, 15_000, () => toolFn()));
 }
 ```
 

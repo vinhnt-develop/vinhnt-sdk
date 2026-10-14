@@ -5,7 +5,7 @@ lang: vi
 type: "reference"
 category: "API Reference"
 sidebarLabel: workflow
-version: "0.4.0"
+version: "0.4.2"
 ---
 
 # @vinhnt-sdk/workflow

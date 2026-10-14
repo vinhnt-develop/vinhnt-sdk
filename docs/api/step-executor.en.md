@@ -4,7 +4,7 @@ description: "Execution kernel and self-correction"
 lang: "en"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.6.6"
 sidebarLabel: "step-executor"
 ---
 

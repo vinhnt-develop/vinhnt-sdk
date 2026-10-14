@@ -1,6 +1,6 @@
 import type { RequestContext, RunId, AgentConfig, KnownRunEvent, RunEvent, ToolCall, ContentPart } from "@vinhnt-sdk/schema";
-import { ConfigurationError } from "@vinhnt-sdk/schema";
-import { EventRegistry } from "@vinhnt-sdk/event";
+import { ConfigurationError, getLogger } from "@vinhnt-sdk/schema";
+import { eventRegistry } from "@vinhnt-sdk/event";
 import type { EventDefinition, EventBus } from "@vinhnt-sdk/event";
 import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { PluginManager } from "../plugin.js";
@@ -17,9 +17,9 @@ export interface KernelSessionDeps {
   noStore?: boolean;
 }
 
-/** Auto-generated from EventRegistry — all events with aggregate=runId */
+/** Auto-generated from the default EventRegistry — all events with aggregate=runId */
 const ALL_EVENT_DEFS: Record<string, EventDefinition> = Object.fromEntries(
-  EventRegistry.getAll()
+  eventRegistry.getAll()
     .filter((def) => def.durable?.aggregate === "runId")
     .map((def) => [def.type, def])
 );
@@ -82,7 +82,7 @@ export async function addSessionMessage(
       ...(extra?.cost !== undefined ? { cost: extra.cost } : {}),
     });
   } catch (err) {
-    console.error("[kernel] Failed to add session message:", err);
+    getLogger().error("[kernel] Failed to add session message:", err);
     throw err;
   }
 }
@@ -103,7 +103,7 @@ export async function updateSessionOnComplete(
     ...(totalInputTokens > 0 ? { inputTokens: totalInputTokens } : {}),
     ...(totalOutputTokens > 0 ? { outputTokens: totalOutputTokens } : {}),
     ...(totalCost !== undefined ? { cost: totalCost } : {}),
-  }).catch((err) => { console.warn("[kernel] Session update failed:", err); });
+  }).catch((err) => { getLogger().warn("[kernel] Session update failed:", err); });
 }
 
 export function computeSessionUpdates(
@@ -168,7 +168,7 @@ export async function emitCompletedWithSession(
   // the session stats and leaves the run recoverable (no terminal event yet).
   if (hasSessionWrite) {
     await deps.sessionStore!.updateSession(sessionId!, updates)
-      .catch((err) => { console.warn("[kernel] Session update failed:", err); });
+      .catch((err) => { getLogger().warn("[kernel] Session update failed:", err); });
   }
   await emitEvent(deps, event, persist);
 }

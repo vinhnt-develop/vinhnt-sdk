@@ -205,7 +205,8 @@ describe("kernel-session", () => {
         50,
       );
 
-      expect(consoleWarn).toHaveBeenCalledWith("[kernel] Session update failed:", expect.any(Error));
+      // getLogger()'s default console logger formats messages as "[WARN] <msg>"
+      expect(consoleWarn).toHaveBeenCalledWith("[WARN] [kernel] Session update failed:", expect.any(Error));
       consoleWarn.mockRestore();
     });
   });

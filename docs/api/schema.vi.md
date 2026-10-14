@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/schema"
 description: "Các kiểu cơ bản, hợp đồng, ID được đóng gói"
 lang: "vi"
-version: "0.4.0"
+version: "0.5.13"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "schema"
@@ -148,13 +148,34 @@ interface RunEventStore {
 ### Sự kiện Run
 
 ```typescript
-type RunEvent =
-  | { type: "run.start"; runId: RunId; sessionId: SessionId; timestamp: Date }
-  | { type: "run.end"; runId: RunId; durationMs: number; timestamp: Date }
-  | { type: "message.created"; runId: RunId; message: Message; timestamp: Date }
-  | { type: "tool.call"; runId: RunId; toolId: ToolId; input: unknown; timestamp: Date }
-  | { type: "tool.result"; runId: RunId; toolId: ToolId; output: unknown; timestamp: Date }
-  | { type: "error"; runId: RunId; error: VntError; timestamp: Date };
+// Bao bì (envelope) cho mọi run event được lưu bền vững
+interface RunEvent<TData = unknown> {
+  readonly id: string;
+  readonly runId: RunId;
+  readonly sequence: number;
+  readonly type: string;
+  readonly occurredAt: string;
+  readonly traceId: TraceId;
+  readonly parentRunId?: RunId;
+  readonly data: TData;
+  readonly persist?: boolean; // false = chỉ phát live (ví dụ token streaming)
+  readonly version?: number;
+}
+
+// Từ vựng type-safe phân loại theo `type` — KnownRunEvent (32 thành viên, rút gọn):
+type KnownRunEvent =
+  | (RunEvent<RunStartedData> & { readonly type: "run.started" })
+  | (RunEvent<StepStartedData> & { readonly type: "step.started" })
+  | (RunEvent<LlmResponseData> & { readonly type: "llm.response" })
+  | (RunEvent<ToolInvokedData> & { readonly type: "tool.invoked" })
+  | (RunEvent<ToolCompletedData> & { readonly type: "tool.completed" })
+  | (RunEvent<ToolFailedData> & { readonly type: "tool.failed" })
+  | (RunEvent<PermissionRequestedData> & { readonly type: "permission.requested" })
+  | (RunEvent<RunCompletedData> & { readonly type: "run.completed" })
+  | /* …32 thành viên — xem packages/schema/src/contracts/events.ts */;
+
+// Sự kiện vòng đời trên bề mặt AgentRunHandle (handle.events() / onEvent())
+type AgentEvent = AgentStartedEvent | AgentCompletedEvent | AgentErrorEvent;
 ```
 
 ### Schema công cụ

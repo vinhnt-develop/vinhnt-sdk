@@ -4,7 +4,7 @@ description: "Permission rules and approval stores"
 lang: "en"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.5.1"
 sidebarLabel: "permission"
 ---
 
@@ -72,6 +72,24 @@ type PermissionEffect = "allow" | "deny" | "ask" | string;
 | `"deny"` | Block matching requests without prompt |
 | `"ask"` | Prompt user for approval |
 | Custom string | Extension-defined behavior |
+
+### PermissionMode
+
+Approval mode for a run — the security vocabulary lives in the SDK so applications never own it.
+
+```ts
+type PermissionMode = "ask" | "edit" | "full" | string;
+const KNOWN_PERMISSION_MODES: readonly PermissionMode[]; // ["ask", "edit", "full"]
+```
+
+| Value | Behavior |
+| --- | --- |
+| `"ask"` | Prompt before tool execution (fail-closed default) |
+| `"edit"` | Auto-approve file edits; ask for the rest |
+| `"full"` | Auto-approve everything (destructive floor lifted) |
+| Custom string | Extension-defined mode |
+
+Validation and UI lists must use `KNOWN_PERMISSION_MODES` (the closed known set); the type itself is an open union so new modes ship without a breaking change.
 
 ### PermissionRuleset
 

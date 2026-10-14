@@ -33,14 +33,8 @@ export type {
   AgentEvent,
   AgentEventBase,
   AgentStartedEvent,
-  ModelRequestEvent,
-  ModelResponseEvent,
-  ToolStartEvent,
-  ToolEndEvent,
-  AgentThinkingEvent,
   AgentCompletedEvent,
   AgentErrorEvent,
-  PermissionEvent,
 } from "./events.js";
 
 export {
@@ -54,7 +48,7 @@ export {
   ConfigurationError, PluginError,
   formatToolFailure, isToolFailureEnvelope, TOOL_FAILURE_HINTS,
 } from "./errors/index.js";
-export type { VntErrorCtx, ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from "./errors/index.js";
+export type { VntErrorCtx, KernelErrorCode, ToolFailureResult, ToolSuccessResult, ToolResultEnvelope } from "./errors/index.js";
 
 // ── API transport schemas (WS, Webview, HTTP contracts) ──
 export {

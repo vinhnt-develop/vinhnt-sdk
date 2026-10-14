@@ -4,6 +4,8 @@
  * compensating actions, and roll back steps (or the whole run) in reverse.
  */
 
+import { getLogger } from "@vinhnt-sdk/schema";
+
 /** A recorded tool invocation within a saga step. */
 export interface SagaEntry {
   toolId: string;
@@ -60,7 +62,7 @@ export class ToolSaga {
             new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Compensation timed out")), COMPENSATION_TIMEOUT)),
           ]);
         } catch (err) {
-          console.warn(`[saga] Compensation failed for ${entry.toolName}(${entry.toolId}):`, err);
+          getLogger().warn(`[saga] Compensation failed for ${entry.toolName}(${entry.toolId}):`, err);
         }
       }
       this.rolledBack.add(entry.toolId);

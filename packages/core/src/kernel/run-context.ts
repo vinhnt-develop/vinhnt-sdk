@@ -2,7 +2,7 @@
  * AgentRunContext — dependency injection container for a single agent run.
  *
  * Follows the OpenAI Agents SDK pattern: a typed context object that is
- * created once per run and shared across all tools, hooks, and guardrails.
+ * created once per run and shared across the run's tools.
  *
  * @example
  * ```ts
@@ -13,22 +13,15 @@
  *   db: Database;
  * }
  *
- * // Tools receive AgentRunContext<AppContext> as 2nd parameter
- * const fetchUser = tool({
- *   name: 'fetch_user',
- *   description: 'Fetch user by ID',
- *   parameters: z.object({ userId: z.string() }),
- *   execute: async (args, runContext) => {
- *     const user = await runContext.context.db.getUser(args.userId);
- *     return user;
- *   },
- * });
+ * // Create the run context once per run
+ * const runContext = new AgentRunContext<AppContext>(
+ *   { userId: 'u-1', apiKey: 'sk-...', db: myDb },
+ *   { signal, sessionId, runId, agentId, agentName },
+ * );
  *
- * // Kernel creates AgentRunContext internally
- * const kernel = new AgentKernel({ ... });
- * const result = await kernel.run('Get user 123', {
- *   context: { userId: 'u-1', apiKey: 'sk-...', db: myDb },
- * });
+ * // Pass it to ToolRuntime.execute — each tool receives a ToolContext
+ * // (signal, ask(), extensionData) derived from this run context.
+ * await runtime.execute('fetch_user', { userId: '123' }, runContext);
  * ```
  */
 
@@ -68,8 +61,9 @@ export interface ApprovalRecord {
  * - `signal`: abort signal for cancellation
  * - `approvals`: tool approval decisions
  *
- * The context is **mutable** — tools can read/write `context` and all
- * tools in the same run see the mutations (shared reference).
+ * The context is **mutable** — consumer code holding the run context can
+ * read/write `context`, and every tool executed through the same run context
+ * observes the mutations (shared reference).
  */
 export class AgentRunContext<TContext = unknown> {
   /** User's application state. */

@@ -1,6 +1,6 @@
 # @vinhnt-sdk/guard
 
-> Version: 0.4.3 | Status: stable
+> Status: stable
 
 Circuit breaker, loop detection, tool timeout, monotonic guards, and secret redaction for resilient agent execution.
 

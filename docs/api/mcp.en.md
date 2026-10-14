@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/mcp"
 description: "MCP client for Model Context Protocol 2026-07-28"
-version: "0.4.0"
+version: "0.4.6"
 lang: "en"
 type: "reference"
 category: "API Reference"
@@ -52,127 +52,113 @@ const prompts = await conn.listPrompts();
 await conn.close();
 ```
 
-**Constructor:** `McpClient(config: McpServerConfig)`
+**Methods:**
+- `connect(config: McpServerConfig): Promise<McpConnection>` — Connect to an MCP server, returns a connection handle.
+- `getConnection(name: string): McpConnection | undefined` — Get an existing connection by server name.
+- `closeAll(): Promise<void>` — Close all open connections.
+
+### `McpConnection`
+
+Result handle from `client.connect(...)`.
+
+**Properties:** `serverInfo`, `capabilities`, `protocolVersion`.
 
 **Methods:**
-- `connect(): Promise<void>` — Establish connection to the MCP server.
-- `disconnect(): Promise<void>` — Close the connection gracefully.
 - `listTools(): Promise<McpTool[]>` — Discover available tools on the server.
-- `callTool(name: string, args: Record<string, unknown>): Promise<unknown>` — Invoke a tool by name with arguments.
-- `isConnected(): boolean` — Check if the client is currently connected.
-- `onNotification(handler: (notification: JsonRpcNotification) => void): void` — Handle server-initiated notifications.
+- `callTool(name: string, args?: Record<string, unknown>): Promise<CallToolResult>` — Invoke a tool by name with arguments.
+- `listResources(): Promise<McpResource[]>` — List resources (deprecated, prefer tools).
+- `readResource(uri: string): Promise<string>` — Read a resource (deprecated).
+- `listPrompts()` / `getPrompt(name, args?)` — Prompt access (deprecated).
+- `close(): Promise<void>` — Disconnect from the server.
 
 ---
 
-### `McpClientPool`
+### `McpToolProvider`
 
-Manages a pool of `McpClient` instances, enabling load balancing, automatic reconnection, and concurrent access to multiple MCP servers.
+Wraps `McpClient` + tool discovery into a `ToolProvider` so MCP tools can be registered into the `ToolProviderRegistry`.
 
 ```ts
-import { McpClientPool } from "@vinhnt-sdk/mcp";
+import { McpToolProvider } from "@vinhnt-sdk/mcp";
 
-const pool = new McpClientPool({
-  maxConnections: 5,
-  retryAttempts: 3,
-  retryDelay: 1000,
+const provider = new McpToolProvider({
+  name: "github",
+  transport: "stdio",
+  command: "npx",
+  args: ["-y", "@modelcontextprotocol/server-github"],
+  env: { GITHUB_TOKEN: "xxx" },
 });
+await provider.connect(); // spawns the server and discovers tools
+registry.registerProvider(provider);
 
-pool.addClient("server-a", { name: "server-a", transport: stdioTransportA });
-pool.addClient("server-b", { name: "server-b", transport: stdioTransportB });
+// Later: re-discover after a listChanged notification
+await provider.refresh();
 
-await pool.connectAll();
-const tools = await pool.listAllTools();
-const result = await pool.callTool("server-a", "analyze", { data: "..." });
+// Teardown
+await provider.close();
 ```
 
-**Constructor:** `McpClientPool(options?: McpClientPoolOptions)`
+**Constructor:** `McpToolProvider(config: McpToolProviderConfig)` — `McpServerConfig` + optional `id` (defaults to `"mcp:<name>"`).
 
 **Methods:**
-- `addClient(id: string, config: McpServerConfig): void` — Register a client in the pool.
-- `removeClient(id: string): Promise<void>` — Disconnect and remove a client.
-- `connectAll(): Promise<void>` — Connect all registered clients.
-- `disconnectAll(): Promise<void>` — Disconnect all clients.
-- `getClient(id: string): McpClient | undefined` — Retrieve a client by ID.
-- `listAllTools(): Promise<Record<string, McpTool[]>>` — List tools from all connected servers.
-- `callTool(serverId: string, toolName: string, args: Record<string, unknown>): Promise<unknown>` — Route a tool call to a specific server.
+- `connect(): Promise<void>` — Connect to the MCP server and discover tools (call before registering).
+- `getConnection(): McpConnection | null` — Underlying connection for direct access.
+- `toolCount(): number` — Number of discovered tools.
+- `get tools(): ToolDefinition[]` — Discovered tools as vinhnt-sdk definitions.
+- `refresh(): Promise<void>` — Re-discover tools.
+- `close(): Promise<void>` — Disconnect and clear tools.
 
 ---
 
-### `McpToolMapper`
+### `mapMcpTool` / `discoverMcpTools`
 
-Maps MCP tools discovered from servers into the vinhnt-sdk `Tool` format, enabling seamless integration with the agent framework.
+Maps MCP tools into vinhnt-sdk `ToolDefinition`s, enabling seamless integration with the agent framework.
 
 ```ts
-import { McpToolMapper } from "@vinhnt-sdk/mcp";
+import { discoverMcpTools, mapMcpTool, mcpDomain, mcpToolId } from "@vinhnt-sdk/mcp";
 
-const mapper = new McpToolMapper();
+// Map every tool on a connection
+const sdkTools = await discoverMcpTools("my-server", conn);
+// → ToolDefinition[] — pass directly into kernel config `tools`
 
-const mcpTools = await client.listTools();
-const sdkTools = mapper.mapTools(mcpTools);
+// Or map a single tool
+const tool = mapMcpTool("my-server", mcpTool, conn);
 
-// sdkTools can be passed directly to an Agent
-agent.setTools(sdkTools);
+// Naming conventions
+mcpDomain("my-server");              // "mcp:my-server"
+mcpToolId("my-server", "get_weather"); // "mcp__my-server__get_weather"
 ```
 
-**Constructor:** `McpToolMapper(options?: ToolMapperOptions)`
-
-**Methods:**
-- `mapTools(mcpTools: McpTool[]): Tool[]` — Convert MCP tools to vinhnt-sdk tools.
-- `mapTool(mcpTool: McpTool): Tool` — Convert a single MCP tool.
-- `addConverter(name: string, converter: ToolConverter): void` — Register a custom converter for specific tool patterns.
+Mapped tools get `risk: "external"`, `metadata.source: "mcp"`, and a namespaced id `mcp__<server>__<tool>`.
 
 ---
 
-## Transport Implementations
+## Transports
 
-### `StdioTransport`
-
-Communicates with an MCP server via stdin/stdout pipes. Ideal for local process-based servers.
+Transport is selected via `McpServerConfig.transport` — implementations (`stdio`, `sse`, `streamable-http`) are created internally by `McpClient.connect()`.
 
 ```ts
-import { StdioTransport } from "@vinhnt-sdk/mcp";
-
-const transport = new StdioTransport({
-  command: "node",
-  args: ["./my-mcp-server.js"],
-  env: { ...process.env, API_KEY: "..." },
-  cwd: "/path/to/server",
+// Local process via stdin/stdout
+const local = await client.connect({
+  name: "filesystem",
+  transport: "stdio",
+  command: "npx",
+  args: ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"],
+  env: { ...process.env },
 });
-```
 
-**Options:**
-- `command: string` — The executable to run.
-- `args?: string[]` — Command arguments.
-- `env?: Record<string, string>` — Environment variables.
-- `cwd?: string` — Working directory.
-
----
-
-### `SseTransport`
-
-Transport for Server-Sent Events (SSE) based MCP servers. Currently a stub implementation.
-
-```ts
-import { SseTransport } from "@vinhnt-sdk/mcp";
-
-const transport = new SseTransport({
+// Server-Sent Events
+const sse = await client.connect({
+  name: "remote",
+  transport: "sse",
   url: "http://localhost:3000/mcp/sse",
   headers: { Authorization: "Bearer token" },
 });
-```
 
----
-
-### `StreamableHttpTransport`
-
-Transport for streamable HTTP-based MCP servers. Currently a stub implementation.
-
-```ts
-import { StreamableHttpTransport } from "@vinhnt-sdk/mcp";
-
-const transport = new StreamableHttpTransport({
+// Streamable HTTP
+const http = await client.connect({
+  name: "http-server",
+  transport: "streamable-http",
   url: "http://localhost:3000/mcp",
-  headers: { "Content-Type": "application/json" },
 });
 ```
 
@@ -182,27 +168,35 @@ const transport = new StreamableHttpTransport({
 
 ### `McpTransport`
 
-Interface for all transport implementations.
+Interface implemented by the internal transports.
 
 ```ts
 interface McpTransport {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  send(request: JsonRpcRequest): Promise<JsonRpcResponse>;
-  onNotification(handler: (notification: JsonRpcNotification) => void): void;
+  request(req: JsonRpcRequest): Promise<JsonRpcResponse>;
+  notify(notification: JsonRpcNotification): void;
+  onMessage(handler: (msg: JsonRpcResponse | JsonRpcNotification) => void): () => void;
+  close(): Promise<void>;
 }
 ```
 
+`McpTransportType = "stdio" | "sse" | "streamable-http" | (string & {})`
+
 ### `McpServerConfig`
 
-Configuration for creating an `McpClient`.
+Configuration accepted by `McpClient.connect()` (and `McpToolProvider`).
 
 ```ts
 interface McpServerConfig {
-  name: string;
-  transport: McpTransport;
-  timeout?: number;          // Request timeout in ms (default: 30000)
-  capabilities?: string[];   // Requested server capabilities
+  readonly name: string;
+  readonly transport: "stdio" | "sse" | "streamable-http";
+  readonly protocolVersion?: string;   // default: "2026-07-28"
+  readonly command?: string;           // stdio
+  readonly args?: string[];            // stdio
+  readonly env?: Record<string, string>;
+  readonly url?: string;               // sse / streamable-http
+  readonly headers?: Record<string, string>;
+  readonly timeoutMs?: number;         // default: 30000
+  readonly metadata?: Record<string, unknown>;
 }
 ```
 
@@ -212,49 +206,140 @@ Represents a tool discovered from an MCP server.
 
 ```ts
 interface McpTool {
-  name: string;
-  description?: string;
-  inputSchema: Record<string, unknown>;  // JSON Schema for tool inputs
+  readonly name: string;
+  readonly description?: string;
+  readonly inputSchema: Record<string, unknown>; // JSON Schema for tool inputs
+  readonly annotations?: Record<string, unknown>;
+  readonly metadata?: Record<string, unknown>;
 }
 ```
 
-### `JsonRpcRequest`
+### `CallToolResult`
 
-A JSON-RPC 2.0 request object.
+```ts
+interface CallToolResult {
+  readonly content: ReadonlyArray<
+    | { readonly type: "text"; readonly text: string }
+    | { readonly type: "image"; readonly data: string; readonly mimeType: string }
+    | { readonly type: "resource"; readonly resource: { readonly uri: string; readonly mimeType?: string; readonly text?: string } }
+  >;
+  readonly isError?: boolean;
+}
+```
+
+### `JsonRpcRequest` / `JsonRpcResponse` / `JsonRpcNotification`
+
+JSON-RPC 2.0 wire types (re-exported from `@vinhnt-sdk/schema`).
 
 ```ts
 interface JsonRpcRequest {
-  jsonrpc: "2.0";
-  id: string | number;
-  method: string;
-  params?: Record<string, unknown>;
+  readonly jsonrpc: "2.0";
+  readonly id: number | string;
+  readonly method: string;
+  readonly params?: unknown;
 }
-```
 
-### `JsonRpcResponse`
-
-A JSON-RPC 2.0 response object.
-
-```ts
 interface JsonRpcResponse {
-  jsonrpc: "2.0";
-  id: string | number;
-  result?: unknown;
-  error?: { code: number; message: string; data?: unknown };
+  readonly jsonrpc: "2.0";
+  readonly id: number | string;
+  readonly result?: unknown;
+  readonly error?: { code: number; message: string; data?: unknown };
+}
+
+interface JsonRpcNotification {
+  readonly jsonrpc: "2.0";
+  readonly method: string;
+  readonly params?: unknown;
 }
 ```
 
-### `JsonRpcNotification`
+---
 
-A JSON-RPC 2.0 notification (request without `id`).
+## A2A v1.0 (Agent Card discovery)
+
+Agent-to-agent interop per A2A v1.0 (Linux Foundation): Agent Card canonical
+data model, `/.well-known/agent-card.json` discovery with ETag/304 caching, and
+the strict 7-state task lifecycle. Streaming (`SendStreamingMessage`), push
+notifications, and WebSocket/gRPC bindings are **not yet implemented** (deferred).
+
+### `discoverAgentCard`
 
 ```ts
-interface JsonRpcNotification {
-  jsonrpc: "2.0";
-  method: string;
-  params?: Record<string, unknown>;
+import {
+  discoverAgentCard,
+  A2A_AGENT_CARD_WELL_KNOWN_PATH,
+} from "@vinhnt-sdk/mcp";
+import type { AgentCardDocument, DiscoverAgentCardOptions } from "@vinhnt-sdk/mcp";
+
+const options: DiscoverAgentCardOptions = {
+  etag: cachedEtag,      // conditional If-None-Match (optional)
+  signal: abort.signal,  // optional
+  fetchImpl,             // fetch seam (optional)
+};
+const doc: AgentCardDocument = await discoverAgentCard(
+  "https://agent.example.com/", // → /.well-known/agent-card.json
+  options,
+);
+if (doc.notModified) {
+  // 304 — reuse the cached card
+} else {
+  console.log(doc.card?.name, doc.card?.skills);
 }
 ```
+
+- Bare origin → GET `/.well-known/agent-card.json` (`A2A_AGENT_CARD_WELL_KNOWN_PATH`); a full URL is requested as-is (curated registries).
+- Returns `AgentCardDocument { card?, url, etag?, notModified? }`.
+- `@throws {ValidationError}` — invalid target URL, or card payload missing `name` / `description` / `version` / `supportedInterfaces` / `skills` / `defaultInputModes` / `defaultOutputModes` / `capabilities`.
+- `@throws {NetworkError}` — transport failure, HTTP status ≠ 2xx (and ≠ 304), or invalid JSON.
+
+### Task states
+
+```ts
+import { KNOWN_TASK_STATES, isKnownTaskState, isTerminalTaskState } from "@vinhnt-sdk/mcp";
+import type { TaskState } from "@vinhnt-sdk/mcp";
+
+KNOWN_TASK_STATES.length;                    // 7 — lifecycle order
+isKnownTaskState("TASK_STATE_WORKING");     // true (narrows string → TaskState)
+isTerminalTaskState("TASK_STATE_COMPLETED"); // true
+```
+
+`TaskState` (strict closed union): `TASK_STATE_SUBMITTED` | `TASK_STATE_WORKING` | `TASK_STATE_INPUT_REQUIRED` | `TASK_STATE_COMPLETED` | `TASK_STATE_FAILED` | `TASK_STATE_CANCELED` | `TASK_STATE_REJECTED`.
+Terminal: `COMPLETED`, `FAILED`, `CANCELED`, `REJECTED`.
+
+### A2A types
+
+```ts
+import type {
+  AgentCard,
+  AgentInterface,
+  AgentCapabilities,
+  AgentSkill,
+  AgentSecurityScheme,
+  A2AProtocolBinding,
+} from "@vinhnt-sdk/mcp";
+
+interface AgentCard {
+  readonly name: string;
+  readonly description: string;
+  readonly version: string;
+  readonly supportedInterfaces: readonly AgentInterface[];
+  readonly capabilities: AgentCapabilities;
+  readonly skills: readonly AgentSkill[];
+  readonly defaultInputModes: readonly string[];
+  readonly defaultOutputModes: readonly string[];
+  readonly securitySchemes?: Record<string, AgentSecurityScheme>;
+}
+
+interface AgentInterface {
+  readonly url: string;
+  readonly protocolBinding: A2AProtocolBinding; // "JSONRPC" | "GRPC" | "HTTP+JSON"
+  readonly protocolVersion: string;
+}
+```
+
+- `AgentCapabilities` — `streaming?`, `pushNotifications?`, `stateTransitionHistory?`, `agentCardUrl?`
+- `AgentSkill` — `id`, `name`, `description`, `tags?`, `examples?`
+- `AgentSecurityScheme` — `{ type: string; [key: string]: unknown }` (OpenAPI-style; vendor schemes pass through)
 
 ---
 
@@ -262,23 +347,23 @@ interface JsonRpcNotification {
 
 ### `mcp-servers.json`
 
-Define MCP server connections in a JSON configuration file:
+Define MCP server connections in a JSON configuration file (one `McpServerConfig` per entry):
 
 ```json
 {
   "servers": [
     {
-      "id": "filesystem",
+      "name": "filesystem",
+      "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"],
-      "capabilities": ["tools"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"]
     },
     {
-      "id": "github",
+      "name": "github",
+      "transport": "stdio",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" },
-      "capabilities": ["tools", "resources"]
+      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
     }
   ]
 }
@@ -287,17 +372,18 @@ Define MCP server connections in a JSON configuration file:
 Load from configuration:
 
 ```ts
-import { McpClientPool, loadMcpConfig } from "@vinhnt-sdk/mcp";
+import { McpToolProvider } from "@vinhnt-sdk/mcp";
+import { readFile } from "node:fs/promises";
 
-const config = await loadMcpConfig("mcp-servers.json");
-const pool = new McpClientPool();
+const config = JSON.parse(await readFile("mcp-servers.json", "utf8"));
 for (const server of config.servers) {
-  pool.addClient(server.id, server);
+  const provider = new McpToolProvider(server);
+  await provider.connect();
+  registry.registerProvider(provider);
 }
-await pool.connectAll();
 ```
 
 ## Dependencies
 
-- `@vinhnt-sdk/schema` — Provides `Tool` type definitions and JSON Schema validation.
-- `@vinhnt-sdk/tools` — Tool execution interface used by `McpToolMapper`.
+- `@vinhnt-sdk/schema` — JSON-RPC wire types (`JsonRpcRequest`, `JsonRpcResponse`, `JsonRpcNotification`).
+- `@vinhnt-sdk/tools` — `ToolDefinition` / `ToolProvider` interfaces used by `mapMcpTool` and `McpToolProvider`.

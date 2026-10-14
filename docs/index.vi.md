@@ -8,7 +8,7 @@ category: Getting Started
 
 # Xây dựng agent AI với TypeScript
 
-vinhnt-sdk là một SDK modular, có thể mở rộng để xây dựng agent AI trong TypeScript. Nó cung cấp 18 packages hoạt động cùng nhau để mang đến cho bạn bộ công cụ hoàn chỉnh để tạo, triển khai và quản lý các agent thông minh.
+vinhnt-sdk là một SDK modular, có thể mở rộng để xây dựng agent AI trong TypeScript. Nó cung cấp 21 packages hoạt động cùng nhau để mang đến cho bạn bộ công cụ hoàn chỉnh để tạo, triển khai và quản lý các agent thông minh.
 
 ## vinhnt-sdk là gì?
 
@@ -25,32 +25,44 @@ vinhnt-sdk được thiết kế từ đầu cho các lập trình viên TypeScr
 ## Cài đặt nhanh
 
 ```bash
-pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools
+pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools @vinhnt-sdk/session @vinhnt-sdk/provider-openai-compatible zod
 ```
 
 ## Ví dụ 5 phút
 
 ```typescript
 import { AgentKernel, defineTool } from '@vinhnt-sdk/core'
+import { NullRunEventStore } from '@vinhnt-sdk/session'
+import { OpenAICompatibleProvider } from '@vinhnt-sdk/provider-openai-compatible'
+import { z } from 'zod'
 
 const calculator = defineTool({
   name: 'calculator',
   description: 'Thực hiện tính toán cơ bản',
-  parameters: {
-    expression: { type: 'string', description: 'Biểu thức toán học' }
-  },
-  handler: async ({ expression }) => {
+  risk: 'read',
+  input: z.object({ expression: z.string().describe('Biểu thức toán học') }),
+  async execute({ expression }) {
     return eval(expression)
-  }
+  },
 })
 
 const kernel = new AgentKernel({
-  model: 'gpt-4',
-  tools: [calculator]
+  model: new OpenAICompatibleProvider({
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: process.env.OPENAI_API_KEY!,
+    defaultModel: 'gpt-4o-mini',
+  }),
+  store: new NullRunEventStore(),
+  tools: [calculator.toDefinition()],
 })
 
-const result = await kernel.run('Tính 15 * 23')
-console.log(result)
+const handle = kernel.run('Tính 15 * 23', {
+  requestId: 'req-1',
+  traceId: 'trace-1',
+  actorId: 'user-1',
+  tenantId: 'default',
+})
+await handle.completed
 ```
 
 ## Bước tiếp theo

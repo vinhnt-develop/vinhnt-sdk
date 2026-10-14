@@ -7,7 +7,6 @@ category: "Guides"
 sidebarPosition: 2
 sidebarLabel: "Tool Permissions"
 tags: [permissions, security, risk]
-version: "0.1.3"
 lastUpdated: "2026-08-26"
 ---
 

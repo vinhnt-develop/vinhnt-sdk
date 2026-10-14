@@ -114,59 +114,6 @@ export interface AgentStartedEvent extends AgentEventBase {
 }
 
 /**
- * Model request event.
- */
-export interface ModelRequestEvent extends AgentEventBase {
-  readonly type: "model.request";
-  readonly runId: RunId;
-  readonly model: string;
-  readonly provider?: string;
-  readonly tokenCount?: number;
-}
-
-/**
- * Model response event.
- */
-export interface ModelResponseEvent extends AgentEventBase {
-  readonly type: "model.response";
-  readonly runId: RunId;
-  readonly model: string;
-  readonly provider?: string;
-  readonly tokensUsed?: number;
-  readonly durationMs?: number;
-}
-
-/**
- * Tool start event.
- */
-export interface ToolStartEvent extends AgentEventBase {
-  readonly type: "tool.start";
-  readonly runId: RunId;
-  readonly tool: string;
-  readonly input?: unknown;
-}
-
-/**
- * Tool end event.
- */
-export interface ToolEndEvent extends AgentEventBase {
-  readonly type: "tool.end";
-  readonly runId: RunId;
-  readonly tool: string;
-  readonly output?: unknown;
-  readonly durationMs?: number;
-}
-
-/**
- * Agent thinking event.
- */
-export interface AgentThinkingEvent extends AgentEventBase {
-  readonly type: "agent.thinking";
-  readonly runId: RunId;
-  readonly content: string;
-}
-
-/**
  * Agent completed event.
  */
 export interface AgentCompletedEvent extends AgentEventBase {
@@ -189,31 +136,24 @@ export interface AgentErrorEvent extends AgentEventBase {
 }
 
 /**
- * Permission requested event.
- */
-export interface PermissionEvent extends AgentEventBase {
-  readonly type: "permission.requested";
-  readonly runId: RunId;
-  readonly tool: string;
-  readonly resource: string;
-  readonly reason: string;
-}
-
-/**
- * Agent event — discriminated union of all agent events.
- * Use this type for type-safe event handling.
- * 
+ * Agent event — discriminated union of the lifecycle events emitted by
+ * `handle.events()` / `onEvent()` (the AgentRunHandle surface).
+ *
+ * Detailed run telemetry (tool, LLM, permission, step, …) uses the canonical
+ * `KnownRunEvent` vocabulary via the event bus / persisted run events — not
+ * this union.
+ *
  * @example
  * ```typescript
  * import { AgentEvent } from "@vinhnt-sdk/schema";
- * 
+ *
  * function handleEvent(event: AgentEvent) {
  *   switch (event.type) {
  *     case "agent.started":
  *       console.log(`Agent started: ${event.prompt}`);
  *       break;
- *     case "tool.start":
- *       console.log(`Tool started: ${event.tool}`);
+ *     case "agent.error":
+ *       console.log(`Agent error: ${event.error}`);
  *       break;
  *     case "agent.completed":
  *       console.log(`Agent completed: ${event.status}`);
@@ -224,19 +164,13 @@ export interface PermissionEvent extends AgentEventBase {
  */
 export type AgentEvent =
   | AgentStartedEvent
-  | ModelRequestEvent
-  | ModelResponseEvent
-  | ToolStartEvent
-  | ToolEndEvent
-  | AgentThinkingEvent
   | AgentCompletedEvent
-  | AgentErrorEvent
-  | PermissionEvent;
+  | AgentErrorEvent;
 
 // ---------------------------------------------------------------------------
 // Data payloads (reusable by consumers)
 // ---------------------------------------------------------------------------
-export interface RunStartedData { readonly prompt: string; readonly model: string; readonly provider: string; readonly agentName?: string; readonly agentId?: string; readonly parentRunId?: RunId }
+export interface RunStartedData { readonly prompt: string; readonly model: string; readonly provider: string; readonly agentName?: string; readonly agentId?: string; readonly parentRunId?: RunId; readonly sessionId?: string }
 export interface StepStartedData { readonly turn: number; readonly step: number }
 export interface TokenStreamedData { readonly content: string; readonly step: number }
 export interface ThinkingStartedData { readonly step: number }

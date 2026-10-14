@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/llm"
 description: "LLM adapter abstraction, registry, retry"
 lang: "en"
-version: "0.4.0"
+version: "0.5.10"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "llm"
@@ -53,8 +53,8 @@ class LlmRegistry {
 
 | Method | Throws | Description |
 |--------|--------|-------------|
-| `register(provider, adapter)` | `ConfigError` | Registers adapter for a provider |
-| `get(provider)` | `ModelNotFoundError` | Retrieves adapter by provider |
+| `register(provider, adapter)` | `AdapterRegistrationError` | Registers adapter for a provider |
+| `get(provider)` | `—` | Retrieves adapter by provider (`undefined` if not registered) |
 | `has(provider)` | — | Checks if provider is registered |
 | `list()` | — | Returns all registered providers |
 
@@ -198,7 +198,7 @@ if (meter.fitsContext("Hello world", 4096)) {
 ## Error Handling
 
 ```typescript
-import { RateLimitError, TimeoutError, ModelNotFoundError } from "@vinhnt-sdk/schema";
+import { RateLimitError, TimeoutError, NetworkError } from "@vinhnt-sdk/schema";
 
 async function callWithRetry(request: GenerateOptions, policy: RetryPolicy) {
   let attempt = 0;

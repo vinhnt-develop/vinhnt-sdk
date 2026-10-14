@@ -27,7 +27,7 @@ Trước khi bắt đầu, đảm bảo bạn có:
 Thêm các package core vào dự án của bạn:
 
 ```bash
-pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools
+pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools @vinhnt-sdk/session @vinhnt-sdk/provider-openai-compatible zod
 ```
 
 ### Bước 2: Cấu hình
@@ -36,13 +36,11 @@ Tạo file cấu hình cơ bản:
 
 ```typescript
 // agent.config.ts
-import { defineConfig } from '@vinhnt-sdk/core'
-
-export default defineConfig({
+export default {
   model: 'gpt-4',
   temperature: 0.7,
   maxTokens: 2000,
-})
+}
 ```
 
 ### Bước 3: Chạy
@@ -51,24 +49,37 @@ Tạo và chạy agent đầu tiên của bạn:
 
 ```typescript
 import { AgentKernel, defineTool } from '@vinhnt-sdk/core'
+import { NullRunEventStore } from '@vinhnt-sdk/session'
+import { OpenAICompatibleProvider } from '@vinhnt-sdk/provider-openai-compatible'
+import { z } from 'zod'
 
 const calculator = defineTool({
   name: 'calculator',
   description: 'Thực hiện tính toán cơ bản',
-  parameters: {
-    expression: { type: 'string', description: 'Biểu thức toán học' }
-  },
-  handler: async ({ expression }) => {
+  risk: 'read',
+  input: z.object({ expression: z.string().describe('Biểu thức toán học') }),
+  async execute({ expression }) {
     return eval(expression)
-  }
+  },
 })
 
 const kernel = new AgentKernel({
-  model: 'gpt-4',
-  tools: [calculator]
+  model: new OpenAICompatibleProvider({
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: process.env.OPENAI_API_KEY!,
+    defaultModel: 'gpt-4o-mini',
+  }),
+  store: new NullRunEventStore(),
+  tools: [calculator.toDefinition()],
 })
 
-await kernel.run('2 + 2 bằng bao nhiêu?')
+const handle = kernel.run('2 + 2 bằng bao nhiêu?', {
+  requestId: 'req-1',
+  traceId: 'trace-1',
+  actorId: 'user-1',
+  tenantId: 'default',
+})
+await handle.completed
 ```
 
 ## Bạn sẽ xây dựng gì

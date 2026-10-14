@@ -1,7 +1,7 @@
 ---
 title: "@vinhnt-sdk/mcp"
-description: "Khách MCP, pooling kết nối và ánh xạ tool"
-version: "0.4.0"
+description: "Khách MCP cho Model Context Protocol 2026-07-28"
+version: "0.4.6"
 lang: "vi"
 type: "reference"
 category: "API Reference"
@@ -10,7 +10,13 @@ sidebarLabel: "mcp"
 
 # @vinhnt-sdk/mcp
 
-Các triển khai khách Model Context Protocol (MCP) để kết nối với máy chủ tool bên ngoài, quản lý kết nối và ánh xạ tool MCP sang giao diện tool của vinhnt-sdk.
+Khách Model Context Protocol (MCP) cho vinhnt-sdk — tuân thủ MCP 2026-07-28.
+
+Thay đổi chính so với MCP 2025-03-26:
+- **Stateless mặc định** — không theo dõi phiên
+- **MRTR** (Model-Relative Tool Registration) thay thế yêu cầu do server khởi xướng
+- **Resources và Prompts** giờ là tool (giao diện hợp nhất)
+- **Sampling và Roots** đã deprecated (dùng tool call thay thế)
 
 ## Cài đặt
 
@@ -22,143 +28,137 @@ npm install @vinhnt-sdk/mcp
 
 ### `McpClient`
 
-Quản lý một kết nối duy nhất đến máy chủ MCP. Xử lý giao tiếp JSON-RPC, khám phá tool và vòng đời.
+Kết nối tới các máy chủ MCP và cung cấp truy cập tool/resource. Stateless mặc định (MCP 2026-07-28).
 
 ```ts
-import { McpClient, StdioTransport } from "@vinhnt-sdk/mcp";
+import { McpClient } from "@vinhnt-sdk/mcp";
 
-const client = new McpClient({
+const client = new McpClient();
+const conn = await client.connect({
   name: "my-server",
-  transport: new StdioTransport({ command: "node", args: ["server.js"] }),
-});
-
-await client.connect();
-const tools = await client.listTools();
-const result = await client.callTool("get_weather", { city: "Hà Nội" });
-await client.disconnect();
-```
-
-**Constructor:** `McpClient(config: McpServerConfig)`
-
-**Phương thức:**
-- `connect(): Promise<void>` — Thiết lập kết nối đến máy chủ MCP.
-- `disconnect(): Promise<void>` — Đóng kết nối một cách trôi chảy.
-- `listTools(): Promise<McpTool[]>` — Khám phá các tool có sẵn trên máy chủ.
-- `callTool(name: string, args: Record<string, unknown>): Promise<unknown>` — Gọi tool theo tên với đối số.
-- `isConnected(): boolean` — Kiểm tra xem khách có đang kết nối không.
-- `onNotification(handler: (notification: JsonRpcNotification) => void): void` — Xử lý thông báo do máy chủ khởi xướng.
-
----
-
-### `McpClientPool`
-
-Quản lý một nhóm các instance `McpClient`, cho phép cân bằng tải, tự động kết nối lại và truy cập đồng thời nhiều máy chủ MCP.
-
-```ts
-import { McpClientPool } from "@vinhnt-sdk/mcp";
-
-const pool = new McpClientPool({
-  maxConnections: 5,
-  retryAttempts: 3,
-  retryDelay: 1000,
-});
-
-pool.addClient("server-a", { name: "server-a", transport: stdioTransportA });
-pool.addClient("server-b", { name: "server-b", transport: stdioTransportB });
-
-await pool.connectAll();
-const tools = await pool.listAllTools();
-const result = await pool.callTool("server-a", "analyze", { data: "..." });
-```
-
-**Constructor:** `McpClientPool(options?: McpClientPoolOptions)`
-
-**Phương thức:**
-- `addClient(id: string, config: McpServerConfig): void` — Đăng ký khách trong nhóm.
-- `removeClient(id: string): Promise<void>` — Ngắt kết nối và xóa khách.
-- `connectAll(): Promise<void>` — Kết nối tất cả khách đã đăng ký.
-- `disconnectAll(): Promise<void>` — Ngắt kết nối tất cả khách.
-- `getClient(id: string): McpClient | undefined` — Lấy khách theo ID.
-- `listAllTools(): Promise<Record<string, McpTool[]>>` — Liệt kê tool từ tất cả máy chủ đã kết nối.
-- `callTool(serverId: string, toolName: string, args: Record<string, unknown>): Promise<unknown>` — Định tuyến lời gọi tool đến máy chủ cụ thể.
-
----
-
-### `McpToolMapper`
-
-Ánh xạ tool MCP được khám phá từ máy chủ sang định dạng `Tool` của vinhnt-sdk, cho phép tích hợp liền mạch với framework agent.
-
-```ts
-import { McpToolMapper } from "@vinhnt-sdk/mcp";
-
-const mapper = new McpToolMapper();
-
-const mcpTools = await client.listTools();
-const sdkTools = mapper.mapTools(mcpTools);
-
-// sdkTools có thể truyền trực tiếp cho Agent
-agent.setTools(sdkTools);
-```
-
-**Constructor:** `McpToolMapper(options?: ToolMapperOptions)`
-
-**Phương thức:**
-- `mapTools(mcpTools: McpTool[]): Tool[]` — Chuyển đổi tool MCP sang tool vinhnt-sdk.
-- `mapTool(mcpTool: McpTool): Tool` — Chuyển đổi một tool MCP.
-- `addConverter(name: string, converter: ToolConverter): void` — Đăng ký bộ chuyển đổi tùy chỉnh cho các mẫu tool cụ thể.
-
----
-
-## Triển khai Transport
-
-### `StdioTransport`
-
-Giao tiếp với máy chủ MCP qua pipe stdin/stdout. Lý tưởng cho máy chủ dựa trên quy trình cục bộ.
-
-```ts
-import { StdioTransport } from "@vinhnt-sdk/mcp";
-
-const transport = new StdioTransport({
+  transport: "stdio",
   command: "node",
-  args: ["./my-mcp-server.js"],
-  env: { ...process.env, API_KEY: "..." },
-  cwd: "/path/to/server",
+  args: ["server.js"],
+  protocolVersion: "2026-07-28", // mặc định
 });
+
+const tools = await conn.listTools();
+const result = await conn.callTool("get_weather", { city: "Hà Nội" });
+
+// Deprecated trong 2026-07-28 — ưu tiên tools
+const resources = await conn.listResources();
+const prompts = await conn.listPrompts();
+
+await conn.close();
 ```
 
-**Tùy chọn:**
-- `command: string` — Chương trình thực thi cần chạy.
-- `args?: string[]` — Đối số lệnh.
-- `env?: Record<string, string>` — Biến môi trường.
-- `cwd?: string` — Thư mục làm việc.
+**Phương thức:**
+- `connect(config: McpServerConfig): Promise<McpConnection>` — Kết nối tới máy chủ MCP, trả về handle kết nối.
+- `getConnection(name: string): McpConnection | undefined` — Lấy kết nối hiện có theo tên server.
+- `closeAll(): Promise<void>` — Đóng mọi kết nối đang mở.
+
+### `McpConnection`
+
+Handle kết quả từ `client.connect(...)`.
+
+**Thuộc tính:** `serverInfo`, `capabilities`, `protocolVersion`.
+
+**Phương thức:**
+- `listTools(): Promise<McpTool[]>` — Khám phá các tool có sẵn trên máy chủ.
+- `callTool(name: string, args?: Record<string, unknown>): Promise<CallToolResult>` — Gọi tool theo tên với đối số.
+- `listResources(): Promise<McpResource[]>` — Liệt kê resource (deprecated, ưu tiên tool).
+- `readResource(uri: string): Promise<string>` — Đọc resource (deprecated).
+- `listPrompts()` / `getPrompt(name, args?)` — Truy cập prompt (deprecated).
+- `close(): Promise<void>` — Ngắt kết nối khỏi máy chủ.
 
 ---
 
-### `SseTransport`
+### `McpToolProvider`
 
-Transport cho máy chủ MCP dựa trên Server-Sent Events (SSE). Hiện là triển khai chờ.
+Gói `McpClient` + khám phá tool thành một `ToolProvider` để tool MCP đăng ký vào `ToolProviderRegistry`.
 
 ```ts
-import { SseTransport } from "@vinhnt-sdk/mcp";
+import { McpToolProvider } from "@vinhnt-sdk/mcp";
 
-const transport = new SseTransport({
+const provider = new McpToolProvider({
+  name: "github",
+  transport: "stdio",
+  command: "npx",
+  args: ["-y", "@modelcontextprotocol/server-github"],
+  env: { GITHUB_TOKEN: "xxx" },
+});
+await provider.connect(); // khởi chạy server và khám phá tool
+registry.registerProvider(provider);
+
+// Sau này: khám phá lại khi nhận thông báo listChanged
+await provider.refresh();
+
+// Dọn dẹp
+await provider.close();
+```
+
+**Constructor:** `McpToolProvider(config: McpToolProviderConfig)` — `McpServerConfig` + `id` tùy chọn (mặc định `"mcp:<name>"`).
+
+**Phương thức:**
+- `connect(): Promise<void>` — Kết nối máy chủ và khám phá tool (gọi trước khi đăng ký).
+- `getConnection(): McpConnection | null` — Kết nối gốc để truy cập trực tiếp.
+- `toolCount(): number` — Số tool đã khám phá.
+- `get tools(): ToolDefinition[]` — Tool đã khám phá dạng định nghĩa vinhnt-sdk.
+- `refresh(): Promise<void>` — Khám phá lại tool.
+- `close(): Promise<void>` — Ngắt kết nối và xóa tool.
+
+---
+
+### `mapMcpTool` / `discoverMcpTools`
+
+Ánh xạ tool MCP sang `ToolDefinition` của vinhnt-sdk, tích hợp liền mạch với framework agent.
+
+```ts
+import { discoverMcpTools, mapMcpTool, mcpDomain, mcpToolId } from "@vinhnt-sdk/mcp";
+
+// Ánh xạ mọi tool trên một kết nối
+const sdkTools = await discoverMcpTools("my-server", conn);
+// → ToolDefinition[] — truyền trực tiếp vào `tools` của kernel config
+
+// Hoặc ánh xạ từng tool
+const tool = mapMcpTool("my-server", mcpTool, conn);
+
+// Quy ước đặt tên
+mcpDomain("my-server");              // "mcp:my-server"
+mcpToolId("my-server", "get_weather"); // "mcp__my-server__get_weather"
+```
+
+Tool được ánh xạ có `risk: "external"`, `metadata.source: "mcp"` và id có namespace `mcp__<server>__<tool>`.
+
+---
+
+## Transport
+
+Transport được chọn qua `McpServerConfig.transport` — các triển khai (`stdio`, `sse`, `streamable-http`) do `McpClient.connect()` tạo nội bộ.
+
+```ts
+// Quy trình cục bộ qua stdin/stdout
+const local = await client.connect({
+  name: "filesystem",
+  transport: "stdio",
+  command: "npx",
+  args: ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"],
+  env: { ...process.env },
+});
+
+// Server-Sent Events
+const sse = await client.connect({
+  name: "remote",
+  transport: "sse",
   url: "http://localhost:3000/mcp/sse",
   headers: { Authorization: "Bearer token" },
 });
-```
 
----
-
-### `StreamableHttpTransport`
-
-Transport cho máy chủ MCP dựa trên HTTP có thể phát trực tuyến. Hiện là triển khai chờ.
-
-```ts
-import { StreamableHttpTransport } from "@vinhnt-sdk/mcp";
-
-const transport = new StreamableHttpTransport({
+// Streamable HTTP
+const http = await client.connect({
+  name: "http-server",
+  transport: "streamable-http",
   url: "http://localhost:3000/mcp",
-  headers: { "Content-Type": "application/json" },
 });
 ```
 
@@ -168,27 +168,35 @@ const transport = new StreamableHttpTransport({
 
 ### `McpTransport`
 
-Giao diện cho tất cả triển khai transport.
+Giao diện do các transport nội bộ triển khai.
 
 ```ts
 interface McpTransport {
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  send(request: JsonRpcRequest): Promise<JsonRpcResponse>;
-  onNotification(handler: (notification: JsonRpcNotification) => void): void;
+  request(req: JsonRpcRequest): Promise<JsonRpcResponse>;
+  notify(notification: JsonRpcNotification): void;
+  onMessage(handler: (msg: JsonRpcResponse | JsonRpcNotification) => void): () => void;
+  close(): Promise<void>;
 }
 ```
 
+`McpTransportType = "stdio" | "sse" | "streamable-http" | (string & {})`
+
 ### `McpServerConfig`
 
-Cấu hình để tạo `McpClient`.
+Cấu hình chấp nhận bởi `McpClient.connect()` (và `McpToolProvider`).
 
 ```ts
 interface McpServerConfig {
-  name: string;
-  transport: McpTransport;
-  timeout?: number;          // Thời gian chờ yêu cầu tính bằng ms (mặc định: 30000)
-  capabilities?: string[];   // Các khả năng máy chủ được yêu cầu
+  readonly name: string;
+  readonly transport: "stdio" | "sse" | "streamable-http";
+  readonly protocolVersion?: string;   // mặc định: "2026-07-28"
+  readonly command?: string;           // stdio
+  readonly args?: string[];            // stdio
+  readonly env?: Record<string, string>;
+  readonly url?: string;               // sse / streamable-http
+  readonly headers?: Record<string, string>;
+  readonly timeoutMs?: number;         // mặc định: 30000
+  readonly metadata?: Record<string, unknown>;
 }
 ```
 
@@ -198,49 +206,140 @@ interface McpServerConfig {
 
 ```ts
 interface McpTool {
-  name: string;
-  description?: string;
-  inputSchema: Record<string, unknown>;  // JSON Schema cho đầu vào tool
+  readonly name: string;
+  readonly description?: string;
+  readonly inputSchema: Record<string, unknown>; // JSON Schema cho đầu vào tool
+  readonly annotations?: Record<string, unknown>;
+  readonly metadata?: Record<string, unknown>;
 }
 ```
 
-### `JsonRpcRequest`
+### `CallToolResult`
 
-Đối tượng yêu cầu JSON-RPC 2.0.
+```ts
+interface CallToolResult {
+  readonly content: ReadonlyArray<
+    | { readonly type: "text"; readonly text: string }
+    | { readonly type: "image"; readonly data: string; readonly mimeType: string }
+    | { readonly type: "resource"; readonly resource: { readonly uri: string; readonly mimeType?: string; readonly text?: string } }
+  >;
+  readonly isError?: boolean;
+}
+```
+
+### `JsonRpcRequest` / `JsonRpcResponse` / `JsonRpcNotification`
+
+Kiểu wire JSON-RPC 2.0 (re-export từ `@vinhnt-sdk/schema`).
 
 ```ts
 interface JsonRpcRequest {
-  jsonrpc: "2.0";
-  id: string | number;
-  method: string;
-  params?: Record<string, unknown>;
+  readonly jsonrpc: "2.0";
+  readonly id: number | string;
+  readonly method: string;
+  readonly params?: unknown;
 }
-```
 
-### `JsonRpcResponse`
-
-Đối tượng phản hồi JSON-RPC 2.0.
-
-```ts
 interface JsonRpcResponse {
-  jsonrpc: "2.0";
-  id: string | number;
-  result?: unknown;
-  error?: { code: number; message: string; data?: unknown };
+  readonly jsonrpc: "2.0";
+  readonly id: number | string;
+  readonly result?: unknown;
+  readonly error?: { code: number; message: string; data?: unknown };
+}
+
+interface JsonRpcNotification {
+  readonly jsonrpc: "2.0";
+  readonly method: string;
+  readonly params?: unknown;
 }
 ```
 
-### `JsonRpcNotification`
+---
 
-Thông báo JSON-RPC 2.0 (yêu cầu không có `id`).
+## A2A v1.0 (Khám phá Agent Card)
+
+Tương tác agent-to-agent theo A2A v1.0 (Linux Foundation): dữ liệu Agent Card
+chuẩn, khám phá `/.well-known/agent-card.json` có cache ETag/304, và vòng đời
+task 7 trạng thái nghiêm ngặt. Streaming (`SendStreamingMessage`), push
+notification, binding WebSocket/gRPC **chưa triển khai** (hoãn lại).
+
+### `discoverAgentCard`
 
 ```ts
-interface JsonRpcNotification {
-  jsonrpc: "2.0";
-  method: string;
-  params?: Record<string, unknown>;
+import {
+  discoverAgentCard,
+  A2A_AGENT_CARD_WELL_KNOWN_PATH,
+} from "@vinhnt-sdk/mcp";
+import type { AgentCardDocument, DiscoverAgentCardOptions } from "@vinhnt-sdk/mcp";
+
+const options: DiscoverAgentCardOptions = {
+  etag: cachedEtag,      // If-None-Match có điều kiện (tuỳ chọn)
+  signal: abort.signal,  // tuỳ chọn
+  fetchImpl,             // seam fetch (tuỳ chọn)
+};
+const doc: AgentCardDocument = await discoverAgentCard(
+  "https://agent.example.com/", // → /.well-known/agent-card.json
+  options,
+);
+if (doc.notModified) {
+  // 304 — dùng lại card đã cache
+} else {
+  console.log(doc.card?.name, doc.card?.skills);
 }
 ```
+
+- Origin trần → GET `/.well-known/agent-card.json` (`A2A_AGENT_CARD_WELL_KNOWN_PATH`); URL đầy đủ được request nguyên trạng (registry curated).
+- Trả về `AgentCardDocument { card?, url, etag?, notModified? }`.
+- `@throws {ValidationError}` — URL target không hợp lệ, hoặc payload thiếu `name` / `description` / `version` / `supportedInterfaces` / `skills` / `defaultInputModes` / `defaultOutputModes` / `capabilities`.
+- `@throws {NetworkError}` — lỗi vận chuyển, HTTP ≠ 2xx (và ≠ 304), hoặc JSON không hợp lệ.
+
+### Trạng thái task
+
+```ts
+import { KNOWN_TASK_STATES, isKnownTaskState, isTerminalTaskState } from "@vinhnt-sdk/mcp";
+import type { TaskState } from "@vinhnt-sdk/mcp";
+
+KNOWN_TASK_STATES.length;                    // 7 — theo thứ tự vòng đời
+isKnownTaskState("TASK_STATE_WORKING");     // true (narrows string → TaskState)
+isTerminalTaskState("TASK_STATE_COMPLETED"); // true
+```
+
+`TaskState` (union đóng nghiêm ngặt): `TASK_STATE_SUBMITTED` | `TASK_STATE_WORKING` | `TASK_STATE_INPUT_REQUIRED` | `TASK_STATE_COMPLETED` | `TASK_STATE_FAILED` | `TASK_STATE_CANCELED` | `TASK_STATE_REJECTED`.
+Trạng thái kết thúc: `COMPLETED`, `FAILED`, `CANCELED`, `REJECTED`.
+
+### Kiểu A2A
+
+```ts
+import type {
+  AgentCard,
+  AgentInterface,
+  AgentCapabilities,
+  AgentSkill,
+  AgentSecurityScheme,
+  A2AProtocolBinding,
+} from "@vinhnt-sdk/mcp";
+
+interface AgentCard {
+  readonly name: string;
+  readonly description: string;
+  readonly version: string;
+  readonly supportedInterfaces: readonly AgentInterface[];
+  readonly capabilities: AgentCapabilities;
+  readonly skills: readonly AgentSkill[];
+  readonly defaultInputModes: readonly string[];
+  readonly defaultOutputModes: readonly string[];
+  readonly securitySchemes?: Record<string, AgentSecurityScheme>;
+}
+
+interface AgentInterface {
+  readonly url: string;
+  readonly protocolBinding: A2AProtocolBinding; // "JSONRPC" | "GRPC" | "HTTP+JSON"
+  readonly protocolVersion: string;
+}
+```
+
+- `AgentCapabilities` — `streaming?`, `pushNotifications?`, `stateTransitionHistory?`, `agentCardUrl?`
+- `AgentSkill` — `id`, `name`, `description`, `tags?`, `examples?`
+- `AgentSecurityScheme` — `{ type: string; [key: string]: unknown }` (kiểu OpenAPI; scheme riêng của vendor truyền qua)
 
 ---
 
@@ -248,23 +347,23 @@ interface JsonRpcNotification {
 
 ### `mcp-servers.json`
 
-Định nghĩa kết nối máy chủ MCP trong tệp cấu hình JSON:
+Định nghĩa kết nối máy chủ MCP trong tệp cấu hình JSON (mỗi mục là một `McpServerConfig`):
 
 ```json
 {
   "servers": [
     {
-      "id": "filesystem",
+      "name": "filesystem",
+      "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"],
-      "capabilities": ["tools"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/files"]
     },
     {
-      "id": "github",
+      "name": "github",
+      "transport": "stdio",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" },
-      "capabilities": ["tools", "resources"]
+      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
     }
   ]
 }
@@ -273,17 +372,18 @@ interface JsonRpcNotification {
 Tải từ cấu hình:
 
 ```ts
-import { McpClientPool, loadMcpConfig } from "@vinhnt-sdk/mcp";
+import { McpToolProvider } from "@vinhnt-sdk/mcp";
+import { readFile } from "node:fs/promises";
 
-const config = await loadMcpConfig("mcp-servers.json");
-const pool = new McpClientPool();
+const config = JSON.parse(await readFile("mcp-servers.json", "utf8"));
 for (const server of config.servers) {
-  pool.addClient(server.id, server);
+  const provider = new McpToolProvider(server);
+  await provider.connect();
+  registry.registerProvider(provider);
 }
-await pool.connectAll();
 ```
 
 ## Phụ thuộc
 
-- `@vinhnt-sdk/schema` — Cung cấp định nghĩa kiểu `Tool` và xác thực JSON Schema.
-- `@vinhnt-sdk/tools` — Giao diện thực thi tool được sử dụng bởi `McpToolMapper`.
+- `@vinhnt-sdk/schema` — kiểu wire JSON-RPC (`JsonRpcRequest`, `JsonRpcResponse`, `JsonRpcNotification`).
+- `@vinhnt-sdk/tools` — giao diện `ToolDefinition` / `ToolProvider` dùng bởi `mapMcpTool` và `McpToolProvider`.

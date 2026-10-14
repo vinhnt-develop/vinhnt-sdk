@@ -1,6 +1,6 @@
 # @vinhnt-sdk/knowledge
 
-> Version: 0.1.2-beta.0 | Status: BETA
+> Status: BETA
 
 Memory and knowledge management for vinhnt-sdk — bounded memory, context compression, learning engine.
 

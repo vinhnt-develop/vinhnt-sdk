@@ -9,7 +9,7 @@ sidebarPosition: 1
 
 # Lịch sử thay đổi
 
-## v0.1.3 (Hiện tại)
+## v0.1.3ện tại)
 
 ### Thêm mới
 - `CircuitBreakerOpenError` — kế thừa `VntError` với `code: "CIRCUIT_BREAKER_OPEN"`, có thể retry

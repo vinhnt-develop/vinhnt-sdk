@@ -4,7 +4,7 @@ description: "Secret redactor and injection detection (deprecated — use guard)
 lang: "en"
 type: "reference"
 category: "API Reference"
-version: "0.4.0"
+version: "0.4.2"
 sidebarLabel: "security"
 ---
 
@@ -106,14 +106,14 @@ safeLogger.info("Connecting with token=sk-abc123");
 
 ### `SecretRedactor`
 
-Class with injectable patterns for more advanced use cases.
+Class with injectable patterns for more advanced use cases. Defined in `@vinhnt-sdk/guard` (this package re-exports a curated subset of guard's security utilities).
 
 ```ts
-import { SecretRedactor } from "@vinhnt-sdk/security";
+import { SecretRedactor } from "@vinhnt-sdk/guard";
 
 const redactor = new SecretRedactor({
-  customPatterns: [
-    { name: "internal_id", regex: /INT-\d{6}/g, replacement: "[REDACTED:id]" },
+  patterns: [
+    { name: "internal_id", pattern: /INT-\d{6}/g, replacement: "[REDACTED:id]" },
   ],
 });
 
@@ -127,7 +127,8 @@ redactor.redact("User INT-000123 logged in");
 | --- | --- |
 | `redact(text)` | Redact secrets using all configured patterns |
 | `detect(text)` | Detect secrets without redacting |
-| `addPattern(pattern)` | Add a custom pattern at runtime |
+| `register(pattern)` | Add a custom `SecretPattern` (`name`, `pattern`, `replacement`) at runtime |
+| `unregister(name)` | Remove a pattern by name |
 | `removePattern(name)` | Remove a pattern by name |
 
 ---

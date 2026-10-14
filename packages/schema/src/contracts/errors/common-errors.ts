@@ -1,22 +1,38 @@
 import { VntError } from "./base.js";
 import type { ErrorDomain, ErrorCategory } from "./base.js";
 
+/** Kernel-level failure codes for {@link KernelError}. */
+export type KernelErrorCode =
+  | "session_busy"
+  | "cancelled"
+  | "max_steps_exceeded"
+  | "max_tokens_exceeded"
+  | "tool_failed"
+  | "model_failed"
+  | "session_store_failed"
+  | "internal_error"
+  | "timeout"
+  | "model_unavailable"
+  | "guardrail_denied"
+  | "validation_error"
+  | "missed_tool_calls";
+
 /**
- * Generic kernel-level failure.
+ * Kernel-level failure with a typed {@link KernelErrorCode}.
  *
- * @deprecated Use `KernelError` from `@vinhnt-sdk/step-executor` instead.
- * This version lacks a typed `KernelErrorCode`. The step-executor version
- * is the canonical implementation: `import { KernelError } from "@vinhnt-sdk/step-executor"`.
+ * Canonical definition (merged from `@vinhnt-sdk/step-executor`, which
+ * re-exports this class): `import { KernelError } from "@vinhnt-sdk/schema"`.
  */
 export class KernelError extends VntError {
-  public override readonly code = "KERNEL_ERROR";
+  public override readonly code: string;
   public override readonly retryable = false;
   public override readonly domain: ErrorDomain = "kernel";
   public override readonly category: ErrorCategory = "system";
 
-  constructor(message: string, cause?: unknown) {
+  constructor(kernelCode: KernelErrorCode, message: string, cause?: unknown) {
     super(message, { cause, domain: "kernel", category: "system" });
-    this.name = "KernelError";
+    this.code = kernelCode;
+    this.name = `KernelError.${kernelCode}`;
   }
 
   static override isInstance(error: unknown): error is KernelError {
@@ -24,16 +40,27 @@ export class KernelError extends VntError {
   }
 }
 
-/** Thrown when a circuit breaker is open (calls rejected until it resets). */
+/**
+ * Thrown when a call is rejected because the breaker is open.
+ *
+ * Canonical definition (merged from `@vinhnt-sdk/guard`, which re-exports
+ * this class).
+ */
 export class CircuitBreakerOpenError extends VntError {
-  public override readonly code = "KERNEL_CIRCUIT_OPEN";
+  public override readonly code = "CIRCUIT_BREAKER_OPEN";
   public override readonly retryable = true;
   public override readonly domain: ErrorDomain = "kernel";
   public override readonly category: ErrorCategory = "system";
+  /** Milliseconds until the breaker transitions to half-open. */
+  public readonly remainingMs: number;
 
-  constructor(message: string = "Circuit breaker is open") {
-    super(message, { domain: "kernel", category: "system", retryable: true });
+  constructor(resetTimeoutMs: number) {
+    super(
+      `Circuit breaker is open — too many consecutive failures. Will retry in ${resetTimeoutMs}ms`,
+      { code: "CIRCUIT_BREAKER_OPEN", domain: "kernel", category: "system", retryable: true },
+    );
     this.name = "CircuitBreakerOpenError";
+    this.remainingMs = resetTimeoutMs;
   }
 
   static override isInstance(error: unknown): error is CircuitBreakerOpenError {

@@ -27,7 +27,7 @@ Before you begin, make sure you have:
 Add the core packages to your project:
 
 ```bash
-pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools
+pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools @vinhnt-sdk/session @vinhnt-sdk/provider-openai-compatible zod
 ```
 
 ### Step 2: Configure
@@ -36,13 +36,11 @@ Create a basic configuration file:
 
 ```typescript
 // agent.config.ts
-import { defineConfig } from '@vinhnt-sdk/core'
-
-export default defineConfig({
+export default {
   model: 'gpt-4',
   temperature: 0.7,
   maxTokens: 2000,
-})
+}
 ```
 
 ### Step 3: Run
@@ -51,24 +49,37 @@ Create and run your first agent:
 
 ```typescript
 import { AgentKernel, defineTool } from '@vinhnt-sdk/core'
+import { NullRunEventStore } from '@vinhnt-sdk/session'
+import { OpenAICompatibleProvider } from '@vinhnt-sdk/provider-openai-compatible'
+import { z } from 'zod'
 
 const calculator = defineTool({
   name: 'calculator',
   description: 'Perform basic calculations',
-  parameters: {
-    expression: { type: 'string', description: 'Math expression' }
-  },
-  handler: async ({ expression }) => {
+  risk: 'read',
+  input: z.object({ expression: z.string().describe('Math expression') }),
+  async execute({ expression }) {
     return eval(expression)
-  }
+  },
 })
 
 const kernel = new AgentKernel({
-  model: 'gpt-4',
-  tools: [calculator]
+  model: new OpenAICompatibleProvider({
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: process.env.OPENAI_API_KEY!,
+    defaultModel: 'gpt-4o-mini',
+  }),
+  store: new NullRunEventStore(),
+  tools: [calculator.toDefinition()],
 })
 
-await kernel.run('What is 2 + 2?')
+const handle = kernel.run('What is 2 + 2?', {
+  requestId: 'req-1',
+  traceId: 'trace-1',
+  actorId: 'user-1',
+  tenantId: 'default',
+})
+await handle.completed
 ```
 
 ## What You'll Build

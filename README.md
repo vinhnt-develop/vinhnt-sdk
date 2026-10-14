@@ -13,12 +13,11 @@
 
 | Package | Description |
 |---------|-------------|
-| `@vinhnt-sdk/provider-spec` | Provider specification — LanguageModelV1, Tool, ChatMessage, ContentBlock, error taxonomy |
 | `@vinhnt-sdk/schema` | Types, contracts, branded IDs, wire format |
 | `@vinhnt-sdk/config` | Credential resolution, settings, env validation |
 | `@vinhnt-sdk/llm` | LLM adapter, registry, token metering |
 | `@vinhnt-sdk/tools` | Tool framework + built-in tools (fs, shell, git, web, search) |
-| `@vinhnt-sdk/sandbox` | Process isolation with host/process backends |
+| `@vinhnt-sdk/sandbox` | Process isolation with host/process/container backends |
 | `@vinhnt-sdk/guard` | Circuit breaker, loop detector, timeout guards, secret redaction |
 | `@vinhnt-sdk/session` | Session management with event sourcing |
 | `@vinhnt-sdk/permission` | Fine-grained allow/deny/ask permission rules |
@@ -40,13 +39,11 @@
 | `@vinhnt-sdk/guardrails` | Guardrail tripwires for inputs/outputs |
 | `@vinhnt-sdk/workflow` | Workflow primitives (parallel, sequential, conditional) |
 | `@vinhnt-sdk/test-utils` | Shared test utilities and mocks |
+| `@vinhnt-sdk/tools-browser` | Browser/computer-use + image-gen tools (driver-injected) |
 
 ## Key Features (8-Phase Refactor)
 
-- **Provider Specification** — Zero-dependency interfaces (`LanguageModelV1`, `Tool`, `ChatMessage`, `ContentBlock`) for provider implementors
-- **Structured Error Taxonomy** — Domain + category + `isInstance()` for cross-module type checking (`SdkError`, `LlmError`, `ToolError`, `ConfigError`)
-- **DynamicArgument Pattern** — Static or per-request dynamic configuration (inspired by Mastra)
-- **prepareStep Callback** — Per-step model/message override before each agent step (Vercel AI SDK pattern)
+- **Structured Error Taxonomy** — Stable `code` + `domain`/`category` + `retryable` for programmatic handling (`SdkError`, `isSdkError`, `hasErrorCode`, `errorChain` in `@vinhnt-sdk/schema`)
 - **ToolMiddleware** — Extensible tool execution hooks for logging, validation, and transformation
 - **TelemetryProvider** — Pluggable observability interface for cost tracking and tracing
 - **Test Utilities** — Shared mocks for `RunUsage`, `ChatMessage`, and test helpers
@@ -54,63 +51,58 @@
 ## Quick Start
 
 ```bash
-pnpm add @vinhnt-sdk/core @vinhnt-sdk/provider-spec
+pnpm add @vinhnt-sdk/core @vinhnt-sdk/tools @vinhnt-sdk/session @vinhnt-sdk/provider-openai-compatible zod
 ```
 
 ```typescript
-import { AgentKernel, defineTool, InMemoryEventBus } from "@vinhnt-sdk/core";
-import { tool, type LanguageModelV1 } from "@vinhnt-sdk/provider-spec";
+import { AgentKernel, defineTool } from "@vinhnt-sdk/core";
+import { NullRunEventStore } from "@vinhnt-sdk/session";
+import { OpenAICompatibleProvider } from "@vinhnt-sdk/provider-openai-compatible";
 import { z } from "zod";
 
-// Define a tool using provider-spec types
-const calculatorTool = tool({
+// Schema-first tool: owns its validation schema, derives its JSON Schema
+const calculatorTool = defineTool({
   name: "calculator",
   description: "Perform arithmetic calculations",
-  inputSchema: {
-    type: "object",
-    properties: { expression: { type: "string" } },
-    required: ["expression"],
-  },
-  riskLevel: "read",
-  async execute(input, context) {
-    const parts = (input as { expression: string }).expression.match(
-      /^(\d+)\s*([+\-*/])\s*(\d+)$/
-    );
+  risk: "read",
+  input: z.object({
+    expression: z.string().describe("Arithmetic expression, e.g. '2 + 2'"),
+  }),
+  async execute({ expression }) {
+    const parts = expression.match(/^(\d+)\s*([+\-*/])\s*(\d+)$/);
     if (!parts) throw new Error("Invalid expression. Use: number operator number");
     const [, a, op, b] = parts;
     const numA = parseInt(a, 10);
     const numB = parseInt(b, 10);
     switch (op) {
-      case "+": return { result: numA + numB };
-      case "-": return { result: numA - numB };
-      case "*": return { result: numA * numB };
+      case "+": return numA + numB;
+      case "-": return numA - numB;
+      case "*": return numA * numB;
       case "/":
         if (numB === 0) throw new Error("Division by zero");
-        return { result: numA / numB };
+        return numA / numB;
       default: throw new Error(`Unknown operator: ${op}`);
     }
   },
 });
 
-// Create the kernel with DynamicArgument for maxSteps
 const kernel = new AgentKernel({
-  model: yourModelProvider,
-  store: new InMemoryEventBus(),
-  tools: [calculatorTool],
-  maxSteps: (ctx) => (ctx.isComplex ? 20 : 10), // Dynamic per request
+  model: new OpenAICompatibleProvider({
+    baseUrl: "https://api.openai.com/v1",
+    apiKey: process.env.OPENAI_API_KEY!,
+    defaultModel: "gpt-4o-mini",
+  }),
+  store: new NullRunEventStore(),
+  tools: [calculatorTool.toDefinition()],
+  maxSteps: 10,
 });
 
-// Run with prepareStep callback for per-step model override
 const handle = kernel.run("Calculate 2 + 2", {
   requestId: "req-1",
   traceId: "trace-1",
-  prepareStep: async ({ step, model, messages }) => {
-    // Override model for specific steps
-    if (step === 3) return { model: fallbackModel };
-    return {}; // Use defaults
-  },
+  actorId: "user-1",
+  tenantId: "default",
 });
-
 const result = await handle.completed;
 console.log("Agent completed:", result);
 ```
@@ -118,16 +110,22 @@ console.log("Agent completed:", result);
 ## Error Handling
 
 ```typescript
-import { LlmError, ToolError, SdkError } from "@vinhnt-sdk/provider-spec";
+import { SdkError, hasErrorCode, errorChain } from "@vinhnt-sdk/schema";
 
 try {
-  await kernel.run({ prompt: "Hello" });
+  const handle = kernel.run("Hello", {
+    requestId: "req-2",
+    traceId: "trace-2",
+    actorId: "user-1",
+    tenantId: "default",
+  });
+  const result = await handle.completed;
 } catch (e) {
-  if (LlmError.isInstance(e)) {
-    console.error(`LLM error [${e.code}]: ${e.message}`);
-    if (e.isRetryable) { /* retry logic */ }
-  } else if (ToolError.isInstance(e)) {
-    console.error(`Tool error: ${e.details?.toolName}`);
+  if (SdkError.isInstance(e)) {
+    console.error(`[${e.domain ?? "unknown"}] ${e.code}: ${e.message}`);
+    if (e.retryable) { /* retry logic */ }
+  } else if (hasErrorCode(e, "TOOL_PERMISSION_DENIED")) {
+    console.error("Tool permission denied:", errorChain(e));
   }
 }
 ```

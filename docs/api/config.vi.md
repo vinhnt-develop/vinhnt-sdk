@@ -2,7 +2,7 @@
 title: "@vinhnt-sdk/config"
 description: "Thông tin xác thực, phân giải môi trường, cài đặt"
 lang: "vi"
-version: "0.4.0"
+version: "0.4.2"
 type: "reference"
 category: "API Reference"
 sidebarLabel: "config"
@@ -179,15 +179,15 @@ const ns = settingsNamespace("myapp");
 ## Xử lý lỗi
 
 ```typescript
-import { ConfigError } from "@vinhnt-sdk/schema";
+import { ConfigurationError } from "@vinhnt-sdk/schema";
 
 try {
   const cred = resolveCredentialMultiLayer(config, ref);
   if (!cred.value) {
-    throw new ConfigError(`Thiếu xác thực: ${ref.key}`);
+    throw new ConfigurationError(`Thiếu xác thực: ${ref.key}`);
   }
 } catch (e) {
-  if (e instanceof ConfigError) {
+  if (e instanceof ConfigurationError) {
     console.error("Lỗi cấu hình:", e.message);
   }
 }
