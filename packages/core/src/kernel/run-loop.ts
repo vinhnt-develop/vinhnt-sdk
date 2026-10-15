@@ -599,14 +599,19 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         };
       }
 
-      // P1-2: failover to secondary model on non-retryable / circuit-open failures.
+      // P1-2: failover to secondary model on transient/circuit-open failures.
       // Skip when user aborted — cancel must not resurrect a different model.
       // Context overflow goes to the compactor path below (not a failover candidate).
+      // P0.3: explicitly non-retryable errors (auth 401/403, billing quota,
+      // invalid request) cannot be fixed by switching models — surface them
+      // instead of burning attempts + emitting a misleading llm.failover event.
+      const retryable = (err as { retryable?: unknown } | undefined)?.retryable !== false;
       const canFailover =
         !runAbort.signal.aborted &&
         !stepTimeoutController.signal.aborted &&
         (deps.failoverModels?.length ?? 0) > 0 &&
         deps.modelRegistry !== undefined &&
+        retryable &&
         !isContextOverflowError(err instanceof Error ? err.message : String(err));
 
       if (canFailover) {
