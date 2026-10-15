@@ -225,6 +225,20 @@ export {
 export { createToolProviderRegistry, wireAgentAndSkillTools } from "./tool/provider-helpers.js";
 export type { WireAgentAndSkillToolsOptions, WiredAgentAndSkillTools } from "./tool/provider-helpers.js";
 
+// === Skills (P4.4 — file discovery + skill tools) ===
+
+export { SkillFileLoader, SkillFileProvider } from "./skill/skill-file-loader.js";
+export { SkillParser } from "./skill/skill-parser.js";
+export { createSkillTool, createSkillSearchTool } from "./skill/skill-tool.js";
+export { createSkillGuidanceSource } from "./system-context/sources/skill-guidance-source.js";
+
+// === Sub-agent capability tools (P4.4 — spawn/delegate/create/list) ===
+
+export { createSpawnAgentTool } from "./agent/spawn-agent-tool.js";
+export { createDelegateTool } from "./agent/delegate-tool.js";
+export { createCreateAgentTool } from "./agent/create-agent-tool.js";
+export { createListAgentsTool } from "./agent/list-agents-tool.js";
+
 // === Knowledge ===
 
 export { BoundedMemory, ContextCompressor } from "@vinhnt-sdk/knowledge";
