@@ -61,7 +61,10 @@ function makeCaller(
   return stub;
 }
 
-function makeDeps(callerStub: ReturnType<typeof makeCaller>): RunLoopDeps {
+function makeDeps(
+  callerStub: ReturnType<typeof makeCaller>,
+  opts: { breakerMaxRetries?: number; thinkingBudget?: number } = {},
+): RunLoopDeps {
   const store = new FakeRunEventStore();
   const stateMachine = new RunStateMachine();
   const approvalStore = new FakeApprovalStore();
@@ -84,14 +87,18 @@ function makeDeps(callerStub: ReturnType<typeof makeCaller>): RunLoopDeps {
     },
     saga: new ToolSaga(),
     store,
-    // maxRetries 0: one attempt per breaker.call — failover decision must not
-    // depend on breaker-internal retries.
-    circuitBreaker: new CircuitBreaker({ maxRetries: 0 }),
+    // maxRetries 0 by default: one attempt per breaker.call — failover decision
+    // must not depend on breaker-internal retries (P0.3 tests). Tests may opt in.
+    circuitBreaker: new CircuitBreaker({
+      maxRetries: opts.breakerMaxRetries ?? 0,
+      backoffMs: 1,
+      maxBackoffMs: 1,
+    }),
     stateMachine,
     addSessionMessage: async () => {},
     maxSteps: 5,
     maxTokens: 4096,
-    thinkingBudget: 0,
+    thinkingBudget: opts.thinkingBudget ?? 0,
     stepTimeout: 60_000,
     failoverModels: ["claude-sonnet-4"],
     modelRegistry: makeRegistry([primary, alt]),
@@ -198,5 +205,67 @@ describe("P0.3 failover is gated on error retryable", () => {
     });
     expect(caller.calls).toBe(2);
     expect(caller.getActiveModel()).toBe(alt);
+  });
+});
+
+describe("P0.6 thinking step runs under the circuit breaker", () => {
+  it("retries a failing thinking step via the breaker (single retry owner)", async () => {
+    let thinkingCalls = 0;
+    const caller = makeCaller(
+      async () => ({
+        content: "final",
+        provider: "openai",
+        model: "gpt-4o",
+        finishReason: "stop",
+      } as ModelResponse),
+      async () => {
+        throw new Error("alt must not be called");
+      },
+    );
+    caller.doThinkingStep = async () => {
+      thinkingCalls++;
+      throw new Error("thinking model blip");
+    };
+    const events: CapturedEvent[] = [];
+
+    const result = await runLoop(
+      makeDeps(caller, { breakerMaxRetries: 2, thinkingBudget: 1024 }),
+      makeInput(events),
+    );
+
+    // 1 + maxRetries attempts — the breaker, not a provider-internal retry,
+    // owns the policy; thinking failure is fatal (pre-existing semantics).
+    expect(thinkingCalls).toBe(3);
+    expect(result.status).toBe("failed");
+    expect(failoverEvents(events)).toHaveLength(0);
+  });
+
+  it("a transient thinking failure heals under the breaker", async () => {
+    let thinkingCalls = 0;
+    const caller = makeCaller(
+      async () => ({
+        content: "final",
+        provider: "openai",
+        model: "gpt-4o",
+        finishReason: "stop",
+      } as ModelResponse),
+      async () => {
+        throw new Error("alt must not be called");
+      },
+    );
+    caller.doThinkingStep = async () => {
+      thinkingCalls++;
+      if (thinkingCalls <= 2) throw new Error("thinking model blip");
+    };
+    const events: CapturedEvent[] = [];
+
+    const result = await runLoop(
+      makeDeps(caller, { breakerMaxRetries: 3, thinkingBudget: 1024 }),
+      makeInput(events),
+    );
+
+    expect(thinkingCalls).toBe(3);
+    expect(result.status).toBe("succeeded");
+    expect(result.output).toBe("final");
   });
 });

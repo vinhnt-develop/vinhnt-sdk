@@ -554,7 +554,18 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
     }
 
     if (deps.thinkingBudget > 0) {
-      await deps.modelCaller.doThinkingStep(messages, input.step, runId, ctx, stepTimeoutController.signal);
+      // P0.6: the circuit breaker is the single retry owner for kernel LLM
+      // calls. Thinking streams used to rely on provider-internal
+      // fetchWithRetry (the composition root disables it to stop nested
+      // (provider+1)×(breaker+1) attempt multiplication) — run them under the
+      // same breaker policy instead.
+      await deps.circuitBreaker.call(
+        () =>
+          deps.modelCaller.doThinkingStep(
+            messages, input.step, runId, ctx, stepTimeoutController.signal,
+          ),
+        stepTimeoutController.signal,
+      );
     }
 
     // Phase 7 group 2 — reset_tool_choice (OpenAI Agents parity): a configured
@@ -1427,8 +1438,15 @@ export async function runLoop(
             for (const cond of termination.stopConditions ?? []) {
               if (cond.kind !== "llm-judge") continue;
               const judgeModel = deps.judgeModel ?? deps.modelCaller.getActiveModel(runId);
-              const res = await judgeModel.generate(
-                { messages: buildJudgeMessages(cond, stopCtx, termination.evaluatorAgent) as ChatMessage[], tools: [], maxTokens: 500 },
+              // P0.6: same single-retry-owner rule as the main model call —
+              // the judge shares the provider instance (whose inner retry is
+              // off under the kernel), so it runs under the breaker too.
+              const res = await deps.circuitBreaker.call(
+                () =>
+                  judgeModel.generate(
+                    { messages: buildJudgeMessages(cond, stopCtx, termination.evaluatorAgent) as ChatMessage[], tools: [], maxTokens: 500 },
+                    runAbort.signal,
+                  ),
                 runAbort.signal,
               );
               if (parseJudgeVerdict(res.content).met) {
