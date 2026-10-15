@@ -1,6 +1,14 @@
 /**
  * LLM Retry — provider-scoped retry with exponential backoff.
  *
+ * @deprecated The kernel does NOT execute this helper: retry is owned by the
+ * provider HTTP layer (`@vinhnt-sdk/provider-openai-compatible` error.ts —
+ * `RetryOptions`/`waitForRetry`/`RETRYABLE_STATUSES`, which also carves out
+ * billing/quota 429s and honors `Retry-After`), while agent-level protection
+ * is the circuit breaker in `@vinhnt-sdk/guard`. Kept as a published,
+ * tested convenience for consumers building their own retry loops — do not
+ * wire it into model-caller (it would double-retry on top of the provider).
+ *
  * Retry is a separate concern from the adapter. Each adapter captures
  * its retry policy at registration. The retry plugin executes it at
  * durable boundaries (agent step level, not inside the adapter call).

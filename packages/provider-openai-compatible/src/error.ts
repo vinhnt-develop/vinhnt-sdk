@@ -208,9 +208,13 @@ export async function waitForRetry(
 }
 
 /**
- * Map an upstream failure into a VntError. Prefers the provider's
- * structured OpenAI error body via `fromOpenAIError`, otherwise produces
- * an `UpstreamError` with an `ERR_UPSTREAM_*` code.
+ * Map an upstream failure into a VntError. Prefers the structured error
+ * message from an OpenAI-style body (redacted) and carves billing/quota
+ * failures out of the retryable class; otherwise produces an `UpstreamError`
+ * with an `ERR_UPSTREAM_*` code. (Note: `fromOpenAIError` in convert.ts is a
+ * standalone public helper that maps `error.type` to typed VntErrors — it is
+ * intentionally NOT used here, because that path loses the HTTP status,
+ * Retry-After, retryable and billing semantics this mapper carries.)
  */
 export function toUpstreamError(
   status: number,
