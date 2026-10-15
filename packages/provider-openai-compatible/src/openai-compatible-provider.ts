@@ -30,6 +30,7 @@ import {
   parseRetryAfterMs,
   waitForRetry,
   toUpstreamError,
+  isBillingError,
 } from "./error.js";
 
 /** Configuration for the OpenAI-compatible provider. */
@@ -243,6 +244,13 @@ export class OpenAICompatibleProvider implements ModelProvider {
         return res;
       }
 
+      // P0.2: a billing/quota 429 never succeeds on retry — peek the body
+      // (clone, caller still gets the original) and return immediately so
+      // the caller maps it to ERR_BILLING_REQUIRED instead of burning attempts.
+      if (res.status === 429 && (await isBillingResponse(res))) {
+        return res;
+      }
+
       const retryAfterMs = parseRetryAfterMs(res.headers.get("retry-after"));
       // Release the failed response body before retrying.
       await res.body?.cancel().catch(() => undefined);
@@ -261,6 +269,16 @@ async function parseBody(res: Response): Promise<unknown> {
     } catch {
       return undefined;
     }
+  }
+}
+
+/** Peek (non-destructive) whether a response body is a billing/quota error. */
+async function isBillingResponse(res: Response): Promise<boolean> {
+  try {
+    const body = await res.clone().json();
+    return isBillingError(body);
+  } catch {
+    return false;
   }
 }
 

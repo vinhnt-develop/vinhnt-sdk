@@ -24,6 +24,8 @@ export { fromOpenAIMessage, toOpenAIMessage, fromOpenAIResponse, toOpenAIRespons
 export {
   UpstreamError,
   RETRYABLE_STATUSES,
+  BILLING_ERROR_CODES,
+  isBillingError,
   DEFAULT_RETRY_OPTIONS,
   parseRetryAfterMs,
   computeBackoffMs,

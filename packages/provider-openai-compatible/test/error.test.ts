@@ -8,6 +8,7 @@ import {
   retryableStatusSet,
   extractErrorMessage,
   toUpstreamError,
+  isBillingError,
   abortableSleep,
 } from "../src/error.js";
 
@@ -115,6 +116,33 @@ describe("toUpstreamError", () => {
     const err = toUpstreamError(401, { error: { message: "Invalid key: sk-abc123secret" } });
     expect(err.message).not.toContain("sk-abc123secret");
     expect(err.message).toContain("[REDACTED:");
+  });
+
+  it("maps a billing 429 to a non-retryable ERR_BILLING_REQUIRED (P0.2)", () => {
+    const err = toUpstreamError(
+      429,
+      { error: { message: "You exceeded your current quota, please check your plan and billing details.", code: "insufficient_quota" } },
+      new Headers({ "retry-after": "10" }),
+    );
+    expect(err.code).toBe("ERR_BILLING_REQUIRED");
+    expect(err.retryable).toBe(false);
+  });
+});
+
+describe("isBillingError", () => {
+  it("detects billing failures via error.code", () => {
+    expect(isBillingError({ error: { message: "x", code: "insufficient_quota" } })).toBe(true);
+    expect(isBillingError({ error: { message: "x", code: "credit_balance_exhausted" } })).toBe(true);
+  });
+
+  it("detects billing failures via message when code is absent", () => {
+    expect(isBillingError({ error: { message: "You exceeded your current quota, please check your plan and billing details." } })).toBe(true);
+  });
+
+  it("does not flag plain rate limits or auth errors", () => {
+    expect(isBillingError({ error: { message: "Rate limit reached", type: "rate_limit_exceeded" } })).toBe(false);
+    expect(isBillingError({ error: { message: "Incorrect API key provided" } })).toBe(false);
+    expect(isBillingError(undefined)).toBe(false);
   });
 });
 

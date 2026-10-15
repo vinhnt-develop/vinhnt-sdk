@@ -7,8 +7,12 @@
 import { VntError } from "@vinhnt-sdk/schema";
 import { redactSecrets } from "@vinhnt-sdk/guard";
 
-/** HTTP statuses that are safe to retry (transient). */
-export const RETRYABLE_STATUSES = new Set([408, 409, 425, 500, 502, 503, 504]);
+/** HTTP statuses that are safe to retry (transient).
+ *
+ *  P0.1: 429 (rate limit) is transient when the provider signals a wait
+ *  (`Retry-After`) — it MUST be retried. Billing/quota 429s are carved
+ *  out separately via `isBillingError` (never retryable). */
+export const RETRYABLE_STATUSES = new Set([408, 409, 425, 429, 500, 502, 503, 504]);
 
 /** Retry configuration for the provider's HTTP calls. */
 export interface RetryOptions {
@@ -39,16 +43,60 @@ export class UpstreamError extends VntError {
   public readonly status: number;
   public readonly retryAfterMs: number | undefined;
 
-  constructor(status: number, message: string, opts?: { retryAfterMs?: number; cause?: unknown }) {
+  constructor(
+    status: number,
+    message: string,
+    opts?: { retryAfterMs?: number; cause?: unknown; retryable?: boolean; code?: string },
+  ) {
     super(message, {
-      code: `ERR_UPSTREAM_${status}`,
-      retryable: RETRYABLE_STATUSES.has(status),
+      code: opts?.code ?? `ERR_UPSTREAM_${status}`,
+      retryable: opts?.retryable ?? RETRYABLE_STATUSES.has(status),
       cause: opts?.cause,
     });
     this.name = "UpstreamError";
     this.status = status;
     this.retryAfterMs = opts?.retryAfterMs;
   }
+}
+
+/**
+ * `error.code`/`error.type` values that mark a billing/quota failure.
+ * These 429/402/403 responses NEVER succeed on retry — waiting does not
+ * refill the credit (OpenAI `insufficient_quota`, spend/usage limits,
+ * Anthropic-style `billing_error`).
+ */
+export const BILLING_ERROR_CODES: ReadonlySet<string> = new Set([
+  "insufficient_quota",
+  "insufficient_user_quota",
+  "credit_balance_exhausted",
+  "organization_spend_limit_exceeded",
+  "project_spend_limit_exceeded",
+  "organization_usage_limit_exceeded",
+  "billing_error",
+]);
+
+/** Message heuristics for providers that omit `error.code` on billing 429s. */
+const BILLING_MESSAGE_PATTERN =
+  /exceeded your current quota|insufficient quota|credit balance|billing details|add a valid payment method|exceeded your current included usage|insufficient credits/i;
+
+/**
+ * Detect a billing/quota failure from an upstream error body.
+ * Used to carve billing responses out of the retryable 429 class.
+ */
+export function isBillingError(body: unknown): boolean {
+  if (body && typeof body === "object") {
+    const err = (body as { error?: unknown }).error;
+    if (err && typeof err === "object") {
+      const { code, type } = err as { code?: unknown; type?: unknown };
+      if (typeof code === "string" && BILLING_ERROR_CODES.has(code)) return true;
+      if (typeof type === "string" && BILLING_ERROR_CODES.has(type)) return true;
+    }
+    const message = extractRawErrorMessage(body);
+    if (message !== undefined && BILLING_MESSAGE_PATTERN.test(message)) return true;
+    return false;
+  }
+  if (typeof body === "string" && body) return BILLING_MESSAGE_PATTERN.test(body);
+  return false;
 }
 
 /** Extract a human message from an OpenAI-style or plain error body. */
@@ -172,12 +220,16 @@ export function toUpstreamError(
 ): VntError {
   const retryAfterMs = parseRetryAfterMs(headers?.get("retry-after"));
   const fallback = extractErrorMessage(body);
+  const billing = isBillingError(body);
   return new UpstreamError(
     status,
     fallback ?? `Upstream request failed with HTTP ${status}`,
     {
       ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
       ...(cause !== undefined ? { cause } : {}),
+      // P0.2: billing/quota failures must never be retried, whatever the
+      // status — surface a dedicated code so the app can show "top up".
+      ...(billing ? { retryable: false, code: "ERR_BILLING_REQUIRED" } : {}),
     },
   );
 }

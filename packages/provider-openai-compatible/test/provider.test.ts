@@ -166,6 +166,34 @@ describe("OpenAICompatibleProvider.generate", () => {
     expect(err.retryAfterMs).toBe(1000);
   });
 
+  it("retries a transient 429 rate limit then succeeds", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonBody({ error: { message: "rate limit", type: "rate_limit_exceeded" } }, 429, { "retry-after": "1" }))
+      .mockResolvedValueOnce(jsonBody({ id: "r", object: "chat.completion", created: 1, model: "model-x", choices: [{ index: 0, message: { role: "assistant", content: "ok" }, finish_reason: "stop" }] }));
+    const p = provider(fetchMock as unknown as typeof fetch, { maxRetries: 2, fixedBackoffMs: 1 });
+
+    const res = await p.generate(request());
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(res.content).toBe("ok");
+  });
+
+  it("never retries a billing 429 (ERR_BILLING_REQUIRED)", async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonBody(
+        { error: { message: "You exceeded your current quota, please check your plan and billing details.", type: "insufficient_quota", code: "insufficient_quota" } },
+        429,
+      ),
+    );
+    const p = provider(fetchMock as unknown as typeof fetch, { maxRetries: 3, fixedBackoffMs: 1 });
+
+    await expect(p.generate(request())).rejects.toMatchObject({
+      code: "ERR_BILLING_REQUIRED",
+      retryable: false,
+      status: 429,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("throws NetworkError when fetch rejects and retries are exhausted", async () => {
     const fetchMock = vi.fn(async () => { throw new Error("ECONNREFUSED"); });
     const p = provider(fetchMock as unknown as typeof fetch, { maxRetries: 1, fixedBackoffMs: 1 });
