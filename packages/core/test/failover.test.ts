@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { KnownRunEvent, RequestContext, RunId } from "@vinhnt-sdk/schema";
+import type { KnownRunEvent, RequestContext, RunId, TraceId } from "@vinhnt-sdk/schema";
 import type { ModelProvider, ModelRegistry } from "../src/model.js";
 import { ModelCaller } from "@vinhnt-sdk/llm";
 import { CircuitBreaker } from "@vinhnt-sdk/step-executor";
 
+type RegistryEntry = ModelProvider & { id?: string };
+
 // Minimal fake registry implementing get/getByProvider
-function makeRegistry(models: ModelProvider[]): ModelRegistry {
+function makeRegistry(models: RegistryEntry[]): ModelRegistry {
   return {
     get: (id: string) => models.find((m) => m.model === id || m.id === id),
     getByProvider: (p: string) => models.filter((m) => m.provider === p),
@@ -13,17 +15,17 @@ function makeRegistry(models: ModelProvider[]): ModelRegistry {
   } as unknown as ModelRegistry;
 }
 
-const primary: ModelProvider = {
+const primary: RegistryEntry = {
   id: "primary",
   provider: "openai",
   model: "gpt-4o",
-} as ModelProvider;
+} as RegistryEntry;
 
-const failover: ModelProvider = {
+const failover: RegistryEntry = {
   id: "failover",
   provider: "anthropic",
   model: "claude-sonnet-4",
-} as ModelProvider;
+} as RegistryEntry;
 
 describe("ModelCaller.setModelForRun (P1-2)", () => {
   let runModel: ModelProvider | undefined;
@@ -104,9 +106,10 @@ describe("llm.failover event schema shape", () => {
     const event: KnownRunEvent = {
       id: "evt-failover-1",
       runId: "r1" as RunId,
+      sequence: 1,
       type: "llm.failover",
       occurredAt: new Date().toISOString(),
-      traceId: "t1",
+      traceId: "t1" as TraceId,
       data: {
         fromProvider: "openai",
         fromModel: "gpt-4o",

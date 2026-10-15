@@ -174,7 +174,7 @@ describe("AgentRunHandle", () => {
     resolveComplete({
       runId,
       status: "succeeded",
-      totalSteps: 1,
+      usage: { totalSteps: 1 },
     });
     
     // Wait for completion

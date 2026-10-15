@@ -15,7 +15,7 @@ import { FakeTool } from "../src/fakes/fake-tool.js";
 import { FakeAgentRegistry } from "../src/fakes/fake-agent-registry.js";
 import { FakeApprovalStore } from "../src/fakes/fake-approval-store.js";
 import type { AgentId, AgentConfig, ModelProvider, ModelResponse, ModelStreamEvent } from "@vinhnt-sdk/core";
-import type { RunEvent, KnownRunEvent, TokenStreamedData, ThinkingCompletedData, ToolSelfCorrectingData, RequestId, RunId, TraceId } from "@vinhnt-sdk/schema";
+import type { RunEvent, KnownRunEvent, TokenStreamedData, ThinkingCompletedData, ToolSelfCorrectingData, RequestId, RunId, TraceId, ModelId } from "@vinhnt-sdk/schema";
 import type { CircuitBreakerOptions } from "@vinhnt-sdk/step-executor";
 
 const testCtx = {
@@ -68,10 +68,14 @@ describe("AgentKernel", () => {
 
     expect(types).toEqual([
       "run.started",
+      "turn.started",
       "step.started",
+      "llm.request",
       "token.counted",
       "model.cost",
+      "llm.response",
       "step.completed",
+      "turn.end",
       "run.completed",
     ]);
 
@@ -1064,15 +1068,15 @@ describe("AgentKernel", () => {
     let childModelAborted = false;
     const blockingModel: ModelProvider = {
       provider: "test",
-      model: "blocking",
+      model: "blocking" as ModelId,
       contextLimit: undefined,
       capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
       pricing: { input: 0, output: 0 },
       generate: async (_req, signal) => new Promise<ModelResponse>((resolve) => {
-        if (signal?.aborted) { childModelAborted = true; resolve({ content: "aborted" }); return; }
+        if (signal?.aborted) { childModelAborted = true; resolve({ content: "aborted", provider: "test" }); return; }
         signal?.addEventListener("abort", () => {
           childModelAborted = true;
-          resolve({ content: "aborted" });
+          resolve({ content: "aborted", provider: "test" });
         }, { once: true });
       }),
       countTokens: () => 0,
@@ -1237,7 +1241,7 @@ describe("AgentKernel", () => {
     it("TC36: onRunCompleted fires on failure", async () => {
       const model: ModelProvider = {
         provider: "test",
-        model: "fail-model",
+        model: "fail-model" as ModelId,
         contextLimit: undefined,
         capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
         pricing: { input: 0, output: 0 },
@@ -1262,7 +1266,7 @@ describe("AgentKernel", () => {
       let calls = 0;
       const model: ModelProvider = {
         provider: "test",
-        model: "test-model",
+        model: "test-model" as ModelId,
         contextLimit: undefined,
         capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
         pricing: { input: 0, output: 0 },
@@ -1274,7 +1278,7 @@ describe("AgentKernel", () => {
               signal?.addEventListener("abort", () => reject(new Error("timed out")), { once: true });
             });
           }
-          return { content: "recovered" };
+          return { content: "recovered", provider: "test" };
         },
         countTokens: () => 0,
       };
@@ -1926,7 +1930,7 @@ describe("AgentKernel", () => {
       let calls = 0;
       const model: ModelProvider = {
         provider: "test",
-        model: "test-model",
+        model: "test-model" as ModelId,
         contextLimit: undefined,
         capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
         pricing: { input: 0, output: 0 },
@@ -1938,7 +1942,7 @@ describe("AgentKernel", () => {
               signal?.addEventListener("abort", () => reject(new Error("timed out")), { once: true });
             });
           }
-          return { content: "recovered after timeout" };
+          return { content: "recovered after timeout", provider: "test" };
         },
         countTokens: () => 0,
       };
@@ -1978,7 +1982,7 @@ describe("AgentKernel", () => {
     it("TC51: circuit breaker opens after consecutive model failures", async () => {
       const failModel: ModelProvider = {
         provider: "test",
-        model: "test-model",
+        model: "test-model" as ModelId,
         contextLimit: undefined,
         capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
         pricing: { input: 0, output: 0 },
@@ -1987,7 +1991,9 @@ describe("AgentKernel", () => {
       const store = new FakeRunEventStore();
       const kernel = new AgentKernel({
         model: failModel, store, tools: [], maxSteps: 10,
-        circuitBreakerOptions: { failureThreshold: 3, resetTimeoutMs: 60000 },
+        // maxRetries: 0 — verify the breaker itself, not the retry/backoff path
+        // (default 3 retries with exponential backoff exceeds the 5s test timeout).
+        circuitBreakerOptions: { failureThreshold: 3, resetTimeoutMs: 60000, maxRetries: 0 },
       });
       const handle = kernel.run("test", testCtx);
       await handle.completed;
@@ -2229,7 +2235,7 @@ describe("P1-M: single max-steps authority + per-run circuit breaker", () => {
   it("TC-P1M-02: circuit breaker state is per-run, not shared across runs", async () => {
     const failModel: ModelProvider = {
       provider: "test",
-      model: "test-model",
+      model: "test-model" as ModelId,
       contextLimit: undefined,
       capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
       pricing: { input: 0, output: 0 },
@@ -2311,11 +2317,11 @@ describe("P1-N: scrub env + redact log", () => {
     };
     const secretModel: ModelProvider = {
       provider: "test",
-      model: "test-model-sk-1234567890abcdef1234567890abcdef",
+      model: "test-model-sk-1234567890abcdef1234567890abcdef" as ModelId,
       contextLimit: undefined,
       capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
       pricing: { input: 0, output: 0 },
-      generate: async () => ({ content: "done" }),
+      generate: async () => ({ content: "done", provider: "test" }),
     };
     const store = new FakeRunEventStore();
     const kernel = new AgentKernel({ model: secretModel, store, tools: [], maxSteps: 1, logger });
@@ -2335,12 +2341,12 @@ describe("P2-A: ModelProvider.stream is optional", () => {
     let generateCalls = 0;
     const nonStreamingModel: ModelProvider = {
       provider: "fake-nonstream",
-      model: "fake-nonstream",
+      model: "fake-nonstream" as ModelId,
       contextLimit: undefined,
       capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
       generate: async () => {
         generateCalls++;
-        return { content: "done without streaming" };
+        return { content: "done without streaming", provider: "fake-nonstream" };
       },
     };
     const store = new FakeRunEventStore();
@@ -2359,7 +2365,7 @@ describe("P2-A: ModelProvider.stream is optional", () => {
     let streamCalls = 0;
     const streamingModel: ModelProvider = {
       provider: "fake-stream",
-      model: "fake-stream",
+      model: "fake-stream" as ModelId,
       contextLimit: undefined,
       capabilities: { streaming: true, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
       async *stream() {
@@ -2369,7 +2375,7 @@ describe("P2-A: ModelProvider.stream is optional", () => {
       },
       generate: async () => {
         generateCalls++;
-        return { content: "generated" };
+        return { content: "generated", provider: "fake-stream" };
       },
     };
     const store = new FakeRunEventStore();

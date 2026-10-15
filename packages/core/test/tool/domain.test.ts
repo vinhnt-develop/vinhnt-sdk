@@ -18,7 +18,7 @@ const testCtx: RequestContext = {
 /** Subclass that captures the tools each model request was given. */
 class CapturingModel extends FakeModelProvider {
   readonly seenToolIds: string[][] = [];
-  constructor(responses: ModelResponse[]) {
+  constructor(responses: Array<Omit<ModelResponse, "provider"> & { provider?: string }>) {
     super(responses);
   }
   override async generate(request: ModelRequest, signal?: AbortSignal): Promise<ModelResponse> {

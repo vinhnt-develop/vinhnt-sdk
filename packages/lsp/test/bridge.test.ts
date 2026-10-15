@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createLspToolHook, notifyChange } from "../src/bridge.js";
 import type { LspPool } from "../src/pool.js";
-import type { ToolDefinition, ToolHook } from "@vinhnt-sdk/core";
+import type { ToolDefinition } from "@vinhnt-sdk/tools";
+import type { ToolHook } from "@vinhnt-sdk/tools";
 
 const dummyTool = {} as ToolDefinition;
 type ToolHookParams = Parameters<NonNullable<ToolHook["post"]>>[0];

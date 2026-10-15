@@ -67,6 +67,7 @@ import type {
   ModelRequest,
   ModelResponse,
   ModelStreamEvent,
+  ModelId,
   ChatMessage,
   ChatMessageRole,
   ResponseFormat,
@@ -217,10 +218,10 @@ describe('Schema Package Type Tests', () => {
     it('a provider without stream is a valid ModelProvider (stream is optional)', () => {
       const nonStreaming = {
         provider: "fake",
-        model: "fake",
+        model: "fake" as ModelId,
         contextLimit: undefined,
         capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
-        generate: async (_request: ModelRequest, _signal?: AbortSignal): Promise<ModelResponse> => ({ content: "ok" }),
+        generate: async (_request: ModelRequest, _signal?: AbortSignal): Promise<ModelResponse> => ({ content: "ok", provider: "fake" }),
       } satisfies ModelProvider;
       expectTypeOf<ModelProvider['stream']>().toEqualTypeOf<
         ((request: ModelRequest, signal?: AbortSignal) => AsyncIterable<ModelStreamEvent>) | undefined
@@ -230,13 +231,13 @@ describe('Schema Package Type Tests', () => {
     it('a provider with stream still satisfies ModelProvider', () => {
       const streaming = {
         provider: "fake",
-        model: "fake",
+        model: "fake" as ModelId,
         contextLimit: undefined,
         capabilities: { streaming: true, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
         async *stream(_request: ModelRequest, _signal?: AbortSignal): AsyncIterable<ModelStreamEvent> {
           yield { type: "done" };
         },
-        generate: async (_request: ModelRequest): Promise<ModelResponse> => ({ content: "ok" }),
+        generate: async (_request: ModelRequest): Promise<ModelResponse> => ({ content: "ok", provider: "fake" }),
       } satisfies ModelProvider;
       expectTypeOf(streaming.stream).not.toBeUndefined();
     });

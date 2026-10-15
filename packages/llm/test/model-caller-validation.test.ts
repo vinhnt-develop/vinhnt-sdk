@@ -1,18 +1,26 @@
 import { describe, it, expect } from "vitest";
 import { ModelCaller } from "../src/model-caller.js";
 import { ConfigurationError } from "@vinhnt-sdk/schema";
-import type { ModelProvider, ModelCallerDeps } from "@vinhnt-sdk/schema";
+import type { ModelProvider } from "@vinhnt-sdk/schema";
+import type { ModelCallerDeps } from "../src/model-caller.js";
 
 function createValidDeps(model?: ModelProvider): ModelCallerDeps {
+  const defaultModel: ModelProvider = model ?? {
+    provider: "test",
+    model: "gpt-4o" as ModelProvider["model"],
+    contextLimit: undefined,
+    capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false },
+    async generate() { return { content: "ok", provider: "test" }; },
+  };
   return {
-    defaultModel: model ?? { provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined },
+    defaultModel,
     modelRegistry: undefined,
     maxTokens: 4096,
-    thinkingBudget: undefined,
-    thinkingPrompt: undefined,
+    thinkingBudget: 0,
+    thinkingPrompt: "",
     pluginManager: undefined,
-    logger: { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} },
-    emitEvent: () => {},
+    logger: { info: () => {} },
+    emitEvent: async () => {},
     modelForRun: () => undefined,
     setModelForRun: () => {},
     getAvailableTools: () => [],
@@ -33,7 +41,7 @@ describe("ModelCaller constructor validation", () => {
     expect(() => {
       new ModelCaller({
         ...createValidDeps(),
-        defaultModel: { provider: "test", model: "", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined },
+        defaultModel: { provider: "test", model: "" as ModelProvider["model"], contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, async generate() { return { content: "ok", provider: "test" }; } } as ModelProvider,
       });
     }).toThrow(ConfigurationError);
   });
@@ -42,7 +50,7 @@ describe("ModelCaller constructor validation", () => {
     expect(() => {
       new ModelCaller({
         ...createValidDeps(),
-        defaultModel: { provider: "test", model: "   ", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined },
+        defaultModel: { provider: "test", model: "   " as ModelProvider["model"], contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, async generate() { return { content: "ok", provider: "test" }; } } as ModelProvider,
       });
     }).toThrow(ConfigurationError);
   });

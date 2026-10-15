@@ -38,8 +38,9 @@ export class FakeModelProvider implements ModelProvider {
   generated = 0;
   private index = 0;
 
+  /** Partial responses — `provider` is filled in automatically ("fake"). */
   constructor(
-    private readonly responses: ModelResponse[],
+    private readonly responses: Array<Omit<ModelResponse, "provider"> & { provider?: string }>,
     private readonly options?: { echoPrefix?: string },
   ) {}
 
@@ -67,7 +68,8 @@ export class FakeModelProvider implements ModelProvider {
     this.generated++;
     // Return response from queue if available
     if (this.index < this.responses.length) {
-      return this.responses[this.index++] as ModelResponse;
+      const queued = this.responses[this.index++]!;
+      return { provider: this.provider, ...queued } as ModelResponse;
     }
 
     // Fallback: echo the last user message

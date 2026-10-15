@@ -30,7 +30,7 @@ function makeCtx(ask: ToolContext["ask"]): ToolContext {
 }
 
 function makeDeps(gate: { checkSavedApproval: PermissionGate["checkSavedApproval"]; hasSavedRejection: PermissionGate["hasSavedRejection"] }) {
-  const emitEvent = vi.fn(async () => {});
+  const emitEvent = vi.fn(async (..._args: unknown[]) => {});
   const addSessionMessage = vi.fn(async () => {});
   return {
     emitEvent,

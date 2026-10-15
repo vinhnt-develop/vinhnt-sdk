@@ -96,6 +96,7 @@ describe("OpenAI Format Types", () => {
         finishReason: "stop",
         id: "chatcmpl-123",
         model: "gpt-4",
+        provider: "openai",
         created: 1234567890,
         systemFingerprint: "fp_abc",
         logprobs: { content: [] },
@@ -108,6 +109,7 @@ describe("OpenAI Format Types", () => {
       const res: ModelResponse = {
         content: "Hello",
         finishReason: "custom_reason",
+        provider: "openai",
       };
       expectTypeOf(res).toMatchTypeOf<ModelResponse>();
     });

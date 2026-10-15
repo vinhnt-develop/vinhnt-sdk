@@ -1,13 +1,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { computeSessionUpdates, updateSessionOnComplete } from "../src/kernel/kernel-session.js";
-import type { ModelCaller, ModelProvider } from "@vinhnt-sdk/llm";
+import type { ModelCaller } from "@vinhnt-sdk/llm";
+import type { ModelProvider, ModelId } from "@vinhnt-sdk/schema";
 import type { SessionStore } from "@vinhnt-sdk/session";
 import type { RunId } from "@vinhnt-sdk/schema";
 
-function createMockModelCaller(model?: ModelProvider): ModelCaller {
+function createMockModelCaller(model?: Partial<ModelProvider> | null): ModelCaller {
   return {
-    getActiveModel: vi.fn((runId: RunId) => model),
-    getDefaultModel: vi.fn(() => model),
+    getActiveModel: vi.fn((runId: RunId) => (model == null ? model : (model as ModelProvider))),
+    getDefaultModel: vi.fn(() => (model == null ? model : (model as ModelProvider))),
     calculateCost: vi.fn(() => undefined),
     resolveAgentModel: vi.fn(),
   } as unknown as ModelCaller;
@@ -25,7 +26,7 @@ describe("kernel-session", () => {
 
   describe("computeSessionUpdates", () => {
     it("includes model when model is non-empty", () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       const updates = computeSessionUpdates(
         { modelCaller } as any,
         runId,
@@ -36,7 +37,7 @@ describe("kernel-session", () => {
     });
 
     it("excludes model when model is empty string", () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       const updates = computeSessionUpdates(
         { modelCaller } as any,
         runId,
@@ -58,7 +59,7 @@ describe("kernel-session", () => {
     });
 
     it("includes inputTokens when > 0", () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       const updates = computeSessionUpdates(
         { modelCaller } as any,
         runId,
@@ -70,7 +71,7 @@ describe("kernel-session", () => {
     });
 
     it("includes outputTokens when > 0", () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       const updates = computeSessionUpdates(
         { modelCaller } as any,
         runId,
@@ -82,7 +83,7 @@ describe("kernel-session", () => {
     });
 
     it("includes cost when calculateCost returns a value", () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       (modelCaller.calculateCost as any).mockReturnValue(0.005);
       const updates = computeSessionUpdates(
         { modelCaller } as any,
@@ -94,7 +95,7 @@ describe("kernel-session", () => {
     });
 
     it("handles whitespace-only model as empty", () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "   ", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "   " as unknown as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       const updates = computeSessionUpdates(
         { modelCaller } as any,
         runId,
@@ -108,7 +109,7 @@ describe("kernel-session", () => {
   describe("updateSessionOnComplete", () => {
     it("calls sessionStore.updateSession with correct data", async () => {
       const sessionStore = createMockSessionStore();
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
 
       await updateSessionOnComplete(
         { modelCaller, sessionStore, noStore: false } as any,
@@ -119,7 +120,7 @@ describe("kernel-session", () => {
       );
 
       expect(sessionStore.updateSession).toHaveBeenCalledWith(sessionId, expect.objectContaining({
-        model: "gpt-4o",
+        model: "gpt-4o" as ModelId,
         inputTokens: 100,
         outputTokens: 50,
       }));
@@ -127,7 +128,7 @@ describe("kernel-session", () => {
 
     it("does not call updateSession when noStore is true", async () => {
       const sessionStore = createMockSessionStore();
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
 
       await updateSessionOnComplete(
         { modelCaller, sessionStore, noStore: true } as any,
@@ -142,7 +143,7 @@ describe("kernel-session", () => {
 
     it("does not call updateSession when sessionId is undefined", async () => {
       const sessionStore = createMockSessionStore();
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
 
       await updateSessionOnComplete(
         { modelCaller, sessionStore, noStore: false } as any,
@@ -156,7 +157,7 @@ describe("kernel-session", () => {
     });
 
     it("does not call updateSession when sessionStore is undefined", async () => {
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
 
       await updateSessionOnComplete(
         { modelCaller, sessionStore: undefined, noStore: false } as any,
@@ -170,7 +171,7 @@ describe("kernel-session", () => {
 
     it("handles empty model gracefully", async () => {
       const sessionStore = createMockSessionStore();
-      const modelCaller = createMockModelCaller({ provider: "test", model: "", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
 
       await updateSessionOnComplete(
         { modelCaller, sessionStore, noStore: false } as any,
@@ -194,7 +195,7 @@ describe("kernel-session", () => {
       const sessionStore = {
         updateSession: vi.fn().mockRejectedValue(new Error("DB error")),
       } as unknown as SessionStore;
-      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o", contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
+      const modelCaller = createMockModelCaller({ provider: "test", model: "gpt-4o" as ModelId, contextLimit: undefined, capabilities: { streaming: true, toolCalling: true, imageInput: false, thinking: false, structuredOutput: false }, pricing: undefined });
       const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       await updateSessionOnComplete(

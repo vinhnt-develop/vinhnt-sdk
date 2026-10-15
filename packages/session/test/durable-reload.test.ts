@@ -94,11 +94,12 @@ describe("durable compaction reload (RV-15)", () => {
       async listSessions() { return []; },
       async updateSession() {},
       async deleteSession() {},
-      async addMessage(_sid, _role, _content, _toolCallId?, _tokens?, _model?, _cost?, _admittedSeq?) { return messages[0] ?? msg("m-0", "user", ""); },
+      async addMessage(..._args: unknown[]) { return messages[0] ?? msg("m-0", "user", ""); },
+      async updateMessage() {},
       async forkSession() { return { id: "sess-f" as SessionId, title: "t", createdAt: "", updatedAt: "", isActive: true } as never; },
       async searchMessages() { return []; },
       async getSessionStats() { return { totalSessions: 0, totalCost: 0, totalInputTokens: 0, totalOutputTokens: 0, totalMessages: 0, sessionsByDate: [], costByModel: [] }; },
-    } as SessionStore;
+    } as unknown as SessionStore;
   }
 
   it("collapses the transcript to the last summary marker on reload", async () => {
@@ -447,6 +448,10 @@ class PersistingStore implements RunEventStore {
   async append(event: RunEvent): Promise<void> {
     if (event.persist === false) return;
     this.events.push(event);
+  }
+
+  async exists(eventId: string): Promise<boolean> {
+    return this.events.some((e) => e.id === eventId);
   }
 
   async appendWithSequence(event: RunEvent): Promise<number> {

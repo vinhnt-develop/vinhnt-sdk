@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RequestContext, RequestId, TraceId } from "@vinhnt-sdk/schema";
-import type { Message, Session, SessionId, MessageId, SessionStore, SessionUpdates } from "@vinhnt-sdk/schema";
+import type { Message, Session, SessionId, MessageId, SessionStore, SessionUpdates, ModelId } from "@vinhnt-sdk/schema";
 import type { ModelProvider, ModelRequest, ModelResponse, ModelStreamEvent, ModelPricing } from "../src/model.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
 import { AgentKernel } from "../src/kernel/kernel.js";
@@ -116,7 +116,7 @@ class GatedModel implements ModelProvider {
   private releaseResolve!: () => void;
   private gated = false;
 
-  constructor(private readonly responses: ModelResponse[]) {}
+  constructor(private readonly responses: Array<Omit<ModelResponse, "provider"> & { provider?: string }>) {}
 
   gate(): void {
     this.gated = true;
@@ -151,7 +151,7 @@ class GatedModel implements ModelProvider {
       await new Promise<void>((resolve) => { this.releaseResolve = resolve; });
     }
     const response = this.responses[Math.min(this.callCount - 1, this.responses.length - 1)]!;
-    return response;
+    return { provider: this.provider, ...response } as ModelResponse;
   }
 }
 

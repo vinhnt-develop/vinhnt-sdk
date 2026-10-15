@@ -14,19 +14,19 @@ describe("EventBusBridge", () => {
     const handler = vi.fn();
     bridge.subscribe(RunStarted, handler);
 
-    bridge.publish(RunStarted, { prompt: "hello" }, { aggregateId: "run-1" });
+    bridge.publish(RunStarted, { prompt: "hello", model: "m", provider: "p" }, { aggregateId: "run-1" });
 
     expect(handler).toHaveBeenCalledOnce();
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ data: { prompt: "hello" } }));
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ prompt: "hello" }) }));
   });
 
   it("persists durable events to store with correct sequence", async () => {
     const store = new FakeRunEventStore();
     const bridge = new EventBusBridge(store);
 
-    bridge.publish(RunStarted, { prompt: "a" }, { aggregateId: "run-1" });
+    bridge.publish(RunStarted, { prompt: "a", model: "m", provider: "p" }, { aggregateId: "run-1" });
     await new Promise((r) => setTimeout(r, 20)); // wait for persist before next publish
-    bridge.publish(StepStarted, { step: 1 }, { aggregateId: "run-1" });
+    bridge.publish(StepStarted, { turn: 1, step: 1 }, { aggregateId: "run-1" });
     await new Promise((r) => setTimeout(r, 50));
 
     const events = await store.list("run-1");
@@ -52,7 +52,7 @@ describe("EventBusBridge", () => {
     const store = new FakeRunEventStore();
     const bridge = new EventBusBridge(store);
 
-    bridge.publish(RunStarted, { prompt: "test" });
+    bridge.publish(RunStarted, { prompt: "test", model: "m", provider: "p" });
     await new Promise((r) => setTimeout(r, 50));
 
     const events = await store.list("run-1");
@@ -65,7 +65,7 @@ describe("EventBusBridge", () => {
 
     // Publish sequentially to avoid race on getNextSequence
     for (let i = 0; i < 5; i++) {
-      bridge.publish(StepStarted, { step: i }, { aggregateId: "run-1" });
+      bridge.publish(StepStarted, { turn: 1, step: i }, { aggregateId: "run-1" });
       await new Promise((r) => setTimeout(r, 20));
     }
     await new Promise((r) => setTimeout(r, 50));
@@ -80,11 +80,11 @@ describe("EventBusBridge", () => {
     const store = new FakeRunEventStore();
     const bridge = new EventBusBridge(store);
 
-    bridge.publish(RunStarted, { prompt: "a" }, { aggregateId: "run-1" });
+    bridge.publish(RunStarted, { prompt: "a", model: "m", provider: "p" }, { aggregateId: "run-1" });
     await new Promise((r) => setTimeout(r, 20));
-    bridge.publish(RunStarted, { prompt: "b" }, { aggregateId: "run-2" });
+    bridge.publish(RunStarted, { prompt: "b", model: "m", provider: "p" }, { aggregateId: "run-2" });
     await new Promise((r) => setTimeout(r, 20));
-    bridge.publish(StepStarted, { step: 2 }, { aggregateId: "run-1" });
+    bridge.publish(StepStarted, { turn: 1, step: 2 }, { aggregateId: "run-1" });
     await new Promise((r) => setTimeout(r, 50));
 
     const ev1 = await store.list("run-1");

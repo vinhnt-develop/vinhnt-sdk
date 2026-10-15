@@ -14,6 +14,7 @@ function mockStore(overrides: Partial<SessionStore> = {}): SessionStore {
     updateSession: async () => {},
     deleteSession: async () => {},
     addMessage: async () => ({ id: "m1" as never, sessionId: "s1" as never, role: "", content: "", createdAt: new Date().toISOString() }),
+    updateMessage: async () => {},
     listMessages: async () => [],
     searchMessages: undefined as unknown as SessionStore["searchMessages"],
     getSessionStats: async () => ({ totalSessions: 0, totalCost: 0, totalInputTokens: 0, totalOutputTokens: 0, totalMessages: 0, sessionsByDate: [], costByModel: [] }),
@@ -98,30 +99,30 @@ describe("createMemorySearchTool", () => {
   });
 
   it("uses default limit of 10 when not specified", async () => {
-    let capturedLimit = 0;
+    let captured: { limit?: number } | undefined;
     const store = mockStore({
-      searchMessages: async (_query: string, limit?: number) => {
-        capturedLimit = limit ?? 0;
+      searchMessages: async (_query: string, options?: { sessionId?: string; limit?: number }) => {
+        captured = options;
         return [];
       },
     });
     const tool = createMemorySearchTool(store);
     await tool.execute({ query: "test" }, {} as never);
 
-    expect(capturedLimit).toBe(10);
+    expect(captured?.limit).toBe(10);
   });
 
   it("passes custom limit to searchMessages", async () => {
-    let capturedLimit = 0;
+    let captured: { limit?: number } | undefined;
     const store = mockStore({
-      searchMessages: async (_query: string, limit?: number) => {
-        capturedLimit = limit ?? 0;
+      searchMessages: async (_query: string, options?: { sessionId?: string; limit?: number }) => {
+        captured = options;
         return [];
       },
     });
     const tool = createMemorySearchTool(store);
     await tool.execute({ query: "test", limit: 5 }, {} as never);
 
-    expect(capturedLimit).toBe(5);
+    expect(captured?.limit).toBe(5);
   });
 });

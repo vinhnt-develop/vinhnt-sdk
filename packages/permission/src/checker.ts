@@ -121,17 +121,19 @@ export function evaluatePermission(
     return { decision: "ask", reason: `No matching rule for "${resource}"` };
   }
 
-  // matchedRule is AnyRule, we need to get the original AgentRule for reason
-  const rule = matchedRule as unknown as AgentRule;
+  // matchedRule is the converted PermissionRule; original reason (if any)
+  // was stashed under metadata by toPermissionRule.
+  const rule = matchedRule as unknown as PermissionRule;
+  const ruleReason = (rule.metadata as { reason?: string } | undefined)?.reason;
   switch (effect) {
     case "deny":
-      return { decision: "deny", reason: rule.reason ?? `Denied by rule: ${resource}` };
+      return { decision: "deny", reason: ruleReason ?? `Denied by rule: ${resource}` };
     case "ask":
-      return { decision: "ask", reason: rule.reason ?? `Approval needed for "${resource}"` };
+      return { decision: "ask", reason: ruleReason ?? `Approval needed for "${resource}"` };
     case "allow":
       return { decision: "allow" };
     default:
-      return { decision: "ask", reason: rule.reason ?? `Unknown effect "${effect}" for "${resource}"` };
+      return { decision: "ask", reason: ruleReason ?? `Unknown effect "${effect}" for "${resource}"` };
   }
 }
 

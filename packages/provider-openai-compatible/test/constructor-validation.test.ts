@@ -8,8 +8,8 @@ describe("OpenAICompatibleProvider constructor validation", () => {
       new OpenAICompatibleProvider({
         baseUrl: "https://api.example.com/v1",
         apiKey: "test-key",
-        // defaultModel omitted
-      });
+        // defaultModel omitted — runtime validation must throw
+      } as unknown as ConstructorParameters<typeof OpenAICompatibleProvider>[0]);
     }).toThrow(ConfigurationError);
   });
 

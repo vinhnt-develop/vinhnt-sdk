@@ -19,19 +19,21 @@ const testCtx: RequestContext = {
   tenantId: "default",
 };
 
-const primary: ModelProvider = {
+type RegistryEntry = ModelProvider & { id?: string };
+
+const primary: RegistryEntry = {
   id: "primary",
   provider: "openai",
   model: "gpt-4o",
-} as ModelProvider;
+} as RegistryEntry;
 
-const alt: ModelProvider = {
+const alt: RegistryEntry = {
   id: "alt",
   provider: "anthropic",
   model: "claude-sonnet-4",
-} as ModelProvider;
+} as RegistryEntry;
 
-function makeRegistry(models: ModelProvider[]): RunLoopDeps["modelRegistry"] {
+function makeRegistry(models: RegistryEntry[]): RunLoopDeps["modelRegistry"] {
   return {
     get: (id: string) => models.find((m) => m.model === id || m.id === id),
     getByProvider: (p: string) => models.filter((m) => m.provider === p),

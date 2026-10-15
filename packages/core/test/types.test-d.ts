@@ -50,8 +50,6 @@ import type {
   ToolRisk,
   ToolDefinition,
   ToolContext,
-  ToolHook,
-  ToolProvider,
   MemoryItem,
   MemoryStore,
   RunId,

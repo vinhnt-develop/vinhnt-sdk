@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ModelCaller } from "../src/model-caller.js";
-import type { ModelRequest, ModelResponse, ModelProvider } from "../src/model-caller.js";
+import type { ModelRequest, ModelResponse, ModelProvider } from "@vinhnt-sdk/schema";
 import type { RunId, RequestContext, RequestId, TraceId } from "@vinhnt-sdk/schema";
 
 const runId = "run_tc" as RunId;
@@ -14,6 +14,7 @@ const ctx: RequestContext = {
 class CaptureProvider implements ModelProvider {
   readonly provider = "capture";
   readonly model = "capture-model" as ModelProvider["model"];
+  readonly contextLimit: number | undefined = undefined;
   readonly pricing = { input: 1, output: 1 };
   readonly capabilities = {
     streaming: true,
@@ -21,7 +22,7 @@ class CaptureProvider implements ModelProvider {
     imageInput: false,
     thinking: false,
     structuredOutput: false,
-  } as const;
+  };
   lastRequest: ModelRequest | undefined;
 
   countTokens(text: string): number {

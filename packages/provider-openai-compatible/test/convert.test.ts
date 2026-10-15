@@ -12,6 +12,7 @@ import type {
   OpenAIMessage,
   OpenAIResponse,
   OpenAIStreamChunk,
+  ModelResponse,
 } from "@vinhnt-sdk/schema";
 
 describe("OpenAI Adapter", () => {
@@ -355,7 +356,7 @@ describe("OpenAI Adapter", () => {
         content: "Hello!",
         finishReason: "stop" as const,
         usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
-      };
+      } as ModelResponse;
       const result = toOpenAIResponse(res);
       expect(result.object).toBe("chat.completion");
       expect(result.choices[0]!.message.content).toBe("Hello!");
@@ -368,7 +369,7 @@ describe("OpenAI Adapter", () => {
     });
 
     it("generates id and created when missing", () => {
-      const res = { content: "Hello!" };
+      const res = { content: "Hello!" } as ModelResponse;
       const result = toOpenAIResponse(res);
       expect(result.id).toMatch(/^gen-/);
       expect(result.created).toBeGreaterThan(0);
@@ -382,7 +383,7 @@ describe("OpenAI Adapter", () => {
           name: "get_weather",
           args: { city: "Hanoi" },
         }],
-      };
+      } as unknown as ModelResponse;
       const result = toOpenAIResponse(res);
       expect(result.choices[0]!.message.tool_calls).toEqual([{
         id: "call_1",
@@ -395,7 +396,7 @@ describe("OpenAI Adapter", () => {
       const res = {
         content: "",
         refusal: "I cannot help with that",
-      };
+      } as ModelResponse;
       const result = toOpenAIResponse(res);
       expect(result.choices[0]!.message.refusal).toBe("I cannot help with that");
     });
@@ -410,7 +411,7 @@ describe("OpenAI Adapter", () => {
           cachedTokens: 3,
           reasoningTokens: 2,
         },
-      };
+      } as ModelResponse;
       const result = toOpenAIResponse(res);
       expect(result.usage).toEqual({
         prompt_tokens: 10,
@@ -422,7 +423,7 @@ describe("OpenAI Adapter", () => {
     });
 
     it("maps error finishReason to stop", () => {
-      const res = { content: "Hello!", finishReason: "error" as const };
+      const res = { content: "Hello!", finishReason: "error" as const } as ModelResponse;
       const result = toOpenAIResponse(res);
       expect(result.choices[0]!.finish_reason).toBe("stop");
     });

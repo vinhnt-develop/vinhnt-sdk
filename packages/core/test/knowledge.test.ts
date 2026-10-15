@@ -128,10 +128,10 @@ describe("BoundedMemory", () => {
     expect(result.value.endsWith("...")).toBe(true);
   });
 
-  it("setProfile returns MemoryEntry with tier stable", async () => {
+  it("setProfile returns MemoryEntry with tier long-term", async () => {
     const bm = new BoundedMemory();
     const result = await bm.setProfile("user likes Python");
-    expect(result.tier).toBe("stable");
+    expect(result.tier).toBe("long-term");
     expect(result.charLimit).toBe(1400);
   });
 

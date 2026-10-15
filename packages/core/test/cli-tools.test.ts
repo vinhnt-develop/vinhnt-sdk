@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
-import { ToolProviderRegistry, BuiltinToolProvider } from "@vinhnt-sdk/core";
+import { ToolProviderRegistry } from "@vinhnt-sdk/tools";
+import { BuiltinToolProvider } from "../src/tool/builtin-provider.js";
 
 function createBuiltinProvider(): BuiltinToolProvider {
   return new BuiltinToolProvider({

@@ -14,7 +14,10 @@ function makeBase(overrides: Record<string, unknown> = {}) {
 
 describe("parseRunEvent", () => {
   it("parses a valid run.started event", () => {
-    const raw = { ...makeBase({ type: "run.started" }), data: { prompt: "Hello" } };
+    const raw = {
+      ...makeBase({ type: "run.started" }),
+      data: { prompt: "Hello", model: "gpt-4", provider: "openai" },
+    };
     const evt = parseRunEvent(raw);
     expect(evt.type).toBe("run.started");
     expect((evt.data as { prompt: string }).prompt).toBe("Hello");
@@ -66,18 +69,18 @@ describe("parseRunEvent", () => {
     ] as const;
 
     const dataMap: Record<string, Record<string, unknown>> = {
-      "run.started": { prompt: "x" },
+      "run.started": { prompt: "x", model: "gpt-4", provider: "openai" },
       "run.completed": { status: "succeeded" },
-      "step.started": { step: 1 },
-      "step.completed": { step: 1, toolCallCount: 0 },
-      "step.failed": { step: 1, reason: "timeout", error: "Model call timed out after 1000ms" },
+      "step.started": { turn: 1, step: 1 },
+      "step.completed": { turn: 1, step: 1, toolCallCount: 0 },
+      "step.failed": { turn: 1, step: 1, reason: "timeout", error: "Model call timed out after 1000ms" },
       "token.streamed": { content: "hello", step: 1 },
       "thinking.started": { step: 1 },
       "thinking.content": { content: "hmm", step: 1 },
       "thinking.completed": { content: "done", step: 1 },
       "context.compressed": { originalCount: 10, compressedCount: 3, step: 1 },
-      "token.counted": { inputTokens: 100, step: 1 },
-      "model.cost": { inputTokens: 100, outputTokens: 50, cost: 0.01, model: "gpt-4", durationMs: 500, step: 1 },
+      "token.counted": { inputTokens: 100, step: 1, provider: "openai", model: "gpt-4" },
+      "model.cost": { inputTokens: 100, outputTokens: 50, cost: 0.01, model: "gpt-4", provider: "openai", durationMs: 500, step: 1 },
       "tool.invoked": { toolId: "t", toolName: "n", input: {} },
       "tool.completed": { toolId: "t", toolName: "n", output: {} },
       "tool.failed": { toolId: "t", toolName: "n", error: "err" },
@@ -101,7 +104,7 @@ describe("parseRunEvent", () => {
   it("propagates sequence and traceId through parse", () => {
     const raw = {
       ...makeBase({ type: "step.completed", sequence: 42, traceId: "trace_deep" }),
-      data: { step: 5, toolCallCount: 3 },
+      data: { turn: 1, step: 5, toolCallCount: 3 },
     };
     const evt = parseRunEvent(raw);
     expect(evt.sequence).toBe(42);
@@ -109,13 +112,19 @@ describe("parseRunEvent", () => {
   });
 
   it("parses event with version field", () => {
-    const raw = { ...makeBase({ type: "run.started", version: 1 }), data: { prompt: "Hi" } };
+    const raw = {
+      ...makeBase({ type: "run.started", version: 1 }),
+      data: { prompt: "Hi", model: "gpt-4", provider: "openai" },
+    };
     const evt = parseRunEvent(raw);
     expect(evt.version).toBe(1);
   });
 
   it("parses event without version field (optional)", () => {
-    const raw = { ...makeBase({ type: "run.started" }), data: { prompt: "Hi" } };
+    const raw = {
+      ...makeBase({ type: "run.started" }),
+      data: { prompt: "Hi", model: "gpt-4", provider: "openai" },
+    };
     const evt = parseRunEvent(raw);
     expect(evt.version).toBeUndefined();
   });

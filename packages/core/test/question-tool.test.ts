@@ -1,5 +1,5 @@
 ﻿import { describe, it, expect } from "vitest";
-import { createQuestionTool } from "@vinhnt-sdk/core";
+import { createQuestionTool } from "@vinhnt-sdk/tools";
 
 describe("createQuestionTool", () => {
   it("returns a tool with correct id and risk", () => {

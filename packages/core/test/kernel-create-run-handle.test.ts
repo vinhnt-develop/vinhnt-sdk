@@ -3,7 +3,7 @@ import { AgentKernel } from "../src/kernel/kernel.js";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";
-import type { AgentEvent, RunId, RequestId, TraceId } from "@vinhnt-sdk/schema";
+import type { AgentEvent, RunId, RequestId, TraceId, ModelId } from "@vinhnt-sdk/schema";
 import type { ModelProvider } from "../src/model.js";
 
 const testCtx = {
@@ -147,7 +147,7 @@ describe("AgentKernel.createRunHandle", () => {
     let modelCalls = 0;
     const slowModel: ModelProvider = {
       provider: "fake",
-      model: "slow-model",
+      model: "slow-model" as ModelId,
       pricing: { input: 1.0, output: 2.0 },
       contextLimit: 100000,
       capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
@@ -164,7 +164,7 @@ describe("AgentKernel.createRunHandle", () => {
             resolve();
           }, 50);
         });
-        return { content: "Slow reply" };
+        return { content: "Slow reply", provider: "fake" };
       },
       async *stream(request, signal) {
         const r = await this.generate(request, signal);
@@ -184,7 +184,7 @@ describe("AgentKernel.createRunHandle", () => {
     const result = await handle.completed;
 
     expect(result.status).toBe("cancelled");
-    expect(result.totalSteps).toBe(1); // step 0 was entered before the abort hit
+    expect(result.usage?.totalSteps).toBe(1); // step 0 was entered before the abort hit
     expect(modelCalls).toBe(1); // the in-flight call was aborted, no second call started
     expect(handle.isCompleted).toBe(true);
   });
@@ -198,14 +198,14 @@ describe("AgentKernel.createRunHandle", () => {
     const result = await handle.completed;
 
     expect(result.status).toBe("succeeded");
-    expect(result.totalSteps).toBe(1);
+    expect(result.usage?.totalSteps).toBe(1);
   });
 
   it("RV7: cancel before first step lands -> single cancelled outcome + cancelled event flag", async () => {
     let modelCalls = 0;
     const slowModel: ModelProvider = {
       provider: "fake",
-      model: "slow-model",
+      model: "slow-model" as ModelId,
       pricing: { input: 1.0, output: 2.0 },
       contextLimit: 100000,
       capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
@@ -219,7 +219,7 @@ describe("AgentKernel.createRunHandle", () => {
           signal?.addEventListener("abort", onAbort, { once: true });
           setTimeout(resolve, 2000);
         });
-        return { content: "late" };
+        return { content: "late", provider: "fake" };
       },
       async *stream(request, signal) {
         const r = await this.generate(request, signal);
@@ -254,7 +254,7 @@ describe("AgentKernel.createRunHandle", () => {
   it("RV7: abort during an in-flight model call -> cancelled (never succeeded/failed)", async () => {
     const slowModel: ModelProvider = {
       provider: "fake",
-      model: "slow-model",
+      model: "slow-model" as ModelId,
       pricing: { input: 1.0, output: 2.0 },
       contextLimit: 100000,
       capabilities: { streaming: false, toolCalling: false, imageInput: false, thinking: false, structuredOutput: false },
@@ -267,7 +267,7 @@ describe("AgentKernel.createRunHandle", () => {
           signal?.addEventListener("abort", onAbort, { once: true });
           setTimeout(resolve, 2000);
         });
-        return { content: "Slow reply" };
+        return { content: "Slow reply", provider: "fake" };
       },
       async *stream(request, signal) {
         const r = await this.generate(request, signal);

@@ -227,6 +227,7 @@ export {
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmRetryDataSchema, LlmRetryStartedDataSchema, LlmFailoverDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
+  KnownRunEventSchema, parseRunEvent, safeParseRunEvent,
   // Snapshot schemas
   LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,
   LlmRequestDataSchema, LlmResponseDataSchema,

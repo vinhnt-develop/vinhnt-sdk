@@ -2,7 +2,13 @@ import type { PermissionRule, PermissionEffect } from "./permission.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 import { normalize } from "node:path";
 
-type AnyRule = { effect: PermissionEffect; action?: string; target?: string; paramPattern: string | undefined };
+type AnyRule = {
+  effect: PermissionEffect;
+  action?: string;
+  target?: string;
+  paramPattern: string | undefined;
+  metadata?: Record<string, unknown>;
+};
 
 function asAnyRule(rule: PermissionRule): AnyRule {
   return {
@@ -10,6 +16,7 @@ function asAnyRule(rule: PermissionRule): AnyRule {
     action: rule.action,
     target: rule.action,
     paramPattern: rule.paramPattern,
+    ...(rule.metadata ? { metadata: rule.metadata } : {}),
   };
 }
 
