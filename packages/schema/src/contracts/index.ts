@@ -24,6 +24,7 @@ export type {
   TurnStartedData, TurnEndedData, AgentHandoffData,
   LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
+  TodoItem, TodoUpdatedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,

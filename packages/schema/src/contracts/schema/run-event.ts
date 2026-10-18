@@ -336,6 +336,40 @@ export const ToolCancelledDataSchema = z.object({
 /** Inferred type of {@link ToolCancelledDataSchema}. */
 export type ToolCancelledData = z.infer<typeof ToolCancelledDataSchema>;
 
+/**
+ * A single todo item in the agent's task list.
+ *
+ * Canonical superset of the ecosystem shape (Claude Code `TodoWrite`,
+ * opencode `todowrite`, DeepSeek `todo_write`): `content` is the imperative
+ * label, `activeForm` its continuous-present variant shown while in progress.
+ */
+export const TodoItemSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  /** Continuous-present form of `content` (e.g. "Running tests"). */
+  activeForm: z.string().optional(),
+  status: z.enum(["pending", "in_progress", "completed", "cancelled"]),
+  priority: z.enum(["high", "medium", "low"]).optional(),
+  createdAt: z.number().optional(),
+  updatedAt: z.number().optional(),
+  /** Extensible bag — kept off-wire (never serialized to the provider). */
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+/** Inferred type of {@link TodoItemSchema}. */
+export type TodoItem = z.infer<typeof TodoItemSchema>;
+
+/**
+ * Data payload for the `todo.updated` event — a full snapshot of the session's
+ * task list (last-write-wins, no deltas). Durable so the UI can replay it.
+ */
+export const TodoUpdatedDataSchema = z.object({
+  /** Session that owns the task list (absent on legacy/global writes). */
+  sessionId: z.string().optional(),
+  todos: z.array(TodoItemSchema),
+});
+/** Inferred type of {@link TodoUpdatedDataSchema}. */
+export type TodoUpdatedData = z.infer<typeof TodoUpdatedDataSchema>;
+
 /** Data payload for the `request.header` event. */
 export const RequestHeaderDataSchema = z.object({
   provider: z.string(),
@@ -649,6 +683,11 @@ export const ToolCancelledEventSchema = eventSchema(ToolCancelledDataSchema, z.l
 /** Inferred type of {@link ToolCancelledEventSchema}. */
 export type ToolCancelledEvent = z.infer<typeof ToolCancelledEventSchema>;
 
+/** Zod schema for the `todo.updated` event. */
+export const TodoUpdatedEventSchema = eventSchema(TodoUpdatedDataSchema, z.literal("todo.updated"));
+/** Inferred type of {@link TodoUpdatedEventSchema}. */
+export type TodoUpdatedEvent = z.infer<typeof TodoUpdatedEventSchema>;
+
 /** Zod schema for the `request.header` event. */
 export const RequestHeaderEventSchema = eventSchema(RequestHeaderDataSchema, z.literal("request.header"));
 /** Inferred type of {@link RequestHeaderEventSchema}. */
@@ -701,6 +740,7 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   LlmFailoverEventSchema,
   ApprovalAskedEventSchema,
   ApprovalDecidedEventSchema,
+  TodoUpdatedEventSchema,
   RequestHeaderEventSchema,
   RequestContextEventSchema,
   LlmRequestEventSchema,

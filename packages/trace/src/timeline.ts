@@ -56,6 +56,7 @@ export const KNOWN_TIMELINE_EVENT_TYPES = [
   "llm.failover",
   "approval.asked",
   "approval.decided",
+  "todo.updated",
   "request.header",
   "request.context",
   "llm.request",

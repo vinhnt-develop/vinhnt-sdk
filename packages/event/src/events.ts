@@ -9,6 +9,7 @@ import {
   ContextCompressedDataSchema,
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmFailoverDataSchema, LlmRequestDataSchema, LlmResponseDataSchema,
+  TodoUpdatedDataSchema,
 } from "@vinhnt-sdk/schema";
 
 // ── Run events (durable, aggregate=runId) ──
@@ -202,6 +203,14 @@ export const LlmResponse = defineEvent({
   description: "A response was received from the model",
   durable: { version: 1, aggregate: "runId" },
   schema: LlmResponseDataSchema,
+});
+
+/** Event definition for `todo.updated` — The session's task list changed (full snapshot). */
+export const TodoUpdated = defineEvent({
+  type: "todo.updated",
+  description: "The session's task list changed (full snapshot)",
+  durable: { version: 1, aggregate: "runId" },
+  schema: TodoUpdatedDataSchema,
 });
 
 // ── System events (non-durable, broadcast-only) ──

@@ -1,5 +1,12 @@
 # @vinhnt-sdk/permission
 
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @vinhnt-sdk/schema@0.12.0
+
 ## 0.11.0
 
 ### Minor Changes

@@ -1,5 +1,19 @@
 # @vinhnt-sdk/event
 
+## 0.12.0
+
+### Minor Changes
+
+- Add live task-list support: durable `todo.updated` event (full snapshot),
+  injectable `TodoStore` / `InMemoryTodoStore`, and a rewritten `todowrite` tool
+  that supports whole-list replace, `activeForm`, preserved ordering, a single
+  in-progress invariant, and full-snapshot return on every call.
+
+### Patch Changes
+
+- Updated dependencies
+  - @vinhnt-sdk/schema@0.12.0
+
 ## 0.11.0
 
 ### Minor Changes

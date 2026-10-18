@@ -57,6 +57,7 @@ export type {
   TurnStartedData, TurnEndedData, AgentHandoffData,
   LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
+  TodoItem, TodoUpdatedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,
@@ -227,6 +228,7 @@ export {
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmRetryDataSchema, LlmRetryStartedDataSchema, LlmFailoverDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
+  TodoItemSchema, TodoUpdatedDataSchema,
   KnownRunEventSchema, parseRunEvent, safeParseRunEvent,
   // Snapshot schemas
   LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,

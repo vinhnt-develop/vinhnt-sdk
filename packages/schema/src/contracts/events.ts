@@ -203,6 +203,26 @@ export interface LlmFailoverData { readonly fromProvider: string; readonly fromM
 export interface ApprovalAskedData { readonly requestId: RequestId; readonly toolName: string; readonly resource: string; readonly reason: string }
 export interface ApprovalDecidedData { readonly requestId: RequestId; readonly decision: "allow" | "deny" | "unavailable" }
 export interface ToolCancelledData { readonly toolId: string; readonly toolName: string; readonly callId?: string }
+/**
+ * A single todo item in the agent's task list.
+ * Prefer the Zod-derived type from `./schema/run-event.js` when validating.
+ */
+export interface TodoItem {
+  readonly id: string;
+  readonly content: string;
+  /** Continuous-present form of `content` (e.g. "Running tests"). */
+  readonly activeForm?: string;
+  readonly status: "pending" | "in_progress" | "completed" | "cancelled";
+  readonly priority?: "high" | "medium" | "low";
+  readonly createdAt?: number;
+  readonly updatedAt?: number;
+  readonly metadata?: Record<string, unknown>;
+}
+/** Data payload for the `todo.updated` event — full task-list snapshot. */
+export interface TodoUpdatedData {
+  readonly sessionId?: string;
+  readonly todos: ReadonlyArray<TodoItem>;
+}
 export interface RequestHeaderData { readonly provider: string; readonly model: string; readonly reason: "initial" | "resume" | "change" | "series" }
 export interface RequestContextData { readonly provider: string; readonly model: string; readonly contextWindow?: number }
 /**
@@ -313,6 +333,7 @@ export type KnownRunEvent =
   | (RunEvent<LlmFailoverData> & { readonly type: "llm.failover" })
   | (RunEvent<ApprovalAskedData> & { readonly type: "approval.asked" })
   | (RunEvent<ApprovalDecidedData> & { readonly type: "approval.decided" })
+  | (RunEvent<TodoUpdatedData> & { readonly type: "todo.updated" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
   | (RunEvent<RequestContextData> & { readonly type: "request.context" })
   | (RunEvent<LlmRequestData> & { readonly type: "llm.request" })
