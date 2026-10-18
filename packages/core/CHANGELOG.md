@@ -1,5 +1,28 @@
 # @vinhnt-sdk/core
 
+## 0.13.0
+
+### Minor Changes
+
+- 5b3ecb6: feat(tools): human-in-the-loop `question` tool — durable `question.requested` / `question.replied` events, injectable `QuestionStore` (+ `InMemoryQuestionStore`), and `ToolContext.askQuestion` for block-await-resume. The `question` tool now supports a 1–4 item batch form and resumes the run with the store reply; wire it via `AgentKernel` config `questions.questionStore`.
+
+### Patch Changes
+
+- Updated dependencies [5b3ecb6]
+  - @vinhnt-sdk/tools@0.13.0
+  - @vinhnt-sdk/schema@0.13.0
+  - @vinhnt-sdk/event@0.13.0
+  - @vinhnt-sdk/step-executor@0.13.0
+  - @vinhnt-sdk/llm@0.13.0
+  - @vinhnt-sdk/guard@0.13.0
+  - @vinhnt-sdk/guardrails@0.13.0
+  - @vinhnt-sdk/knowledge@0.13.0
+  - @vinhnt-sdk/permission@0.13.0
+  - @vinhnt-sdk/sandbox@0.13.0
+  - @vinhnt-sdk/session@0.13.0
+  - @vinhnt-sdk/trace@0.13.0
+  - @vinhnt-sdk/workflow@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

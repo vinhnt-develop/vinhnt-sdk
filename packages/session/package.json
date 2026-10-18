@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/session",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Session runtime state, run event stores, durable reload and title generation for VNT Agent",
   "license": "MIT",
   "type": "module",
@@ -51,7 +51,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@vinhnt-sdk/guard": "workspace:*",
-    "@vinhnt-sdk/schema": "workspace:*"
+    "@vinhnt-sdk/guard": "0.13.0",
+    "@vinhnt-sdk/schema": "0.13.0"
   }
 }

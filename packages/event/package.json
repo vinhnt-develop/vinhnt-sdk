@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/event",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Typed event definitions and event bus for VNT Agent - defineEvent registry, built-in run/system/webhook events, in-memory and global event buses with durable replay",
   "license": "MIT",
   "type": "module",
@@ -44,7 +44,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "workspace:*",
+    "@vinhnt-sdk/schema": "0.13.0",
     "zod": "^4.4.3"
   },
   "scripts": {

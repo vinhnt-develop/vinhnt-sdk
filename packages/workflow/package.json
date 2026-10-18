@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/workflow",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Workflow primitives for agent orchestration - parallel, sequential, conditional",
   "license": "MIT",
   "type": "module",
@@ -51,7 +51,7 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "workspace:*"
+    "@vinhnt-sdk/schema": "0.13.0"
   },
   "devDependencies": {
     "vitest": "^3.2.7"

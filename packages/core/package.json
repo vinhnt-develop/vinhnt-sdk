@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/core",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Core agent engine for VNT Agent - kernel, tools, sessions, plugins, permissions, and knowledge",
   "license": "MIT",
   "type": "module",
@@ -53,19 +53,19 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@vinhnt-sdk/event": "workspace:*",
-    "@vinhnt-sdk/guard": "workspace:*",
-    "@vinhnt-sdk/guardrails": "workspace:*",
-    "@vinhnt-sdk/knowledge": "workspace:*",
-    "@vinhnt-sdk/llm": "workspace:*",
-    "@vinhnt-sdk/permission": "workspace:*",
-    "@vinhnt-sdk/sandbox": "workspace:*",
-    "@vinhnt-sdk/schema": "workspace:*",
-    "@vinhnt-sdk/session": "workspace:*",
-    "@vinhnt-sdk/step-executor": "workspace:*",
-    "@vinhnt-sdk/tools": "workspace:*",
-    "@vinhnt-sdk/trace": "workspace:*",
-    "@vinhnt-sdk/workflow": "workspace:*",
+    "@vinhnt-sdk/event": "0.13.0",
+    "@vinhnt-sdk/guard": "0.13.0",
+    "@vinhnt-sdk/guardrails": "0.13.0",
+    "@vinhnt-sdk/knowledge": "0.13.0",
+    "@vinhnt-sdk/llm": "0.13.0",
+    "@vinhnt-sdk/permission": "0.13.0",
+    "@vinhnt-sdk/sandbox": "0.13.0",
+    "@vinhnt-sdk/schema": "0.13.0",
+    "@vinhnt-sdk/session": "0.13.0",
+    "@vinhnt-sdk/step-executor": "0.13.0",
+    "@vinhnt-sdk/tools": "0.13.0",
+    "@vinhnt-sdk/trace": "0.13.0",
+    "@vinhnt-sdk/workflow": "0.13.0",
     "zod": "^4.4.3"
   }
 }

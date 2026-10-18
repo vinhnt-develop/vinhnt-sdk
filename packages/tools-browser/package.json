@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/tools-browser",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Browser/computer-use + image-generation tools - driver-injected seam, no backend shipped",
   "license": "MIT",
   "type": "module",
@@ -52,9 +52,9 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@vinhnt-sdk/guard": "workspace:*",
-    "@vinhnt-sdk/schema": "workspace:*",
-    "@vinhnt-sdk/tools": "workspace:*",
+    "@vinhnt-sdk/guard": "0.13.0",
+    "@vinhnt-sdk/schema": "0.13.0",
+    "@vinhnt-sdk/tools": "0.13.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

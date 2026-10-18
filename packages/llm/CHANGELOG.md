@@ -1,5 +1,14 @@
 # @vinhnt-sdk/llm
 
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [5b3ecb6]
+  - @vinhnt-sdk/tools@0.13.0
+  - @vinhnt-sdk/schema@0.13.0
+  - @vinhnt-sdk/config@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

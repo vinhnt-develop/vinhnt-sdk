@@ -1,5 +1,13 @@
 # @vinhnt-sdk/sandbox
 
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [5b3ecb6]
+  - @vinhnt-sdk/schema@0.13.0
+  - @vinhnt-sdk/guard@0.13.0
+
 ## 0.12.0
 
 ### Patch Changes

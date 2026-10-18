@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/permission",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Permission kernel primitive for VNT Agent - rule types, permission matching/checking, risk rules, and approval stores, decoupled from core",
   "license": "MIT",
   "type": "module",
@@ -43,7 +43,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@vinhnt-sdk/schema": "workspace:*"
+    "@vinhnt-sdk/schema": "0.13.0"
   },
   "scripts": {
     "build": "tsc -b",
