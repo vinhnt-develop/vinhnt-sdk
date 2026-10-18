@@ -25,6 +25,7 @@ export type {
   LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
   TodoItem, TodoUpdatedData,
+  QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,

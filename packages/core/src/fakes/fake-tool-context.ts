@@ -1,4 +1,5 @@
-import type { ToolContext, PermissionReply } from "@vinhnt-sdk/tools";
+import type { ToolContext, PermissionReply, QuestionReply } from "@vinhnt-sdk/tools";
+import type { QuestionItem } from "@vinhnt-sdk/schema";
 
 export class FakeToolContext implements ToolContext {
   readonly sessionId: string;
@@ -8,6 +9,7 @@ export class FakeToolContext implements ToolContext {
   readonly signal: AbortSignal;
   readonly env: Record<string, string>;
   private askFn: ((input: { permission: string; resource: string; reason: string }) => Promise<PermissionReply>) | null = null;
+  private askQuestionFn: ((input: { questions: readonly QuestionItem[]; allowCustom?: boolean; timeoutMs?: number }) => Promise<QuestionReply>) | null = null;
   metadataCalls: Array<{ title?: string; metadata?: Record<string, unknown> }> = [];
 
   constructor(overrides?: Partial<ToolContext>) {
@@ -27,6 +29,16 @@ export class FakeToolContext implements ToolContext {
   async ask(input: { permission: string; resource: string; reason: string }): Promise<PermissionReply> {
     if (this.askFn) return this.askFn(input);
     return "once";
+  }
+
+  /** Override the askQuestion handler for custom behavior */
+  setAskQuestionHandler(fn: typeof this.askQuestionFn): void {
+    this.askQuestionFn = fn;
+  }
+
+  async askQuestion(input: { questions: readonly QuestionItem[]; allowCustom?: boolean; timeoutMs?: number }): Promise<QuestionReply> {
+    if (this.askQuestionFn) return this.askQuestionFn(input);
+    return { action: "cancel" };
   }
 
   metadata(input: { title?: string; metadata?: Record<string, unknown> }): void {

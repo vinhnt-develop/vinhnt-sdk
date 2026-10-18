@@ -238,6 +238,7 @@ export class AgentRunContext<TContext = unknown> {
         // Delegate to approval handler (will be set by kernel)
         return "reject" as PermissionReply;
       },
+      askQuestion: async () => ({ action: "cancel" as const }),
       metadata: () => {},
       setCompensation: (action) => this.setCompensation(action),
     };

@@ -57,6 +57,8 @@ export const KNOWN_TIMELINE_EVENT_TYPES = [
   "approval.asked",
   "approval.decided",
   "todo.updated",
+  "question.requested",
+  "question.replied",
   "request.header",
   "request.context",
   "llm.request",

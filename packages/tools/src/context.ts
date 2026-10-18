@@ -1,7 +1,8 @@
 /** Reply from human-in-the-loop approval */
 export type PermissionReply = "once" | "always" | "reject";
 
-import type { RequestContext } from "@vinhnt-sdk/schema";
+import type { RequestContext, QuestionItem } from "@vinhnt-sdk/schema";
+import type { QuestionReply } from "./question-store.js";
 
 /** Context passed to every tool execution — replaces bare AbortSignal */
 export interface ToolContext {
@@ -56,6 +57,22 @@ export interface ToolContext {
     /** Patterns to save as "always allow" rules if user replies "always". Uses arity-based truncation. */
     savePatterns?: readonly string[];
   }): Promise<PermissionReply>;
+
+  /**
+   * Ask the user one or more questions and block until they answer.
+   * Durable request/reply path (mirrors {@link ask}): the host emits
+   * `question.requested`, waits for a reply, then emits `question.replied`.
+   * Returns `{ action: "cancel" }` when no store is wired or the run aborts.
+   */
+  askQuestion?(input: {
+    questions: readonly QuestionItem[];
+    /** Offer an "Other" free-text option even when options are predefined. */
+    allowCustom?: boolean;
+    /** Epoch ms after which the question expires. */
+    expiresAt?: number;
+    /** Hard timeout in ms (overrides the host default). */
+    timeoutMs?: number;
+  }): Promise<QuestionReply>;
 
   /** Attach metadata to the current tool call (for observability) */
   metadata(input: {

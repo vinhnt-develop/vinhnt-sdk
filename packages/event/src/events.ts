@@ -9,7 +9,7 @@ import {
   ContextCompressedDataSchema,
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmFailoverDataSchema, LlmRequestDataSchema, LlmResponseDataSchema,
-  TodoUpdatedDataSchema,
+  TodoUpdatedDataSchema, QuestionRequestedDataSchema, QuestionRepliedDataSchema,
 } from "@vinhnt-sdk/schema";
 
 // ── Run events (durable, aggregate=runId) ──
@@ -213,6 +213,22 @@ export const TodoUpdated = defineEvent({
   schema: TodoUpdatedDataSchema,
 });
 
+/** Event definition for `question.requested` — The agent asked the user a question and is awaiting a reply. */
+export const QuestionRequested = defineEvent({
+  type: "question.requested",
+  description: "The agent asked the user a question and is awaiting a reply",
+  durable: { version: 1, aggregate: "runId" },
+  schema: QuestionRequestedDataSchema,
+});
+
+/** Event definition for `question.replied` — The user (or system) replied to a question. */
+export const QuestionReplied = defineEvent({
+  type: "question.replied",
+  description: "The user (or system) replied to a question",
+  durable: { version: 1, aggregate: "runId" },
+  schema: QuestionRepliedDataSchema,
+});
+
 // ── System events (non-durable, broadcast-only) ──
 /** Event definition for `file.changed` — A file was changed on disk. */
 export const FileChanged = defineEvent({
@@ -242,18 +258,6 @@ export const ConfigChanged = defineEvent({
 export const SessionCreated = defineEvent({
   type: "session.created",
   description: "A new session was created",
-});
-
-/** Event definition for `question.asked` — A question was asked to the user. */
-export const QuestionAsked = defineEvent({
-  type: "question.asked",
-  description: "A question was asked to the user",
-});
-
-/** Event definition for `question.replied` — A question was replied to. */
-export const QuestionReplied = defineEvent({
-  type: "question.replied",
-  description: "A question was replied to",
 });
 
 /** Event definition for `vcs.branch.changed` — VCS branch changed. */

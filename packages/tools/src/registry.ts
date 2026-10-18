@@ -149,6 +149,7 @@ export class ToolRegistry {
           // gate there is no human in the loop, so a tool's `ask` must reject
           // rather than auto-approve itself.
           ask: async () => "reject",
+          askQuestion: async () => ({ action: "cancel" as const }),
           metadata: () => {},
           setCompensation: () => {},
         };

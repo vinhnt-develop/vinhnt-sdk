@@ -1,6 +1,6 @@
-import type { RunId, RequestContext } from "@vinhnt-sdk/schema";
+import type { RunId, RequestContext, KnownRunEvent, RequestId } from "@vinhnt-sdk/schema";
 import { sanitizeEnv } from "@vinhnt-sdk/guard";
-import type { ToolContext, ToolRisk } from "@vinhnt-sdk/tools";
+import type { ToolContext, ToolRisk, QuestionStore, QuestionRequest, QuestionReply } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { ToolExecutionPlan } from "./step-executor.js";
@@ -19,6 +19,12 @@ export interface ToolContextBuilderDeps {
   readonly sandboxScope?: string | undefined;
   /** P7.1: sanitizer truncation cap from `ContextBudget.sanitizeLimitChars`. */
   readonly sanitizeLimitChars?: number | undefined;
+  /** Store backing the `question` tool's durable request/reply path. */
+  readonly questionStore?: QuestionStore | undefined;
+  /** Default timeout (ms) for a question wait; omitted → store default. */
+  readonly questionTimeoutMs?: number | undefined;
+  /** Persist + publish a durable run event (used to emit question.* events). */
+  readonly emitEvent?: ((event: Omit<KnownRunEvent, "sequence">) => Promise<void>) | undefined;
 }
 
 /** Mutable ref through which tools attach observability metadata. */
@@ -76,6 +82,64 @@ export async function buildToolContext(
         // `source` comes from the checkTool result above).
         { risk: deps.toolRisk, args: tc.args as Record<string, unknown>, source: decision.source },
       );
+    },
+    // Durable HITL question: emit `question.requested`, await the store, then
+    // emit `question.replied`. Mirrors the permission ask path but keyed on a
+    // single batch request and resolved via the app's QuestionStore.
+    askQuestion: async (input) => {
+      const requestId = crypto.randomUUID() as RequestId;
+      const request: QuestionRequest = {
+        requestId,
+        runId,
+        sessionId: sessionId ?? "",
+        questions: input.questions,
+        ...(input.allowCustom !== undefined ? { allowCustom: input.allowCustom } : {}),
+        ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+      };
+
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "question.requested",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          requestId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          questions: input.questions,
+          ...(input.allowCustom !== undefined ? { allowCustom: input.allowCustom } : {}),
+          ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        },
+      });
+
+      let reply: QuestionReply = { action: "cancel" };
+      if (deps.questionStore) {
+        const timeoutMs = input.timeoutMs ?? deps.questionTimeoutMs;
+        try {
+          reply = await deps.questionStore.awaitReply(request, {
+            signal: runAbort.signal,
+            ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+          });
+        } catch (err) {
+          // Run aborted / timed out → treat as cancelled but still emit the
+          // reply so the UI clears its pending question card.
+          const isAbort =
+            err instanceof DOMException
+              ? err.name === "AbortError"
+              : err instanceof Error && err.name === "AbortError";
+          reply = { action: "cancel" };
+          if (!isAbort) throw err;
+        }
+      }
+
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "question.replied",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          requestId,
+          action: reply.action,
+          ...(reply.answers !== undefined ? { answers: reply.answers } : {}),
+        },
+      });
+
+      return reply;
     },
     metadata: (input) => {
       metadataRef.current = {

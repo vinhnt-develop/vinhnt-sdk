@@ -58,6 +58,7 @@ export type {
   LlmRetryData, LlmRetryStartedData, LlmFailoverData,
   ApprovalAskedData, ApprovalDecidedData,
   TodoItem, TodoUpdatedData,
+  QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,
@@ -229,6 +230,8 @@ export {
   LlmRetryDataSchema, LlmRetryStartedDataSchema, LlmFailoverDataSchema,
   ApprovalAskedDataSchema, ApprovalDecidedDataSchema,
   TodoItemSchema, TodoUpdatedDataSchema,
+  QuestionOptionSchema, QuestionItemSchema, QuestionRequestedDataSchema,
+  QuestionAnswerSchema, QuestionRepliedDataSchema,
   KnownRunEventSchema, parseRunEvent, safeParseRunEvent,
   // Snapshot schemas
   LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,

@@ -361,6 +361,8 @@ this.stepExecutor = new StepExecutor({
       addSessionMessage: (sid, role, content, extra?: Record<string, unknown>) => this.addSessionMessage(sid, role, content, extra as SessionMessageExtra | undefined),
       pluginManager: normalized.pluginManager as import("@vinhnt-sdk/step-executor").StepExecutorPluginHooks | undefined,
       permissionGate: this.permissionGate,
+      ...(normalized.questions?.questionStore !== undefined ? { questionStore: normalized.questions.questionStore } : {}),
+      ...(normalized.questions?.questionTimeoutMs !== undefined ? { questionTimeoutMs: normalized.questions.questionTimeoutMs } : {}),
       modelCaller: this.modelCaller,
       maxToolCallsPerStep: this.maxToolCallsPerStep,
       ...(normalized.maxConcurrentToolCalls !== undefined ? { maxConcurrentToolCalls: normalized.maxConcurrentToolCalls } : {}),

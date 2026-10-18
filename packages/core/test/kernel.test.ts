@@ -9,6 +9,7 @@ import { InMemoryModelRegistry } from "../src/model.js";
 import type { SessionStore } from "@vinhnt-sdk/session";
 import type { Plugin, PluginHooks } from "../src/plugin.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
+import { createQuestionTool, InMemoryQuestionStore } from "@vinhnt-sdk/tools";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";
@@ -27,6 +28,14 @@ const testCtx = {
 
 function findEvent<T extends KnownRunEvent["type"]>(events: readonly RunEvent[], type: T): Extract<KnownRunEvent, { type: T }> | undefined {
   return events.find((e) => e.type === type) as Extract<KnownRunEvent, { type: T }> | undefined;
+}
+
+async function waitFor(cond: () => boolean, timeoutMs = 3000): Promise<void> {
+  const start = Date.now();
+  while (!cond()) {
+    if (Date.now() - start > timeoutMs) throw new Error("waitFor timed out");
+    await new Promise((r) => setTimeout(r, 5));
+  }
 }
 
 describe("AgentKernel", () => {
@@ -1592,6 +1601,55 @@ describe("AgentKernel", () => {
 
       const repEvent = events.find((e) => e.type === "permission.replied");
       expect((repEvent!.data as Record<string, unknown>).reply).toBe("once");
+    });
+
+    it("question tool emits question.requested/replied and resumes with the store reply", async () => {
+      const model = new FakeModelProvider([
+        { content: "", toolCalls: [{ id: "call_q", name: "question", args: { header: "Pick", question: "Which one?", options: [{ label: "a" }, { label: "b" }] } }] },
+        { content: "done" },
+      ]);
+      const store = new FakeRunEventStore();
+      const questionStore = new InMemoryQuestionStore();
+
+      const agent: AgentConfig = {
+        id: "q-agent" as AgentId,
+        profile: { name: "QAgent", description: "" },
+        capabilities: {},
+        permissions: { ruleset: { rules: [{ effect: "allow", target: "tool.question" }] } },
+      };
+      const registry = new FakeAgentRegistry();
+      await registry.register(agent);
+      const kernel = new AgentKernel({
+        model, store, maxSteps: 10, agentRegistry: registry,
+        tools: [createQuestionTool()],
+        questions: { questionStore },
+      });
+      await kernel.useAgent("q-agent" as AgentId);
+
+      const handle = kernel.run("ask me", testCtx);
+      await waitFor(() => questionStore.pendingRequests().length === 1);
+      const req = questionStore.pendingRequests()[0]!;
+      questionStore.resolveRequest(req.requestId, {
+        action: "accept",
+        answers: [{ header: "Pick", selected: ["b"] }],
+      });
+      await handle.completed;
+
+      const events = await store.list(handle.runId);
+      const types = events.map((e) => e.type);
+      expect(types).toContain("question.requested");
+      expect(types).toContain("question.replied");
+
+      const reqEvent = events.find((e) => e.type === "question.requested");
+      expect((reqEvent!.data as Record<string, unknown>).requestId).toBe(req.requestId);
+      const reqData = reqEvent!.data as { questions?: Array<{ header?: string }> };
+      expect(reqData.questions?.[0]?.header).toBe("Pick");
+
+      const repEvent = events.find((e) => e.type === "question.replied");
+      expect((repEvent!.data as Record<string, unknown>).action).toBe("accept");
+
+      const toolDone = events.find((e) => e.type === "tool.completed");
+      expect((toolDone!.data as Record<string, unknown>).toolName).toBe("question");
     });
 
     it("ask with 'reject' reply rejects tool and does not execute it", async () => {

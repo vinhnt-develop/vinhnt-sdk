@@ -223,6 +223,45 @@ export interface TodoUpdatedData {
   readonly sessionId?: string;
   readonly todos: ReadonlyArray<TodoItem>;
 }
+/** A single selectable option for a question. */
+export interface QuestionOption {
+  readonly label: string;
+  readonly description?: string;
+}
+/** One question within a `question.requested` batch (1–4 per request). */
+export interface QuestionItem {
+  /** Short title for the question (≤ 30 chars). */
+  readonly header: string;
+  /** The question text shown to the user. */
+  readonly question: string;
+  /** Predefined answer options; absent → free-text answer. */
+  readonly options?: ReadonlyArray<QuestionOption>;
+  /** Allow selecting multiple options (default false). */
+  readonly multiple?: boolean;
+}
+/** Data payload for the `question.requested` event (HITL ask). */
+export interface QuestionRequestedData {
+  readonly requestId: RequestId;
+  readonly sessionId?: string;
+  readonly questions: ReadonlyArray<QuestionItem>;
+  readonly allowCustom?: boolean;
+  readonly expiresAt?: number;
+}
+/** Answer to a single question in a batch. */
+export interface QuestionAnswer {
+  /** Matches the `header` of the corresponding {@link QuestionItem}. */
+  readonly header: string;
+  /** Selected option labels (empty for free-text-only answers). */
+  readonly selected: ReadonlyArray<string>;
+  /** Free-text ("Other") answer, when the user typed one. */
+  readonly text?: string;
+}
+/** Data payload for the `question.replied` event. */
+export interface QuestionRepliedData {
+  readonly requestId: RequestId;
+  readonly action: "accept" | "decline" | "cancel";
+  readonly answers?: ReadonlyArray<QuestionAnswer>;
+}
 export interface RequestHeaderData { readonly provider: string; readonly model: string; readonly reason: "initial" | "resume" | "change" | "series" }
 export interface RequestContextData { readonly provider: string; readonly model: string; readonly contextWindow?: number }
 /**
@@ -334,6 +373,8 @@ export type KnownRunEvent =
   | (RunEvent<ApprovalAskedData> & { readonly type: "approval.asked" })
   | (RunEvent<ApprovalDecidedData> & { readonly type: "approval.decided" })
   | (RunEvent<TodoUpdatedData> & { readonly type: "todo.updated" })
+  | (RunEvent<QuestionRequestedData> & { readonly type: "question.requested" })
+  | (RunEvent<QuestionRepliedData> & { readonly type: "question.replied" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
   | (RunEvent<RequestContextData> & { readonly type: "request.context" })
   | (RunEvent<LlmRequestData> & { readonly type: "llm.request" })

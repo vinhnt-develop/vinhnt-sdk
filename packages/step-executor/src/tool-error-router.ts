@@ -138,6 +138,8 @@ export async function tryReadFileFallback(
           { risk: fallbackTool.risk },
         );
       },
+      // Fallback read_file never asks the user — stub the question seam.
+      askQuestion: async () => ({ action: "cancel" as const }),
       metadata: () => {},
       setCompensation: () => {},
     };

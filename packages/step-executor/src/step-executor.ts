@@ -1,7 +1,7 @@
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
 import { formatToolFailure, hasErrorCode, getLogger } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
-import type { ToolContext, ToolDefinition } from "@vinhnt-sdk/tools";
+import type { ToolContext, ToolDefinition, QuestionStore } from "@vinhnt-sdk/tools";
 
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
@@ -77,6 +77,14 @@ export interface StepExecutorDeps {
   readonly maxToolOutputChars?: number;
   /** P7.1: sanitizer truncation cap from `ContextBudget.sanitizeLimitChars`. */
   readonly sanitizeLimitChars?: number;
+  /**
+   * Store backing the `question` tool's durable request/reply path. When set,
+   * `ctx.askQuestion` emits `question.requested`/`question.replied` and awaits
+   * the user's reply (HITL ask).
+   */
+  readonly questionStore?: QuestionStore;
+  /** Default timeout (ms) for a question wait. */
+  readonly questionTimeoutMs?: number;
   /**
    * P3.1: monotonic tool guards evaluated before every tool execution.
    * `deny` fails the call outright; `escalate` forces a user approval ask
@@ -640,6 +648,9 @@ export class StepExecutor {
       workspaceRoot: resolvedWorkspaceRoot,
       ...(this.deps.sandboxMode !== undefined ? { sandboxScope: this.deps.sandboxMode } : {}),
       ...(this.deps.sanitizeLimitChars !== undefined ? { sanitizeLimitChars: this.deps.sanitizeLimitChars } : {}),
+      ...(this.deps.questionStore !== undefined ? { questionStore: this.deps.questionStore } : {}),
+      ...(this.deps.questionTimeoutMs !== undefined ? { questionTimeoutMs: this.deps.questionTimeoutMs } : {}),
+      emitEvent: (event) => safeEmit(this.deps.store, event),
     });
   }
 

@@ -18,6 +18,14 @@ export interface KernelSandboxConfig {
   readonly mode?: string;
 }
 
+/** Question (ask-user / HITL) configuration for the `question` tool. */
+export interface QuestionConfig {
+  /** Store backing the `question` tool's durable request/reply path. */
+  readonly questionStore?: import("@vinhnt-sdk/tools").QuestionStore;
+  /** Default timeout (ms) for a question wait. */
+  readonly questionTimeoutMs?: number;
+}
+
 /** Permission configuration for tool execution and file access. */
 export interface PermissionConfig {
   /** Store for persisting approval decisions. */
@@ -263,6 +271,8 @@ export interface AgentKernelConfig {
   readonly sandbox?: KernelSandboxConfig;
   /** Permission configuration for tool execution. */
   readonly permissions?: PermissionConfig;
+  /** Question (ask-user / HITL) configuration for the `question` tool. */
+  readonly questions?: QuestionConfig;
   /** Model routing configuration for multi-model setups. */
   readonly modelRouting?: ModelRoutingConfig;
   /** Input guardrails — run before model calls. */
@@ -441,6 +451,15 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
     delete normalized.bareDenyHidesTool;
     delete normalized.hideFromModel;
   }
+
+  if (!normalized.questions && (normalized.questionStore !== undefined || normalized.questionTimeoutMs !== undefined)) {
+    normalized.questions = {
+      questionStore: normalized.questionStore,
+      questionTimeoutMs: normalized.questionTimeoutMs,
+    };
+  }
+  delete normalized.questionStore;
+  delete normalized.questionTimeoutMs;
 
   if (!normalized.modelRouting) {
     normalized.modelRouting = {

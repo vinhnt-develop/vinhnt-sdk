@@ -38,6 +38,7 @@ export function signalToToolContext(signal?: AbortSignal): ToolContext {
     // RV-41: fail-closed default — no gate in this loose context means a tool's
     // `ask` must reject rather than self-approve.
     ask: async () => "reject",
+    askQuestion: async () => ({ action: "cancel" as const }),
     metadata: () => {},
     setCompensation: () => {},
   };

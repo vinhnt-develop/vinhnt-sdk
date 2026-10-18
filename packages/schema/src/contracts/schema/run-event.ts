@@ -370,6 +370,68 @@ export const TodoUpdatedDataSchema = z.object({
 /** Inferred type of {@link TodoUpdatedDataSchema}. */
 export type TodoUpdatedData = z.infer<typeof TodoUpdatedDataSchema>;
 
+/** A single selectable option for a question. */
+export const QuestionOptionSchema = z.object({
+  label: z.string(),
+  description: z.string().optional(),
+});
+/** Inferred type of {@link QuestionOptionSchema}. */
+export type QuestionOption = z.infer<typeof QuestionOptionSchema>;
+
+/** One question within a `question.requested` batch (1–4 per request). */
+export const QuestionItemSchema = z.object({
+  /** Short title for the question (≤ 30 chars). */
+  header: z.string(),
+  /** The question text shown to the user. */
+  question: z.string(),
+  /** Predefined answer options; absent → free-text answer. */
+  options: z.array(QuestionOptionSchema).optional(),
+  /** Allow selecting multiple options (default false). */
+  multiple: z.boolean().optional(),
+});
+/** Inferred type of {@link QuestionItemSchema}. */
+export type QuestionItem = z.infer<typeof QuestionItemSchema>;
+
+/**
+ * Data payload for the `question.requested` durable event — the agent is
+ * blocked awaiting a user answer (HITL). Durable so the UI can replay it when
+ * a client reconnects; the reply resolves the pending request.
+ */
+export const QuestionRequestedDataSchema = z.object({
+  requestId: z.string(),
+  /** Session that owns the request (absent on legacy/global writes). */
+  sessionId: z.string().optional(),
+  questions: z.array(QuestionItemSchema),
+  /** Offer an "Other" free-text option even when options are predefined. */
+  allowCustom: z.boolean().optional(),
+  /** Epoch ms after which the question expires (graceful expiry). */
+  expiresAt: z.number().optional(),
+});
+/** Inferred type of {@link QuestionRequestedDataSchema}. */
+export type QuestionRequestedData = z.infer<typeof QuestionRequestedDataSchema>;
+
+/** Answer to a single question in a batch. */
+export const QuestionAnswerSchema = z.object({
+  /** Matches the `header` of the corresponding {@link QuestionItem}. */
+  header: z.string(),
+  /** Selected option labels (empty for free-text-only answers). */
+  selected: z.array(z.string()),
+  /** Free-text ("Other") answer, when the user typed one. */
+  text: z.string().optional(),
+});
+/** Inferred type of {@link QuestionAnswerSchema}. */
+export type QuestionAnswer = z.infer<typeof QuestionAnswerSchema>;
+
+/** Data payload for the `question.replied` durable event. */
+export const QuestionRepliedDataSchema = z.object({
+  requestId: z.string(),
+  action: z.enum(["accept", "decline", "cancel"]),
+  /** Present only when `action === "accept"`. */
+  answers: z.array(QuestionAnswerSchema).optional(),
+});
+/** Inferred type of {@link QuestionRepliedDataSchema}. */
+export type QuestionRepliedData = z.infer<typeof QuestionRepliedDataSchema>;
+
 /** Data payload for the `request.header` event. */
 export const RequestHeaderDataSchema = z.object({
   provider: z.string(),
@@ -688,6 +750,16 @@ export const TodoUpdatedEventSchema = eventSchema(TodoUpdatedDataSchema, z.liter
 /** Inferred type of {@link TodoUpdatedEventSchema}. */
 export type TodoUpdatedEvent = z.infer<typeof TodoUpdatedEventSchema>;
 
+/** Zod schema for the `question.requested` event. */
+export const QuestionRequestedEventSchema = eventSchema(QuestionRequestedDataSchema, z.literal("question.requested"));
+/** Inferred type of {@link QuestionRequestedEventSchema}. */
+export type QuestionRequestedEvent = z.infer<typeof QuestionRequestedEventSchema>;
+
+/** Zod schema for the `question.replied` event. */
+export const QuestionRepliedEventSchema = eventSchema(QuestionRepliedDataSchema, z.literal("question.replied"));
+/** Inferred type of {@link QuestionRepliedEventSchema}. */
+export type QuestionRepliedEvent = z.infer<typeof QuestionRepliedEventSchema>;
+
 /** Zod schema for the `request.header` event. */
 export const RequestHeaderEventSchema = eventSchema(RequestHeaderDataSchema, z.literal("request.header"));
 /** Inferred type of {@link RequestHeaderEventSchema}. */
@@ -731,6 +803,8 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   RunCompletedEventSchema,
   PermissionRequestedEventSchema,
   PermissionRepliedEventSchema,
+  QuestionRequestedEventSchema,
+  QuestionRepliedEventSchema,
   StepTypeChangedEventSchema,
   TurnStartedEventSchema,
   TurnEndEventSchema,

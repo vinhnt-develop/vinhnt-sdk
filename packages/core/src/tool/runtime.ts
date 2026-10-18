@@ -181,6 +181,7 @@ export class ToolRuntime {
         runContext.setApproval(toolId, callId, "once");
         return "once";
       },
+      askQuestion: async () => ({ action: "cancel" as const }),
       metadata: () => {},
       setCompensation: (action) => runContext.setCompensation(action),
     };
@@ -198,6 +199,7 @@ export class ToolRuntime {
       signal: AbortSignal.timeout(120_000),
       env: {},
       ask: async () => "reject",
+      askQuestion: async () => ({ action: "cancel" as const }),
       metadata: () => {},
       setCompensation: () => {},
     };

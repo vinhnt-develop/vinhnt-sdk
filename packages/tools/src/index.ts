@@ -117,7 +117,11 @@ export { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitComm
 // === Agent tools ===
 
 export { createQuestionTool } from "./question-tool.js";
-export type { QuestionInput, QuestionHandler } from "./question-tool.js";
+export type { QuestionInput, QuestionHandler, QuestionToolOptions } from "./question-tool.js";
+export { InMemoryQuestionStore } from "./question-store.js";
+export type {
+  QuestionStore, QuestionRequest, QuestionReply, QuestionAction, AwaitQuestionOptions,
+} from "./question-store.js";
 export { createTodoWriteTool } from "./todo-tool.js";
 export type { TodoWriteToolOptions, TodoUpdate } from "./todo-tool.js";
 export { InMemoryTodoStore } from "./todo-store.js";

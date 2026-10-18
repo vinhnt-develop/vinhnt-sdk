@@ -48,6 +48,9 @@ function createServerToolContext(): ToolContext {
     async ask() {
       return "reject";
     },
+    async askQuestion() {
+      return { action: "cancel" as const };
+    },
     metadata() {},
     setCompensation() {},
   };
