@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { RunStateMachine, MAX_RETAINED_RUN_STATES } from "../src/run-state.js";
 import type { RunId } from "@vinhnt-sdk/schema";
 

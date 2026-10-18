@@ -1,4 +1,4 @@
-﻿import type { Message, RunEvent, RunEventListener, Session, SessionStats, SessionId, MessageId } from "@vinhnt-sdk/schema";
+import type { Message, RunEvent, RunEventListener, Session, SessionStats, SessionId, MessageId } from "@vinhnt-sdk/schema";
 import { ValidationError } from "@vinhnt-sdk/schema";
 import type { RunEventStore, RunEventSnapshot, SessionStore, SessionUpdates, AddMessageOptions } from "./store.js";
 
@@ -6,7 +6,7 @@ import type { RunEventStore, RunEventSnapshot, SessionStore, SessionUpdates, Add
  * In-memory {@link SessionStore} reference implementation (G4.1).
  *
  * Fully functional (unlike {@link NullSessionStore}) so tests, prototypes and
- * `forkSessionHistory` exercise real message storage without a database â€”
+ * `forkSessionHistory` exercise real message storage without a database —
  * the hand-rolled partial store fakes in durable-reload tests collapse into
  * this one. Mirrors the sqlite store's semantics: `forkSession` links a child
  * session but does NOT copy messages (use `forkSessionHistory` for that).
@@ -41,7 +41,7 @@ export class InMemorySessionStore implements SessionStore {
     return session;
   }
 
-  /** Link-only fork (SessionStore contract) â€” copy messages via `forkSessionHistory`. */
+  /** Link-only fork (SessionStore contract) — copy messages via `forkSessionHistory`. */
   async forkSession(sourceSessionId: string, title?: string): Promise<Session> {
     const source = await this.getSession(sourceSessionId);
     if (!source) throw new ValidationError(`Source session not found: ${sourceSessionId}`);
@@ -184,7 +184,7 @@ export class InMemorySessionStore implements SessionStore {
 }
 
 /**
- * Minimal in-memory {@link RunEventStore} that actually serves `list()` â€”
+ * Minimal in-memory {@link RunEventStore} that actually serves `list()` —
  * unlike {@link NullRunEventStore} (whose `list()` returns `[]` and therefore
  * cannot drive replay). Snapshots are stored per runId.
  */

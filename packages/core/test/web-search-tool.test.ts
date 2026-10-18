@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createWebSearchTool, TavilySearchProvider } from "@vinhnt-sdk/tools";
 import type { WebSearchProvider } from "@vinhnt-sdk/tools";
 

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createApplyPatchTool } from "@vinhnt-sdk/core";
 import type { ToolContext } from "@vinhnt-sdk/core";
 import { writeFileSync, mkdtempSync, readFileSync } from "node:fs";

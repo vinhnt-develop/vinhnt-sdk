@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ToolProviderRegistry, defineTool } from "@vinhnt-sdk/tools";
 import { BuiltinToolProvider } from "../src/tool/builtin-provider.js";
 import type { ToolDefinition } from "@vinhnt-sdk/core";

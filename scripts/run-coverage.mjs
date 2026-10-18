@@ -30,4 +30,9 @@ if (existsSync(summaryPath)) {
 } else {
   console.error("NO_COVERAGE_SUMMARY");
 }
-process.exit(existsSync(summaryPath) ? 0 : (r.status ?? 1));
+// Respect vitest's exit code: a failing test suite must fail the coverage run
+// even when a partial summary was still written (reportOnFailure=true).
+if ((r.status ?? 0) !== 0) {
+  process.exit(r.status);
+}
+process.exit(existsSync(summaryPath) ? 0 : 1);

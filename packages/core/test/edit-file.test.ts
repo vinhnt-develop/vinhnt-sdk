@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { createEditFileTool } from "@vinhnt-sdk/core";
 import type { ToolContext } from "@vinhnt-sdk/tools";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";

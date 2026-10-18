@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
 import { InMemoryEventBus } from "@vinhnt-sdk/event";
 import { buildAgentIdentity } from "../src/kernel/kernel-session.js";
@@ -53,7 +53,7 @@ describe("AgentKernel", () => {
     expect(counted).toHaveLength(1);
   });
 
-  it("TC01: complete run with text response â€” no tool call", async () => {
+  it("TC01: complete run with text response — no tool call", async () => {
     const model = new FakeModelProvider([
       { content: "Hello! I am an AI assistant." },
     ]);
@@ -88,7 +88,7 @@ describe("AgentKernel", () => {
     expect(completed?.data.totalSteps).toBe(1);
   });
 
-  it("TC02: tool call success â€” LLM calls 1 tool, gets result, responds", async () => {
+  it("TC02: tool call success — LLM calls 1 tool, gets result, responds", async () => {
     const readFile = new FakeTool("read_file", async (input) => {
       const { path } = input as { path: string };
       return `Content of ${path}: Hello World!`;
@@ -160,7 +160,7 @@ describe("AgentKernel", () => {
     expect(invoked[1]!.data).toMatchObject({ toolName: "read_b" });
   });
 
-  it("TC04: maxSteps exceeded â€” agent loop stops with status failed", async () => {
+  it("TC04: maxSteps exceeded — agent loop stops with status failed", async () => {
     const loopTool = new FakeTool("loop_tool", async () => "Keep calling me!");
     const model = new FakeModelProvider([
       { content: "", toolCalls: [{ id: "call-1", name: "loop_tool", args: {} }] },
@@ -183,7 +183,7 @@ describe("AgentKernel", () => {
     expect(completed?.data.totalSteps).toBe(2);
   });
 
-  it("TC04c: per-run saga â€” compensation registered on a tool fires when the run fails (rollbackAll)", async () => {
+  it("TC04c: per-run saga — compensation registered on a tool fires when the run fails (rollbackAll)", async () => {
     const compensated = vi.fn(async () => {});
     const loopTool = new FakeTool("loop_tool", async (_input, ctx) => {
       ctx.setCompensation(async () => { await compensated(); });
@@ -262,7 +262,7 @@ describe("AgentKernel", () => {
     const resumedModel = new FakeModelProvider([{ content: "Continued answer" }]);
     const resumedKernel = new AgentKernel({ model: resumedModel, store, tools: [], maxSteps: 10 });
 
-    // A run that already completed is terminal â€” not reported as active.
+    // A run that already completed is terminal — not reported as active.
     const active = await resumedKernel.getActiveSessionIds();
     expect(active).toEqual([]);
 
@@ -281,7 +281,7 @@ describe("AgentKernel", () => {
     expect(finalSnapshot?.state.sessionId).toBe("resume-sess-1");
   });
 
-  it("TC04e: streamRun isolates concurrent runs â€” only events for its own runId", async () => {
+  it("TC04e: streamRun isolates concurrent runs — only events for its own runId", async () => {
     const modelA = new FakeModelProvider([{ content: "A done" }]);
     const modelB = new FakeModelProvider([{ content: "B done" }]);
     const store = new FakeRunEventStore();
@@ -312,7 +312,7 @@ describe("AgentKernel", () => {
     expect(typesB.filter((t) => t === "run.completed").length).toBe(1);
   });
 
-  it("TC04b: maxSteps graceful â€” model produces text summary on last step, status succeeded", async () => {
+  it("TC04b: maxSteps graceful — model produces text summary on last step, status succeeded", async () => {
     const loopTool = new FakeTool("loop_tool", async () => "result");
     const model = new FakeModelProvider([
       { content: "", toolCalls: [{ id: "call-1", name: "loop_tool", args: {} }] },
@@ -332,7 +332,7 @@ describe("AgentKernel", () => {
     expect(completed?.data.totalSteps).toBe(2);
   });
 
-  it("TC05: tool not found â€” records tool.failed event, run continues", async () => {
+  it("TC05: tool not found — records tool.failed event, run continues", async () => {
     const model = new FakeModelProvider([
       {
         content: "Call unknown tool",
@@ -356,7 +356,7 @@ describe("AgentKernel", () => {
     expect(completed?.data.status).toBe("succeeded");
   });
 
-  it("TC06: tool execute throws error â€” records tool.failed, run continues", async () => {
+  it("TC06: tool execute throws error — records tool.failed, run continues", async () => {
     const crashTool = new FakeTool("crash_tool", async () => {
       throw new Error("Unknown error!");
     });
@@ -387,7 +387,7 @@ describe("AgentKernel", () => {
     expect(runEnd?.data.status).toBe("succeeded");
   });
 
-  it("TC07: doom-loop â€” 3 identical tool calls detected and blocked", async () => {
+  it("TC07: doom-loop — 3 identical tool calls detected and blocked", async () => {
     const echo = new FakeTool("echo", async (input) => input);
     const model = new FakeModelProvider([
       {
@@ -418,7 +418,7 @@ describe("AgentKernel", () => {
     expect((failed[0]!.data as Record<string, unknown>).error as string).toMatch(/doom|identical|infinite/i);
   });
 
-  it("TC09: stream â€” kernel emits token.streamed events (live-only) when model supports streaming", async () => {
+  it("TC09: stream — kernel emits token.streamed events (live-only) when model supports streaming", async () => {
     const model = new FakeModelProvider([
       { content: "Hello! I am AI." },
     ]);
@@ -439,7 +439,7 @@ describe("AgentKernel", () => {
     expect(completed?.data.output).toBe("Hello! I am AI.");
   });
 
-  it("TC10: stream with tool calls â€” tool calls still work, token.streamed is live-only", async () => {
+  it("TC10: stream with tool calls — tool calls still work, token.streamed is live-only", async () => {
     const readFile = new FakeTool("read_file", async (input) => {
       return `Ná»™i dung: Hello World!`;
     });
@@ -580,7 +580,7 @@ describe("AgentKernel", () => {
     expect(reloaded[1]!.content).toBe("fresh reply");
   });
 
-  it("TC12: thinking step â€” emits thinking.* events (content live-only) and injects thinking into context", async () => {
+  it("TC12: thinking step — emits thinking.* events (content live-only) and injects thinking into context", async () => {
     const model = new FakeModelProvider([
       { content: "Let me analyze this request. The user wants a greeting." },
       { content: "Hello! Welcome!" },
@@ -609,7 +609,7 @@ describe("AgentKernel", () => {
     expect(ce.data.step).toBe(0);
   });
 
-  it("TC13: thinking disabled (default) â€” does not emit thinking.* events", async () => {
+  it("TC13: thinking disabled (default) — does not emit thinking.* events", async () => {
     const model = new FakeModelProvider([{ content: "Hello!" }]);
     const store = new FakeRunEventStore();
     const kernel = new AgentKernel({ model, store, tools: [], maxSteps: 5 });
@@ -621,7 +621,7 @@ describe("AgentKernel", () => {
     expect(events.filter((e) => e.type.startsWith("thinking."))).toHaveLength(0);
   });
 
-  it("TC14: self-correct on tool failure â€” tool fails â†’ model fixes â†’ retry succeeds", async () => {
+  it("TC14: self-correct on tool failure — tool fails â†’ model fixes â†’ retry succeeds", async () => {
     let callCount = 0;
     const failingTool = new FakeTool("flaky", async () => {
       callCount++;
@@ -650,7 +650,7 @@ describe("AgentKernel", () => {
     expect(callCount).toBe(2);
   });
 
-  it("TC15: self-correct disabled (default) â€” does not emit tool.self_correcting", async () => {
+  it("TC15: self-correct disabled (default) — does not emit tool.self_correcting", async () => {
     const failingTool = new FakeTool("flaky", async () => { throw new Error("fail"); });
     const model = new FakeModelProvider([
       { content: "use flaky", toolCalls: [{ id: "call-1", name: "flaky", args: {} }] },
@@ -665,7 +665,7 @@ describe("AgentKernel", () => {
     expect(events.filter((e) => e.type === "tool.self_correcting")).toHaveLength(0);
   });
 
-  it("TC08: abort() â€” cancel running run", async () => {
+  it("TC08: abort() — cancel running run", async () => {
     const slowTool = new FakeTool("slow", async () => {
       await new Promise((r) => setTimeout(r, 5000));
       return "done";
@@ -849,7 +849,7 @@ describe("AgentKernel", () => {
     const sessionStore = {
       async addMessage() {},
       async updateSession(_id: string, updates: Record<string, unknown>) {
-        // If the atomic path is taken, this is never called directly â€” the
+        // If the atomic path is taken, this is never called directly — the
         // update goes through appendTransactional instead.
         updatesFromTransactional = updates;
       },
@@ -1064,7 +1064,7 @@ describe("AgentKernel", () => {
     expect(kernel.getCurrentAgent()?.id).toBe("p");
   });
 
-  it("TC31b (RV-20): parent abort propagates to a running sub-agent â€” no orphan", async () => {
+  it("TC31b (RV-20): parent abort propagates to a running sub-agent — no orphan", async () => {
     let childModelAborted = false;
     const blockingModel: ModelProvider = {
       provider: "test",
@@ -2264,7 +2264,7 @@ describe("P1-M: single max-steps authority + per-run circuit breaker", () => {
     const eventsA = await store.list(handleA.runId);
     expect(findEvent(eventsA, "run.completed")?.data.status).toBe("failed");
 
-    // The instance breaker must stay closed â€” it's no longer global state.
+    // The instance breaker must stay closed — it's no longer global state.
     expect(kernel.getCircuitBreaker().getState()).toBe("closed");
 
     // Run B starts with a fresh breaker and is not poisoned by run A.

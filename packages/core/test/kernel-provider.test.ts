@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
 import { ToolProviderRegistry, defineTool } from "@vinhnt-sdk/tools";
 import { BuiltinToolProvider } from "../src/tool/builtin-provider.js";

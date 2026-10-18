@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { AgentKernel } from "../src/kernel/kernel.js";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";

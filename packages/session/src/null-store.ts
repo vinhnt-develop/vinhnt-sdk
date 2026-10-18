@@ -9,6 +9,13 @@ const nullMessageId = "null-message" as MessageId;
 export class NullRunEventStore implements RunEventStore {
   private listeners = new Set<(event: RunEvent) => void>();
   private events: RunEvent[] = [];
+  /**
+   * Per-aggregate sequence counter. Kept monotonic even though this store does
+   * not serve `list()` — a constant sequence (the old `return 1`) silently
+   * violates the "sequence is monotonic per aggregate" invariant for any caller
+   * that still assigns sequences through this store.
+   */
+  private sequences = new Map<string, number>();
 
   async append(event: RunEvent): Promise<void> {
     if (event.persist === false) return;
@@ -18,9 +25,10 @@ export class NullRunEventStore implements RunEventStore {
 
   async appendWithSequence(event: RunEvent): Promise<number> {
     if (event.persist === false) return 0;
-    const seq = await this.getNextSequence(event.runId);
-    await this.append({ ...event, sequence: seq } as RunEvent);
-    return seq;
+    const sequence = this.sequences.get(event.runId) ?? 0;
+    this.sequences.set(event.runId, sequence + 1);
+    await this.append({ ...event, sequence } as RunEvent);
+    return sequence;
   }
 
   async exists(_eventId: string): Promise<boolean> {
@@ -49,8 +57,8 @@ export class NullRunEventStore implements RunEventStore {
     return null;
   }
 
-  async getNextSequence(_aggregateId: string): Promise<number> {
-    return 1;
+  async getNextSequence(aggregateId: string): Promise<number> {
+    return this.sequences.get(aggregateId) ?? 0;
   }
 
   subscribe(listener: (event: RunEvent) => void): () => void {
