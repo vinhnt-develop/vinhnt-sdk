@@ -19,6 +19,15 @@ const args = [
   ...process.argv.slice(2),
 ];
 
+// Conservative floors (~1.5% under the current baseline). Ratchet these up as
+// the suite grows; override per-run via env (e.g. COVERAGE_MIN_LINES=80).
+const FLOORS = {
+  lines: Number(process.env.COVERAGE_MIN_LINES ?? 72),
+  statements: Number(process.env.COVERAGE_MIN_STATEMENTS ?? 72),
+  branches: Number(process.env.COVERAGE_MIN_BRANCHES ?? 78),
+  functions: Number(process.env.COVERAGE_MIN_FUNCTIONS ?? 62),
+};
+
 const r = spawnSync("npx", args, { stdio: "inherit", shell: true, cwd: root });
 const summaryPath = join(outDir, "coverage-summary.json");
 if (existsSync(summaryPath)) {
@@ -35,4 +44,21 @@ if (existsSync(summaryPath)) {
 if ((r.status ?? 0) !== 0) {
   process.exit(r.status);
 }
-process.exit(existsSync(summaryPath) ? 0 : 1);
+if (!existsSync(summaryPath)) {
+  process.exit(1);
+}
+
+const t = JSON.parse(readFileSync(summaryPath, "utf8")).total;
+const below = Object.entries(FLOORS).filter(([metric, floor]) => t[metric].pct < floor);
+if (below.length > 0) {
+  console.error(
+    `\nCOVERAGE_BELOW_FLOOR: ${below
+      .map(([metric, floor]) => `${metric} ${t[metric].pct}% < ${floor}%`)
+      .join(", ")}`,
+  );
+  process.exit(1);
+}
+console.log(
+  `coverage: floors OK (lines≥${FLOORS.lines} branches≥${FLOORS.branches} functions≥${FLOORS.functions})`,
+);
+process.exit(0);
