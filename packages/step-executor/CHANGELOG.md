@@ -1,5 +1,29 @@
 # @vinhnt-sdk/step-executor
 
+## 0.16.0
+
+### Minor Changes
+
+- 8401a47: Expose the approval **scope** and ask **source** on permission requests.
+  
+  - `PermissionRequestedData` (event) and `PermissionRequest` (type) gain optional
+    `scope?: readonly string[]` (the allow-rule patterns a `"always"` reply would
+    persist) and `source?: string` (ask origin, e.g. `rules` | `risk`).
+  - `PermissionGate` now forwards `savePatterns` and the ask source into the
+    `permission.requested` event and the approval store request, so approval UIs
+    can show the user exactly what "always allow" will cover.
+
+### Patch Changes
+
+- Updated dependencies [8401a47]
+  - @vinhnt-sdk/schema@0.16.0
+  - @vinhnt-sdk/event@0.16.0
+  - @vinhnt-sdk/guard@0.16.0
+  - @vinhnt-sdk/llm@0.16.0
+  - @vinhnt-sdk/permission@0.16.0
+  - @vinhnt-sdk/session@0.16.0
+  - @vinhnt-sdk/tools@0.16.0
+
 ## 0.15.0
 
 ### Minor Changes

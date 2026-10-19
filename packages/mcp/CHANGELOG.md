@@ -1,5 +1,13 @@
 # @vinhnt-sdk/mcp
 
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [8401a47]
+  - @vinhnt-sdk/schema@0.16.0
+  - @vinhnt-sdk/tools@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes

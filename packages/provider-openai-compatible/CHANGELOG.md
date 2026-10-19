@@ -1,5 +1,14 @@
 # @vinhnt-sdk/provider-openai-compatible
 
+## 0.16.0
+
+### Patch Changes
+
+- Updated dependencies [8401a47]
+  - @vinhnt-sdk/schema@0.16.0
+  - @vinhnt-sdk/config@0.16.0
+  - @vinhnt-sdk/guard@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes
