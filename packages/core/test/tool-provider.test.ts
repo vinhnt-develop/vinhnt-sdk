@@ -178,6 +178,7 @@ describe("BuiltinToolProvider", () => {
     // Utility tools
     expect(toolIds).toContain("todowrite");
     expect(toolIds).toContain("question");
+    expect(toolIds).toContain("elicit");
     expect(toolIds).toContain("read_image");
   });
 

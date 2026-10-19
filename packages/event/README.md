@@ -18,7 +18,7 @@ bus.publish(ToolExecuted, { toolId: "read_file", duration: 12 });
 ## Features
 
 - `defineEvent` / `EventRegistry` — typed event definitions with optional durable config and Zod schema validation.
-- Built-in events — run, step, tool, token, thinking, permission, cost, system, webhook, `TodoUpdated` (`todo.updated` — durable full task-list snapshot), and the durable human-in-the-loop pairs `QuestionRequested` (`question.requested`) / `QuestionReplied` (`question.replied`) and `PlanRequested` (`plan.requested`) / `PlanReplied` (`plan.replied`), plus `UiSurface` (`ui.surface` — durable generative-UI surface snapshot).
+- Built-in events — run, step, tool, token, thinking, permission, cost, system, webhook, `TodoUpdated` (`todo.updated` — durable full task-list snapshot), and the durable human-in-the-loop pairs `QuestionRequested` (`question.requested`) / `QuestionReplied` (`question.replied`), `ElicitationRequested` (`elicitation.requested`) / `ElicitationReplied` (`elicitation.replied` — MCP-style structured input), and `PlanRequested` (`plan.requested`) / `PlanReplied` (`plan.replied`), plus `UiSurface` (`ui.surface` — durable generative-UI surface snapshot).
 - `InMemoryEventBus` — publish/subscribe, `subscribeAll`, projectors, durable replay, live streaming with `streamWithReplay`.
 - `GlobalEventBus` — process-wide singleton bus with optional Redis fan-out adapter.
 - `EventMigrationRegistry` — forward migration of event data between schema versions.

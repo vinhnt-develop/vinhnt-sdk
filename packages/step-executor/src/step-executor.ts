@@ -1,7 +1,7 @@
 import type { RunId, AgentConfig, RequestContext } from "@vinhnt-sdk/schema";
 import { formatToolFailure, hasErrorCode, getLogger } from "@vinhnt-sdk/schema";
 import type { ChatMessage } from "@vinhnt-sdk/schema";
-import type { ToolContext, ToolDefinition, QuestionStore, PlanApprovalStore } from "@vinhnt-sdk/tools";
+import type { ToolContext, ToolDefinition, QuestionStore, ElicitationStore, PlanApprovalStore } from "@vinhnt-sdk/tools";
 
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate, PermissionCheckResult } from "./permission-gate.js";
@@ -85,6 +85,14 @@ export interface StepExecutorDeps {
   readonly questionStore?: QuestionStore;
   /** Default timeout (ms) for a question wait. */
   readonly questionTimeoutMs?: number;
+  /**
+   * Store backing the `elicit` tool's durable request/reply path. When set,
+   * `ctx.askElicitation` emits `elicitation.requested`/`elicitation.replied`
+   * and awaits the user's structured reply (HITL elicitation).
+   */
+  readonly elicitStore?: ElicitationStore;
+  /** Default timeout (ms) for an elicitation wait. */
+  readonly elicitTimeoutMs?: number;
   /**
    * Store backing the `submit_plan` tool's durable request/reply path. When set,
    * `ctx.askPlan` emits `plan.requested`/`plan.replied` and awaits the user's
@@ -658,6 +666,8 @@ export class StepExecutor {
       ...(this.deps.sanitizeLimitChars !== undefined ? { sanitizeLimitChars: this.deps.sanitizeLimitChars } : {}),
       ...(this.deps.questionStore !== undefined ? { questionStore: this.deps.questionStore } : {}),
       ...(this.deps.questionTimeoutMs !== undefined ? { questionTimeoutMs: this.deps.questionTimeoutMs } : {}),
+      ...(this.deps.elicitStore !== undefined ? { elicitStore: this.deps.elicitStore } : {}),
+      ...(this.deps.elicitTimeoutMs !== undefined ? { elicitTimeoutMs: this.deps.elicitTimeoutMs } : {}),
       ...(this.deps.planStore !== undefined ? { planStore: this.deps.planStore } : {}),
       ...(this.deps.planTimeoutMs !== undefined ? { planTimeoutMs: this.deps.planTimeoutMs } : {}),
       emitEvent: (event) => safeEmit(this.deps.store, event),

@@ -122,6 +122,12 @@ export { InMemoryQuestionStore } from "./question-store.js";
 export type {
   QuestionStore, QuestionRequest, QuestionReply, QuestionAction, AwaitQuestionOptions,
 } from "./question-store.js";
+export { createElicitTool } from "./elicitation-tool.js";
+export type { ElicitationHandler, ElicitToolOptions } from "./elicitation-tool.js";
+export { InMemoryElicitationStore } from "./elicitation-store.js";
+export type {
+  ElicitationStore, ElicitationRequest, ElicitationReply, ElicitationAction, AwaitElicitationOptions,
+} from "./elicitation-store.js";
 export { createSubmitPlanTool } from "./plan-approval-tool.js";
 export type { PlanApprovalHandler, SubmitPlanToolOptions } from "./plan-approval-tool.js";
 export { InMemoryPlanApprovalStore } from "./plan-store.js";

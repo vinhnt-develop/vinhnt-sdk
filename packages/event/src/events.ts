@@ -10,6 +10,7 @@ import {
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmFailoverDataSchema, LlmRequestDataSchema, LlmResponseDataSchema,
   TodoUpdatedDataSchema, QuestionRequestedDataSchema, QuestionRepliedDataSchema,
+  ElicitationRequestedDataSchema, ElicitationRepliedDataSchema,
   PlanRequestedDataSchema, PlanRepliedDataSchema, UiSurfaceDataSchema,
 } from "@vinhnt-sdk/schema";
 
@@ -228,6 +229,22 @@ export const QuestionReplied = defineEvent({
   description: "The user (or system) replied to a question",
   durable: { version: 1, aggregate: "runId" },
   schema: QuestionRepliedDataSchema,
+});
+
+/** Event definition for `elicitation.requested` — The agent requested structured input (MCP elicitation) and is awaiting a reply. */
+export const ElicitationRequested = defineEvent({
+  type: "elicitation.requested",
+  description: "The agent requested structured input and is awaiting a reply",
+  durable: { version: 1, aggregate: "runId" },
+  schema: ElicitationRequestedDataSchema,
+});
+
+/** Event definition for `elicitation.replied` — The user (or system) replied to an elicitation request. */
+export const ElicitationReplied = defineEvent({
+  type: "elicitation.replied",
+  description: "The user (or system) replied to an elicitation request",
+  durable: { version: 1, aggregate: "runId" },
+  schema: ElicitationRepliedDataSchema,
 });
 
 /** Event definition for `plan.requested` — The agent presented a plan and is awaiting a decision. */

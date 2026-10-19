@@ -9,7 +9,7 @@ import { InMemoryModelRegistry } from "../src/model.js";
 import type { SessionStore } from "@vinhnt-sdk/session";
 import type { Plugin, PluginHooks } from "../src/plugin.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
-import { createQuestionTool, InMemoryQuestionStore, createSubmitPlanTool, InMemoryPlanApprovalStore } from "@vinhnt-sdk/tools";
+import { createQuestionTool, InMemoryQuestionStore, createElicitTool, InMemoryElicitationStore, createSubmitPlanTool, InMemoryPlanApprovalStore } from "@vinhnt-sdk/tools";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";
@@ -1650,6 +1650,55 @@ describe("AgentKernel", () => {
 
       const toolDone = events.find((e) => e.type === "tool.completed");
       expect((toolDone!.data as Record<string, unknown>).toolName).toBe("question");
+    });
+
+    it("elicit tool emits elicitation.requested/replied and resumes with the store reply", async () => {
+      const model = new FakeModelProvider([
+        { content: "", toolCalls: [{ id: "call_e", name: "elicit", args: { message: "Provide details", requestedSchema: { type: "object", properties: { name: { type: "string" } }, required: ["name"] } } }] },
+        { content: "done" },
+      ]);
+      const store = new FakeRunEventStore();
+      const elicitStore = new InMemoryElicitationStore();
+
+      const agent: AgentConfig = {
+        id: "e-agent" as AgentId,
+        profile: { name: "EAgent", description: "" },
+        capabilities: {},
+        permissions: { ruleset: { rules: [{ effect: "allow", target: "tool.elicit" }] } },
+      };
+      const registry = new FakeAgentRegistry();
+      await registry.register(agent);
+      const kernel = new AgentKernel({
+        model, store, maxSteps: 10, agentRegistry: registry,
+        tools: [createElicitTool()],
+        elicitations: { elicitStore },
+      });
+      await kernel.useAgent("e-agent" as AgentId);
+
+      const handle = kernel.run("ask me for details", testCtx);
+      await waitFor(() => elicitStore.pendingRequests().length === 1);
+      const req = elicitStore.pendingRequests()[0]!;
+      elicitStore.resolveRequest(req.requestId, {
+        action: "accept",
+        content: { name: "Ada" },
+      });
+      await handle.completed;
+
+      const events = await store.list(handle.runId);
+      const types = events.map((e) => e.type);
+      expect(types).toContain("elicitation.requested");
+      expect(types).toContain("elicitation.replied");
+
+      const reqEvent = events.find((e) => e.type === "elicitation.requested");
+      expect((reqEvent!.data as Record<string, unknown>).requestId).toBe(req.requestId);
+      const reqData = reqEvent!.data as { message?: string };
+      expect(reqData.message).toBe("Provide details");
+
+      const repEvent = events.find((e) => e.type === "elicitation.replied");
+      expect((repEvent!.data as Record<string, unknown>).action).toBe("accept");
+
+      const toolDone = events.find((e) => e.type === "tool.completed");
+      expect((toolDone!.data as Record<string, unknown>).toolName).toBe("elicit");
     });
 
     it("submit_plan tool emits plan.requested/replied and resumes with the store decision", async () => {

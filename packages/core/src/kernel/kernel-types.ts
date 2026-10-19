@@ -26,6 +26,14 @@ export interface QuestionConfig {
   readonly questionTimeoutMs?: number;
 }
 
+/** Elicitation (structured input / HITL) configuration for the `elicit` tool. */
+export interface ElicitConfig {
+  /** Store backing the `elicit` tool's durable request/reply path. */
+  readonly elicitStore?: import("@vinhnt-sdk/tools").ElicitationStore;
+  /** Default timeout (ms) for an elicitation wait. */
+  readonly elicitTimeoutMs?: number;
+}
+
 /** Plan-approval (HITL) configuration for the `submit_plan` tool. */
 export interface PlanConfig {
   /** Store backing the `submit_plan` tool's durable request/reply path. */
@@ -281,6 +289,8 @@ export interface AgentKernelConfig {
   readonly permissions?: PermissionConfig;
   /** Question (ask-user / HITL) configuration for the `question` tool. */
   readonly questions?: QuestionConfig;
+  /** Elicitation (structured input / HITL) configuration for the `elicit` tool. */
+  readonly elicitations?: ElicitConfig;
   /** Plan-approval (HITL) configuration for the `submit_plan` tool. */
   readonly plans?: PlanConfig;
   /** Model routing configuration for multi-model setups. */
@@ -470,6 +480,15 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
   }
   delete normalized.questionStore;
   delete normalized.questionTimeoutMs;
+
+  if (!normalized.elicitations && (normalized.elicitStore !== undefined || normalized.elicitTimeoutMs !== undefined)) {
+    normalized.elicitations = {
+      elicitStore: normalized.elicitStore,
+      elicitTimeoutMs: normalized.elicitTimeoutMs,
+    };
+  }
+  delete normalized.elicitStore;
+  delete normalized.elicitTimeoutMs;
 
   if (!normalized.plans && (normalized.planStore !== undefined || normalized.planTimeoutMs !== undefined)) {
     normalized.plans = {

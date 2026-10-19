@@ -59,6 +59,8 @@ export type {
   ApprovalAskedData, ApprovalDecidedData,
   TodoItem, TodoUpdatedData,
   QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
+  ElicitationMode, ElicitationFieldSchema, ElicitationRequestedSchema,
+  ElicitationRequestedData, ElicitationRepliedData,
   PlanApprovalStep, PlanRequestedData, PlanRepliedData,
   UiSurfaceTone, UiSurfaceComponent, UiSurface, UiSurfaceData,
   // Snapshot types
@@ -234,6 +236,8 @@ export {
   TodoItemSchema, TodoUpdatedDataSchema,
   QuestionOptionSchema, QuestionItemSchema, QuestionRequestedDataSchema,
   QuestionAnswerSchema, QuestionRepliedDataSchema,
+  ElicitationModeSchema, ElicitationFieldSchemaSchema, ElicitationRequestedSchemaSchema,
+  ElicitationRequestedDataSchema, ElicitationRepliedDataSchema,
   PlanApprovalStepSchema, PlanRequestedDataSchema, PlanDecisionSchema, PlanRepliedDataSchema,
   UiSurfaceToneSchema, UiSurfaceComponentSchema, UiSurfaceSchema, UiSurfaceDataSchema,
   UiSurfaceEventSchema,

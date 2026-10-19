@@ -1,8 +1,9 @@
 /** Reply from human-in-the-loop approval */
 export type PermissionReply = "once" | "always" | "reject";
 
-import type { RequestContext, QuestionItem, PlanApprovalStep, UiSurface } from "@vinhnt-sdk/schema";
+import type { RequestContext, QuestionItem, PlanApprovalStep, UiSurface, ElicitationMode, ElicitationRequestedSchema } from "@vinhnt-sdk/schema";
 import type { QuestionReply } from "./question-store.js";
+import type { ElicitationReply } from "./elicitation-store.js";
 import type { PlanApprovalReply } from "./plan-store.js";
 
 /** Context passed to every tool execution — replaces bare AbortSignal */
@@ -80,6 +81,28 @@ export interface ToolContext {
     /** Hard timeout in ms (overrides the host default). */
     timeoutMs?: number;
   }): Promise<QuestionReply>;
+
+  /**
+   * Request structured input from the user and block until they respond
+   * (MCP `elicitation/create` shape). Durable request/reply path (mirrors
+   * {@link askQuestion}): the host emits `elicitation.requested`, waits for a
+   * reply, then emits `elicitation.replied`.
+   * Returns `{ action: "cancel" }` when no store is wired or the run aborts.
+   */
+  askElicitation?(input: {
+    /** Human-readable prompt shown above the form. */
+    message: string;
+    /** `form` (default) renders a schema-driven form; `url` prompts to open a link. */
+    mode?: ElicitationMode;
+    /** Target URL when `mode === "url"`. */
+    url?: string;
+    /** Flat form schema when `mode === "form"`. */
+    requestedSchema?: ElicitationRequestedSchema;
+    /** Epoch ms after which the request expires. */
+    expiresAt?: number;
+    /** Hard timeout in ms (overrides the host default). */
+    timeoutMs?: number;
+  }): Promise<ElicitationReply>;
 
   /**
    * Present a plan to the user for approval and block until they decide.

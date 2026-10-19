@@ -276,6 +276,66 @@ export interface QuestionRepliedData {
   readonly action: "accept" | "decline" | "cancel";
   readonly answers?: ReadonlyArray<QuestionAnswer>;
 }
+/** Delivery mode of an elicitation (MCP `elicitation/create`). */
+export type ElicitationMode = "form" | "url";
+/**
+ * A single primitive field in an elicitation form — a flattened, client-safe
+ * subset of JSON Schema (MCP elicitation `requestedSchema`).
+ */
+export type ElicitationFieldSchema =
+  | {
+      readonly type: "string";
+      readonly title?: string;
+      readonly description?: string;
+      readonly enum?: ReadonlyArray<string>;
+      readonly enumNames?: ReadonlyArray<string>;
+      readonly default?: string;
+      readonly format?: string;
+      readonly minLength?: number;
+      readonly maxLength?: number;
+    }
+  | {
+      readonly type: "number" | "integer";
+      readonly title?: string;
+      readonly description?: string;
+      readonly minimum?: number;
+      readonly maximum?: number;
+      readonly default?: number;
+    }
+  | {
+      readonly type: "boolean";
+      readonly title?: string;
+      readonly description?: string;
+      readonly default?: boolean;
+    };
+/** Flat form schema for a form-mode elicitation request. */
+export interface ElicitationRequestedSchema {
+  readonly type: "object";
+  readonly properties: Readonly<Record<string, ElicitationFieldSchema>>;
+  readonly required?: ReadonlyArray<string>;
+}
+/** Data payload for the `elicitation.requested` event (MCP elicitation). */
+export interface ElicitationRequestedData {
+  readonly requestId: RequestId;
+  readonly sessionId?: string;
+  /** Human-readable prompt shown above the form. */
+  readonly message: string;
+  /** `form` (default) renders a schema-driven form; `url` prompts to open a link. */
+  readonly mode?: ElicitationMode;
+  /** Target URL when `mode === "url"`. */
+  readonly url?: string;
+  /** Flat form schema when `mode === "form"`. */
+  readonly requestedSchema?: ElicitationRequestedSchema;
+  /** Epoch ms after which the request expires (graceful expiry). */
+  readonly expiresAt?: number;
+}
+/** Data payload for the `elicitation.replied` event. */
+export interface ElicitationRepliedData {
+  readonly requestId: RequestId;
+  readonly action: "accept" | "decline" | "cancel";
+  /** Accepted form values (present only when `action === "accept"`). */
+  readonly content?: Readonly<Record<string, unknown>>;
+}
 /** A single step in a plan presented for approval (`plan.requested`). */
 export interface PlanApprovalStep {
   /** Stable step id; the UI falls back to the array index when absent. */
@@ -482,6 +542,8 @@ export type KnownRunEvent =
   | (RunEvent<TodoUpdatedData> & { readonly type: "todo.updated" })
   | (RunEvent<QuestionRequestedData> & { readonly type: "question.requested" })
   | (RunEvent<QuestionRepliedData> & { readonly type: "question.replied" })
+  | (RunEvent<ElicitationRequestedData> & { readonly type: "elicitation.requested" })
+  | (RunEvent<ElicitationRepliedData> & { readonly type: "elicitation.replied" })
   | (RunEvent<PlanRequestedData> & { readonly type: "plan.requested" })
   | (RunEvent<PlanRepliedData> & { readonly type: "plan.replied" })
   | (RunEvent<UiSurfaceData> & { readonly type: "ui.surface" })

@@ -441,6 +441,101 @@ export const QuestionRepliedDataSchema = z.object({
 /** Inferred type of {@link QuestionRepliedDataSchema}. */
 export type QuestionRepliedData = z.infer<typeof QuestionRepliedDataSchema>;
 
+/** Delivery mode of an elicitation (MCP `elicitation/create`). */
+export const ElicitationModeSchema = z.enum(["form", "url"]);
+/** Inferred type of {@link ElicitationModeSchema}. */
+export type ElicitationMode = z.infer<typeof ElicitationModeSchema>;
+
+/**
+ * A single primitive field in an elicitation form — a flattened, client-safe
+ * subset of JSON Schema (MCP elicitation `requestedSchema`).
+ */
+export const ElicitationFieldSchemaSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("string"),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    enum: z.array(z.string()).optional(),
+    enumNames: z.array(z.string()).optional(),
+    default: z.string().optional(),
+    format: z.string().optional(),
+    minLength: z.number().optional(),
+    maxLength: z.number().optional(),
+  }),
+  z.object({
+    type: z.literal("number"),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    minimum: z.number().optional(),
+    maximum: z.number().optional(),
+    default: z.number().optional(),
+  }),
+  z.object({
+    type: z.literal("integer"),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    minimum: z.number().optional(),
+    maximum: z.number().optional(),
+    default: z.number().optional(),
+  }),
+  z.object({
+    type: z.literal("boolean"),
+    title: z.string().optional(),
+    description: z.string().optional(),
+    default: z.boolean().optional(),
+  }),
+]);
+/** Inferred type of {@link ElicitationFieldSchemaSchema}. */
+export type ElicitationFieldSchema = z.infer<typeof ElicitationFieldSchemaSchema>;
+
+/** Flat form schema for a form-mode elicitation request. */
+export const ElicitationRequestedSchemaSchema = z.object({
+  type: z.literal("object"),
+  properties: z.record(z.string(), ElicitationFieldSchemaSchema),
+  required: z.array(z.string()).optional(),
+});
+/** Inferred type of {@link ElicitationRequestedSchemaSchema}. */
+export type ElicitationRequestedSchema = z.infer<
+  typeof ElicitationRequestedSchemaSchema
+>;
+
+/**
+ * Data payload for the `elicitation.requested` durable event — the agent is
+ * blocked awaiting a structured user response (MCP elicitation). Durable so the
+ * UI can replay it when a client reconnects; the reply resolves the request.
+ */
+export const ElicitationRequestedDataSchema = z.object({
+  requestId: z.string(),
+  /** Session that owns the request (absent on legacy/global writes). */
+  sessionId: z.string().optional(),
+  /** Human-readable prompt shown above the form. */
+  message: z.string(),
+  /** `form` (default) renders a schema-driven form; `url` prompts to open a link. */
+  mode: ElicitationModeSchema.optional(),
+  /** Target URL when `mode === "url"`. */
+  url: z.string().optional(),
+  /** Flat form schema when `mode === "form"`. */
+  requestedSchema: ElicitationRequestedSchemaSchema.optional(),
+  /** Epoch ms after which the request expires (graceful expiry). */
+  expiresAt: z.number().optional(),
+});
+/** Inferred type of {@link ElicitationRequestedDataSchema}. */
+export type ElicitationRequestedData = z.infer<
+  typeof ElicitationRequestedDataSchema
+>;
+
+/** Data payload for the `elicitation.replied` durable event. */
+export const ElicitationRepliedDataSchema = z.object({
+  requestId: z.string(),
+  action: z.enum(["accept", "decline", "cancel"]),
+  /** Accepted form values (present only when `action === "accept"`). */
+  content: z.record(z.string(), z.unknown()).optional(),
+});
+/** Inferred type of {@link ElicitationRepliedDataSchema}. */
+export type ElicitationRepliedData = z.infer<
+  typeof ElicitationRepliedDataSchema
+>;
+
 /** A single step in a plan presented for approval (`plan.requested`). */
 export const PlanApprovalStepSchema = z.object({
   /** Stable step id; the UI falls back to the array index when absent. */
@@ -911,6 +1006,16 @@ export const QuestionRepliedEventSchema = eventSchema(QuestionRepliedDataSchema,
 /** Inferred type of {@link QuestionRepliedEventSchema}. */
 export type QuestionRepliedEvent = z.infer<typeof QuestionRepliedEventSchema>;
 
+/** Zod schema for the `elicitation.requested` event. */
+export const ElicitationRequestedEventSchema = eventSchema(ElicitationRequestedDataSchema, z.literal("elicitation.requested"));
+/** Inferred type of {@link ElicitationRequestedEventSchema}. */
+export type ElicitationRequestedEvent = z.infer<typeof ElicitationRequestedEventSchema>;
+
+/** Zod schema for the `elicitation.replied` event. */
+export const ElicitationRepliedEventSchema = eventSchema(ElicitationRepliedDataSchema, z.literal("elicitation.replied"));
+/** Inferred type of {@link ElicitationRepliedEventSchema}. */
+export type ElicitationRepliedEvent = z.infer<typeof ElicitationRepliedEventSchema>;
+
 /** Zod schema for the `plan.requested` event. */
 export const PlanRequestedEventSchema = eventSchema(PlanRequestedDataSchema, z.literal("plan.requested"));
 /** Inferred type of {@link PlanRequestedEventSchema}. */
@@ -971,6 +1076,8 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   PermissionRepliedEventSchema,
   QuestionRequestedEventSchema,
   QuestionRepliedEventSchema,
+  ElicitationRequestedEventSchema,
+  ElicitationRepliedEventSchema,
   PlanRequestedEventSchema,
   PlanRepliedEventSchema,
   StepTypeChangedEventSchema,

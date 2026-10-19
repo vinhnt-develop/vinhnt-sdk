@@ -363,6 +363,8 @@ this.stepExecutor = new StepExecutor({
       permissionGate: this.permissionGate,
       ...(normalized.questions?.questionStore !== undefined ? { questionStore: normalized.questions.questionStore } : {}),
       ...(normalized.questions?.questionTimeoutMs !== undefined ? { questionTimeoutMs: normalized.questions.questionTimeoutMs } : {}),
+      ...(normalized.elicitations?.elicitStore !== undefined ? { elicitStore: normalized.elicitations.elicitStore } : {}),
+      ...(normalized.elicitations?.elicitTimeoutMs !== undefined ? { elicitTimeoutMs: normalized.elicitations.elicitTimeoutMs } : {}),
       ...(normalized.plans?.planStore !== undefined ? { planStore: normalized.plans.planStore } : {}),
       ...(normalized.plans?.planTimeoutMs !== undefined ? { planTimeoutMs: normalized.plans.planTimeoutMs } : {}),
       modelCaller: this.modelCaller,

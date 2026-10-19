@@ -1,6 +1,6 @@
 import type { RunId, RequestContext, KnownRunEvent, RequestId } from "@vinhnt-sdk/schema";
 import { sanitizeEnv } from "@vinhnt-sdk/guard";
-import type { ToolContext, ToolRisk, QuestionStore, QuestionRequest, QuestionReply, PlanApprovalStore, PlanApprovalRequest, PlanApprovalReply } from "@vinhnt-sdk/tools";
+import type { ToolContext, ToolRisk, QuestionStore, QuestionRequest, QuestionReply, ElicitationStore, ElicitationRequest, ElicitationReply, PlanApprovalStore, PlanApprovalRequest, PlanApprovalReply } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { ToolExecutionPlan } from "./step-executor.js";
@@ -23,6 +23,10 @@ export interface ToolContextBuilderDeps {
   readonly questionStore?: QuestionStore | undefined;
   /** Default timeout (ms) for a question wait; omitted → store default. */
   readonly questionTimeoutMs?: number | undefined;
+  /** Store backing the `elicit` tool's durable request/reply path. */
+  readonly elicitStore?: ElicitationStore | undefined;
+  /** Default timeout (ms) for an elicitation wait; omitted → store default. */
+  readonly elicitTimeoutMs?: number | undefined;
   /** Store backing the `submit_plan` tool's durable request/reply path. */
   readonly planStore?: PlanApprovalStore | undefined;
   /** Default timeout (ms) for a plan review wait; omitted → store default. */
@@ -146,6 +150,69 @@ export async function buildToolContext(
           requestId,
           action: reply.action,
           ...(reply.answers !== undefined ? { answers: reply.answers } : {}),
+        },
+      });
+
+      return reply;
+    },
+    // Durable structured elicitation: emit `elicitation.requested`, await the
+    // store, then emit `elicitation.replied`. Mirrors the question path,
+    // resolved via the app's ElicitationStore (MCP `elicitation/create` shape).
+    askElicitation: async (input) => {
+      const requestId = crypto.randomUUID() as RequestId;
+      const mode = input.mode ?? "form";
+      const request: ElicitationRequest = {
+        requestId,
+        runId,
+        sessionId: sessionId ?? "",
+        message: input.message,
+        mode,
+        ...(input.url !== undefined ? { url: input.url } : {}),
+        ...(input.requestedSchema !== undefined ? { requestedSchema: input.requestedSchema } : {}),
+        ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+      };
+
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "elicitation.requested",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          requestId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          message: input.message,
+          mode,
+          ...(input.url !== undefined ? { url: input.url } : {}),
+          ...(input.requestedSchema !== undefined ? { requestedSchema: input.requestedSchema } : {}),
+          ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        },
+      });
+
+      let reply: ElicitationReply = { action: "cancel" };
+      if (deps.elicitStore) {
+        const timeoutMs = input.timeoutMs ?? deps.elicitTimeoutMs;
+        try {
+          reply = await deps.elicitStore.awaitReply(request, {
+            signal: runAbort.signal,
+            ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+          });
+        } catch (err) {
+          // Run aborted / timed out → treat as cancelled but still emit the
+          // reply so the UI clears its pending elicitation card.
+          const isAbort =
+            err instanceof DOMException
+              ? err.name === "AbortError"
+              : err instanceof Error && err.name === "AbortError";
+          reply = { action: "cancel" };
+          if (!isAbort) throw err;
+        }
+      }
+
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "elicitation.replied",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          requestId,
+          action: reply.action,
+          ...(reply.content !== undefined ? { content: reply.content } : {}),
         },
       });
 

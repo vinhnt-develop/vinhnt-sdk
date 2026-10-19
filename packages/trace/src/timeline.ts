@@ -59,6 +59,8 @@ export const KNOWN_TIMELINE_EVENT_TYPES = [
   "todo.updated",
   "question.requested",
   "question.replied",
+  "elicitation.requested",
+  "elicitation.replied",
   "plan.requested",
   "plan.replied",
   "ui.surface",
