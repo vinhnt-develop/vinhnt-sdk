@@ -135,7 +135,7 @@ export async function tryReadFileFallback(
           "read_file", tc.toolId, runId, sessionId ?? "",
           input.reason, deps.currentAgent?.id ?? "",
           ctx.traceId, deps.pluginManager, undefined, runAbort.signal,
-          { risk: fallbackTool.risk },
+          { risk: fallbackTool.risk, ...(input.onReply ? { onReply: input.onReply } : {}) },
         );
       },
       // Fallback read_file never asks the user — stub the question seam.

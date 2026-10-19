@@ -228,6 +228,8 @@ export type PermissionRequestedData = z.infer<typeof PermissionRequestedDataSche
 export const PermissionRepliedDataSchema = z.object({
   requestId: z.string(),
   reply: z.enum(["once", "always", "reject"]),
+  /** Optional user-supplied reason (typically why a call was rejected). */
+  reason: z.string().optional(),
 });
 /** Inferred type of {@link PermissionRepliedDataSchema}. */
 export type PermissionRepliedData = z.infer<typeof PermissionRepliedDataSchema>;

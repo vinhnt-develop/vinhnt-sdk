@@ -114,6 +114,31 @@ describe("handleApproval — terminal saved rejection", () => {
     );
   });
 
+  it("TC04_reject_reason_is_fed_back_to_the_model", async () => {
+    const ask = vi.fn(async (input: Parameters<ToolContext["ask"]>[0]) => {
+      input.onReply?.("reject", "use a temp file instead");
+      return "reject" as const;
+    });
+    const saveRejection = vi.fn();
+    const messages: Awaited<Parameters<typeof handleApproval>>[6] = [];
+    const { promise, emitEvent } = run(
+      ask,
+      {
+        checkSavedApproval: () => false,
+        hasSavedRejection: () => false,
+        saveRejection,
+      } as never,
+      messages,
+    );
+
+    await expect(promise).resolves.toBe(false);
+    expect(messages[0]!.content).toContain("use a temp file instead");
+    expect(emitEvent.mock.calls[0]![0]).toMatchObject({
+      type: "tool.failed",
+      data: { error: expect.stringContaining("use a temp file instead") },
+    });
+  });
+
   it("TC03_saved_approval_short_circuits_without_dialog", async () => {
     const ask = vi.fn(async () => "once" as const);
     const messages: Awaited<Parameters<typeof handleApproval>>[6] = [];

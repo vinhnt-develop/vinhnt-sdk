@@ -20,7 +20,7 @@ export type {
 } from "./skill.js";
 export { KNOWN_SKILL_MODES } from "./skill.js";
 
-export type { PermissionRequest, PermissionReply, SavedApproval } from "./permission.js";
+export type { PermissionRequest, PermissionReply, SavedApproval, ApprovalReply } from "./permission.js";
 
 export type { RequestContext } from "./request-context.js";
 

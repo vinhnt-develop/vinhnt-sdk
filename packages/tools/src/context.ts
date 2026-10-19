@@ -56,6 +56,12 @@ export interface ToolContext {
     reason: string;
     /** Patterns to save as "always allow" rules if user replies "always". Uses arity-based truncation. */
     savePatterns?: readonly string[];
+    /**
+     * Optional observer for the resolved reply. Lets a host read a
+     * user-supplied reason (e.g. why a call was rejected) while `ask` keeps
+     * returning the decision only. Not invoked for auto-approvals.
+     */
+    onReply?: (reply: PermissionReply, reason?: string) => void;
   }): Promise<PermissionReply>;
 
   /**

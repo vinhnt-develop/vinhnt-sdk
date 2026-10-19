@@ -36,6 +36,24 @@ describe("InMemoryApprovalStore", () => {
     expect(result).toBe("once");
   });
 
+  it("awaitReplyWithReason surfaces the user-supplied reason", async () => {
+    const store = new InMemoryApprovalStore();
+    const promise = store.awaitReplyWithReason(makeRequest());
+
+    store.resolveRequest("req-1", "reject", "too risky");
+
+    await expect(promise).resolves.toEqual({ reply: "reject", reason: "too risky" });
+  });
+
+  it("awaitReplyWithReason omits reason when none is supplied", async () => {
+    const store = new InMemoryApprovalStore();
+    const promise = store.awaitReplyWithReason(makeRequest());
+
+    store.resolveRequest("req-1", "once");
+
+    await expect(promise).resolves.toEqual({ reply: "once" });
+  });
+
   it("tracks all requests", async () => {
     const store = new InMemoryApprovalStore();
     const p1 = store.awaitReply(makeRequest({ id: id("req-1") }));

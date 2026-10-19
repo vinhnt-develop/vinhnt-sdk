@@ -1,4 +1,4 @@
-import type { RunId, RequestId, AgentConfig, PermissionRequest, AgentRule, RunEvent } from "@vinhnt-sdk/schema";
+import type { RunId, RequestId, AgentConfig, PermissionRequest, ApprovalReply, AgentRule, RunEvent } from "@vinhnt-sdk/schema";
 import type { ToolRisk, PermissionReply } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { ApprovalStore, PermissionRule, PermissionMode, PermissionClassifier, PermissionClassification, ModeEffect, ModeEffectSource } from "@vinhnt-sdk/permission";
@@ -53,6 +53,12 @@ export interface AskForToolOptions {
    * runs for `"risk"` asks — absent/`"rules"` asks always open the dialog.
    */
   readonly source?: ModeEffectSource | undefined;
+  /**
+   * Observes the resolved user reply (decision + optional reason). Lets callers
+   * that keep a decision-only return type still read the user's feedback
+   * (e.g. the reason a call was rejected). Not called for auto-approvals.
+   */
+  readonly onReply?: ((reply: PermissionReply, reason?: string) => void) | undefined;
 }
 
 /** Dependencies required by {@link PermissionGate}. */
@@ -384,7 +390,10 @@ export class PermissionGate {
     }
 
     const permissionKey = options?.permissionKey;
-    const reply = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal, permissionKey);
+    const answer = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal, permissionKey);
+    const reply = answer.reply;
+    // Surface the user's feedback to the caller (decision-only return type).
+    options?.onReply?.(reply, answer.reason);
 
     if (reply === "always") {
       if (permissionKey === "doom_loop") {
@@ -423,7 +432,7 @@ export class PermissionGate {
     pluginManager?: StepExecutorPluginHooks,
     signal?: AbortSignal,
     permissionKey?: string,
-  ): Promise<PermissionReply> {
+  ): Promise<ApprovalReply> {
     const requestId = crypto.randomUUID() as RequestId;
     const permission = permissionKey ?? `tool.${toolName}`;
     const req: PermissionRequest = {
@@ -449,14 +458,14 @@ export class PermissionGate {
       }, { traceId, aggregateId: runId });
     }
 
-    let reply: PermissionReply = "reject";
+    let answer: ApprovalReply = { reply: "reject" };
     const hookResult = await pluginManager?.fireHook("onPermissionAsk", {
       permission,
       resource: toolName,
       reason,
     });
     if (hookResult?.modified?.reply) {
-      reply = hookResult.modified.reply as PermissionReply;
+      answer = { reply: hookResult.modified.reply as PermissionReply };
     } else if (this.deps.approvalStore) {
       // Race the approval wait against the run's abort signal AND a hard
       // timeout so a missed UI reply fails the tool instead of blocking
@@ -466,17 +475,22 @@ export class PermissionGate {
       // On abort/timeout, awaitReply rejects with AbortError — still emit
       // permission.replied below so the UI clears pendingPermission instead
       // of leaving a stuck dialog.
+      const opts = {
+        ...(signal ? { signal } : {}),
+        timeoutMs: this.approvalTimeoutMs,
+      };
       try {
-        reply = await this.deps.approvalStore.awaitReply(req, {
-          ...(signal ? { signal } : {}),
-          timeoutMs: this.approvalTimeoutMs,
-        });
+        // Prefer the richer variant when the store provides one, so a
+        // user-supplied reason rides along with the decision.
+        answer = this.deps.approvalStore.awaitReplyWithReason
+          ? await this.deps.approvalStore.awaitReplyWithReason(req, opts)
+          : { reply: await this.deps.approvalStore.awaitReply(req, opts) };
       } catch (err) {
         const isAbort =
           err instanceof DOMException
             ? err.name === "AbortError"
             : err instanceof Error && err.name === "AbortError";
-        reply = "reject";
+        answer = { reply: "reject" };
         if (!isAbort) throw err;
         // fall through — emit permission.replied with reject so UI unblocks
       }
@@ -486,15 +500,15 @@ export class PermissionGate {
     await this.appendPersisted({
       id: crypto.randomUUID(), runId, type: "permission.replied",
       occurredAt: new Date().toISOString(), traceId,
-      data: { requestId, reply },
+      data: { requestId, reply: answer.reply, ...(answer.reason !== undefined ? { reason: answer.reason } : {}) },
     } as Omit<RunEvent, "sequence">);
 
     if (this.deps.eventBus) {
       this.deps.eventBus.publish(PermissionReplied, {
-        requestId, reply
+        requestId, reply: answer.reply, ...(answer.reason !== undefined ? { reason: answer.reason } : {})
       }, { traceId, aggregateId: runId });
     }
-    return reply;
+    return answer;
   }
 
   /**

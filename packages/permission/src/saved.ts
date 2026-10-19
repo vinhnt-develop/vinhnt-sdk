@@ -1,4 +1,4 @@
-import type { PermissionRequest, PermissionReply, SavedApproval } from "@vinhnt-sdk/schema";
+import type { PermissionRequest, PermissionReply, ApprovalReply, SavedApproval } from "@vinhnt-sdk/schema";
 import type { PermissionRule } from "./permission.js";
 import { wildcardMatch } from "@vinhnt-sdk/schema";
 
@@ -20,7 +20,14 @@ export interface AwaitReplyOptions {
 /** Store managing in-flight approval requests and saved allow/reject decisions. */
 export interface ApprovalStore {
   awaitReply(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<PermissionReply>;
-  resolveRequest(requestId: string, reply: PermissionReply): void;
+  /**
+   * Optional richer variant of {@link awaitReply} that also surfaces a
+   * user-supplied reason (why a call was rejected), when the store records one.
+   * Stores that omit it degrade gracefully to decision-only replies.
+   */
+  awaitReplyWithReason?(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<ApprovalReply>;
+  /** Resolve a pending request; `reason` is optional user feedback. */
+  resolveRequest(requestId: string, reply: PermissionReply, reason?: string): void;
   getRequest(requestId: string): PermissionRequest | undefined;
   pendingRequests(runId?: string): readonly PermissionRequest[];
   cancelRequest(requestId: string): void;
@@ -32,7 +39,7 @@ export interface ApprovalStore {
 
 /** In-memory {@link ApprovalStore} implementation. */
 export class InMemoryApprovalStore implements ApprovalStore {
-  private pending = new Map<string, (reply: PermissionReply) => void>();
+  private pending = new Map<string, (answer: ApprovalReply) => void>();
   private requests: PermissionRequest[] = [];
   private savedApprovals: SavedApproval[] = [];
   private savedRejections: SavedApproval[] = [];
@@ -50,8 +57,12 @@ export class InMemoryApprovalStore implements ApprovalStore {
   }
 
   awaitReply(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<PermissionReply> {
+    return this.awaitReplyWithReason(request, opts).then((answer) => answer.reply);
+  }
+
+  awaitReplyWithReason(request: PermissionRequest, opts?: AwaitReplyOptions): Promise<ApprovalReply> {
     this.requests.push(request);
-    return new Promise<PermissionReply>((resolve, reject) => {
+    return new Promise<ApprovalReply>((resolve, reject) => {
       const { signal, timeoutMs } = opts ?? {};
       let settled = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -76,15 +87,15 @@ export class InMemoryApprovalStore implements ApprovalStore {
       }
       if (timeoutMs !== undefined) timer = setTimeout(onAbort, timeoutMs);
 
-      this.pending.set(request.id, (reply: PermissionReply) => settle(() => resolve(reply)));
+      this.pending.set(request.id, (answer: ApprovalReply) => settle(() => resolve(answer)));
     });
   }
 
-  resolveRequest(requestId: string, reply: PermissionReply): void {
+  resolveRequest(requestId: string, reply: PermissionReply, reason?: string): void {
     const resolve = this.pending.get(requestId);
     if (resolve) {
       this.pending.delete(requestId);
-      resolve(reply);
+      resolve(reason !== undefined ? { reply, reason } : { reply });
     }
   }
 
@@ -98,7 +109,7 @@ export class InMemoryApprovalStore implements ApprovalStore {
       this.pending.delete(requestId);
       // Settle the waiter as a rejection instead of leaking a dangling promise
       // (previously the awaited call hung forever after cancel).
-      resolve("reject");
+      resolve({ reply: "reject" });
     }
   }
 

@@ -79,8 +79,14 @@ export async function buildToolContext(
         ctx.traceId, deps.pluginManager,
         askInput.savePatterns, runAbort.signal,
         // G5: hand the classifier what it needs (risk floor asks only —
-        // `source` comes from the checkTool result above).
-        { risk: deps.toolRisk, args: tc.args as Record<string, unknown>, source: decision.source },
+        // `source` comes from the checkTool result above). Also forward the
+        // caller's reply observer so user feedback (reject reason) survives.
+        {
+          risk: deps.toolRisk,
+          args: tc.args as Record<string, unknown>,
+          source: decision.source,
+          ...(askInput.onReply ? { onReply: askInput.onReply } : {}),
+        },
       );
     },
     // Durable HITL question: emit `question.requested`, await the store, then

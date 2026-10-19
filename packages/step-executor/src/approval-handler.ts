@@ -61,10 +61,14 @@ export async function handleApproval(
     return false;
   }
 
+  let rejectReason: string | undefined;
   const reply = await toolCtx.ask({
     permission: `tool.${tc.toolName}`,
     resource: tc.toolName,
     reason: permResult.reason!,
+    onReply: (_decision, reason) => {
+      rejectReason = reason;
+    },
   });
 
   if (reply === "reject") {
@@ -72,9 +76,12 @@ export async function handleApproval(
     await deps.store.emitEvent({
       id: crypto.randomUUID(), runId, type: "tool.failed",
       occurredAt: new Date().toISOString(), traceId: ctx.traceId,
-      data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Tool "${tc.toolName}" rejected by user` },
+      data: { toolId: tc.toolId, toolName: tc.toolName, domain: toolDomain(tc.toolName), decision: "deny", error: `Tool "${tc.toolName}" rejected by user${rejectReason ? `: ${rejectReason}` : ""}` },
     });
-    const content = `Error: Tool "${tc.toolName}" rejected by user`;
+    // Feed the user's reason back to the model so it can adapt its approach.
+    const content = rejectReason
+      ? `Error: Tool "${tc.toolName}" rejected by user. Reason: ${rejectReason}`
+      : `Error: Tool "${tc.toolName}" rejected by user`;
     messages.push({ role: "tool", toolCallId: tc.toolId, content });
     await deps.addSessionMessage(sessionId, "tool", content, { toolCallId: tc.toolId });
     return false;
