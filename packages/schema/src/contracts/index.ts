@@ -27,7 +27,7 @@ export type {
   TodoItem, TodoUpdatedData,
   QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
   PlanApprovalStep, PlanRequestedData, PlanRepliedData,
-  UiSurfaceTone, UiSurfaceComponent, UiSurface, UiSurfaceData,
+  UiSurfaceTone, UiSurfaceActionItem, UiSurfaceComponent, UiSurface, UiSurfaceData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,

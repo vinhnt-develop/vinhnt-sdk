@@ -495,6 +495,19 @@ export const UiSurfaceToneSchema = z.enum(["neutral", "info", "success", "warnin
 export type UiSurfaceTone = z.infer<typeof UiSurfaceToneSchema>;
 
 /**
+ * A clickable button inside an `actions` component. Clicking it makes the
+ * client send a `ui.action` message back to the agent with `surfaceId` + `id`.
+ */
+export const UiSurfaceActionItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  tone: UiSurfaceToneSchema.optional(),
+  value: z.string().optional(),
+});
+/** Inferred type of {@link UiSurfaceActionItemSchema}. */
+export type UiSurfaceActionItem = z.infer<typeof UiSurfaceActionItemSchema>;
+
+/**
  * A single component inside a generative-UI surface — a closed, client-rendered
  * whitelist (no code is ever evaluated). New component types must be added here
  * AND to the approved renderer catalog.
@@ -537,6 +550,10 @@ export const UiSurfaceComponentSchema = z.discriminatedUnion("type", [
     type: z.literal("list"),
     items: z.array(z.string()),
     ordered: z.boolean().optional(),
+  }),
+  z.object({
+    type: z.literal("actions"),
+    items: z.array(UiSurfaceActionItemSchema),
   }),
 ]);
 /** Inferred type of {@link UiSurfaceComponentSchema}. */

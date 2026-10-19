@@ -303,6 +303,22 @@ export interface PlanRepliedData {
 /** Semantic color for a surface callout/badge. */
 export type UiSurfaceTone = "neutral" | "info" | "success" | "warning" | "danger";
 /**
+ * A clickable button inside an `actions` component. When the user clicks it
+ * the client sends a `ui.action` message back to the agent carrying
+ * `surfaceId` + `id` (+ optional `value`). Purely declarative — the SDK never
+ * executes anything.
+ */
+export interface UiSurfaceActionItem {
+  /** Stable action id echoed back to the agent on click. */
+  readonly id: string;
+  /** Button label shown to the user. */
+  readonly label: string;
+  /** Optional semantic color hint for the renderer. */
+  readonly tone?: UiSurfaceTone;
+  /** Optional opaque payload forwarded to the agent on click. */
+  readonly value?: string;
+}
+/**
  * A single component inside a generative-UI surface. The set is a closed,
  * client-rendered whitelist (no code is ever evaluated) — consumers drop
  * unknown types. Mirrors the Zod discriminated union in
@@ -334,7 +350,8 @@ export type UiSurfaceComponent =
       readonly label?: string;
     }
   | { readonly type: "badge"; readonly label: string; readonly tone?: UiSurfaceTone }
-  | { readonly type: "list"; readonly items: ReadonlyArray<string>; readonly ordered?: boolean };
+  | { readonly type: "list"; readonly items: ReadonlyArray<string>; readonly ordered?: boolean }
+  | { readonly type: "actions"; readonly items: ReadonlyArray<UiSurfaceActionItem> };
 /** A named generative-UI surface the agent renders for the user. */
 export interface UiSurface {
   readonly surfaceId: string;

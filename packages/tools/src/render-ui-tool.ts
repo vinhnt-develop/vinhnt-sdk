@@ -18,8 +18,10 @@ const COMPONENT_SCHEMA = {
   properties: {
     type: {
       type: "string",
-      enum: ["text", "markdown", "keyValue", "table", "callout", "codeBlock", "progress", "badge", "list"],
-      description: "Component kind (from the approved catalog).",
+      enum: ["text", "markdown", "keyValue", "table", "callout", "codeBlock", "progress", "badge", "list", "actions"],
+      description:
+        "Component kind (from the approved catalog). Use \"actions\" for clickable buttons the user can press " +
+        "to send a choice back to you (each item: {id, label, tone?, value?}).",
     },
     text: { type: "string", description: "Body text (text | callout)." },
     markdown: { type: "string", description: "Markdown source (markdown)." },
@@ -32,7 +34,9 @@ const COMPONENT_SCHEMA = {
     max: { type: "number", description: "Maximum value (progress, default 100)." },
     items: {
       type: "array",
-      description: "Rows (keyValue: {label,value}[]) or lines (list: string[]).",
+      description:
+        "Rows (keyValue: {label,value}[]), lines (list: string[]), or buttons " +
+        "(actions: {id,label,tone?,value?}[]).",
     },
     columns: { type: "array", items: { type: "string" }, description: "Header cells (table)." },
     rows: { type: "array", items: { type: "array", items: { type: "string" } }, description: "Body rows (table)." },
@@ -56,6 +60,7 @@ export function createRenderUiTool(options: RenderUiToolOptions = {}) {
       "Render a visual surface (table, chart-like list, key/value, callout, code, progress) for the user. " +
       "Pass `components[]` from the approved catalog; each component has a `type` plus its fields. " +
       "Reuse the same `surfaceId` to update a surface in place, or pass `action:\"delete\"` to remove it. " +
+      "An `actions` component renders buttons the user can click to send a choice back to you. " +
       "Use this for structured, scannable output instead of long prose.",
     risk: "read",
     input: z.unknown(),

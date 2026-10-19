@@ -33,6 +33,54 @@ describe("createRenderUiTool", () => {
     expect(captured?.components).toHaveLength(2);
   });
 
+  it("accepts an interactive actions component", async () => {
+    let captured: UiSurface | undefined;
+    const tool = createRenderUiTool();
+    const result = (await tool.execute(
+      {
+        surfaceId: "confirm",
+        components: [
+          { type: "text", text: "Proceed?" },
+          {
+            type: "actions",
+            items: [
+              { id: "yes", label: "Yes", tone: "success" },
+              { id: "no", label: "No", tone: "danger", value: "declined" },
+            ],
+          },
+        ],
+      },
+      { presentSurface: (s: UiSurface) => { captured = s; } } as never,
+    )) as { components: number };
+
+    expect(result.components).toBe(2);
+    expect(captured?.components[1]).toEqual({
+      type: "actions",
+      items: [
+        { id: "yes", label: "Yes", tone: "success" },
+        { id: "no", label: "No", tone: "danger", value: "declined" },
+      ],
+    });
+  });
+
+  it("drops an actions component with a malformed item", async () => {
+    let captured: UiSurface | undefined;
+    const tool = createRenderUiTool();
+    const result = (await tool.execute(
+      {
+        surfaceId: "s1",
+        components: [
+          { type: "actions", items: [{ id: "ok", label: "OK" }] },
+          { type: "actions", items: [{ label: "missing id" }] },
+        ],
+      },
+      { presentSurface: (s: UiSurface) => { captured = s; } } as never,
+    )) as { components: number; droppedComponents?: number };
+
+    expect(result.components).toBe(1);
+    expect(result.droppedComponents).toBe(1);
+  });
+
   it("generates a surfaceId when omitted", async () => {
     let captured: UiSurface | undefined;
     const tool = createRenderUiTool();
