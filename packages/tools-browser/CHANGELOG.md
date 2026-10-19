@@ -1,5 +1,14 @@
 # @vinhnt-sdk/tools-browser
 
+## 0.17.0
+
+### Patch Changes
+
+- Updated dependencies [ffbffa5]
+  - @vinhnt-sdk/schema@0.17.0
+  - @vinhnt-sdk/tools@0.17.0
+  - @vinhnt-sdk/guard@0.17.0
+
 ## 0.16.0
 
 ### Patch Changes
