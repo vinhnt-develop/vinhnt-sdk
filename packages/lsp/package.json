@@ -51,8 +51,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@vinhnt-sdk/schema": "0.13.0",
-    "@vinhnt-sdk/tools": "0.13.0",
+    "@vinhnt-sdk/schema": "workspace:*",
+    "@vinhnt-sdk/tools": "workspace:*",
     "zod": "^4.4.3"
   }
 }

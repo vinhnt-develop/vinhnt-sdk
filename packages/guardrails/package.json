@@ -51,8 +51,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@vinhnt-sdk/guard": "0.13.0",
-    "@vinhnt-sdk/schema": "0.13.0"
+    "@vinhnt-sdk/guard": "workspace:*",
+    "@vinhnt-sdk/schema": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^3.2.7"
