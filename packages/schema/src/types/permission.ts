@@ -8,6 +8,14 @@ export interface PermissionRequest {
   readonly reason: string;
   readonly prompt: string;
   readonly occurredAt: string;
+  /**
+   * Allow-rule patterns that a `"always"` reply would persist (the scope the
+   * user is granting). Empty/absent → `"always"` grants no durable scope beyond
+   * the current call. Surfaced so the approval UI can show what "always" covers.
+   */
+  readonly scope?: readonly string[];
+  /** Origin of the ask (e.g. `rules` | `risk`) for UI explanation. */
+  readonly source?: string;
 }
 
 export type PermissionReply = "once" | "always" | "reject";

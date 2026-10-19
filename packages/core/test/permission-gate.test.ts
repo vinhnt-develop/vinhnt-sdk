@@ -361,6 +361,35 @@ describe("PermissionGate", () => {
       expect(types).toContain("permission.replied");
     });
 
+    it("surfaces savePatterns as `scope` and the ask `source` on request + event", async () => {
+      const { gate, approvalStore, store } = makeGate();
+      approvalStore.queueReply("always");
+      await gate.askForTool(
+        "execute_command", "tc-1", "run-1" as RunId, "sess-1", "run npm install",
+        "agent-1", "trace-1", undefined, ["npm install *"], undefined,
+        { source: "risk" },
+      );
+      expect(approvalStore.requests[0]).toMatchObject({
+        scope: ["npm install *"],
+        source: "risk",
+      });
+      const events = await store.list("run-1");
+      const requested = events.find((e) => e.type === "permission.requested") as
+        | { data?: Record<string, unknown> }
+        | undefined;
+      expect(requested?.data).toMatchObject({
+        scope: ["npm install *"],
+        source: "risk",
+      });
+    });
+
+    it("omits `scope` when no savePatterns are provided", async () => {
+      const { gate, approvalStore } = makeGate();
+      approvalStore.queueReply("once");
+      await gate.askForTool("read_file", "tc-1", "run-1" as RunId, "sess-1", "testing", "agent-1", "trace-1");
+      expect(approvalStore.requests[0]!.scope).toBeUndefined();
+    });
+
     it("persists savePatterns as allow rules on 'always' without opening the whole tool", async () => {
       const { gate, approvalStore } = makeGate();
       approvalStore.queueReply("always");

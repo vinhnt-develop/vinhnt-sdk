@@ -220,6 +220,13 @@ export const PermissionRequestedDataSchema = z.object({
   prompt: z.string(),
   /** Permission/rule key (e.g. `tool.read_file` or `doom_loop`). Optional for P1-3. */
   permission: z.string().optional(),
+  /**
+   * Allow-rule patterns a `"always"` reply would persist (scope the user is
+   * granting). Empty/absent → no durable scope beyond the current call.
+   */
+  scope: z.array(z.string()).optional(),
+  /** Origin of the ask (e.g. `rules` | `risk`) for UI explanation. */
+  source: z.string().optional(),
 });
 /** Inferred type of {@link PermissionRequestedDataSchema}. */
 export type PermissionRequestedData = z.infer<typeof PermissionRequestedDataSchema>;

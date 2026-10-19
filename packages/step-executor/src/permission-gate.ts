@@ -390,7 +390,10 @@ export class PermissionGate {
     }
 
     const permissionKey = options?.permissionKey;
-    const answer = await this.askViaApprovalStore(toolName, runId, reason, traceId, pluginManager, signal, permissionKey);
+    const answer = await this.askViaApprovalStore(
+      toolName, runId, reason, traceId, pluginManager, signal, permissionKey,
+      savePatterns, options?.source,
+    );
     const reply = answer.reply;
     // Surface the user's feedback to the caller (decision-only return type).
     options?.onReply?.(reply, answer.reason);
@@ -432,9 +435,12 @@ export class PermissionGate {
     pluginManager?: StepExecutorPluginHooks,
     signal?: AbortSignal,
     permissionKey?: string,
+    scope?: readonly string[],
+    source?: string,
   ): Promise<ApprovalReply> {
     const requestId = crypto.randomUUID() as RequestId;
     const permission = permissionKey ?? `tool.${toolName}`;
+    const scoped = scope && scope.length > 0 ? [...scope] : undefined;
     const req: PermissionRequest = {
       id: requestId,
       runId,
@@ -443,18 +449,26 @@ export class PermissionGate {
       reason,
       prompt: reason,
       occurredAt: new Date().toISOString(),
+      ...(scoped ? { scope: scoped } : {}),
+      ...(source !== undefined ? { source } : {}),
     };
 
     // Persist permission.requested to store (sync for tests) AND publish to bus
     await this.appendPersisted({
       id: crypto.randomUUID(), runId, type: "permission.requested",
       occurredAt: new Date().toISOString(), traceId,
-      data: { requestId, toolName, resource: toolName, reason, prompt: reason, permission },
+      data: {
+        requestId, toolName, resource: toolName, reason, prompt: reason, permission,
+        ...(scoped ? { scope: scoped } : {}),
+        ...(source !== undefined ? { source } : {}),
+      },
     } as Omit<RunEvent, "sequence">);
 
     if (this.deps.eventBus) {
       this.deps.eventBus.publish(PermissionRequested, {
-        requestId, toolName, resource: toolName, reason, prompt: reason, permission
+        requestId, toolName, resource: toolName, reason, prompt: reason, permission,
+        ...(scoped ? { scope: scoped } : {}),
+        ...(source !== undefined ? { source } : {}),
       }, { traceId, aggregateId: runId });
     }
 
