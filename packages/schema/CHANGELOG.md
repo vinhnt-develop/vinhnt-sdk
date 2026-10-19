@@ -1,5 +1,21 @@
 # @vinhnt-sdk/schema
 
+## 0.19.0
+
+### Minor Changes
+
+- b476bec: Add MCP-style elicitation (structured human input) as a first-class HITL flow.
+  
+  - New durable events `elicitation.requested` / `elicitation.replied` plus
+    `ElicitationRequestedData` / `ElicitationRepliedData` schemas and a flat,
+    client-safe `ElicitationFieldSchema` (string/number/integer/boolean).
+  - New `elicit` built-in tool (`createElicitTool`) and `ElicitationStore` /
+    `InMemoryElicitationStore` seam; the kernel wires it via
+    `elicitations: { elicitStore, elicitTimeoutMs }` and `ctx.askElicitation`.
+  - The tool accepts `{ message, requestedSchema }` (form mode) or
+    `{ message, mode: "url", url }` and returns
+    `{ action: "accept" | "decline" | "cancel", content? }`.
+
 ## 0.18.0
 
 ### Minor Changes

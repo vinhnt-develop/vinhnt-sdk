@@ -1,5 +1,38 @@
 # @vinhnt-sdk/core
 
+## 0.19.0
+
+### Minor Changes
+
+- b476bec: Add MCP-style elicitation (structured human input) as a first-class HITL flow.
+  
+  - New durable events `elicitation.requested` / `elicitation.replied` plus
+    `ElicitationRequestedData` / `ElicitationRepliedData` schemas and a flat,
+    client-safe `ElicitationFieldSchema` (string/number/integer/boolean).
+  - New `elicit` built-in tool (`createElicitTool`) and `ElicitationStore` /
+    `InMemoryElicitationStore` seam; the kernel wires it via
+    `elicitations: { elicitStore, elicitTimeoutMs }` and `ctx.askElicitation`.
+  - The tool accepts `{ message, requestedSchema }` (form mode) or
+    `{ message, mode: "url", url }` and returns
+    `{ action: "accept" | "decline" | "cancel", content? }`.
+
+### Patch Changes
+
+- Updated dependencies [b476bec]
+  - @vinhnt-sdk/schema@0.19.0
+  - @vinhnt-sdk/event@0.19.0
+  - @vinhnt-sdk/tools@0.19.0
+  - @vinhnt-sdk/step-executor@0.19.0
+  - @vinhnt-sdk/trace@0.19.0
+  - @vinhnt-sdk/guard@0.19.0
+  - @vinhnt-sdk/guardrails@0.19.0
+  - @vinhnt-sdk/knowledge@0.19.0
+  - @vinhnt-sdk/llm@0.19.0
+  - @vinhnt-sdk/permission@0.19.0
+  - @vinhnt-sdk/sandbox@0.19.0
+  - @vinhnt-sdk/session@0.19.0
+  - @vinhnt-sdk/workflow@0.19.0
+
 ## 0.18.0
 
 ### Patch Changes

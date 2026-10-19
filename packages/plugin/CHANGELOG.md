@@ -1,5 +1,12 @@
 # @vinhnt-sdk/plugin
 
+## 0.19.0
+
+### Patch Changes
+
+- Updated dependencies [b476bec]
+  - @vinhnt-sdk/core@0.19.0
+
 ## 0.18.0
 
 ### Patch Changes
