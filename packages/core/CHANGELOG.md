@@ -1,5 +1,24 @@
 # @vinhnt-sdk/core
 
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [83d6536]
+  - @vinhnt-sdk/schema@0.14.0
+  - @vinhnt-sdk/permission@0.14.0
+  - @vinhnt-sdk/step-executor@0.14.0
+  - @vinhnt-sdk/tools@0.14.0
+  - @vinhnt-sdk/event@0.14.0
+  - @vinhnt-sdk/guard@0.14.0
+  - @vinhnt-sdk/guardrails@0.14.0
+  - @vinhnt-sdk/knowledge@0.14.0
+  - @vinhnt-sdk/llm@0.14.0
+  - @vinhnt-sdk/sandbox@0.14.0
+  - @vinhnt-sdk/session@0.14.0
+  - @vinhnt-sdk/trace@0.14.0
+  - @vinhnt-sdk/workflow@0.14.0
+
 ## 0.13.0
 
 ### Minor Changes
