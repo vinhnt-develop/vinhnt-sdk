@@ -60,6 +60,7 @@ export type {
   TodoItem, TodoUpdatedData,
   QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
   PlanApprovalStep, PlanRequestedData, PlanRepliedData,
+  UiSurfaceTone, UiSurfaceComponent, UiSurface, UiSurfaceData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,
@@ -234,6 +235,8 @@ export {
   QuestionOptionSchema, QuestionItemSchema, QuestionRequestedDataSchema,
   QuestionAnswerSchema, QuestionRepliedDataSchema,
   PlanApprovalStepSchema, PlanRequestedDataSchema, PlanDecisionSchema, PlanRepliedDataSchema,
+  UiSurfaceToneSchema, UiSurfaceComponentSchema, UiSurfaceSchema, UiSurfaceDataSchema,
+  UiSurfaceEventSchema,
   KnownRunEventSchema, parseRunEvent, safeParseRunEvent,
   // Snapshot schemas
   LlmSnapshotMessageSchema, LlmSnapshotToolDefSchema, LlmSnapshotSelectionSchema,

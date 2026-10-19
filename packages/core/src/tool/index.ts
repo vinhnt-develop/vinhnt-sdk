@@ -44,8 +44,8 @@ export { createGlobFilesTool, createGrepFilesTool, createToolSearchTool } from "
 export type { ToolSearchInput, ToolSearchResult } from "@vinhnt-sdk/tools";
 
 // Agent tool family
-export { createQuestionTool, createSubmitPlanTool, createTodoWriteTool, AgentToolProvider, SkillToolProvider } from "@vinhnt-sdk/tools";
-export type { QuestionInput, QuestionHandler, PlanApprovalHandler, SubmitPlanToolOptions } from "@vinhnt-sdk/tools";
+export { createQuestionTool, createSubmitPlanTool, createTodoWriteTool, createRenderUiTool, AgentToolProvider, SkillToolProvider } from "@vinhnt-sdk/tools";
+export type { QuestionInput, QuestionHandler, PlanApprovalHandler, SubmitPlanToolOptions, RenderUiToolOptions } from "@vinhnt-sdk/tools";
 export { InMemoryPlanApprovalStore } from "@vinhnt-sdk/tools";
 export type {
   PlanApprovalStore, PlanApprovalRequest, PlanApprovalReply, PlanDecision, AwaitPlanOptions,

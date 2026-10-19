@@ -211,6 +211,21 @@ export async function buildToolContext(
 
       return reply;
     },
+    // Generative UI: emit a durable `ui.surface` snapshot (non-blocking). A
+    // `delete` action (empty components) removes the surface client-side.
+    presentSurface: async (surface) => {
+      const isDelete = surface.components.length === 0;
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "ui.surface",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          surfaceId: surface.surfaceId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          action: isDelete ? "delete" : "upsert",
+          ...(isDelete ? {} : { surface }),
+        },
+      });
+    },
     metadata: (input) => {
       metadataRef.current = {
         ...metadataRef.current,

@@ -1,7 +1,7 @@
 /** Reply from human-in-the-loop approval */
 export type PermissionReply = "once" | "always" | "reject";
 
-import type { RequestContext, QuestionItem, PlanApprovalStep } from "@vinhnt-sdk/schema";
+import type { RequestContext, QuestionItem, PlanApprovalStep, UiSurface } from "@vinhnt-sdk/schema";
 import type { QuestionReply } from "./question-store.js";
 import type { PlanApprovalReply } from "./plan-store.js";
 
@@ -98,6 +98,13 @@ export interface ToolContext {
     /** Hard timeout in ms (overrides the host default). */
     timeoutMs?: number;
   }): Promise<PlanApprovalReply>;
+
+  /**
+   * Render a generative-UI surface for the user (non-blocking). The host emits
+   * a durable `ui.surface` event; the client renders it against its approved
+   * catalog. No-op (`undefined`) when the host does not support surfaces.
+   */
+  presentSurface?(surface: UiSurface): Promise<void> | void;
 
   /** Attach metadata to the current tool call (for observability) */
   metadata(input: {

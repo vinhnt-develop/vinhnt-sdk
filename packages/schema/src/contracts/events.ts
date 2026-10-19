@@ -300,6 +300,58 @@ export interface PlanRepliedData {
   readonly decision: "approve" | "request_changes" | "cancel";
   readonly feedback?: string;
 }
+/** Semantic color for a surface callout/badge. */
+export type UiSurfaceTone = "neutral" | "info" | "success" | "warning" | "danger";
+/**
+ * A single component inside a generative-UI surface. The set is a closed,
+ * client-rendered whitelist (no code is ever evaluated) — consumers drop
+ * unknown types. Mirrors the Zod discriminated union in
+ * `./schema/run-event.js`.
+ */
+export type UiSurfaceComponent =
+  | { readonly type: "text"; readonly text: string }
+  | { readonly type: "markdown"; readonly markdown: string }
+  | {
+      readonly type: "keyValue";
+      readonly items: ReadonlyArray<{ readonly label: string; readonly value: string }>;
+    }
+  | {
+      readonly type: "table";
+      readonly columns: ReadonlyArray<string>;
+      readonly rows: ReadonlyArray<ReadonlyArray<string>>;
+    }
+  | {
+      readonly type: "callout";
+      readonly tone?: UiSurfaceTone;
+      readonly title?: string;
+      readonly text: string;
+    }
+  | { readonly type: "codeBlock"; readonly language?: string; readonly code: string }
+  | {
+      readonly type: "progress";
+      readonly value: number;
+      readonly max?: number;
+      readonly label?: string;
+    }
+  | { readonly type: "badge"; readonly label: string; readonly tone?: UiSurfaceTone }
+  | { readonly type: "list"; readonly items: ReadonlyArray<string>; readonly ordered?: boolean };
+/** A named generative-UI surface the agent renders for the user. */
+export interface UiSurface {
+  readonly surfaceId: string;
+  readonly title?: string;
+  readonly description?: string;
+  readonly components: ReadonlyArray<UiSurfaceComponent>;
+}
+/**
+ * Data payload for the `ui.surface` event. Full-surface snapshot (last-write-
+ * wins); `action: "delete"` removes the surface. Durable so the UI can replay.
+ */
+export interface UiSurfaceData {
+  readonly surfaceId: string;
+  readonly sessionId?: string;
+  readonly action?: "upsert" | "delete";
+  readonly surface?: UiSurface;
+}
 export interface RequestHeaderData { readonly provider: string; readonly model: string; readonly reason: "initial" | "resume" | "change" | "series" }
 export interface RequestContextData { readonly provider: string; readonly model: string; readonly contextWindow?: number }
 /**
@@ -415,6 +467,7 @@ export type KnownRunEvent =
   | (RunEvent<QuestionRepliedData> & { readonly type: "question.replied" })
   | (RunEvent<PlanRequestedData> & { readonly type: "plan.requested" })
   | (RunEvent<PlanRepliedData> & { readonly type: "plan.replied" })
+  | (RunEvent<UiSurfaceData> & { readonly type: "ui.surface" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
   | (RunEvent<RequestContextData> & { readonly type: "request.context" })
   | (RunEvent<LlmRequestData> & { readonly type: "llm.request" })

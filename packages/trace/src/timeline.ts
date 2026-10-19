@@ -61,6 +61,7 @@ export const KNOWN_TIMELINE_EVENT_TYPES = [
   "question.replied",
   "plan.requested",
   "plan.replied",
+  "ui.surface",
   "request.header",
   "request.context",
   "llm.request",

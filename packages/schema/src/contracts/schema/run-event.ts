@@ -489,6 +489,83 @@ export const PlanRepliedDataSchema = z.object({
 /** Inferred type of {@link PlanRepliedDataSchema}. */
 export type PlanRepliedData = z.infer<typeof PlanRepliedDataSchema>;
 
+/** Semantic color for a surface callout/badge. */
+export const UiSurfaceToneSchema = z.enum(["neutral", "info", "success", "warning", "danger"]);
+/** Inferred type of {@link UiSurfaceToneSchema}. */
+export type UiSurfaceTone = z.infer<typeof UiSurfaceToneSchema>;
+
+/**
+ * A single component inside a generative-UI surface — a closed, client-rendered
+ * whitelist (no code is ever evaluated). New component types must be added here
+ * AND to the approved renderer catalog.
+ */
+export const UiSurfaceComponentSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("text"), text: z.string() }),
+  z.object({ type: z.literal("markdown"), markdown: z.string() }),
+  z.object({
+    type: z.literal("keyValue"),
+    items: z.array(z.object({ label: z.string(), value: z.string() })),
+  }),
+  z.object({
+    type: z.literal("table"),
+    columns: z.array(z.string()),
+    rows: z.array(z.array(z.string())),
+  }),
+  z.object({
+    type: z.literal("callout"),
+    tone: UiSurfaceToneSchema.optional(),
+    title: z.string().optional(),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal("codeBlock"),
+    language: z.string().optional(),
+    code: z.string(),
+  }),
+  z.object({
+    type: z.literal("progress"),
+    value: z.number(),
+    max: z.number().optional(),
+    label: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("badge"),
+    label: z.string(),
+    tone: UiSurfaceToneSchema.optional(),
+  }),
+  z.object({
+    type: z.literal("list"),
+    items: z.array(z.string()),
+    ordered: z.boolean().optional(),
+  }),
+]);
+/** Inferred type of {@link UiSurfaceComponentSchema}. */
+export type UiSurfaceComponent = z.infer<typeof UiSurfaceComponentSchema>;
+
+/** A named generative-UI surface the agent renders for the user. */
+export const UiSurfaceSchema = z.object({
+  surfaceId: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  components: z.array(UiSurfaceComponentSchema),
+});
+/** Inferred type of {@link UiSurfaceSchema}. */
+export type UiSurface = z.infer<typeof UiSurfaceSchema>;
+
+/**
+ * Data payload for the `ui.surface` durable event — full-surface snapshot
+ * (last-write-wins); `action: "delete"` removes it. Durable so the UI replays.
+ */
+export const UiSurfaceDataSchema = z.object({
+  surfaceId: z.string(),
+  /** Session that owns the surface (absent on legacy/global writes). */
+  sessionId: z.string().optional(),
+  action: z.enum(["upsert", "delete"]).optional(),
+  surface: UiSurfaceSchema.optional(),
+});
+/** Inferred type of {@link UiSurfaceDataSchema}. */
+export type UiSurfaceData = z.infer<typeof UiSurfaceDataSchema>;
+
 /** Data payload for the `request.header` event. */
 export const RequestHeaderDataSchema = z.object({
   provider: z.string(),
@@ -827,6 +904,11 @@ export const PlanRepliedEventSchema = eventSchema(PlanRepliedDataSchema, z.liter
 /** Inferred type of {@link PlanRepliedEventSchema}. */
 export type PlanRepliedEvent = z.infer<typeof PlanRepliedEventSchema>;
 
+/** Zod schema for the `ui.surface` event. */
+export const UiSurfaceEventSchema = eventSchema(UiSurfaceDataSchema, z.literal("ui.surface"));
+/** Inferred type of {@link UiSurfaceEventSchema}. */
+export type UiSurfaceEvent = z.infer<typeof UiSurfaceEventSchema>;
+
 /** Zod schema for the `request.header` event. */
 export const RequestHeaderEventSchema = eventSchema(RequestHeaderDataSchema, z.literal("request.header"));
 /** Inferred type of {@link RequestHeaderEventSchema}. */
@@ -884,6 +966,7 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   ApprovalAskedEventSchema,
   ApprovalDecidedEventSchema,
   TodoUpdatedEventSchema,
+  UiSurfaceEventSchema,
   RequestHeaderEventSchema,
   RequestContextEventSchema,
   LlmRequestEventSchema,

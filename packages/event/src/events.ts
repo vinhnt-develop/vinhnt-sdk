@@ -10,7 +10,7 @@ import {
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmFailoverDataSchema, LlmRequestDataSchema, LlmResponseDataSchema,
   TodoUpdatedDataSchema, QuestionRequestedDataSchema, QuestionRepliedDataSchema,
-  PlanRequestedDataSchema, PlanRepliedDataSchema,
+  PlanRequestedDataSchema, PlanRepliedDataSchema, UiSurfaceDataSchema,
 } from "@vinhnt-sdk/schema";
 
 // ── Run events (durable, aggregate=runId) ──
@@ -244,6 +244,14 @@ export const PlanReplied = defineEvent({
   description: "The user (or system) approved or requested changes to a plan",
   durable: { version: 1, aggregate: "runId" },
   schema: PlanRepliedDataSchema,
+});
+
+/** Event definition for `ui.surface` — The agent rendered a generative-UI surface (full snapshot). */
+export const UiSurface = defineEvent({
+  type: "ui.surface",
+  description: "The agent rendered or updated a generative-UI surface (full snapshot)",
+  durable: { version: 1, aggregate: "runId" },
+  schema: UiSurfaceDataSchema,
 });
 
 // ── System events (non-durable, broadcast-only) ──
