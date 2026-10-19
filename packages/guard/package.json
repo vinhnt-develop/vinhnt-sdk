@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/guard",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Guard system - circuit breaker, loop detection, tool timeout, monotonic guards, secret redaction",
   "license": "MIT",
   "type": "module",

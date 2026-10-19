@@ -1,5 +1,11 @@
 # @vinhnt-sdk/schema
 
+## 0.15.0
+
+### Minor Changes
+
+- Add a durable plan-approval (HITL) vertical: `plan.requested` / `plan.replied` events, the `submit_plan` tool + `PlanApprovalStore` in `@vinhnt-sdk/tools`, `ctx.askPlan` in `@vinhnt-sdk/step-executor`, and `AgentKernelConfig.plans` wiring in `@vinhnt-sdk/core`. The agent can present a plan and block until the user approves, requests changes, or cancels.
+
 ## 0.14.0
 
 ### Minor Changes
