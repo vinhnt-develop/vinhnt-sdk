@@ -44,8 +44,12 @@ export { createGlobFilesTool, createGrepFilesTool, createToolSearchTool } from "
 export type { ToolSearchInput, ToolSearchResult } from "@vinhnt-sdk/tools";
 
 // Agent tool family
-export { createQuestionTool, createTodoWriteTool, AgentToolProvider, SkillToolProvider } from "@vinhnt-sdk/tools";
-export type { QuestionInput, QuestionHandler } from "@vinhnt-sdk/tools";
+export { createQuestionTool, createSubmitPlanTool, createTodoWriteTool, AgentToolProvider, SkillToolProvider } from "@vinhnt-sdk/tools";
+export type { QuestionInput, QuestionHandler, PlanApprovalHandler, SubmitPlanToolOptions } from "@vinhnt-sdk/tools";
+export { InMemoryPlanApprovalStore } from "@vinhnt-sdk/tools";
+export type {
+  PlanApprovalStore, PlanApprovalRequest, PlanApprovalReply, PlanDecision, AwaitPlanOptions,
+} from "@vinhnt-sdk/tools";
 
 // Aggregator (composition root lives in core)
 export { BuiltinToolProvider } from "./builtin-provider.js";

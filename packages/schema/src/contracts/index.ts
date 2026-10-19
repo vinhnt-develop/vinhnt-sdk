@@ -26,6 +26,7 @@ export type {
   ApprovalAskedData, ApprovalDecidedData,
   TodoItem, TodoUpdatedData,
   QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
+  PlanApprovalStep, PlanRequestedData, PlanRepliedData,
   // Snapshot types
   LlmSnapshotMessage, LlmSnapshotToolDef, LlmSnapshotSelection,
   LlmResponseData,

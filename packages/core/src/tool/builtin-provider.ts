@@ -8,7 +8,7 @@ import { createShellTool } from "@vinhnt-sdk/tools";
 import { createGlobFilesTool, createGrepFilesTool } from "@vinhnt-sdk/tools";
 import { createWebFetchTool, createWebSearchTool, type WebSearchProvider, TavilySearchProvider } from "@vinhnt-sdk/tools";
 import { createGitStatusTool, createGitDiffTool, createGitLogTool, createGitCommitTool } from "@vinhnt-sdk/tools";
-import { createTodoWriteTool, createQuestionTool } from "@vinhnt-sdk/tools";
+import { createTodoWriteTool, createQuestionTool, createSubmitPlanTool } from "@vinhnt-sdk/tools";
 import { createUpdatePlanTool, createGetPlanTool, PlanStore } from "../tools/update-plan.js";
 
 /** Per-tool configuration overrides. Keys are tool IDs (e.g., "shell", "web_search"). */
@@ -105,6 +105,7 @@ export class BuiltinToolProvider implements ToolProvider {
       // Utility tools
       this.applyConfig(asSystem(createTodoWriteTool()), cfg("todowrite")),
       this.applyConfig(asSystem(createQuestionTool()), cfg("question")),
+      this.applyConfig(asSystem(createSubmitPlanTool()), cfg("submit_plan")),
       this.applyConfig(asSystem(createReadImageTool(workspaceRoot)), cfg("read_image")),
 
       // Plan tools (P6.7/G19 — were unreachable stubs)

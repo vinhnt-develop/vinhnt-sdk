@@ -1,6 +1,6 @@
 import type { RunId, RequestContext, KnownRunEvent, RequestId } from "@vinhnt-sdk/schema";
 import { sanitizeEnv } from "@vinhnt-sdk/guard";
-import type { ToolContext, ToolRisk, QuestionStore, QuestionRequest, QuestionReply } from "@vinhnt-sdk/tools";
+import type { ToolContext, ToolRisk, QuestionStore, QuestionRequest, QuestionReply, PlanApprovalStore, PlanApprovalRequest, PlanApprovalReply } from "@vinhnt-sdk/tools";
 import type { StepExecutorPluginHooks } from "./hooks.js";
 import type { PermissionGate } from "./permission-gate.js";
 import type { ToolExecutionPlan } from "./step-executor.js";
@@ -23,7 +23,11 @@ export interface ToolContextBuilderDeps {
   readonly questionStore?: QuestionStore | undefined;
   /** Default timeout (ms) for a question wait; omitted → store default. */
   readonly questionTimeoutMs?: number | undefined;
-  /** Persist + publish a durable run event (used to emit question.* events). */
+  /** Store backing the `submit_plan` tool's durable request/reply path. */
+  readonly planStore?: PlanApprovalStore | undefined;
+  /** Default timeout (ms) for a plan review wait; omitted → store default. */
+  readonly planTimeoutMs?: number | undefined;
+  /** Persist + publish a durable run event (used to emit question.* / plan.* events). */
   readonly emitEvent?: ((event: Omit<KnownRunEvent, "sequence">) => Promise<void>) | undefined;
 }
 
@@ -142,6 +146,66 @@ export async function buildToolContext(
           requestId,
           action: reply.action,
           ...(reply.answers !== undefined ? { answers: reply.answers } : {}),
+        },
+      });
+
+      return reply;
+    },
+    // Durable HITL plan review: emit `plan.requested`, await the store, then
+    // emit `plan.replied`. Mirrors the question path, resolved via the app's
+    // PlanApprovalStore.
+    askPlan: async (input) => {
+      const requestId = crypto.randomUUID() as RequestId;
+      const request: PlanApprovalRequest = {
+        requestId,
+        runId,
+        sessionId: sessionId ?? "",
+        steps: input.steps,
+        ...(input.title !== undefined ? { title: input.title } : {}),
+        ...(input.explanation !== undefined ? { explanation: input.explanation } : {}),
+        ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+      };
+
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "plan.requested",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          requestId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          steps: input.steps,
+          ...(input.title !== undefined ? { title: input.title } : {}),
+          ...(input.explanation !== undefined ? { explanation: input.explanation } : {}),
+          ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        },
+      });
+
+      let reply: PlanApprovalReply = { decision: "cancel" };
+      if (deps.planStore) {
+        const timeoutMs = input.timeoutMs ?? deps.planTimeoutMs;
+        try {
+          reply = await deps.planStore.awaitReply(request, {
+            signal: runAbort.signal,
+            ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+          });
+        } catch (err) {
+          // Run aborted / timed out → treat as cancelled but still emit the
+          // reply so the UI clears its pending plan card.
+          const isAbort =
+            err instanceof DOMException
+              ? err.name === "AbortError"
+              : err instanceof Error && err.name === "AbortError";
+          reply = { decision: "cancel" };
+          if (!isAbort) throw err;
+        }
+      }
+
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "plan.replied",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          requestId,
+          decision: reply.decision,
+          ...(reply.feedback !== undefined ? { feedback: reply.feedback } : {}),
         },
       });
 

@@ -122,6 +122,12 @@ export { InMemoryQuestionStore } from "./question-store.js";
 export type {
   QuestionStore, QuestionRequest, QuestionReply, QuestionAction, AwaitQuestionOptions,
 } from "./question-store.js";
+export { createSubmitPlanTool } from "./plan-approval-tool.js";
+export type { PlanApprovalHandler, SubmitPlanToolOptions } from "./plan-approval-tool.js";
+export { InMemoryPlanApprovalStore } from "./plan-store.js";
+export type {
+  PlanApprovalStore, PlanApprovalRequest, PlanApprovalReply, PlanDecision, AwaitPlanOptions,
+} from "./plan-store.js";
 export { createTodoWriteTool } from "./todo-tool.js";
 export type { TodoWriteToolOptions, TodoUpdate } from "./todo-tool.js";
 export { InMemoryTodoStore } from "./todo-store.js";

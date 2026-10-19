@@ -10,6 +10,7 @@ import {
   TurnStartedDataSchema, TurnEndedDataSchema, AgentHandoffDataSchema,
   LlmFailoverDataSchema, LlmRequestDataSchema, LlmResponseDataSchema,
   TodoUpdatedDataSchema, QuestionRequestedDataSchema, QuestionRepliedDataSchema,
+  PlanRequestedDataSchema, PlanRepliedDataSchema,
 } from "@vinhnt-sdk/schema";
 
 // ── Run events (durable, aggregate=runId) ──
@@ -227,6 +228,22 @@ export const QuestionReplied = defineEvent({
   description: "The user (or system) replied to a question",
   durable: { version: 1, aggregate: "runId" },
   schema: QuestionRepliedDataSchema,
+});
+
+/** Event definition for `plan.requested` — The agent presented a plan and is awaiting a decision. */
+export const PlanRequested = defineEvent({
+  type: "plan.requested",
+  description: "The agent presented a plan and is awaiting the user's decision",
+  durable: { version: 1, aggregate: "runId" },
+  schema: PlanRequestedDataSchema,
+});
+
+/** Event definition for `plan.replied` — The user (or system) decided on a plan. */
+export const PlanReplied = defineEvent({
+  type: "plan.replied",
+  description: "The user (or system) approved or requested changes to a plan",
+  durable: { version: 1, aggregate: "runId" },
+  schema: PlanRepliedDataSchema,
 });
 
 // ── System events (non-durable, broadcast-only) ──

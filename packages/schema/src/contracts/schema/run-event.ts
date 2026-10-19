@@ -434,6 +434,54 @@ export const QuestionRepliedDataSchema = z.object({
 /** Inferred type of {@link QuestionRepliedDataSchema}. */
 export type QuestionRepliedData = z.infer<typeof QuestionRepliedDataSchema>;
 
+/** A single step in a plan presented for approval (`plan.requested`). */
+export const PlanApprovalStepSchema = z.object({
+  /** Stable step id; the UI falls back to the array index when absent. */
+  id: z.string().optional(),
+  /** The step text shown to the user. */
+  text: z.string(),
+  /** Optional per-step status hint ("pending" | "in_progress" | "completed" | …). */
+  status: z.string().optional(),
+});
+/** Inferred type of {@link PlanApprovalStepSchema}. */
+export type PlanApprovalStep = z.infer<typeof PlanApprovalStepSchema>;
+
+/**
+ * Data payload for the `plan.requested` durable event — the agent presented a
+ * plan and is blocked awaiting the user's decision (HITL). Durable so the UI
+ * can replay it when a client reconnects.
+ */
+export const PlanRequestedDataSchema = z.object({
+  requestId: z.string(),
+  /** Session that owns the request (absent on legacy/global writes). */
+  sessionId: z.string().optional(),
+  /** Short plan title shown as the card heading. */
+  title: z.string().optional(),
+  /** Ordered plan steps. */
+  steps: z.array(PlanApprovalStepSchema),
+  /** Optional rationale the agent is proposing the plan. */
+  explanation: z.string().optional(),
+  /** Epoch ms after which the request expires (graceful expiry). */
+  expiresAt: z.number().optional(),
+});
+/** Inferred type of {@link PlanRequestedDataSchema}. */
+export type PlanRequestedData = z.infer<typeof PlanRequestedDataSchema>;
+
+/** Terminal decision for a plan reply. */
+export const PlanDecisionSchema = z.enum(["approve", "request_changes", "cancel"]);
+/** Inferred type of {@link PlanDecisionSchema}. */
+export type PlanDecision = z.infer<typeof PlanDecisionSchema>;
+
+/** Data payload for the `plan.replied` durable event. */
+export const PlanRepliedDataSchema = z.object({
+  requestId: z.string(),
+  decision: PlanDecisionSchema,
+  /** User feedback, typically present when `decision === "request_changes"`. */
+  feedback: z.string().optional(),
+});
+/** Inferred type of {@link PlanRepliedDataSchema}. */
+export type PlanRepliedData = z.infer<typeof PlanRepliedDataSchema>;
+
 /** Data payload for the `request.header` event. */
 export const RequestHeaderDataSchema = z.object({
   provider: z.string(),
@@ -762,6 +810,16 @@ export const QuestionRepliedEventSchema = eventSchema(QuestionRepliedDataSchema,
 /** Inferred type of {@link QuestionRepliedEventSchema}. */
 export type QuestionRepliedEvent = z.infer<typeof QuestionRepliedEventSchema>;
 
+/** Zod schema for the `plan.requested` event. */
+export const PlanRequestedEventSchema = eventSchema(PlanRequestedDataSchema, z.literal("plan.requested"));
+/** Inferred type of {@link PlanRequestedEventSchema}. */
+export type PlanRequestedEvent = z.infer<typeof PlanRequestedEventSchema>;
+
+/** Zod schema for the `plan.replied` event. */
+export const PlanRepliedEventSchema = eventSchema(PlanRepliedDataSchema, z.literal("plan.replied"));
+/** Inferred type of {@link PlanRepliedEventSchema}. */
+export type PlanRepliedEvent = z.infer<typeof PlanRepliedEventSchema>;
+
 /** Zod schema for the `request.header` event. */
 export const RequestHeaderEventSchema = eventSchema(RequestHeaderDataSchema, z.literal("request.header"));
 /** Inferred type of {@link RequestHeaderEventSchema}. */
@@ -807,6 +865,8 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   PermissionRepliedEventSchema,
   QuestionRequestedEventSchema,
   QuestionRepliedEventSchema,
+  PlanRequestedEventSchema,
+  PlanRepliedEventSchema,
   StepTypeChangedEventSchema,
   TurnStartedEventSchema,
   TurnEndEventSchema,

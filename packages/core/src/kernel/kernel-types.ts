@@ -26,6 +26,14 @@ export interface QuestionConfig {
   readonly questionTimeoutMs?: number;
 }
 
+/** Plan-approval (HITL) configuration for the `submit_plan` tool. */
+export interface PlanConfig {
+  /** Store backing the `submit_plan` tool's durable request/reply path. */
+  readonly planStore?: import("@vinhnt-sdk/tools").PlanApprovalStore;
+  /** Default timeout (ms) for a plan review wait. */
+  readonly planTimeoutMs?: number;
+}
+
 /** Permission configuration for tool execution and file access. */
 export interface PermissionConfig {
   /** Store for persisting approval decisions. */
@@ -273,6 +281,8 @@ export interface AgentKernelConfig {
   readonly permissions?: PermissionConfig;
   /** Question (ask-user / HITL) configuration for the `question` tool. */
   readonly questions?: QuestionConfig;
+  /** Plan-approval (HITL) configuration for the `submit_plan` tool. */
+  readonly plans?: PlanConfig;
   /** Model routing configuration for multi-model setups. */
   readonly modelRouting?: ModelRoutingConfig;
   /** Input guardrails — run before model calls. */
@@ -460,6 +470,15 @@ export function normalizeConfig(config: Record<string, unknown>): AgentKernelCon
   }
   delete normalized.questionStore;
   delete normalized.questionTimeoutMs;
+
+  if (!normalized.plans && (normalized.planStore !== undefined || normalized.planTimeoutMs !== undefined)) {
+    normalized.plans = {
+      planStore: normalized.planStore,
+      planTimeoutMs: normalized.planTimeoutMs,
+    };
+  }
+  delete normalized.planStore;
+  delete normalized.planTimeoutMs;
 
   if (!normalized.modelRouting) {
     normalized.modelRouting = {

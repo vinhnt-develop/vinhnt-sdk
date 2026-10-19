@@ -9,7 +9,7 @@ import { InMemoryModelRegistry } from "../src/model.js";
 import type { SessionStore } from "@vinhnt-sdk/session";
 import type { Plugin, PluginHooks } from "../src/plugin.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
-import { createQuestionTool, InMemoryQuestionStore } from "@vinhnt-sdk/tools";
+import { createQuestionTool, InMemoryQuestionStore, createSubmitPlanTool, InMemoryPlanApprovalStore } from "@vinhnt-sdk/tools";
 import { FakeModelProvider } from "../src/fakes/fake-model.js";
 import { FakeRunEventStore } from "../src/fakes/fake-store.js";
 import { FakeTool } from "../src/fakes/fake-tool.js";
@@ -1650,6 +1650,54 @@ describe("AgentKernel", () => {
 
       const toolDone = events.find((e) => e.type === "tool.completed");
       expect((toolDone!.data as Record<string, unknown>).toolName).toBe("question");
+    });
+
+    it("submit_plan tool emits plan.requested/replied and resumes with the store decision", async () => {
+      const model = new FakeModelProvider([
+        { content: "", toolCalls: [{ id: "call_p", name: "submit_plan", args: { title: "Ship it", steps: [{ text: "step one" }, { text: "step two" }] } }] },
+        { content: "done" },
+      ]);
+      const store = new FakeRunEventStore();
+      const planStore = new InMemoryPlanApprovalStore();
+
+      const agent: AgentConfig = {
+        id: "plan-agent" as AgentId,
+        profile: { name: "PlanAgent", description: "" },
+        capabilities: {},
+        permissions: { ruleset: { rules: [{ effect: "allow", target: "tool.submit_plan" }] } },
+      };
+      const registry = new FakeAgentRegistry();
+      await registry.register(agent);
+      const kernel = new AgentKernel({
+        model, store, maxSteps: 10, agentRegistry: registry,
+        tools: [createSubmitPlanTool()],
+        plans: { planStore },
+      });
+      await kernel.useAgent("plan-agent" as AgentId);
+
+      const handle = kernel.run("make a plan", testCtx);
+      await waitFor(() => planStore.pendingRequests().length === 1);
+      const req = planStore.pendingRequests()[0]!;
+      planStore.resolveRequest(req.requestId, { decision: "request_changes", feedback: "split step two" });
+      await handle.completed;
+
+      const events = await store.list(handle.runId);
+      const types = events.map((e) => e.type);
+      expect(types).toContain("plan.requested");
+      expect(types).toContain("plan.replied");
+
+      const reqEvent = events.find((e) => e.type === "plan.requested");
+      expect((reqEvent!.data as Record<string, unknown>).requestId).toBe(req.requestId);
+      const reqData = reqEvent!.data as { title?: string; steps?: Array<{ text?: string }> };
+      expect(reqData.title).toBe("Ship it");
+      expect(reqData.steps?.[0]?.text).toBe("step one");
+
+      const repEvent = events.find((e) => e.type === "plan.replied");
+      expect((repEvent!.data as Record<string, unknown>).decision).toBe("request_changes");
+      expect((repEvent!.data as Record<string, unknown>).feedback).toBe("split step two");
+
+      const toolDone = events.find((e) => e.type === "tool.completed");
+      expect((toolDone!.data as Record<string, unknown>).toolName).toBe("submit_plan");
     });
 
     it("ask with 'reject' reply rejects tool and does not execute it", async () => {

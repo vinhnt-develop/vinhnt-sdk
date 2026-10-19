@@ -262,6 +262,30 @@ export interface QuestionRepliedData {
   readonly action: "accept" | "decline" | "cancel";
   readonly answers?: ReadonlyArray<QuestionAnswer>;
 }
+/** A single step in a plan presented for approval (`plan.requested`). */
+export interface PlanApprovalStep {
+  /** Stable step id; the UI falls back to the array index when absent. */
+  readonly id?: string;
+  /** The step text shown to the user. */
+  readonly text: string;
+  /** Optional per-step status hint ("pending" | "in_progress" | "completed" | …). */
+  readonly status?: string;
+}
+/** Data payload for the `plan.requested` event (HITL plan approval). */
+export interface PlanRequestedData {
+  readonly requestId: RequestId;
+  readonly sessionId?: string;
+  readonly title?: string;
+  readonly steps: ReadonlyArray<PlanApprovalStep>;
+  readonly explanation?: string;
+  readonly expiresAt?: number;
+}
+/** Data payload for the `plan.replied` event. */
+export interface PlanRepliedData {
+  readonly requestId: RequestId;
+  readonly decision: "approve" | "request_changes" | "cancel";
+  readonly feedback?: string;
+}
 export interface RequestHeaderData { readonly provider: string; readonly model: string; readonly reason: "initial" | "resume" | "change" | "series" }
 export interface RequestContextData { readonly provider: string; readonly model: string; readonly contextWindow?: number }
 /**
@@ -375,6 +399,8 @@ export type KnownRunEvent =
   | (RunEvent<TodoUpdatedData> & { readonly type: "todo.updated" })
   | (RunEvent<QuestionRequestedData> & { readonly type: "question.requested" })
   | (RunEvent<QuestionRepliedData> & { readonly type: "question.replied" })
+  | (RunEvent<PlanRequestedData> & { readonly type: "plan.requested" })
+  | (RunEvent<PlanRepliedData> & { readonly type: "plan.replied" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
   | (RunEvent<RequestContextData> & { readonly type: "request.context" })
   | (RunEvent<LlmRequestData> & { readonly type: "llm.request" })
