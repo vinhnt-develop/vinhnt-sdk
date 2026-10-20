@@ -1,5 +1,27 @@
 # @vinhnt-sdk/step-executor
 
+## 0.21.0
+
+### Minor Changes
+
+- add6cda: Answer steering inputs admitted during a run's final step before the run settles, and stop replaying pending inputs twice.
+  
+  - `RunStateMachine.hasPendingInputs()` exposes the buffered input queue.
+  - The run loop continues for one more step when a step completes with pending inputs (bounded by `maxSteps`), so the steer is answered by the run that admitted it.
+  - `AgentKernel.sendInput()` returns `false` once the run is no longer live, letting callers fall back instead of reporting a false acceptance.
+  - `loadSessionHistory()` excludes admitted-but-un-promoted inputs; the kernel's pending-input hydration is their single delivery path.
+
+### Patch Changes
+
+- Updated dependencies [add6cda]
+  - @vinhnt-sdk/session@0.21.0
+  - @vinhnt-sdk/event@0.21.0
+  - @vinhnt-sdk/guard@0.21.0
+  - @vinhnt-sdk/llm@0.21.0
+  - @vinhnt-sdk/permission@0.21.0
+  - @vinhnt-sdk/schema@0.21.0
+  - @vinhnt-sdk/tools@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes

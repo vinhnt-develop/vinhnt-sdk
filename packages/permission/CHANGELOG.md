@@ -1,5 +1,11 @@
 # @vinhnt-sdk/permission
 
+## 0.21.0
+
+### Patch Changes
+
+- @vinhnt-sdk/schema@0.21.0
+
 ## 0.20.0
 
 ### Patch Changes
