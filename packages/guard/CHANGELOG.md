@@ -1,5 +1,12 @@
 # @vinhnt-sdk/guard
 
+## 0.20.0
+
+### Patch Changes
+
+- Updated dependencies [0ca6a58]
+  - @vinhnt-sdk/schema@0.20.0
+
 ## 0.19.0
 
 ### Patch Changes
