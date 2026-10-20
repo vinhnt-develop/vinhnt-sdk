@@ -234,6 +234,58 @@ describe("RV-21: pending session_input admission, persistence and re-drain", () 
     expect(seen).not.toContain("live-a");
   });
 
+  it("a steer admitted during the completing step is answered in the same run", async () => {
+    const store = new TestSessionStore();
+    const session = await store.createSession("PI Session 4");
+
+    const model = new GatedModel([
+      { content: "first answer" },
+      { content: "answer after steer" },
+    ]);
+    const eventStore = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model, store: eventStore, tools: [], maxSteps: 10, sessionStore: store });
+
+    model.gate();
+    const handle = kernel.run("start", testCtx, session.id);
+
+    await model.started;
+    expect(kernel.sendInput(handle.runId, "steer-now")).toBe(true);
+    model.release();
+
+    await handle.completed;
+
+    // The completing step handed control to a continuation step instead of
+    // ending the run, so the steer was drained and answered in this run.
+    expect(model.seenUserTexts).toHaveLength(2);
+    expect(model.seenUserTexts[1]).toContain("steer-now");
+    const steer = (await store.listMessages(session.id)).find((m) => m.content === "steer-now");
+    expect(steer?.promotedSeq).toBe(steer?.admittedSeq);
+
+    // The handle is gone once the run settles - callers get a clear refusal.
+    expect(kernel.sendInput(handle.runId, "too-late")).toBe(false);
+  });
+
+  it("does not continue past maxSteps; the steer stays admitted for the next run", async () => {
+    const store = new TestSessionStore();
+    const session = await store.createSession("PI Session 5");
+
+    const model = new GatedModel([{ content: "only answer" }]);
+    const eventStore = new FakeRunEventStore();
+    const kernel = new AgentKernel({ model, store: eventStore, tools: [], maxSteps: 1, sessionStore: store });
+
+    model.gate();
+    const handle = kernel.run("start", testCtx, session.id);
+    await model.started;
+    expect(kernel.sendInput(handle.runId, "steer-at-limit")).toBe(true);
+    model.release();
+    await handle.completed;
+
+    expect(model.seenUserTexts).toHaveLength(1);
+    const steer = (await store.listMessages(session.id)).find((m) => m.content === "steer-at-limit");
+    expect(steer?.admittedSeq).toBe(1);
+    expect(steer?.promotedSeq).toBeUndefined();
+  });
+
   it("promotion failures are best-effort: a later run re-delivers the input", async () => {
     const store = new TestSessionStore();
     const session = await store.createSession("PI Session 3");

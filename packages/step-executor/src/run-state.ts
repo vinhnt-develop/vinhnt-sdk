@@ -156,6 +156,11 @@ export class RunStateMachine {
     return queue ?? [];
   }
 
+  /** True when inputs are queued but not yet drained into the transcript. */
+  hasPendingInputs(runId: RunId): boolean {
+    return (this.pendingInputs.get(runId)?.length ?? 0) > 0;
+  }
+
   setModelForRun(runId: RunId, model: unknown): void {
     this.modelForRun.set(runId, model);
   }

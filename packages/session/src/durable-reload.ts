@@ -137,8 +137,20 @@ function collapseCompactedMessages(dbMessages: readonly Message[]): Message[] {
 }
 
 /**
+ * Pending steering inputs are persisted with an admission seq but stay
+ * un-promoted until the run loop drains them. `hydratePendingInputs` re-delivers
+ * those rows on the next run, so keeping them in the rebuilt history would
+ * duplicate the same user turn.
+ */
+function isUnpromotedInput(msg: Message): boolean {
+  if (typeof msg.admittedSeq !== "number") return false;
+  return msg.promotedSeq === undefined || msg.promotedSeq < msg.admittedSeq;
+}
+
+/**
  * Load a session's persisted transcript as run-loop-ready {@link ChatMessage}s.
  *
+ * - Drops admitted-but-un-promoted inputs (re-delivered by the kernel instead).
  * - Collapses everything before the last compaction summary marker (RV-15) so
  *   the reloaded context equals the post-compaction conversation.
  * - Optionally keeps only the last `limit` messages (P4.1 historyLimit) —
@@ -162,7 +174,7 @@ export async function loadSessionHistory(
 ): Promise<ChatMessage[]> {
   if (!sessionStore) return [];
   const dbMessages = await sessionStore.listMessages(sessionId);
-  let rows = collapseCompactedMessages(dbMessages);
+  let rows = collapseCompactedMessages(dbMessages.filter((m) => !isUnpromotedInput(m)));
   const limit = options?.limit !== undefined && Number.isFinite(options.limit) && options.limit > 0
     ? Math.floor(options.limit)
     : undefined;

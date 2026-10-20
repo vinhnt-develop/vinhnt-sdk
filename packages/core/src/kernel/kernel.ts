@@ -1262,10 +1262,27 @@ this.stepExecutor = new StepExecutor({
     return this.stateMachine.onStateChange(listener);
   }
 
-  /** Send a user input string to a waiting run (e.g., approval response). */
-  sendInput(runId: RunId, text: string): void {
+  /**
+   * Send a user input string to a waiting run (e.g., approval response).
+   *
+   * Returns `false` when the run is no longer live, so callers can fall back
+   * (e.g. start a fresh run) instead of dropping the text into a finished run.
+   */
+  sendInput(runId: RunId, text: string): boolean {
+    const state = this.stateMachine.getState(runId);
+    if (
+      state === undefined ||
+      !this.stateMachine.isActiveRun(runId) ||
+      this.stateMachine.isAborted(runId) ||
+      state === "completed" ||
+      state === "failed" ||
+      state === "cancelled"
+    ) {
+      return false;
+    }
     this.stateMachine.sendInput(runId, text);
     this.queuePendingEntry(runId, text);
+    return true;
   }
 
   /** Queue an input into the runtime queue and (when a session is attached) start persisting it. */

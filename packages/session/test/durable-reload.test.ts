@@ -222,6 +222,22 @@ describe("loadSessionHistory", () => {
       { role: "tool", content: "tool output", toolCallId: "call-1" },
     ]);
   });
+
+  it("drops admitted-but-un-promoted inputs (the kernel re-delivers them)", async () => {
+    const base = {
+      sessionId: "sess-hist" as Message["sessionId"],
+      createdAt: "2026-10-03T00:00:00.000Z",
+    };
+    const messages: Message[] = [
+      { ...base, id: "m-1" as Message["id"], role: "user", content: "prompt" },
+      { ...base, id: "m-2" as Message["id"], role: "assistant", content: "reply" },
+      { ...base, id: "m-3" as Message["id"], role: "user", content: "pending steer", admittedSeq: 1 },
+      { ...base, id: "m-4" as Message["id"], role: "user", content: "promoted steer", admittedSeq: 2, promotedSeq: 2 },
+    ];
+
+    const history = await loadSessionHistory(storeWith(messages), "sess-hist");
+    expect(history.map((m) => m.content)).toEqual(["prompt", "reply", "promoted steer"]);
+  });
 });
 
 describe("loadSessionHistory — P1.2 tool pairing repair", () => {

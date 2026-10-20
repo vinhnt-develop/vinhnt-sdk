@@ -1393,6 +1393,13 @@ export async function runLoop(
       if (stepResult.completed) {
         finalOutput = stepResult.finalOutput;
         await emitEvt("turn.end", { turn: step, reason: "completed" });
+        // A steer admitted while this step was running has not been drained
+        // yet. Keep the run alive for one more step so the input is answered
+        // in this run instead of leaking into (or being lost before) the next
+        // one. Bounded by runMaxSteps.
+        if (deps.stateMachine.hasPendingInputs(runId) && step + 1 < runMaxSteps) {
+          continue;
+        }
         break;
       }
 
