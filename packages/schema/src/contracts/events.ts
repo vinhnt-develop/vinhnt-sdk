@@ -380,9 +380,10 @@ export interface UiSurfaceActionItem {
 }
 /**
  * A single component inside a generative-UI surface. The set is a closed,
- * client-rendered whitelist (no code is ever evaluated) — consumers drop
- * unknown types. Mirrors the Zod discriminated union in
- * `./schema/run-event.js`.
+ * client-rendered whitelist — consumers drop unknown types. Mirrors the Zod
+ * discriminated union in `./schema/run-event.js`. The `html` escape hatch is
+ * rendered by clients inside a sandboxed iframe; scripts only run when
+ * `allowScripts` is set.
  */
 export type UiSurfaceComponent =
   | { readonly type: "text"; readonly text: string }
@@ -411,7 +412,14 @@ export type UiSurfaceComponent =
     }
   | { readonly type: "badge"; readonly label: string; readonly tone?: UiSurfaceTone }
   | { readonly type: "list"; readonly items: ReadonlyArray<string>; readonly ordered?: boolean }
-  | { readonly type: "actions"; readonly items: ReadonlyArray<UiSurfaceActionItem> };
+  | { readonly type: "actions"; readonly items: ReadonlyArray<UiSurfaceActionItem> }
+  | {
+      readonly type: "html";
+      readonly html: string;
+      readonly title?: string;
+      readonly height?: number;
+      readonly allowScripts?: boolean;
+    };
 /** A named generative-UI surface the agent renders for the user. */
 export interface UiSurface {
   readonly surfaceId: string;

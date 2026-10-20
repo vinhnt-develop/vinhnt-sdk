@@ -63,6 +63,52 @@ describe("createRenderUiTool", () => {
     });
   });
 
+  it("accepts a sandboxed html component", async () => {
+    let captured: UiSurface | undefined;
+    const tool = createRenderUiTool();
+    const result = (await tool.execute(
+      {
+        surfaceId: "widget",
+        components: [
+          {
+            type: "html",
+            html: "<b>hi</b>",
+            title: "Widget",
+            height: 240,
+            allowScripts: true,
+          },
+        ],
+      },
+      { presentSurface: (s: UiSurface) => { captured = s; } } as never,
+    )) as { components: number };
+
+    expect(result.components).toBe(1);
+    expect(captured?.components[0]).toEqual({
+      type: "html",
+      html: "<b>hi</b>",
+      title: "Widget",
+      height: 240,
+      allowScripts: true,
+    });
+  });
+
+  it("drops an html component above the size cap", async () => {
+    const tool = createRenderUiTool();
+    const result = (await tool.execute(
+      {
+        surfaceId: "s1",
+        components: [
+          { type: "text", text: "keep" },
+          { type: "html", html: "x".repeat(120_001) },
+        ],
+      },
+      { presentSurface: () => {} } as never,
+    )) as { components: number; droppedComponents?: number };
+
+    expect(result.components).toBe(1);
+    expect(result.droppedComponents).toBe(1);
+  });
+
   it("drops an actions component with a malformed item", async () => {
     let captured: UiSurface | undefined;
     const tool = createRenderUiTool();

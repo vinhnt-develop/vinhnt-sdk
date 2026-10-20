@@ -604,8 +604,10 @@ export type UiSurfaceActionItem = z.infer<typeof UiSurfaceActionItemSchema>;
 
 /**
  * A single component inside a generative-UI surface — a closed, client-rendered
- * whitelist (no code is ever evaluated). New component types must be added here
- * AND to the approved renderer catalog.
+ * whitelist. New component types must be added here AND to the approved
+ * renderer catalog. The `html` escape hatch is rendered by clients inside a
+ * sandboxed iframe (opaque origin, CSP injected); scripts only run when
+ * `allowScripts` is set.
  */
 export const UiSurfaceComponentSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("text"), text: z.string() }),
@@ -649,6 +651,13 @@ export const UiSurfaceComponentSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("actions"),
     items: z.array(UiSurfaceActionItemSchema),
+  }),
+  z.object({
+    type: z.literal("html"),
+    html: z.string().max(120_000),
+    title: z.string().max(200).optional(),
+    height: z.number().min(80).max(1200).optional(),
+    allowScripts: z.boolean().optional(),
   }),
 ]);
 /** Inferred type of {@link UiSurfaceComponentSchema}. */

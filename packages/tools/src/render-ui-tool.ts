@@ -18,16 +18,20 @@ const COMPONENT_SCHEMA = {
   properties: {
     type: {
       type: "string",
-      enum: ["text", "markdown", "keyValue", "table", "callout", "codeBlock", "progress", "badge", "list", "actions"],
+      enum: ["text", "markdown", "keyValue", "table", "callout", "codeBlock", "progress", "badge", "list", "actions", "html"],
       description:
         "Component kind (from the approved catalog). Use \"actions\" for clickable buttons the user can press " +
-        "to send a choice back to you (each item: {id, label, tone?, value?}).",
+        "to send a choice back to you (each item: {id, label, tone?, value?}). Use \"html\" only for " +
+        "self-contained HTML widgets; it is rendered in a sandboxed iframe.",
     },
     text: { type: "string", description: "Body text (text | callout)." },
     markdown: { type: "string", description: "Markdown source (markdown)." },
     code: { type: "string", description: "Code source (codeBlock)." },
+    html: { type: "string", description: "Self-contained HTML document (html)." },
     language: { type: "string", description: "Language hint (codeBlock)." },
-    title: { type: "string", description: "Optional heading (callout)." },
+    title: { type: "string", description: "Optional heading (callout | html)." },
+    height: { type: "number", description: "Iframe height in px, 80-1200 (html, default 320)." },
+    allowScripts: { type: "boolean", description: "Allow scripts inside the sandboxed iframe (html, default false)." },
     tone: { type: "string", enum: [...TONES], description: "Semantic color (callout | badge)." },
     label: { type: "string", description: "Label text (badge | progress)." },
     value: { type: "number", description: "Current value (progress)." },
@@ -61,7 +65,8 @@ export function createRenderUiTool(options: RenderUiToolOptions = {}) {
       "Pass `components[]` from the approved catalog; each component has a `type` plus its fields. " +
       "Reuse the same `surfaceId` to update a surface in place, or pass `action:\"delete\"` to remove it. " +
       "An `actions` component renders buttons the user can click to send a choice back to you. " +
-      "Use this for structured, scannable output instead of long prose.",
+      "An `html` component renders a self-contained widget in a sandboxed iframe (no network access; " +
+      "scripts off unless `allowScripts:true`). Use this for structured, scannable output instead of long prose.",
     risk: "read",
     input: z.unknown(),
     jsonSchema: {
