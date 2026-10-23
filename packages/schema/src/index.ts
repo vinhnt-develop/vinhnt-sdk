@@ -158,7 +158,7 @@ export type { VntErrorCtx, KernelErrorCode } from "./contracts/index.js";
 /**
  * Core types for runs, sessions, agents, and more.
  */
-export type { RunStatus, RequestContext, Result, Session, Message, MessageTokens, SessionStats, AgentProfile, AgentConfig, AgentPermissions, AgentMode, AgentBehaviourMode, AgentCapabilities, AgentRule, AgentRuleset, MemoryEntry, SkillManifest, SkillDefinition, SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue, ChatMessage, ChatMessageRole, ContentPart, MessageContentPart, CompressionSummary, ApprovalRequest, ConversationCompactor, ModelProvider, PromptAssembly, SessionStore, MessageSeqUpdates, AddMessageOptions, ToolDefinitionLike, ToolCall, ToolCallResult, PermissionRequest, PermissionReply, ApprovalReply, SavedApproval, ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ModelPricing, ModelCapabilities, ModelRegistry, RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore, SessionNode, SessionTreeSnapshot, SessionTreeEvent, TokenLogprob, TopLogprob, Logprobs, ResponseFormat, ResponseFormatJsonSchema, ToolChoice, WireToolChoice, StreamOptions, StreamingToolCallState, JsonSchema, SessionTreeEventType, ApprovalCategory, ApprovalStatus, ApprovalContext, PolicyEffect, SkillMode, PromptTier, AgentStepType, SessionProjection, RunProjection, ProviderCost, TurnSnapshot, LlmFailure, LlmFailureKind } from "./types/index.js";
+export type { RunStatus, RequestContext, SubAgentExecution, Result, Session, Message, MessageTokens, SessionStats, AgentProfile, AgentConfig, AgentPermissions, AgentMode, AgentBehaviourMode, AgentCapabilities, AgentRule, AgentRuleset, MemoryEntry, SkillManifest, SkillDefinition, SkillSource, SkillSourceType, SkillPermission, SkillPermissionValue, ChatMessage, ChatMessageRole, ContentPart, MessageContentPart, CompressionSummary, ApprovalRequest, ConversationCompactor, ModelProvider, PromptAssembly, SessionStore, MessageSeqUpdates, AddMessageOptions, ToolDefinitionLike, ToolCall, ToolCallResult, PermissionRequest, PermissionReply, ApprovalReply, SavedApproval, ModelRequest, ModelResponse, ModelStreamEvent, ModelUsage, ModelPricing, ModelCapabilities, ModelRegistry, RunEventSnapshot, RunEventListener, SessionUpdates, RunEventStore, SessionNode, SessionTreeSnapshot, SessionTreeEvent, TokenLogprob, TopLogprob, Logprobs, ResponseFormat, ResponseFormatJsonSchema, ToolChoice, WireToolChoice, StreamOptions, StreamingToolCallState, JsonSchema, SessionTreeEventType, ApprovalCategory, ApprovalStatus, ApprovalContext, PolicyEffect, SkillMode, PromptTier, AgentStepType, SessionProjection, RunProjection, ProviderCost, TurnSnapshot, LlmFailure, LlmFailureKind } from "./types/index.js";
 
 export { getTextContent, toWireToolChoice } from "./types/index.js";
 export { COMPACTION_SUMMARY_PREFIX } from "./types/index.js";
@@ -209,7 +209,7 @@ export {
  * Contract schemas for validation (Zod schemas used by other packages).
  */
 export {
-  AgentConfigSchema, RequestContextSchema, RunStatusSchema,
+  AgentConfigSchema, RequestContextSchema, SubAgentExecutionSchema, RunStatusSchema,
   PromptAssemblySchema, CompressionSummarySchema,
   AgentProfileSchema, AgentCapabilitiesSchema,
   AgentPermissionsSchema, AgentModeSchema, AgentBehaviourModeSchema,

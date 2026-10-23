@@ -1,5 +1,6 @@
 import type { RunId, TraceId, RequestId } from "./branded.js";
 import type { AgentStepType } from "../types/agent-step.js";
+import type { SubAgentExecution } from "./schema/request-context.js";
 
 // ---------------------------------------------------------------------------
 // Snapshot types (for LLM request/response capture)
@@ -170,7 +171,7 @@ export type AgentEvent =
 // ---------------------------------------------------------------------------
 // Data payloads (reusable by consumers)
 // ---------------------------------------------------------------------------
-export interface RunStartedData { readonly prompt: string; readonly model: string; readonly provider: string; readonly agentName?: string; readonly agentId?: string; readonly parentRunId?: RunId; readonly sessionId?: string }
+export interface RunStartedData { readonly prompt: string; readonly model: string; readonly provider: string; readonly agentName?: string; readonly agentId?: string; readonly parentRunId?: RunId; readonly sessionId?: string; readonly subAgent?: SubAgentExecution }
 export interface StepStartedData { readonly turn: number; readonly step: number }
 export interface TokenStreamedData { readonly content: string; readonly step: number }
 export interface ThinkingStartedData { readonly step: number }
@@ -210,7 +211,7 @@ export interface PermissionRepliedData { readonly requestId: RequestId; readonly
 export interface StepTypeChangedData { readonly stepType: AgentStepType; readonly stepNumber: number; readonly toolName?: string; readonly detail?: string }
 export interface TurnStartedData { readonly turn: number }
 export interface TurnEndedData { readonly turn: number; readonly reason: "completed" | "aborted" | "blocked" | "error" | "max_tokens" | "interrupted" }
-export interface AgentHandoffData { readonly fromAgentId: string; readonly toAgentId: string; readonly reason: string; readonly summary?: string }
+export interface AgentHandoffData { readonly fromAgentId: string; readonly toAgentId: string; readonly reason: string; readonly summary?: string; readonly subAgent?: SubAgentExecution }
 export interface LlmRetryData { readonly attempt: number; readonly delayMs: number; readonly reason: string; readonly provider?: string }
 export interface LlmRetryStartedData { readonly attempt: number }
 export interface LlmFailoverData { readonly fromProvider: string; readonly fromModel: string; readonly toProvider: string; readonly toModel: string; readonly reason: string }

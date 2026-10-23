@@ -22,7 +22,8 @@ import type { ToolDefinition, ToolProvider, ToolRegistry } from "@vinhnt-sdk/too
 import { McpClient } from "./client.js";
 import type { McpConnection } from "./client.js";
 import type { McpServerConfig } from "./types.js";
-import { discoverMcpTools } from "./tool-mapper.js";
+import { discoverMcpTools, searchMcpTools } from "./tool-mapper.js";
+import type { McpToolSearchResult } from "./tool-mapper.js";
 
 /** Configuration for McpToolProvider. */
 export interface McpToolProviderConfig extends McpServerConfig {
@@ -51,6 +52,7 @@ export class McpToolProvider implements ToolProvider {
   private readonly client: McpClient;
   private connection: McpConnection | null = null;
   private _tools: ToolDefinition[] = [];
+  private _catalog: ToolDefinition[] = [];
 
   constructor(config: McpToolProviderConfig) {
     this.config = config;
@@ -70,7 +72,12 @@ export class McpToolProvider implements ToolProvider {
    */
   async connect(): Promise<void> {
     this.connection = await this.client.connect(this.config);
-    this._tools = await discoverMcpTools(this.config.name, this.connection);
+    this._tools = await discoverMcpTools(
+      this.config.name,
+      this.connection,
+      this.config.governance !== undefined ? { governance: this.config.governance } : undefined,
+    );
+    this._catalog = this._tools.filter((tool) => tool.metadata?.synthetic !== true);
   }
 
   /**
@@ -81,10 +88,15 @@ export class McpToolProvider implements ToolProvider {
   }
 
   /**
-   * Get the number of discovered tools.
+   * Get the number of discovered server tools (excludes the synthetic search tool).
    */
   toolCount(): number {
-    return this._tools.length;
+    return this._catalog.length;
+  }
+
+  /** Search the discovered catalog by tool name/description. */
+  search(query: string, limit?: number): McpToolSearchResult[] {
+    return searchMcpTools(this._catalog, query, limit);
   }
 
   register(_registry: ToolRegistry): void {
@@ -93,6 +105,7 @@ export class McpToolProvider implements ToolProvider {
 
   unregister(_registry: ToolRegistry): void {
     this._tools = [];
+    this._catalog = [];
   }
 
   /**
@@ -106,7 +119,12 @@ export class McpToolProvider implements ToolProvider {
     }
 
     try {
-      this._tools = await discoverMcpTools(this.config.name, this.connection);
+      this._tools = await discoverMcpTools(
+        this.config.name,
+        this.connection,
+        this.config.governance !== undefined ? { governance: this.config.governance } : undefined,
+      );
+      this._catalog = this._tools.filter((tool) => tool.metadata?.synthetic !== true);
     } catch {
       // Connection may have dropped — reconnect and re-discover
       await this.close();
@@ -123,6 +141,7 @@ export class McpToolProvider implements ToolProvider {
     } finally {
       this.connection = null;
       this._tools = [];
+      this._catalog = [];
     }
   }
 }

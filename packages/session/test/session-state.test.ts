@@ -65,6 +65,22 @@ describe("InMemorySessionState", () => {
     expect(s2.isRunning).toBe(true);
   });
 
+  it("increments generation on message mutations", () => {
+    const s = new InMemorySessionState();
+    const initial = s.generation;
+    s.pushMessage(msg("user", "one"));
+    const afterPush = s.generation!;
+    s.resetMessages([msg("assistant", "two")]);
+    const afterReset = s.generation!;
+    s.restore(s.snapshot());
+    const afterRestore = s.generation!;
+
+    expect(initial).toBe(0);
+    expect(afterPush).toBeGreaterThan(initial!);
+    expect(afterReset).toBeGreaterThan(afterPush);
+    expect(afterRestore).toBeGreaterThan(afterReset);
+  });
+
   it("snapshot is immutable copy", () => {
     const s = new InMemorySessionState();
     s.pushMessage(msg("user", "original"));

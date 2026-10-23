@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isRunId, isTraceId } from "../branded.js";
-import { RequestContextSchema } from "./request-context.js";
+import { RequestContextSchema, SubAgentExecutionSchema } from "./request-context.js";
 
 /* ── Snapshot sub-schemas ── */
 
@@ -69,6 +69,13 @@ export const RunStartedDataSchema = z.object({
   agentName: z.string().optional(),
   agentId: z.string().optional(),
   sessionId: z.string().optional(),
+  /**
+   * Parent run for a sub-agent run. Top-level runs omit it; durable hosts use
+   * this to persist the Agent execution tree without relying on in-memory state.
+   */
+  parentRunId: z.string().optional(),
+  /** Durable sub-agent contract for tree rendering + budget/allowlist audits. */
+  subAgent: SubAgentExecutionSchema.optional(),
   maxSteps: z.number().optional(),
   ctx: RequestContextSchema.optional(),
 });
@@ -120,6 +127,8 @@ export const ContextCompressedDataSchema = z.object({
   compressedCount: z.number(),
   summary: z.string().optional(),
   removedMessageIds: z.array(z.string()).optional(),
+  /** Whether the pass came from the token threshold or a manual/forced request. */
+  trigger: z.enum(["auto", "manual"]).optional(),
 });
 /** Inferred type of {@link ContextCompressedDataSchema}. */
 export type ContextCompressedData = z.infer<typeof ContextCompressedDataSchema>;
@@ -286,6 +295,8 @@ export const AgentHandoffDataSchema = z.object({
   toAgentId: z.string(),
   reason: z.string(),
   summary: z.string().optional(),
+  /** P1.1: a handoff is the `mode: "handoff"` execution contract. */
+  subAgent: SubAgentExecutionSchema.optional(),
 });
 /** Inferred type of {@link AgentHandoffDataSchema}. */
 export type AgentHandoffData = z.infer<typeof AgentHandoffDataSchema>;
@@ -431,7 +442,24 @@ export const QuestionAnswerSchema = z.object({
 /** Inferred type of {@link QuestionAnswerSchema}. */
 export type QuestionAnswer = z.infer<typeof QuestionAnswerSchema>;
 
-/** Data payload for the `question.replied` durable event. */
+/**
+ * Item-level HITL signal (P2.1) — a run is blocked on a user decision.
+ * This is additive to the durable `question.*`/`plan.*`/`permission.*` events.
+ */
+export const BlockedOnUserDataSchema = z.object({
+  runId: z.string(),
+  /** Corresponding request id (question, plan, approval, elicitation). */
+  requestId: z.string().optional(),
+  /** Session that owns the request. */
+  sessionId: z.string().optional(),
+  toolName: z.string().optional(),
+  reason: z.enum(["approval", "question", "plan", "elicitation"]),
+  expiresAt: z.number().optional(),
+});
+/** Inferred type of {@link BlockedOnUserDataSchema}. */
+export type BlockedOnUserData = z.infer<typeof BlockedOnUserDataSchema>;
+
+/** Zod schema for the `question.replied` event. */
 export const QuestionRepliedDataSchema = z.object({
   requestId: z.string(),
   action: z.enum(["accept", "decline", "cancel"]),
@@ -859,6 +887,11 @@ function eventSchema<T extends z.ZodTypeAny>(dataSchema: T, eventType: z.ZodLite
 }
 
 /* ── Individual event schemas ── */
+
+/** Zod schema for the `blocked_on_user` event (P2.1). */
+export const BlockedOnUserEventSchema = eventSchema(BlockedOnUserDataSchema, z.literal("blocked_on_user"));
+/** Inferred type of {@link BlockedOnUserEventSchema}. */
+export type BlockedOnUserEvent = z.infer<typeof BlockedOnUserEventSchema>;
 
 /** Zod schema for the `run.started` event. */
 export const RunStartedEventSchema = eventSchema(RunStartedDataSchema, z.literal("run.started"));

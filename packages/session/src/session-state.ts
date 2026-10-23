@@ -12,6 +12,12 @@ export interface SessionRuntimeState {
   toolCallCount: number;
   /** Whether the session is currently executing */
   isRunning: boolean;
+  /**
+   * Monotonic mutation counter. Implementations that support it increment this
+   * whenever messages/state are replaced, allowing callers to discard a
+   * compaction result computed against a stale transcript.
+   */
+  readonly generation?: number;
 
   /** Append a message to conversation history */
   pushMessage(msg: ChatMessage): void;

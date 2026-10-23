@@ -192,6 +192,7 @@ export class ModelCaller {
     agentMaxTokens?: number,
     disableTools?: boolean,
     toolChoiceOverride?: ToolChoice,
+    persistResponseEvent = true,
   ): Promise<ModelResponse> {
     const availableTools = disableTools ? [] : this.deps.getAvailableTools(runId);
     // Last/no-tools step: force tool_choice=none so the model cannot emit calls
@@ -390,7 +391,7 @@ export class ModelCaller {
       this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
 
       // Emit llm.response with full response snapshot
-      if (runId) {
+      if (runId && persistResponseEvent) {
         await this.deps.emitEvent({
           id: crypto.randomUUID(), runId, type: "llm.response" as const,
           occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,
@@ -511,7 +512,7 @@ export class ModelCaller {
     this.deps.logger?.info(`[llm] ${modelName}: ${inputTokens} in, ${outputTokens} out, $${cost.toFixed(6)}, ${durationMs}ms${p ? ` ($${p.input}/${p.output} per 1M)` : ""}`);
 
       // Emit llm.response with full response snapshot
-      if (runId) {
+      if (runId && persistResponseEvent) {
         await this.deps.emitEvent({
           id: crypto.randomUUID(), runId, type: "llm.response" as const,
           occurredAt: new Date().toISOString(), sequence: 0, traceId: ctx.traceId,

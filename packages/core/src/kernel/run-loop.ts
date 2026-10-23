@@ -1,5 +1,5 @@
 import type { RequestContext, RunId, AgentConfig, ContentPart, ToolChoice } from "@vinhnt-sdk/schema";
-import { getTextContent, COMPACTION_SUMMARY_PREFIX, approximateTokensFromCharCount, getLogger } from "@vinhnt-sdk/schema";
+import { getTextContent, COMPACTION_SUMMARY_PREFIX, getLogger } from "@vinhnt-sdk/schema";
 import type { ChatMessage, MessageContentPart, ModelProvider, ModelResponse } from "../model.js";
 import type { ContextRegistry } from "../system-context/types.js";
 import type { ConversationCompactor } from "@vinhnt-sdk/session";
@@ -7,7 +7,7 @@ import type { RunEventStore, SessionStore } from "@vinhnt-sdk/session";
 import type { PluginManager } from "../plugin.js";
 import type { SessionRuntimeState } from "@vinhnt-sdk/session";
 import { KernelError } from "@vinhnt-sdk/step-executor";
-import { DEFAULT_CONTEXT_WINDOW, type ModelCaller } from "@vinhnt-sdk/llm";
+import { type ModelCaller } from "@vinhnt-sdk/llm";
 import type { PermissionGate } from "@vinhnt-sdk/step-executor";
 import type { StepExecutor } from "@vinhnt-sdk/step-executor";
 import type { ToolSaga } from "@vinhnt-sdk/tools";
@@ -21,7 +21,7 @@ import type { RecentCall } from "@vinhnt-sdk/guard";
 import type { z } from "zod";
 import type { ResponseFormat } from "@vinhnt-sdk/schema";
 import { zodSchemaToNestedJsonSchema } from "@vinhnt-sdk/tools";
-import { DEFAULT_COMPACTION_THRESHOLD } from "../context/context-budget.js";
+import { compactMessages, type CompactionOutcome } from "./compaction.js";
 import type { TracingConfig, RunTrace, RunTraceStatus } from "./run-tracing.js";
 import { createRunTrace, recordChatSpan, startToolSpans, endToolSpans, finishRunTrace } from "./run-tracing.js";
 
@@ -50,6 +50,20 @@ function validateStructuredOutput(schema: z.ZodTypeAny, output: string): unknown
   return schema.parse(parsed);
 }
 
+/** Data-free transcript row stored when a denied output cannot be sanitized. */
+export const GUARDRAIL_OUTPUT_PLACEHOLDER = "[Output blocked by output guardrail]";
+
+/** Use guardrail-provided sanitized content when available; never fall back to the denied candidate. */
+function sanitizedGuardrailOutput(result: GuardrailResult): string {
+  if (result.modifiedContent === undefined) return "";
+  if (typeof result.modifiedContent === "string") return result.modifiedContent;
+  try {
+    return JSON.stringify(result.modifiedContent) ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export interface RunLoopDeps {
   readonly modelCaller: ModelCaller;
   readonly permissionGate: PermissionGate;
@@ -69,6 +83,8 @@ export interface RunLoopDeps {
   readonly thinkingBudget: number;
   readonly stepTimeout: number;
   readonly compactionThreshold?: number;
+  /** Consume a queued manual compaction request for this run at a step boundary. */
+  readonly consumeForceCompaction?: (runId: RunId) => boolean;
   readonly currentAgent?: AgentConfig;
   readonly termination?: TerminationPolicy;
   /** Input guardrails — run before model calls. */
@@ -241,6 +257,7 @@ async function reconcileSystemContext(
 interface CompactionResult {
   messages: ChatMessage[];
   didCompact: boolean;
+  outcome: CompactionOutcome;
 }
 
 async function maybeCompact(
@@ -250,87 +267,33 @@ async function maybeCompact(
   signal: AbortSignal,
   sessionId: string | undefined,
   emitEvent?: (type: string, data: Record<string, unknown>) => Promise<void>,
+  options?: { readonly force?: boolean; readonly runSessionState?: SessionRuntimeState },
 ): Promise<CompactionResult> {
-  if (!deps.compactor) return { messages, didCompact: false };
-
-  let shouldCompact = true;
-  if (runModel.countTokens) {
-    // Count text AND tool-call args — a write_file arg carries the whole file
-    // body, so ignoring it (old behavior) under-estimates badly and the window
-    // overflows before compaction ever triggers.
-    const estimatedInput = messages.reduce((sum, m) => {
-      let s = runModel.countTokens!(getTextContent(m.content));
-      if (m.toolCalls && m.toolCalls.length > 0) s += runModel.countTokens!(JSON.stringify(m.toolCalls));
-      return sum + s;
-    }, 0);
-    // E5a: context window ≠ 4×max output — fall back to DEFAULT_CONTEXT_WINDOW.
-    const contextWindow = runModel.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
-    // P7.1: unified precedence — contextBudget (single source) > legacy
-    // compactionThreshold dep > default.
-    const ratio =
-      deps.contextBudget?.compactionThreshold ??
-      deps.compactionThreshold ??
-      DEFAULT_COMPACTION_THRESHOLD;
-    const threshold = Math.floor(contextWindow * ratio);
-    shouldCompact = estimatedInput > threshold;
-  } else {
-    // No tokenizer: approximate at 4 chars/token (text + tool-call args)
-    // instead of the old "no countTokens → always compact" behavior.
-    let chars = 0;
-    for (const m of messages) {
-      chars += getTextContent(m.content).length;
-      if (m.toolCalls && m.toolCalls.length > 0) chars += JSON.stringify(m.toolCalls).length;
-    }
-    // E5a: context window ≠ 4×max output — fall back to DEFAULT_CONTEXT_WINDOW.
-    const contextWindow = runModel.contextLimit ?? DEFAULT_CONTEXT_WINDOW;
-    const ratio =
-      deps.contextBudget?.compactionThreshold ??
-      deps.compactionThreshold ??
-      DEFAULT_COMPACTION_THRESHOLD;
-    shouldCompact = approximateTokensFromCharCount(chars) > Math.floor(contextWindow * ratio);
-  }
-
-  if (!shouldCompact) return { messages, didCompact: false };
-
-  // G5 lifecycle: PreCompact fires BEFORE the compactor runs (read-only —
-  // fireHook swallows per-plugin errors, so a bad hook cannot break the run).
-  await deps.pluginManager?.fireHook("onPreCompact", {
-    trigger: "auto",
-    messageCount: messages.length,
+  const result = await compactMessages({
+    messages,
+    runModel,
+    ...(deps.compactor ? { compactor: deps.compactor } : {}),
+    force: options?.force === true,
+    trigger: options?.force === true ? "manual" : "auto",
+    ...(deps.contextBudget ? { contextBudget: deps.contextBudget } : {}),
+    ...(deps.compactionThreshold !== undefined ? { compactionThreshold: deps.compactionThreshold } : {}),
+    ...(deps.pluginManager ? { pluginManager: deps.pluginManager } : {}),
+    signal,
     ...(sessionId !== undefined ? { sessionId } : {}),
+    ...(options?.runSessionState ? { state: options.runSessionState } : {}),
+    addSessionMessage: deps.addSessionMessage,
+    ...(emitEvent
+      ? {
+          emitCompressed: (data) => emitEvent("context.compressed", data as Record<string, unknown>),
+        }
+      : {}),
   });
 
-  const compacted = await deps.compactor.compact(messages, signal);
-  if (compacted.summary.compressedMessageCount < compacted.summary.originalMessageCount) {
-    await emitEvent?.("context.compressed", {
-      originalCount: compacted.summary.originalMessageCount,
-      compressedCount: compacted.summary.compressedMessageCount,
-      ...(compacted.summary.summary ? { summary: compacted.summary.summary } : {}),
-    });
-    await deps.pluginManager?.fireHook("onContextCompressed", {
-      originalCount: compacted.summary.originalMessageCount,
-      compressedCount: compacted.summary.compressedMessageCount,
-    });
-
-    // RV-15 durable compaction: persist the summary as a durable marker so that
-    // a restart / resume rebuilds the compacted context instead of the raw
-    // transcript. Best-effort — a store failure must NOT roll back the run or
-    // the compaction (the in-memory compacted context still applies).
-    if (sessionId) {
-      const summaryText = compacted.summary.summary
-        ? `${COMPACTION_SUMMARY_PREFIX}${compacted.summary.summary}`
-        : `${COMPACTION_SUMMARY_PREFIX}Compressed ${compacted.summary.originalMessageCount} → ${compacted.summary.compressedMessageCount} messages`;
-      try {
-        await deps.addSessionMessage(sessionId, "system", summaryText);
-      } catch (err) {
-        getLogger().warn("[run-loop] Failed to persist compaction summary:", err instanceof Error ? err.message : String(err));
-      }
-    }
-
-    return { messages: [...compacted.messages], didCompact: true };
-  }
-
-  return { messages, didCompact: false };
+  return {
+    messages: result.messages,
+    didCompact: result.outcome.didCompact,
+    outcome: result.outcome,
+  };
 }
 
 async function compactOnOverflow(
@@ -583,6 +546,8 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
         ? "auto"
         : undefined;
 
+    const outputGuardrailsActive = Boolean(deps.outputGuardrails?.length);
+
     chatStartMs = Date.now();
     let response: ModelResponse;
     try {
@@ -592,6 +557,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           deps.currentAgent?.permissions?.maxTokens,
           input.disableTools,
           toolChoiceOverride,
+          !outputGuardrailsActive,
         ), stepTimeoutController.signal);
     } catch (err: unknown) {
       if (stepTimeoutController.signal.aborted && !runAbort.signal.aborted) {
@@ -661,6 +627,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
                 deps.currentAgent?.permissions?.maxTokens,
                 input.disableTools,
                 toolChoiceOverride,
+                !outputGuardrailsActive,
               ), stepTimeoutController.signal);
             break;
           } catch {
@@ -707,6 +674,7 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
               deps.currentAgent?.permissions?.maxTokens,
               input.disableTools,
               toolChoiceOverride,
+              !outputGuardrailsActive,
             ),
             stepTimeoutController.signal,
           );
@@ -764,6 +732,24 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
       });
       if (!guardrailResult.passed) {
         // Output guardrail denied — halt the run
+        // Candidate output is denied: never persist it (or its tool calls).
+        // Keep prior tool/reasoning transcript rows, then store either the
+        // guardrail's sanitized content or a data-free terminal placeholder.
+        const sanitized = sanitizedGuardrailOutput(guardrailResult);
+        try {
+          if (sanitized.trim().length > 0) {
+            await deps.addSessionMessage(sessionId, "assistant", sanitized);
+          } else {
+            await deps.addSessionMessage(sessionId, "system", GUARDRAIL_OUTPUT_PLACEHOLDER);
+          }
+        } catch (persistErr) {
+          getLogger().warn(
+            `[run-loop] failed to persist rejected-output placeholder: ${persistErr instanceof Error ? persistErr.message : String(persistErr)}`,
+          );
+        }
+        // Halt the run. The denied candidate was never persisted as an
+        // `llm.response` event because response events are deferred while
+        // output guardrails are active.
         throw new KernelError("guardrail_denied", `Output guardrail denied: ${guardrailResult.reason ?? "unknown reason"}`);
       }
       // If guardrail modified content, use the modified version
@@ -772,6 +758,28 @@ async function processStep(deps: RunLoopDeps, input: StepInput): Promise<StepOut
           ? guardrailResult.modifiedContent
           : JSON.stringify(guardrailResult.modifiedContent);
       }
+      // ModelCaller deferred `llm.response` so denied content could not leak
+      // into run events. Persist the safe (possibly modified) response now.
+      await input.emitEvent?.({
+        id: crypto.randomUUID(),
+        runId,
+        type: "llm.response",
+        occurredAt: new Date().toISOString(),
+        traceId: ctx.traceId,
+        data: {
+          step: input.step,
+          content: finalContent,
+          ...(response.toolCalls?.length ? { toolCalls: response.toolCalls } : {}),
+          ...(response.finishReason ? { finishReason: response.finishReason } : {}),
+          usage: {
+            inputTokens: response.usage?.promptTokens ?? 0,
+            outputTokens: response.usage?.completionTokens ?? 0,
+          },
+          durationMs: Math.max(0, Date.now() - chatStartMs),
+          model: response.model ?? runModel.model,
+          provider: response.provider ?? runModel.provider,
+        },
+      });
     }
 
     // Validate structured output if outputType is Zod schema
@@ -1199,6 +1207,14 @@ export async function runLoop(
         ...(startedModel ? { model: startedModel } : {}),
         ...(startedAgentName ? { agentName: startedAgentName } : {}),
         ...(startedAgentId ? { agentId: startedAgentId } : {}),
+        // First-class lineage for sub-agent runs. The event payload already
+        // supports parentRunId; without it the host can only infer the tree
+        // from ephemeral kernel state.
+        ...(ctx.parentRunId ? { parentRunId: ctx.parentRunId } : {}),
+        // P1.1: the sub-agent execution contract travels with the run so hosts
+        // can persist mode/allowlist/budget and render the tree without
+        // re-deriving it from ephemeral kernel state.
+        ...(ctx.subAgent ? { subAgent: ctx.subAgent } : {}),
         // G4.1: durable sessionId on the run log so event replay can group a
         // session's runs without an O(runs) snapshot lookup (legacy runs fall
         // back to snapshot.state.sessionId).
@@ -1296,6 +1312,7 @@ export async function runLoop(
         }
       }
 
+      const forceCompaction = deps.consumeForceCompaction?.(runId) ?? false;
       const compactResult = await maybeCompact(
         messages,
         {
@@ -1304,6 +1321,10 @@ export async function runLoop(
         },
         deps, runAbort.signal, sessionId,
         (type, data) => emitEvt(type, data),
+        {
+          force: forceCompaction,
+          ...(runSessionState !== undefined ? { runSessionState } : {}),
+        },
       );
       if (compactResult.didCompact) {
         messages = compactResult.messages;

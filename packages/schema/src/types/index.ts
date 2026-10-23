@@ -22,7 +22,7 @@ export { KNOWN_SKILL_MODES } from "./skill.js";
 
 export type { PermissionRequest, PermissionReply, SavedApproval, ApprovalReply } from "./permission.js";
 
-export type { RequestContext } from "./request-context.js";
+export type { RequestContext, SubAgentExecution } from "./request-context.js";
 
 export type { Result } from "./result.js";
 export { ok, fail } from "./result.js";

@@ -12,7 +12,7 @@ import { WriteApprovalQueue } from "./approval.js";
 import { ContextCompressor } from "./compressor.js";
 import { InMemoryMemoryStore } from "./memory.js";
 import type { MemoryEntry } from "@vinhnt-sdk/schema";
-import type { MemoryStore } from "./types.js";
+import type { MemoryScopeFilter, MemoryStore } from "./types.js";
 
 /** Options for {@link LearningEngine}: runtime flags and session scope. */
 export interface LearningEngineOptions {
@@ -23,6 +23,8 @@ export interface LearningEngineOptions {
    * Inject a persistent implementation (e.g., PostgresMemoryStore) for production.
    */
   readonly store?: MemoryStore;
+  /** Visibility scope for learned facts, profile and working memory. */
+  readonly scope?: MemoryScopeFilter;
 }
 
 /**
@@ -45,13 +47,14 @@ export class LearningEngine {
     this.boundedMem = new BoundedMemory(this.store, {
       profileLimit: options.config.userCharLimit,
       workingLimit: options.config.memoryCharLimit,
-    });
+    }, options.scope);
     this.approvalQueue = new WriteApprovalQueue();
     this.review = new BackgroundReview(
       options.sessionId,
       this.boundedMem,
       this.store,
       this.approvalQueue,
+      options.scope,
     );
     this.compressor = new ContextCompressor();
   }

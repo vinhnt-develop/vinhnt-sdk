@@ -5,6 +5,7 @@ import type { SessionRuntimeState, SessionRuntimeSnapshot } from "./session-stat
 export class InMemorySessionState implements SessionRuntimeState {
   private _messages: ChatMessage[] = [];
   private _context = new Map<string, unknown>();
+  private _generation = 0;
   step = 0;
   toolCallCount = 0;
   isRunning = false;
@@ -13,16 +14,22 @@ export class InMemorySessionState implements SessionRuntimeState {
     return this._messages;
   }
 
+  get generation(): number {
+    return this._generation;
+  }
+
   get context(): ReadonlyMap<string, unknown> {
     return this._context;
   }
 
   pushMessage(msg: ChatMessage): void {
     this._messages.push(msg);
+    this._generation++;
   }
 
   resetMessages(msgs: readonly ChatMessage[]): void {
     this._messages = [...msgs];
+    this._generation++;
   }
 
   setContext(key: string, value: unknown): void {
@@ -49,6 +56,7 @@ export class InMemorySessionState implements SessionRuntimeState {
     this.step = snapshot.step;
     this.toolCallCount = snapshot.toolCallCount;
     this.isRunning = snapshot.isRunning;
+    this._generation++;
   }
 
   fork(): SessionRuntimeState {

@@ -7,6 +7,7 @@
 // === Kernel (core runtime) ===
 
 export { AgentKernel, KernelError } from "./kernel/kernel.js";
+export type { RunCompactionOptions, RunCompactionResult } from "./kernel/kernel.js";
 export { canTransitionRun, terminalRunStatuses } from "./kernel/state-machine.js";
 export { RunStateMachine } from "@vinhnt-sdk/step-executor";
 export type {
@@ -236,10 +237,11 @@ export { createSkillGuidanceSource } from "./system-context/sources/skill-guidan
 
 export { createSpawnAgentTool } from "./agent/spawn-agent-tool.js";
 export { createDelegateTool } from "./agent/delegate-tool.js";
+export { createDelegateBatchTool } from "./agent/delegate-batch-tool.js";
 export { createCreateAgentTool } from "./agent/create-agent-tool.js";
 export { createListAgentsTool } from "./agent/list-agents-tool.js";
 
 // === Knowledge ===
 
 export { BoundedMemory, ContextCompressor } from "@vinhnt-sdk/knowledge";
-export type { MemoryItem, MemoryStore } from "@vinhnt-sdk/knowledge";
+export type { MemoryItem, MemoryScope, MemoryScopeFilter, MemoryStore } from "@vinhnt-sdk/knowledge";

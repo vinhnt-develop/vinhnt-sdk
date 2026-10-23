@@ -158,7 +158,10 @@ describe("createDelegateTool", () => {
     const tool = createDelegateTool(kernel as unknown as AgentKernel);
     const result = await tool.execute({ agentId: "helper", prompt: "do task" }, makeToolCtx({ sessionId: "s1" }));
     expect(result).toBe("task result");
-    expect(kernel.runAgent).toHaveBeenCalledWith("helper", "do task", expect.any(Object), "s1", "", expect.any(AbortSignal));
+    expect(kernel.runAgent).toHaveBeenCalledWith(
+      "helper", "do task", expect.any(Object), "s1", "", expect.any(AbortSignal),
+      { mode: "tool", toolName: "delegate", transcript: "isolated" },
+    );
   });
 
   it("propagates parent context (traceId/actorId) to the child run", async () => {
@@ -168,7 +171,10 @@ describe("createDelegateTool", () => {
       { agentId: "helper", prompt: "do task" },
       makeToolCtx({ sessionId: "s1", parentContext: parentCtx }),
     );
-    expect(kernel.runAgent).toHaveBeenCalledWith("helper", "do task", parentCtx, "s1", "", expect.any(AbortSignal));
+    expect(kernel.runAgent).toHaveBeenCalledWith(
+      "helper", "do task", parentCtx, "s1", "", expect.any(AbortSignal),
+      { mode: "tool", toolName: "delegate", transcript: "isolated" },
+    );
   });
 
   it("falls back to a synthetic context when no parent context is available", async () => {
@@ -184,14 +190,20 @@ describe("createDelegateTool", () => {
     const kernel = mockKernel();
     const tool = createDelegateTool(kernel as unknown as AgentKernel);
     await tool.execute({ agent_id: "snake", prompt: "work" } as never, makeToolCtx());
-    expect(kernel.runAgent).toHaveBeenCalledWith("snake", "work", expect.any(Object), undefined, "", expect.any(AbortSignal));
+    expect(kernel.runAgent).toHaveBeenCalledWith(
+      "snake", "work", expect.any(Object), undefined, "", expect.any(AbortSignal),
+      { mode: "tool", toolName: "delegate", transcript: "isolated" },
+    );
   });
 
   it("accepts task alias for prompt", async () => {
     const kernel = mockKernel();
     const tool = createDelegateTool(kernel as unknown as AgentKernel);
     await tool.execute({ agentId: "a", task: "do it" } as never, makeToolCtx());
-    expect(kernel.runAgent).toHaveBeenCalledWith("a", "do it", expect.any(Object), undefined, "", expect.any(AbortSignal));
+    expect(kernel.runAgent).toHaveBeenCalledWith(
+      "a", "do it", expect.any(Object), undefined, "", expect.any(AbortSignal),
+      { mode: "tool", toolName: "delegate", transcript: "isolated" },
+    );
   });
 
   it("throws when agent id is missing", async () => {
@@ -230,6 +242,7 @@ describe("createDelegateBatchTool", () => {
       undefined,
       "",
       expect.any(AbortSignal),
+      { mode: "tool", toolName: "delegate_batch", transcript: "isolated" },
     );
   });
 
@@ -252,6 +265,7 @@ describe("createDelegateBatchTool", () => {
       "s1",
       "",
       expect.any(AbortSignal),
+      { mode: "tool", toolName: "delegate_batch", transcript: "isolated" },
     );
   });
 });

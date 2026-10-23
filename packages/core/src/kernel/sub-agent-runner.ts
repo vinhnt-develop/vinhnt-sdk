@@ -1,4 +1,4 @@
-import type { RequestContext, RequestId, AgentId, AgentConfig, KnownRunEvent, RunId } from "@vinhnt-sdk/schema";
+import type { RequestContext, RequestId, AgentId, AgentConfig, KnownRunEvent, RunId, SubAgentExecution } from "@vinhnt-sdk/schema";
 import type { SessionRuntimeState } from "@vinhnt-sdk/session";
 import type { RunEventStore } from "@vinhnt-sdk/session";
 import type { AgentRegistry } from "../agent/agent-registry.js";
@@ -8,6 +8,13 @@ import { createSubAgent } from "../agent/agent-factory.js";
 import type { SubAgentParams } from "../agent/agent-factory.js";
 import type { RunHandle } from "./kernel-types.js";
 import type { RunContext } from "@vinhnt-sdk/step-executor";
+
+/** Caller-supplied execution metadata for a child run (P1.1). */
+export interface SubAgentExecutionOptions {
+  mode?: "tool" | "handoff";
+  toolName?: string;
+  transcript?: "isolated" | "shared";
+}
 
 export interface SubAgentRunnerDeps {
   agentRegistry: AgentRegistry;
@@ -67,6 +74,34 @@ function topActiveRun(deps: SubAgentRunnerDeps): RunId | undefined {
   return top !== undefined && deps.stateMachine.isActiveRun(top) ? top : undefined;
 }
 
+/**
+ * Build the durable contract for one child run. The allowlist is the child's
+ * own tool ceiling; budget values are informational for hosts and are also
+ * enforced independently by the permission gate / run-loop.
+ */
+export function buildSubAgentExecution(
+  agent: AgentConfig,
+  parentAgent: AgentConfig | undefined,
+  maxDepth: number,
+  options?: SubAgentExecutionOptions,
+): SubAgentExecution {
+  const allowlist = agent.permissions?.allowedTools ?? agent.capabilities?.tools;
+  const deniedTools = agent.permissions?.deniedTools;
+  return {
+    mode: options?.mode ?? "tool",
+    ...(parentAgent ? { parentAgentId: parentAgent.id } : {}),
+    ...(options?.toolName ? { toolName: options.toolName } : {}),
+    ...(allowlist ? { allowlist: [...allowlist] } : {}),
+    ...(deniedTools && deniedTools.length > 0 ? { deniedTools: [...deniedTools] } : {}),
+    budget: {
+      ...(agent.permissions?.maxSteps !== undefined ? { maxSteps: agent.permissions.maxSteps } : {}),
+      ...(agent.permissions?.maxTokens !== undefined ? { maxTokens: agent.permissions.maxTokens } : {}),
+      maxDepth,
+    },
+    transcript: options?.transcript ?? "isolated",
+  };
+}
+
 export async function runAgent(
   deps: SubAgentRunnerDeps,
   agentId: AgentId,
@@ -75,6 +110,7 @@ export async function runAgent(
   sessionId?: string,
   parentRunId?: RunId,
   signal?: AbortSignal,
+  execution?: SubAgentExecutionOptions,
 ): Promise<string> {
   const resolvedParentRunId = parentRunId ?? topActiveRun(deps);
   const rc = resolvedParentRunId ? deps.runContextFor?.(resolvedParentRunId) : undefined;
@@ -108,9 +144,11 @@ export async function runAgent(
       deps.agentChainRef.value.add(agentId);
     }
 
-    const childCtx: RequestContext = resolvedParentRunId
-      ? { ...ctx, parentRunId: resolvedParentRunId }
-      : ctx;
+    const childCtx: RequestContext = {
+      ...ctx,
+      ...(resolvedParentRunId ? { parentRunId: resolvedParentRunId } : {}),
+      subAgent: buildSubAgentExecution(agent, currentAgent, deps.maxSubAgentDepth, execution),
+    };
 
     const childSession = forkChildSession(deps, resolvedParentRunId);
     const handle = deps.runFn(prompt, childCtx, sessionId, agent, childSession);
@@ -151,6 +189,7 @@ export async function runAgentsParallel(
   sessionId?: string,
   parentRunId?: RunId,
   signal?: AbortSignal,
+  execution?: SubAgentExecutionOptions,
 ): Promise<string> {
   const resolvedParentRunId = parentRunId ?? topActiveRun(deps);
   const rc = resolvedParentRunId ? deps.runContextFor?.(resolvedParentRunId) : undefined;
@@ -191,6 +230,7 @@ export async function runAgentsParallel(
         const childCtxForAgent: RequestContext = {
           ...childCtx,
           requestId: crypto.randomUUID() as RequestId,
+          subAgent: buildSubAgentExecution(agent, currentAgent, deps.maxSubAgentDepth, execution),
         };
 
         // Each task announces its agent for the child run's duration; the

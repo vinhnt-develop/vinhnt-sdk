@@ -1,4 +1,4 @@
-import type { MemoryStore } from "./types.js";
+import type { MemoryScopeFilter, MemoryStore } from "./types.js";
 import { SessionMemory } from "./memory.js";
 import type { WriteApprovalQueue } from "./approval.js";
 import type { BoundedMemory } from "./memory-bounded.js";
@@ -24,8 +24,9 @@ export class BackgroundReview {
     boundedMem: BoundedMemory,
     store?: MemoryStore,
     approvalQueue?: WriteApprovalQueue,
+    scope?: MemoryScopeFilter,
   ) {
-    this.sessionMem = new SessionMemory(sessionId, store);
+    this.sessionMem = new SessionMemory(sessionId, store, scope);
     this.boundedMem = boundedMem;
     this.approvalQueue = approvalQueue;
   }

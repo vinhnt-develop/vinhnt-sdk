@@ -55,6 +55,7 @@ export function createDelegateBatchTool(kernel: AgentKernel) {
         ctx?.sessionId || undefined,
         ctx?.runId as RunId | undefined,
         ctx?.signal,
+        { mode: "tool", toolName: "delegate_batch", transcript: "isolated" },
       );
     },
   }).toDefinition();

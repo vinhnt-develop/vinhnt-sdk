@@ -1,7 +1,8 @@
 export {
   RequestContextSchema,
+  SubAgentExecutionSchema,
 } from "./request-context.js";
-export type { RequestContext } from "./request-context.js";
+export type { RequestContext, SubAgentExecution } from "./request-context.js";
 
 export {
   LlmSnapshotSelectedToolSchema,

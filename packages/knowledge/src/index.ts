@@ -6,7 +6,7 @@
 // === Memory system ===
 export { InMemoryMemoryStore, SessionMemory } from "./memory.js";
 export { BoundedMemory } from "./memory-bounded.js";
-export type { MemoryItem, MemoryStore, MemoryTier } from "./types.js";
+export type { MemoryItem, MemoryScope, MemoryScopeFilter, MemoryStore, MemoryTier } from "./types.js";
 
 // === Token utilities ===
 export { approximateTokens } from "./token-utils.js";

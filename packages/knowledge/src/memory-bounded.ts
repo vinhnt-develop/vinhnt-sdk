@@ -1,5 +1,5 @@
 import type { MemoryEntry } from "@vinhnt-sdk/schema";
-import type { MemoryStore } from "./types.js";
+import type { MemoryScope, MemoryScopeFilter, MemoryStore } from "./types.js";
 import { InMemoryMemoryStore } from "./memory.js";
 
 /** Character limits applied to the profile and working memory sections. */
@@ -24,10 +24,18 @@ export class BoundedMemory {
   private working = "";
   private store: MemoryStore;
   private limits: BoundedMemoryLimits;
+  private scope: MemoryScopeFilter | undefined;
 
-  constructor(store?: MemoryStore, limits?: Partial<BoundedMemoryLimits>) {
+  constructor(store?: MemoryStore, limits?: Partial<BoundedMemoryLimits>, scope?: MemoryScopeFilter) {
     this.store = store ?? new InMemoryMemoryStore();
     this.limits = { ...DEFAULT_LIMITS, ...limits };
+    this.scope = scope;
+  }
+
+  private scopedFields(): { scope?: MemoryScope; userId?: string; appId?: string } {
+    if (this.scope?.userId !== undefined) return { scope: "user", userId: this.scope.userId };
+    if (this.scope?.appId !== undefined) return { scope: "app", appId: this.scope.appId };
+    return {};
   }
 
   async setProfile(value: string): Promise<MemoryEntry> {
@@ -38,6 +46,7 @@ export class BoundedMemory {
       sessionId: "_global",
       tier: "long-term",
       tags: ["profile", "bounded"],
+      ...this.scopedFields(),
     });
     return { key: "_profile", value: this.profile, tier: "long-term", charLimit: this.limits.profileLimit };
   }
@@ -56,6 +65,7 @@ export class BoundedMemory {
       sessionId: "_global",
       tier: "working",
       tags: ["working", "bounded"],
+      ...this.scopedFields(),
     });
     return { key, value, tier: "volatile", charLimit: this.limits.workingLimit };
   }

@@ -32,6 +32,31 @@ const result = await conn.callTool("get_weather", { city: "Hanoi" });
 await conn.close();
 ```
 
+## Governance
+
+Per-server tool and output policy is opt-in through `McpServerConfig.governance`:
+
+```typescript
+const conn = await client.connect({
+  name: "github",
+  transport: "stdio",
+  command: "npx",
+  args: ["-y", "@modelcontextprotocol/server-github"],
+  governance: {
+    allowedTools: ["search_repositories", "get_file_contents"],
+    deniedTools: ["delete_repository"],
+    maxOutputBytes: 64 * 1024, // default; 0 disables the cap
+    spillDir: "/tmp/mcp-spill", // optional; defaults to the OS temp dir
+    searchThreshold: 50, // add mcp__<server>__search_tools above this size
+  },
+});
+```
+
+Oversized text results are truncated for the model and the full output is written
+to `spillDir`; the returned text includes the spill path. `filterMcpTools`,
+`searchMcpTools`, `capMcpOutput`, and `createMcpSearchTool` are exported for
+custom providers.
+
 ## What's new in MCP 2026-07-28
 
 - **Stateless by default** — no session tracking

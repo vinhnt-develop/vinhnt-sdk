@@ -17,9 +17,34 @@ export type { McpConnection } from "./client.js";
 export { McpToolProvider } from "./mcp-provider.js";
 export type { McpToolProviderConfig } from "./mcp-provider.js";
 
-export { mapMcpTool, mapToolDefinitionToMcp, discoverMcpTools, mcpDomain, mcpToolId } from "./tool-mapper.js";
+export {
+  mapMcpTool,
+  mapToolDefinitionToMcp,
+  discoverMcpTools,
+  filterMcpTools,
+  searchMcpTools,
+  createMcpSearchTool,
+  capMcpOutput,
+  mcpDomain,
+  mcpToolId,
+  DEFAULT_MCP_MAX_OUTPUT_BYTES,
+  DEFAULT_MCP_SEARCH_LIMIT,
+} from "./tool-mapper.js";
+export type {
+  McpOutputPolicy,
+  DiscoverMcpToolsOptions,
+  McpToolSearchResult,
+} from "./tool-mapper.js";
 
-export type { McpServerConfig, McpTool, McpResource, McpTransportType, McpTransport, CallToolResult } from "./types.js";
+export type {
+  McpServerConfig,
+  McpGovernanceConfig,
+  McpTool,
+  McpResource,
+  McpTransportType,
+  McpTransport,
+  CallToolResult,
+} from "./types.js";
 
 export { McpServer, MCP_DEFAULT_PROTOCOL_VERSION } from "./server/mcp-server.js";
 export type { McpServerOptions, McpToolExecutor } from "./server/mcp-server.js";

@@ -79,6 +79,26 @@ export interface McpTransport {
 
 // ── MCP Server Config ──
 
+/**
+ * Per-server governance policy.
+ *
+ * - `allowedTools`: when present, only these raw MCP tool names are exposed.
+ *   An empty array exposes no tools.
+ * - `deniedTools`: raw MCP tool names removed after the allowlist.
+ * - `maxOutputBytes`: text output cap before spilling the full result to disk.
+ *   Defaults to 64 KiB; set `0` to disable.
+ * - `spillDir`: directory for spilled output (default: OS temp dir).
+ * - `searchThreshold`: when the filtered catalog reaches this size, expose a
+ *   synthetic `mcp__<server>__search_tools` tool for catalog discovery.
+ */
+export interface McpGovernanceConfig {
+  readonly allowedTools?: readonly string[];
+  readonly deniedTools?: readonly string[];
+  readonly maxOutputBytes?: number;
+  readonly spillDir?: string;
+  readonly searchThreshold?: number;
+}
+
 export interface McpServerConfig {
   readonly name: string;
   readonly transport: "stdio" | "sse" | "streamable-http";
@@ -91,4 +111,6 @@ export interface McpServerConfig {
   readonly headers?: Record<string, string>;
   readonly timeoutMs?: number;
   readonly metadata?: Record<string, unknown>;
+  /** Optional tool/output governance for this server. */
+  readonly governance?: McpGovernanceConfig;
 }

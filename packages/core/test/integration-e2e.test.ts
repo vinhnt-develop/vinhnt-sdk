@@ -113,8 +113,13 @@ describe("Integration E2E", () => {
     const handle = kernel.run("parent prompt", testCtx);
     await handle.completed;
 
-    const childOutput = await kernel.runAgent(child.id, "child task", testCtx);
+    const childOutput = await kernel.runAgent(child.id, "child task", testCtx, undefined, handle.runId);
     expect(childOutput).toBeTruthy();
+
+    const childRunId = (await store.listRunIds()).find((id) => id !== handle.runId);
+    expect(childRunId).toBeDefined();
+    const childStarted = (await store.list(childRunId!)).find((event) => event.type === "run.started");
+    expect((childStarted?.data as { parentRunId?: string } | undefined)?.parentRunId).toBe(handle.runId);
   });
 
   it("validates trace propagation through engine", async () => {

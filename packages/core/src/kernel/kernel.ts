@@ -54,6 +54,7 @@ import { KernelError } from "@vinhnt-sdk/step-executor";
 import type { KernelErrorCode } from "@vinhnt-sdk/step-executor";
 import { runLoop as executeRunLoop } from "./run-loop.js";
 import type { RunLoopDeps, RunLoopResult } from "./run-loop.js";
+import { compactMessages, type CompactionOutcome } from "./compaction.js";
 import { HandoffTracker } from "./handoff.js";
 import { LifecycleManager, type LifecycleResource } from "./lifecycle-manager.js";
 import {
@@ -70,6 +71,7 @@ import {
   runAgentsParallel as runSubAgentsParallel,
   createSubAgentAndRegister,
   type SubAgentRunnerDeps,
+  type SubAgentExecutionOptions,
 } from "./sub-agent-runner.js";
 import type { AgentKernelConfig, RunHandle, AgentRunHandle, AgentRunResult } from "./kernel-types.js";
 import { normalizeConfig } from "./kernel-types.js";
@@ -81,6 +83,26 @@ export { KernelError } from "@vinhnt-sdk/step-executor";
 interface PendingInputEntry {
   text: string;
   persisted?: Promise<{ sessionId: string; messageId: string; admittedSeq: number }>;
+}
+
+/** Options for {@link AgentKernel.runCompaction}. */
+export interface RunCompactionOptions {
+  /** Compact this active run's state; omit to compact the idle kernel state. */
+  readonly runId?: RunId;
+  /** Session id used for the durable summary marker (idle compaction). */
+  readonly sessionId?: string;
+  /** Bypass the token threshold. Default false. */
+  readonly force?: boolean;
+  /** Abort signal for direct/idle compaction. */
+  readonly signal?: AbortSignal;
+}
+
+/** Result of a manual/idle compaction request. */
+export interface RunCompactionResult {
+  readonly status: "queued" | "compacted" | "skipped" | "stale" | "no_compactor" | "no_state";
+  readonly reason?: CompactionOutcome["reason"];
+  readonly originalCount?: number;
+  readonly compressedCount?: number;
 }
 
 /**
@@ -139,6 +161,8 @@ export class AgentKernel {
   /** P1-5: always-omit globs for the model-facing tools[] snapshot. */
   private hideFromModel: readonly string[] | undefined;
   private compactionThreshold: number | undefined;
+  /** Manual compaction requests are consumed by the run loop at a step boundary. */
+  private readonly compactionRequests = new Map<RunId, boolean>();
   private readonly termination: TerminationPolicy | undefined;
   private circuitBreaker: CircuitBreaker;
   private readonly inputGuardrails: readonly import("@vinhnt-sdk/guardrails").Guardrail[];
@@ -684,9 +708,9 @@ this.stepExecutor = new StepExecutor({
   }
 
   /** Delegate a prompt to a named sub-agent. Returns the agent's response text. */
-  async runAgent(agentId: AgentId, prompt: string, ctx: RequestContext, sessionId?: string, parentRunId?: RunId, signal?: AbortSignal): Promise<string> {
+  async runAgent(agentId: AgentId, prompt: string, ctx: RequestContext, sessionId?: string, parentRunId?: RunId, signal?: AbortSignal, execution?: SubAgentExecutionOptions): Promise<string> {
     if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
-    return runSubAgent(this.subAgentDeps, agentId, prompt, ctx, sessionId, parentRunId, signal);
+    return runSubAgent(this.subAgentDeps, agentId, prompt, ctx, sessionId, parentRunId, signal, execution);
   }
 
   /** Build the system head (agent identity + configured system prompt) for a run. */
@@ -749,6 +773,7 @@ this.stepExecutor = new StepExecutor({
         .finally(() => {
           this.stateMachine.exitRun(runId);
           this.runSessionStates.delete(runId);
+          this.compactionRequests.delete(runId);
         });
 
       return {
@@ -854,6 +879,7 @@ this.stepExecutor = new StepExecutor({
         .finally(() => {
           this.stateMachine.exitRun(runId);
           this.runSessionStates.delete(runId);
+          this.compactionRequests.delete(runId);
         });
 
       return {
@@ -880,6 +906,80 @@ this.stepExecutor = new StepExecutor({
    */
   async endSession(sessionId: string): Promise<void> {
     await this.pluginManager?.fireHook("onSessionEnd", { sessionId });
+  }
+
+  /**
+   * Force or threshold-check a compaction pass.
+   *
+   * For an active `runId` the request is queued and consumed by the run loop at
+   * the next step boundary — never applied mid-stream, so a later step cannot be
+   * silently rewritten while the current response is still being assembled.
+   * With no active run the idle kernel state is compacted directly.
+   *
+   * The compactor result is accepted only if the state generation did not
+   * change while compaction was running; otherwise it is reported as `stale`.
+   */
+  async runCompaction(options: RunCompactionOptions = {}): Promise<RunCompactionResult> {
+    const force = options.force === true;
+
+    if (options.runId !== undefined) {
+      if (!this.runSessionStates.has(options.runId)) {
+        return { status: "no_state" };
+      }
+      if (!this.compactor) {
+        return { status: "no_compactor" };
+      }
+      const pendingForce = this.compactionRequests.get(options.runId) ?? false;
+      this.compactionRequests.set(options.runId, pendingForce || force);
+      return { status: "queued" };
+    }
+
+    // Without a run id, never touch a state that an active run might rewrite.
+    if (this.runSessionStates.size > 0) {
+      return { status: "skipped", reason: "active_run" };
+    }
+
+    const state = this.sessionState;
+    if (!state) return { status: "no_state" };
+    if (!this.compactor) return { status: "no_compactor" };
+
+    const result = await compactMessages({
+      messages: state.messages,
+      runModel: this.modelCaller.getDefaultModel(),
+      compactor: this.compactor,
+      force,
+      trigger: force ? "manual" : "auto",
+      ...(this.contextBudget ? { contextBudget: this.contextBudget } : {}),
+      ...(this.compactionThreshold !== undefined ? { compactionThreshold: this.compactionThreshold } : {}),
+      ...(this.pluginManager ? { pluginManager: this.pluginManager } : {}),
+      signal: options.signal ?? new AbortController().signal,
+      ...(options.sessionId !== undefined ? { sessionId: options.sessionId } : {}),
+      state,
+      addSessionMessage: (sid, role, content, extra) =>
+        this.addSessionMessage(sid, role, content, extra as SessionMessageExtra | undefined),
+    });
+
+    if (result.outcome.didCompact) {
+      state.resetMessages(result.messages);
+      return {
+        status: "compacted",
+        originalCount: result.outcome.originalCount,
+        compressedCount: result.outcome.compressedCount,
+      };
+    }
+
+    if (result.outcome.reason === "stale_generation") {
+      return { status: "stale", reason: result.outcome.reason };
+    }
+    if (result.outcome.reason === "no_compactor") {
+      return { status: "no_compactor", reason: result.outcome.reason };
+    }
+    return {
+      status: "skipped",
+      ...(result.outcome.reason !== undefined ? { reason: result.outcome.reason } : {}),
+      originalCount: result.outcome.originalCount,
+      compressedCount: result.outcome.compressedCount,
+    };
   }
 
   /**
@@ -1044,6 +1144,7 @@ this.stepExecutor = new StepExecutor({
       } finally {
         this.stateMachine.exitRun(runId);
         this.runSessionStates.delete(runId);
+        this.compactionRequests.delete(runId);
       }
     })();
 
@@ -1126,9 +1227,10 @@ this.stepExecutor = new StepExecutor({
     sessionId?: string,
     parentRunId?: RunId,
     signal?: AbortSignal,
+    execution?: SubAgentExecutionOptions,
   ): Promise<string> {
     if (!this.agentRegistry) throw new KernelError("internal_error", "No agent registry configured");
-    return runSubAgentsParallel(this.subAgentDeps, tasks, ctx, sessionId, parentRunId, signal);
+    return runSubAgentsParallel(this.subAgentDeps, tasks, ctx, sessionId, parentRunId, signal, execution);
   }
 
   /** Start a run with error-safe wrapper — returns `{ ok, value }` or `{ ok: false, error }`. */
@@ -1451,6 +1553,12 @@ this.stepExecutor = new StepExecutor({
       // Field stays `number | undefined` for the updateConfig path; the
       // constructor resolves the default, so this spread always fires.
       ...(this.compactionThreshold !== undefined ? { compactionThreshold: this.compactionThreshold } : {}),
+      consumeForceCompaction: (id) => {
+        const requested = this.compactionRequests.get(id);
+        if (requested === undefined) return false;
+        this.compactionRequests.delete(id);
+        return requested;
+      },
       ...(this.termination ? { termination: this.termination } : {}),
       ...(judgeModel ? { judgeModel } : {}),
       ...(currentAgent ? { currentAgent } : {}),
@@ -1531,6 +1639,8 @@ this.stepExecutor = new StepExecutor({
         const { targetAgent, fromAgentId } = guard;
 
         // Guard passed — announce the swap (only now is the handoff real).
+        const handoffAllowlist = targetAgent.permissions?.allowedTools ?? targetAgent.capabilities?.tools;
+        const handoffDenied = targetAgent.permissions?.deniedTools;
         await this.emitEvent({
           id: crypto.randomUUID(), runId, type: "agent.handoff",
           occurredAt: new Date().toISOString(), traceId: ctx.traceId,
@@ -1539,6 +1649,20 @@ this.stepExecutor = new StepExecutor({
             toAgentId: result.handoff.targetAgentId,
             reason: result.handoff.reason,
             ...(result.handoff.summary !== undefined ? { summary: result.handoff.summary } : {}),
+            // P1.1: handoff shares the run transcript and keeps the target's
+            // tool ceiling, so persist it as the handoff execution contract.
+            subAgent: {
+              mode: "handoff" as const,
+              parentAgentId: fromAgentId,
+              ...(handoffAllowlist ? { allowlist: [...handoffAllowlist] } : {}),
+              ...(handoffDenied && handoffDenied.length > 0 ? { deniedTools: [...handoffDenied] } : {}),
+              budget: {
+                ...(targetAgent.permissions?.maxSteps !== undefined ? { maxSteps: targetAgent.permissions.maxSteps } : {}),
+                ...(targetAgent.permissions?.maxTokens !== undefined ? { maxTokens: targetAgent.permissions.maxTokens } : {}),
+                maxDepth: this.maxSubAgentDepth,
+              },
+              transcript: "shared" as const,
+            },
           },
         }, true);
 

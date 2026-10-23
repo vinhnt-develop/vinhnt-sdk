@@ -1,11 +1,13 @@
-import type { MemoryItem, MemoryStore, MemoryTier } from "./types.js";
+import type { MemoryItem, MemoryScopeFilter, MemoryStore, MemoryTier } from "./types.js";
 import type { ToolDefinition } from "@vinhnt-sdk/tools";
 
 export interface MemoryServiceSearchOptions {
   readonly limit?: number;
   readonly tier?: MemoryTier;
-  /** Optional vector query — used only when the backing store implements `searchSimilar`. */
+  /** Optional vector query â€” used only when the backing store implements `searchSimilar`. */
   readonly embedding?: number[];
+  /** Visibility scope for cross-session recall. */
+  readonly scope?: MemoryScopeFilter;
 }
 
 export interface MemoryServiceResult {
@@ -21,7 +23,7 @@ export interface MemoryService {
    * ADK `MemoryService.search` parity: keyword search over the session's
    * memories by default; when an `embedding` is supplied and the store
    * implements `searchSimilar`, vector search is used instead (the seam
-   * apps swap to plug in a real embedding backend — none is hardcoded).
+   * apps swap to plug in a real embedding backend â€” none is hardcoded).
    */
   search(query: string, sessionId: string, options?: MemoryServiceSearchOptions): Promise<MemoryServiceResult[]>;
 }
@@ -29,7 +31,7 @@ export interface MemoryService {
 /**
  * ADK-style `MemoryService` facade over the SDK `MemoryStore`.
  * Keeps apps decoupled from the raw store API so search backends can be
- * replaced (keyword → vector) without touching call sites.
+ * replaced (keyword â†’ vector) without touching call sites.
  */
 export function createMemoryService(store: MemoryStore): MemoryService {
   return {
@@ -43,9 +45,10 @@ export function createMemoryService(store: MemoryStore): MemoryService {
         items = await store.searchSimilar(options.embedding, sessionId, {
           topK: limit,
           ...(options.tier !== undefined ? { tier: options.tier } : {}),
+          ...(options.scope !== undefined ? { scope: options.scope } : {}),
         });
       } else {
-        items = await store.search(query, sessionId);
+        items = await store.search(query, sessionId, options?.scope);
       }
       if (options?.tier !== undefined) items = items.filter((i) => i.tier === options.tier);
       return items.slice(0, limit).map((i) => ({ key: i.key, value: i.value, tier: i.tier, sessionId: i.sessionId }));
@@ -54,7 +57,7 @@ export function createMemoryService(store: MemoryStore): MemoryService {
 }
 
 /** Agent-facing `memory_service_search` tool over a `MemoryService` (distinct id from `memory_search`). */
-export function createMemoryServiceSearchTool(service: MemoryService, sessionId: string): ToolDefinition {
+export function createMemoryServiceSearchTool(service: MemoryService, sessionId: string, scope?: MemoryScopeFilter): ToolDefinition {
   return {
     id: "memory_service_search",
     description:
@@ -70,7 +73,7 @@ export function createMemoryServiceSearchTool(service: MemoryService, sessionId:
     risk: "read",
     metadata: { source: "knowledge" },
     async execute(input: { query: string; limit?: number }) {
-      return service.search(input.query, sessionId, { limit: input.limit ?? 10 });
+      return service.search(input.query, sessionId, { limit: input.limit ?? 10, ...(scope !== undefined ? { scope } : {}) });
     },
   };
 }

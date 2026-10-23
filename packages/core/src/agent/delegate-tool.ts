@@ -52,6 +52,7 @@ export function createDelegateTool(kernel: AgentKernel) {
           };
       const output = await kernel.runAgent(
         input.agentId as AgentId, input.prompt, childCtx, ctx.sessionId || undefined, ctx.runId as RunId | undefined, ctx.signal,
+        { mode: "tool", toolName: "delegate", transcript: "isolated" },
       );
       return output || "(no output)";
     },
