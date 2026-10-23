@@ -1,5 +1,13 @@
 # @vinhnt-sdk/lsp
 
+## 0.22.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @vinhnt-sdk/schema@0.22.0
+  - @vinhnt-sdk/tools@0.22.0
+
 ## 0.21.0
 
 ### Patch Changes

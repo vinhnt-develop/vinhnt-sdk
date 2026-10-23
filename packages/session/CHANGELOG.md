@@ -1,5 +1,22 @@
 # @vinhnt-sdk/session
 
+## 0.22.0
+
+### Minor Changes
+
+- Add durable sub-agent run contracts, scoped memory, manual compaction, and MCP governance.
+  
+  - Run events carry `parentRunId`/`subAgent`, and the kernel can execute and settle sub-agent runs under a shared run tree.
+  - Memory entries support scopes (workspace/project/session/user) with bounded recall and migration-safe session state.
+  - Manual compaction and guardrail rejection are covered by kernel tests.
+  - MCP tool mapping and governance filters are enforced at the provider boundary.
+
+### Patch Changes
+
+- Updated dependencies
+  - @vinhnt-sdk/schema@0.22.0
+  - @vinhnt-sdk/guard@0.22.0
+
 ## 0.21.0
 
 ### Minor Changes
