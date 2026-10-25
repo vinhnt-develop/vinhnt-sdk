@@ -1137,6 +1137,7 @@ export const KnownRunEventSchema = z.discriminatedUnion("type", [
   RequestContextEventSchema,
   LlmRequestEventSchema,
   LlmResponseEventSchema,
+  BlockedOnUserEventSchema,
 ]);
 /** Inferred type of {@link KnownRunEventSchema}. */
 export type KnownRunEvent = z.infer<typeof KnownRunEventSchema>;

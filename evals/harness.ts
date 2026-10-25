@@ -2,7 +2,7 @@
  * Shared offline harness for golden evals (P1-10).
  * Zero network — FakeModelProvider / FakeTool only.
  */
-import type { RequestContext, RequestId, RunId, TraceId } from "@vinhnt-sdk/schema";
+import type { RequestContext, RequestId, RunEvent, RunId, TraceId } from "@vinhnt-sdk/schema";
 import type { ChatMessage, ModelProvider, ModelRequest, ModelResponse } from "../packages/core/src/model.js";
 import { runLoop } from "../packages/core/src/kernel/run-loop.js";
 import type { RunLoopDeps, RunLoopInput } from "../packages/core/src/kernel/run-loop.js";
@@ -60,7 +60,11 @@ export function makeDeps(model: ModelProvider, tools: FakeTool[] = []): RunLoopD
     getAvailableTools: () => [],
   });
   const stepExecutor = new StepExecutor({
-    store: { emitEvent: async () => {} },
+    store: {
+      emitEvent: async (event) => {
+        await store.appendWithSequence(event as unknown as RunEvent);
+      },
+    },
     addSessionMessage: async () => {},
     pluginManager: undefined,
     permissionGate,

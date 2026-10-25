@@ -123,6 +123,19 @@ export async function buildToolContext(
         },
       });
 
+      // P2.1: signal that the run is blocked on a user decision.
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "blocked_on_user",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          runId,
+          requestId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          reason: "question",
+          ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        },
+      });
+
       let reply: QuestionReply = { action: "cancel" };
       if (deps.questionStore) {
         const timeoutMs = input.timeoutMs ?? deps.questionTimeoutMs;
@@ -186,6 +199,19 @@ export async function buildToolContext(
         },
       });
 
+      // P2.1: signal that the run is blocked on a user decision.
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "blocked_on_user",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          runId,
+          requestId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          reason: "elicitation",
+          ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        },
+      });
+
       let reply: ElicitationReply = { action: "cancel" };
       if (deps.elicitStore) {
         const timeoutMs = input.timeoutMs ?? deps.elicitTimeoutMs;
@@ -242,6 +268,19 @@ export async function buildToolContext(
           steps: input.steps,
           ...(input.title !== undefined ? { title: input.title } : {}),
           ...(input.explanation !== undefined ? { explanation: input.explanation } : {}),
+          ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
+        },
+      });
+
+      // P2.1: signal that the run is blocked on a user decision.
+      await deps.emitEvent?.({
+        id: crypto.randomUUID(), runId, type: "blocked_on_user",
+        occurredAt: new Date().toISOString(), traceId: ctx.traceId,
+        data: {
+          runId,
+          requestId,
+          ...(sessionId !== undefined ? { sessionId } : {}),
+          reason: "plan",
           ...(input.expiresAt !== undefined ? { expiresAt: input.expiresAt } : {}),
         },
       });

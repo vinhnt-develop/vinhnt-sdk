@@ -1,5 +1,11 @@
 # @vinhnt-sdk/config
 
+## 0.23.0
+
+### Patch Changes
+
+- @vinhnt-sdk/schema@0.23.0
+
 ## 0.22.0
 
 ### Patch Changes

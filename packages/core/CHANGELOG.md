@@ -1,5 +1,23 @@
 # @vinhnt-sdk/core
 
+## 0.23.0
+
+### Patch Changes
+
+- @vinhnt-sdk/event@0.23.0
+  - @vinhnt-sdk/guard@0.23.0
+  - @vinhnt-sdk/guardrails@0.23.0
+  - @vinhnt-sdk/knowledge@0.23.0
+  - @vinhnt-sdk/llm@0.23.0
+  - @vinhnt-sdk/permission@0.23.0
+  - @vinhnt-sdk/sandbox@0.23.0
+  - @vinhnt-sdk/schema@0.23.0
+  - @vinhnt-sdk/session@0.23.0
+  - @vinhnt-sdk/step-executor@0.23.0
+  - @vinhnt-sdk/tools@0.23.0
+  - @vinhnt-sdk/trace@0.23.0
+  - @vinhnt-sdk/workflow@0.23.0
+
 ## 0.22.0
 
 ### Minor Changes

@@ -64,6 +64,7 @@ export const KNOWN_TIMELINE_EVENT_TYPES = [
   "plan.requested",
   "plan.replied",
   "ui.surface",
+  "blocked_on_user",
   "request.header",
   "request.context",
   "llm.request",

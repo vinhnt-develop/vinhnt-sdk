@@ -1,5 +1,12 @@
 # @vinhnt-sdk/session
 
+## 0.23.0
+
+### Patch Changes
+
+- @vinhnt-sdk/guard@0.23.0
+  - @vinhnt-sdk/schema@0.23.0
+
 ## 0.22.0
 
 ### Minor Changes

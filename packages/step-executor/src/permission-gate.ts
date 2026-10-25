@@ -493,6 +493,22 @@ export class PermissionGate {
         ...(signal ? { signal } : {}),
         timeoutMs: this.approvalTimeoutMs,
       };
+
+      // P2.1: signal that the run is blocked on a user decision.
+      await this.appendPersisted({
+        id: crypto.randomUUID(), runId, type: "blocked_on_user",
+        occurredAt: new Date().toISOString(), traceId,
+        data: {
+          runId,
+          requestId,
+          toolName,
+          resource: toolName,
+          reason: "approval",
+          ...(scoped ? { scope: scoped } : {}),
+          ...(source !== undefined ? { source } : {}),
+        },
+      } as Omit<RunEvent, "sequence">);
+
       try {
         // Prefer the richer variant when the store provides one, so a
         // user-supplied reason rides along with the decision.

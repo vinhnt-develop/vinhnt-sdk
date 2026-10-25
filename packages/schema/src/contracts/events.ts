@@ -238,6 +238,19 @@ export interface TodoUpdatedData {
   readonly sessionId?: string;
   readonly todos: ReadonlyArray<TodoItem>;
 }
+/** Item-level signal that a run is blocked awaiting a user decision (P2.1).
+ * Additive to the durable `question.*`/`plan.*`/`permission.*`/`elicitation.*`
+ * events — used for observability spans and UI "blocked" indicators. */
+export interface BlockedOnUserData {
+  readonly runId: RunId;
+  /** Corresponding request id (question, plan, approval, elicitation). */
+  readonly requestId?: RequestId;
+  /** Session that owns the request. */
+  readonly sessionId?: string;
+  readonly toolName?: string;
+  readonly reason: "approval" | "question" | "plan" | "elicitation";
+  readonly expiresAt?: number;
+}
 /** A single selectable option for a question. */
 export interface QuestionOption {
   readonly label: string;
@@ -556,6 +569,7 @@ export type KnownRunEvent =
   | (RunEvent<PlanRequestedData> & { readonly type: "plan.requested" })
   | (RunEvent<PlanRepliedData> & { readonly type: "plan.replied" })
   | (RunEvent<UiSurfaceData> & { readonly type: "ui.surface" })
+  | (RunEvent<BlockedOnUserData> & { readonly type: "blocked_on_user" })
   | (RunEvent<RequestHeaderData> & { readonly type: "request.header" })
   | (RunEvent<RequestContextData> & { readonly type: "request.context" })
   | (RunEvent<LlmRequestData> & { readonly type: "llm.request" })

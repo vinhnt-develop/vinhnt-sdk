@@ -28,6 +28,7 @@ export type {
   QuestionOption, QuestionItem, QuestionRequestedData, QuestionAnswer, QuestionRepliedData,
   ElicitationMode, ElicitationFieldSchema, ElicitationRequestedSchema,
   ElicitationRequestedData, ElicitationRepliedData,
+  BlockedOnUserData,
   PlanApprovalStep, PlanRequestedData, PlanRepliedData,
   UiSurfaceTone, UiSurfaceActionItem, UiSurfaceComponent, UiSurface, UiSurfaceData,
   // Snapshot types
