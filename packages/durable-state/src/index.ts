@@ -126,6 +126,8 @@ export {
 // ===== Executor =====
 export {
   StateGraphExecutor,
+  type StepResult,
+  type GraphNode,
 } from "./state/executor.js";
 
 // ===== Interrupt / Command =====
