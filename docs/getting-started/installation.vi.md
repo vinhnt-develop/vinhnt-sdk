@@ -54,7 +54,9 @@ pnpm add -D typescript @types/node tsx
 | `@vinhnt-sdk/step-executor` | Tool execution engine | Tùy chọn |
 | `@vinhnt-sdk/event` | Event bus | Tùy chọn |
 | `@vinhnt-sdk/trace` | Telemetry, cost tracking | Tùy chọn |
-| `@vinhnt-sdk/config` | Configuration loading | Tùy chọn |
+| `@vinhnt-sdk/test-utils` | Tiện ích test và helper | Tùy chọn |
+| `@vinhnt-sdk/tools-browser` | Browser/computer-use + image-gen tools | Tùy chọn |
+| `@vinhnt-sdk/durable-state` | Trạng thái bền vững, checkpoint, interrupt/resume | Tùy chọn (beta) |
 
 ## TypeScript Setup
 

@@ -23,6 +23,9 @@ graph TB
         EXT_TRACE["trace"]
         EXT_SECURITY["security"]
         EXT_LSP["lsp"]
+        EXT_GUARDRAILS["guardrails"]
+        EXT_WORKFLOW["workflow"]
+        EXT_DURABLE["durable-state"]
     end
 
     subgraph "Core Layer (required)"
@@ -77,7 +80,7 @@ The Core Layer contains every package essential for a working agent runtime.
 | `core` | AgentKernel, orchestration | Top-level agent lifecycle |
 | `provider-openai-compatible` | OpenAI provider + presets | Default LLM provider for most users |
 
-## Extension Layer (7 packages — optional)
+## Extension Layer (10 packages — optional)
 
 Extensions add capabilities that not every agent needs.
 
@@ -90,6 +93,9 @@ Extensions add capabilities that not every agent needs.
 | `trace` | Telemetry, timeline | Production observability needed |
 | `security` | Secret redactor | Agent handles sensitive data |
 | `lsp` | LSP integration | Agent writes or edits code |
+| `guardrails` | Guardrail tripwires | Input/output safety filtering |
+| `workflow` | Workflow primitives | Control-flow orchestration |
+| `durable-state` | Durable state, checkpoint, interrupt/resume | Durable graph state, time-travel, HITL |
 
 ## Minimum Viable Install
 

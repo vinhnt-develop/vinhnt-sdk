@@ -26,6 +26,8 @@ graph TD
         provider-openai-compatible["provider-openai-compatible"]
         knowledge["knowledge"]
         mcp["mcp"]
+        workflow["workflow"]
+        durable-state["durable-state"]
     end
 
     subgraph Feature["Feature Layer"]
@@ -112,9 +114,9 @@ graph TD
 
 - **Foundation**: 1 package
 - **Feature**: 12 packages
-- **Extension**: 4 packages
+- **Extension**: 6 packages
 - **Core**: 3 packages (including `plugin`)
-- **Total**: 18 packages
+- **Total**: 22 packages
 
 ## DAG Verification
 
@@ -147,6 +149,7 @@ The dependency graph is verified as a DAG at CI time using `ts-prune` and custom
 | `core` | `schema`, `config`, `llm`, `tools`, `sandbox`, `guard`, `session`, `permission`, `step-executor`, `event`, `knowledge`, `security` |
 | `lsp` | `schema`, `tools`, `core` |
 | `plugin` | `core` |
+| `durable-state` | `schema` (+ `session` as peer) |
 
 ## How to Extend
 

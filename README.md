@@ -7,7 +7,7 @@
 
 > AI Agent SDK — modular TypeScript libraries for building AI coding agents.
 
-## Packages (22 packages)
+## Packages (23 packages)
 
 ### Core Layer (Required)
 
@@ -40,6 +40,7 @@
 | `@vinhnt-sdk/workflow` | Workflow primitives (parallel, sequential, conditional) |
 | `@vinhnt-sdk/test-utils` | Shared test utilities and mocks |
 | `@vinhnt-sdk/tools-browser` | Browser/computer-use + image-gen tools (driver-injected) |
+| `@vinhnt-sdk/durable-state` | Durable state management — StateChannel, Reducer, Checkpointer, Interrupt/Resume, AttachmentRef (beta) |
 
 ## Key Features (8-Phase Refactor)
 

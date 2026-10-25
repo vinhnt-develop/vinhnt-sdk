@@ -12,6 +12,7 @@ sidebarPosition: 1
 ## v0.1.3ện tại)
 
 ### Thêm mới
+- `@vinhnt-sdk/durable-state` — package mới (beta): quản lý trạng thái bền vững với StateChannel, Reducer, Checkpointer, StateSnapshot, nguyên thủy HITL interrupt()/Command(resume), AttachmentRef cho attachment nhị phân, và session adapter (SerializedRunState ↔ StateSnapshot)
 - `CircuitBreakerOpenError` — kế thừa `VntError` với `code: "CIRCUIT_BREAKER_OPEN"`, có thể retry
 - `ToolTimeoutError` — kế thừa `VntError` với `code: "TOOL_TIMEOUT"`, không retry
 - `CostMeter` — đổi tên từ `TokenMeter` trong package trace (theo dõi usage + cost thực tế)

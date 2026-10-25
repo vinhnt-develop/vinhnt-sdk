@@ -36,6 +36,7 @@
         { "id": "api/guard", "label": "guard" },
         { "id": "api/guardrails", "label": "guardrails" },
         { "id": "api/workflow", "label": "workflow" },
+        { "id": "api/durable-state", "label": "durable-state" },
         { "id": "api/session", "label": "session" },
         { "id": "api/permission", "label": "permission" },
         { "id": "api/step-executor", "label": "step-executor" },

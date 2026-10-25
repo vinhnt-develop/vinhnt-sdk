@@ -26,6 +26,8 @@ graph TD
         provider-openai-compatible["provider-openai-compatible"]
         knowledge["knowledge"]
         mcp["mcp"]
+        workflow["workflow"]
+        durable-state["durable-state"]
     end
 
     subgraph Feature["Lớp Feature"]
@@ -112,9 +114,9 @@ graph TD
 
 - **Foundation**: 1 package
 - **Feature**: 12 package
-- **Extension**: 4 package
+- **Extension**: 6 package
 - **Core**: 3 package (bao gồm `plugin`)
-- **Tổng cộng**: 18 package
+- **Tổng cộng**: 23 package
 
 ## Xác minh DAG
 
@@ -147,6 +149,7 @@ graph TD
 | `core` | `schema`, `config`, `llm`, `tools`, `sandbox`, `guard`, `session`, `permission`, `step-executor`, `event`, `knowledge`, `security` |
 | `lsp` | `schema`, `tools`, `core` |
 | `plugin` | `core` |
+| `durable-state` | `schema` (+ `session` làm peer) |
 
 ## Cách mở rộng
 

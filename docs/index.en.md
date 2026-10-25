@@ -8,7 +8,7 @@ category: Getting Started
 
 # Build AI agents with TypeScript
 
-vinhnt-sdk is a modular, extensible SDK for building AI agents in TypeScript. It provides 21 packages that work together to give you a complete toolkit for creating, deploying, and managing intelligent agents.
+vinhnt-sdk is a modular, extensible SDK for building AI agents in TypeScript. It provides 23 packages that work together to give you a complete toolkit for creating, deploying, and managing intelligent agents.
 
 ## What is vinhnt-sdk?
 

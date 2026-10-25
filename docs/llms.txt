@@ -45,6 +45,7 @@
 - [security](api/security.md) - Deprecated → use guard
 - [guardrails](api/guardrails.md) - Guardrail tripwires for inputs/outputs
 - [workflow](api/workflow.md) - Workflow primitives (parallel, sequential, conditional)
+- [durable-state](api/durable-state.md) - Durable state management (StateChannel, Checkpointer, Interrupt/Resume, AttachmentRef)
 - [lsp](api/lsp.md) - Language Server Protocol
 
 ## Examples

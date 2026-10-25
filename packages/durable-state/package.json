@@ -1,0 +1,48 @@
+{
+  "name": "@vinhnt-sdk/durable-state",
+  "version": "0.23.0",
+  "description": "Durable state management for agent orchestration — StateChannel, Reducer, Checkpointer, Interrupt/Resume, AttachmentRef",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist", "LICENSE", "README.md"],
+  "sideEffects": false,
+  "engines": { "node": ">=20.0.0" },
+  "publishConfig": { "access": "public" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinhnt-develop/vinhnt-sdk.git",
+    "directory": "packages/durable-state"
+  },
+  "homepage": "https://github.com/vinhnt-develop/vinhnt-sdk/tree/main/packages/durable-state",
+  "bugs": { "url": "https://github.com/vinhnt-develop/vinhnt-sdk/issues" },
+  "keywords": ["vnt", "durable", "state", "checkpoint", "interrupt", "resume", "graph-state", "orchestration"],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\" && node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\"",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@vinhnt-sdk/schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "@vinhnt-sdk/session": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7",
+    "@types/node": "^20.0.0",
+    "@vinhnt-sdk/session": "workspace:*"
+  }
+}

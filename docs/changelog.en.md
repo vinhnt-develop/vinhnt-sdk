@@ -14,8 +14,8 @@ sidebarPosition: 1
 ## v0.1.3
 
 ### Added
+- `@vinhnt-sdk/durable-state` — new package (beta): durable state management with StateChannel, Reducer, Checkpointer, StateSnapshot, interrupt()/Command(resume) HITL primitive, AttachmentRef for binary attachments, and session adapter (SerializedRunState ↔ StateSnapshot)
 - `CircuitBreakerOpenError` — extends `VntError` with `code: "CIRCUIT_BREAKER_OPEN"`, retryable
-- `ToolTimeoutError` — extends `VntError` with `code: "TOOL_TIMEOUT"`, non-retryable
 - `CostMeter` — renamed from `TokenMeter` in trace package (tracks actual usage + cost)
 - `StreamChunkEvent` — named interface for `fromOpenAIStreamChunk` return type
 - `SecretPattern` — now exported from `@vinhnt-sdk/security`

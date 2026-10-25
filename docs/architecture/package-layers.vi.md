@@ -23,6 +23,9 @@ graph TB
         EXT_TRACE["trace"]
         EXT_SECURITY["security"]
         EXT_LSP["lsp"]
+        EXT_GUARDRAILS["guardrails"]
+        EXT_WORKFLOW["workflow"]
+        EXT_DURABLE["durable-state"]
     end
 
     subgraph "Tầng Core (bắt buộc)"
@@ -46,6 +49,9 @@ graph TB
     EXT_TRACE --> CORE_CORE
     EXT_SECURITY --> CORE_CONFIG
     EXT_LSP --> CORE_SANDBOX
+    EXT_GUARDRAILS --> CORE_GUARD
+    EXT_WORKFLOW --> CORE_CORE
+    EXT_DURABLE --> CORE_SESSION
 
     CORE_CORE --> CORE_STEP
     CORE_STEP --> CORE_SESSION
@@ -77,7 +83,7 @@ Tầng Core chứa mọi package cần thiết để runtime agent hoạt độn
 | `core` | AgentKernel, orchestration | Vòng đời agent cấp cao nhất |
 | `provider-openai-compatible` | Nhà cung cấp OpenAI + preset | Nhà cung cấp LLM mặc định cho多数 người dùng |
 
-## Tầng Extension (7 package — tùy chọn)
+## Tầng Extension (10 package — tùy chọn)
 
 Extension thêm khả năng mà không phải agent nào cũng cần.
 
@@ -90,6 +96,9 @@ Extension thêm khả năng mà không phải agent nào cũng cần.
 | `trace` | Telemetry, timeline | Cần quan sát production |
 | `security` | Redactor bí mật | Agent xử lý dữ liệu nhạy cảm |
 | `lsp` | Tích hợp LSP | Agent viết hoặc chỉnh sửa code |
+| `guardrails` | Guardrail tripwires | Lọc an toàn input/output |
+| `workflow` | Nguyên thủy workflow | Điều khiển luồng chạy |
+| `durable-state` | Trạng thái bền vững, checkpoint, interrupt/resume | Trạng thái graph bền vững, time-travel, HITL |
 
 ## Cài Đặt Tối Thiểu
 

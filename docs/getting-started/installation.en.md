@@ -54,7 +54,9 @@ pnpm add -D typescript @types/node tsx
 | `@vinhnt-sdk/step-executor` | Tool execution engine | Optional |
 | `@vinhnt-sdk/event` | Event bus | Optional |
 | `@vinhnt-sdk/trace` | Telemetry, cost tracking | Optional |
-| `@vinhnt-sdk/config` | Configuration loading | Optional |
+| `@vinhnt-sdk/test-utils` | Test utilities and helpers | Optional |
+| `@vinhnt-sdk/tools-browser` | Browser/computer-use + image-gen tools | Optional |
+| `@vinhnt-sdk/durable-state` | Durable state, checkpoint, interrupt/resume | Optional (beta) |
 
 ## TypeScript Setup
 
