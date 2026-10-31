@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/durable-state",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "description": "Durable state management for agent orchestration — StateChannel, Reducer, Checkpointer, Interrupt/Resume, AttachmentRef",
   "license": "MIT",
   "type": "module",

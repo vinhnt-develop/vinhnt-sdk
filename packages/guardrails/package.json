@@ -1,6 +1,6 @@
 {
   "name": "@vinhnt-sdk/guardrails",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "description": "Guardrail tripwires for agent inputs/outputs - pattern-based safety",
   "license": "MIT",
   "type": "module",
