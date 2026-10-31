@@ -63,6 +63,7 @@ export function createSubmitPlanTool(
 
   return defineTool<unknown, unknown>({
     name: "submit_plan",
+    label: "Submit Plan",
     description:
       "Present a plan (an ordered list of steps) to the user for approval before executing it. " +
       "Blocks until the user approves, requests changes, or cancels. Use this for multi-step or " +

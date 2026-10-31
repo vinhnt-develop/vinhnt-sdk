@@ -83,6 +83,7 @@ export function createQuestionTool(
 
   return defineTool<unknown, unknown>({
     name: "question",
+    label: "Question",
     description:
       "Ask the user one or more questions and get their response. Use this when you need clarification, preferences, or decisions from the user. " +
       "Provide clear options when possible; pass a `questions[]` array to ask up to 4 at once. " +

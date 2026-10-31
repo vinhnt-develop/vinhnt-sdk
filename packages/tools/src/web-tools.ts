@@ -22,6 +22,7 @@ export interface WebFetchToolConfig {
 export function createWebFetchTool(config?: WebFetchToolConfig) {
   return defineTool<{ url: string; format?: "markdown" | "text" | "html" | undefined; timeout?: number | undefined }, string>({
     name: "web_fetch",
+    label: "Web Fetch",
     description: "Fetch content from a URL and return it as text. Max 512KB.",
     risk: "read",
     input: WebFetchSchema,

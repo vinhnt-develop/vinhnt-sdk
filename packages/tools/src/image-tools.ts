@@ -83,6 +83,7 @@ export function createReadImageTool(workspaceRoot: RootGetter, externalDirAccess
     filePath: string; mimeType?: string | undefined; size: number; message: string;
   }>({
     name: "read_image",
+    label: "Read Image",
     description: "Read an image file and return its content for the model to analyze",
     risk: "read",
     input: ReadImageSchema,

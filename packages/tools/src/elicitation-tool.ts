@@ -67,6 +67,7 @@ export function createElicitTool(handlerOrOptions?: ElicitationHandler | ElicitT
 
   return defineTool<unknown, unknown>({
     name: "elicit",
+    label: "Elicitation",
     description:
       "Request structured input from the user and get their response. Use this when you need a small set of typed values " +
       "(e.g. a name, an amount, a yes/no choice) rather than a free-form question. " +

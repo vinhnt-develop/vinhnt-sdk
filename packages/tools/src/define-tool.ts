@@ -28,6 +28,8 @@ export interface ToolConfig<TInput = unknown, TOutput = unknown> {
   selfApproving?: boolean;
   /** Optional LLM-facing JSON Schema override (e.g. to advertise `path` aliases). */
   jsonSchema?: NestedJsonSchema;
+  /** Human-friendly display name for UI (off-wire, never sent to the LLM provider). */
+  label?: string;
   /** Coerce raw model-agnostic input before validation (e.g. snake_case aliases). */
   normalize?(raw: unknown): unknown;
   execute(input: TInput, ctx: ToolContext): Promise<TOutput>;
@@ -210,6 +212,7 @@ export function defineTool<TInput = unknown, TOutput = unknown>(
     toDefinition(): ToolDefinition<TInput, TOutput> {
       return {
         id: config.name,
+        ...(config.label !== undefined ? { name: config.label } : {}),
         description: config.description,
         risk: config.risk,
         inputSchema:
@@ -219,6 +222,7 @@ export function defineTool<TInput = unknown, TOutput = unknown>(
         ...(config.permissionAction !== undefined ? { permissionAction: config.permissionAction } : {}),
         ...(config.selfApproving !== undefined ? { selfApproving: config.selfApproving } : {}),
         inputZodSchema: config.input,
+        ...(config.label !== undefined ? { label: config.label } : {}),
         ...(config.output !== undefined ? { outputZodSchema: config.output } : {}),
         async execute(raw: unknown, ctx: ToolContext): Promise<TOutput> {
           const normalized = config.normalize ? config.normalize(raw) : raw;

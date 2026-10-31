@@ -153,6 +153,7 @@ export function createWebSearchTool(config: WebSearchToolConfig) {
     error?: string | undefined;
   }>({
     name: "web_search",
+    label: "Web Search",
     description: `Search the web for information. Uses ${config.provider.name} search API. Returns a list of relevant results with titles, URLs, and content snippets.`,
     risk: "read",
     input: WebSearchSchema,

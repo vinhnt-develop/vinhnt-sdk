@@ -73,6 +73,7 @@ export function createTodoWriteTool(options: TodoWriteToolOptions = {}) {
 
   return defineTool<unknown, unknown>({
     name: "todowrite",
+    label: "Todo Write",
     description:
       "Manage a structured task list with priorities and status. " +
       "Preferred: pass the full `todos` array to replace the list (whole-list semantics — include every task on each call, preserving order; keep exactly one task `in_progress`). " +

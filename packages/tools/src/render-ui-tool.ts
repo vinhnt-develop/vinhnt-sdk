@@ -60,6 +60,7 @@ export function createRenderUiTool(options: RenderUiToolOptions = {}) {
 
   return defineTool<unknown, unknown>({
     name: "render_ui",
+    label: "Render UI",
     description:
       "Render a visual surface (table, chart-like list, key/value, callout, code, progress) for the user. " +
       "Pass `components[]` from the approved catalog; each component has a `type` plus its fields. " +

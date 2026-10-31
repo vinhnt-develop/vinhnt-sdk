@@ -203,6 +203,7 @@ function normalizeInput(input: unknown): Record<string, unknown> {
 export function createReadFileTool(workspaceRoot: RootGetter, tracker?: FileReadTracker, externalDirAccess?: boolean, maxFileSize?: number) {
   return defineTool<{ filePath: string; stripTrailingNewline?: boolean }, string>({
     name: "read_file",
+    label: "Read File",
     description: "Read the contents of a file from the workspace.",
     risk: "read",
     input: ReadFileSchema,
@@ -238,6 +239,7 @@ export function createWriteFileTool(workspaceRoot: RootGetter, tracker?: FileRea
     additions: number; removals: number;
   }>({
     name: "write_file",
+    label: "Write File",
     description: "Write content to a file (creates parents dirs if needed). Overwrites existing content.",
     risk: "write",
     input: WriteFileSchema,
@@ -523,6 +525,7 @@ export function createEditFileTool(workspaceRoot: RootGetter, tracker?: FileRead
     hunkCount?: number | undefined; additions: number; removals: number;
   }>({
     name: "edit_file",
+    label: "Edit File",
     description: "Apply search-and-replace edits to an existing file. Supports exact and fuzzy matching (9 layers). Pass edits[] for multiple edits in one call.",
     risk: "write",
     input: EditFileSchema,
@@ -738,6 +741,7 @@ export function createApplyPatchTool(workspaceRoot: RootGetter, tracker?: FileRe
     additions: number; removals: number; deleted?: string[] | undefined;
   }>({
     name: "apply_patch",
+    label: "Apply Patch",
     description: "Apply a patch to files: SEARCH/REPLACE blocks (<<<<<<< SEARCH ... ======= ... >>>>>>>) with filePath, or a structured *** Begin Patch patch (Update/Add/Delete File sections). Each search block must match exactly once.",
     risk: "write",
     input: ApplyPatchSchema,
@@ -814,6 +818,7 @@ export function createListDirectoryTool(workspaceRoot: RootGetter, externalDirAc
 
   return defineTool<{ dirPath: string }, { name: string; type: string; path: string }[]>({
     name: "list_directory",
+    label: "List Directory",
     description: `List files and directories in a path (non-recursive). Skips ${dirsToExclude.join(", ")}.`,
     risk: "read",
     input: ListDirectorySchema,

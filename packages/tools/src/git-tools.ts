@@ -45,6 +45,7 @@ function gitAsync(args: string[], cwd: string, signal?: AbortSignal): Promise<st
 export function createGitStatusTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{}, { branch: string; status: string }>({
     name: "git_status",
+    label: "Git Status",
     description: "Show working tree status (git status --short + branch info).",
     risk: "read",
     input: GitStatusSchema,
@@ -61,6 +62,7 @@ export function createGitStatusTool(workspaceRoot: RootGetter): ToolDefinition {
 export function createGitDiffTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{ staged?: boolean | undefined }, { diff: string }>({
     name: "git_diff",
+    label: "Git Diff",
     description: "Show unstaged diff (git diff) or staged diff (--staged).",
     risk: "read",
     input: GitDiffSchema,
@@ -84,6 +86,7 @@ export function createGitDiffTool(workspaceRoot: RootGetter): ToolDefinition {
 export function createGitLogTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{ maxCount?: number | undefined; path?: string | undefined }, { commits: string[] }>({
     name: "git_log",
+    label: "Git Log",
     description: "Show recent commit log (last 20 commits).",
     risk: "read",
     input: GitLogSchema,
@@ -106,6 +109,7 @@ export function createGitLogTool(workspaceRoot: RootGetter): ToolDefinition {
 export function createGitCommitTool(workspaceRoot: RootGetter): ToolDefinition {
   return defineTool<{ message: string }, { result: string }>({
     name: "git_commit",
+    label: "Git Commit",
     description: "Stage all changed files and create a commit with the given message.",
     risk: "destructive",
     input: GitCommitSchema,

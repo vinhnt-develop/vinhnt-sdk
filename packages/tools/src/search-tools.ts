@@ -43,6 +43,7 @@ export function createGlobFilesTool(workspaceRoot: RootGetter, ignoredDirs?: str
 
   return defineTool<{ pattern: string; maxResults?: number | undefined }, string[]>({
     name: "glob_files",
+    label: "Glob Files",
     description: "Recursively find files matching a pattern in the workspace.",
     risk: "read",
     input: GlobFilesSchema,
@@ -69,6 +70,7 @@ export function createGrepFilesTool(workspaceRoot: RootGetter, ignoredDirs?: str
 
   return defineTool<{ pattern: string; include?: string | undefined; maxResults?: number | undefined }, { file: string; line: number; content: string }[]>({
     name: "grep_files",
+    label: "Grep Files",
     description: "Search file contents for a regex pattern. Returns matches with line numbers.",
     risk: "read",
     input: GrepFilesSchema,

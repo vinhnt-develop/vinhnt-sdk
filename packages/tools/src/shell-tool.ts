@@ -105,6 +105,7 @@ export function createShellTool(config: ShellToolConfig) {
 
   return defineTool<{ command: string; timeoutMs?: number | undefined }, ExecResult>({
     name: "execute_command",
+    label: "Shell",
     description: "Execute a shell command in the workspace directory. Returns stdout and stderr.",
     risk: "write",
     selfApproving: config.askPermission !== false,

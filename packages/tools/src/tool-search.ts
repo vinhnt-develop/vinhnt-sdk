@@ -24,6 +24,7 @@ export interface ToolSearchResult {
 export function createToolSearchTool(registry: ToolRegistry) {
   return defineTool<ToolSearchInput, { results: ToolSearchResult[] }>({
     name: "search_tools",
+    label: "Search Tools",
     description: "Search for available tools by query or tags. Returns matching tool definitions.",
     risk: "read",
     input: ToolSearchSchema,
