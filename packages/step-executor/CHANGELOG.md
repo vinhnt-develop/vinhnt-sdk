@@ -1,5 +1,17 @@
 # @vinhnt-sdk/step-executor
 
+## 0.25.1
+
+### Patch Changes
+
+- @vinhnt-sdk/event@0.25.1
+  - @vinhnt-sdk/guard@0.25.1
+  - @vinhnt-sdk/llm@0.25.1
+  - @vinhnt-sdk/permission@0.25.1
+  - @vinhnt-sdk/schema@0.25.1
+  - @vinhnt-sdk/session@0.25.1
+  - @vinhnt-sdk/tools@0.25.1
+
 ## 0.25.0
 
 ### Patch Changes

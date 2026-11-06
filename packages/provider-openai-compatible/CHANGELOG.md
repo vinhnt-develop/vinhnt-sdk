@@ -1,5 +1,19 @@
 # @vinhnt-sdk/provider-openai-compatible
 
+## 0.25.1
+
+### Patch Changes
+
+- Fix Google provider authentication and parameter stripping
+  
+  - Use `?key=<API_KEY>` query parameter instead of `Authorization: Bearer <key>` header for Google's Generative Language API (fixes 401 OAuth error)
+  - Add `stripParameters` option to drop OpenAI-specific fields Google doesn't recognise (fixes 400 Bad Request: `parallel_tool_calls`, `stream_options`, `presence_penalty`, etc.)
+  - Add `nativeChatUrl` override for providers with non-standard chat endpoints
+  - Add `authStyle` support (bearer | query | header-x-goog | header-x-api-key)
+- @vinhnt-sdk/config@0.25.1
+  - @vinhnt-sdk/guard@0.25.1
+  - @vinhnt-sdk/schema@0.25.1
+
 ## 0.25.0
 
 ### Minor Changes

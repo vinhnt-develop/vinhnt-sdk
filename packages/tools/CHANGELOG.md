@@ -1,5 +1,13 @@
 # @vinhnt-sdk/tools
 
+## 0.25.1
+
+### Patch Changes
+
+- @vinhnt-sdk/guard@0.25.1
+  - @vinhnt-sdk/sandbox@0.25.1
+  - @vinhnt-sdk/schema@0.25.1
+
 ## 0.25.0
 
 ### Patch Changes
