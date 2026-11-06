@@ -71,6 +71,11 @@ export interface BuildRequestOptions {
    * is unchanged (unknown fields would break strict OpenAI endpoints).
    */
   readonly promptCache?: PromptCacheShaping;
+  /**
+   * Parameter names to strip from the request body before returning.
+   * Used to drop fields a provider doesn't recognise (e.g. Google).
+   */
+  readonly stripParameters?: ReadonlySet<string>;
 }
 
 function toToolChoice(choice: ToolChoice | undefined): OpenAICompatibleRequestBody["tool_choice"] {
@@ -193,6 +198,14 @@ export function buildRequest(request: ModelRequest, opts?: BuildRequestOptions):
     body.prompt_cache_key = opts.promptCache.key;
     if (opts.promptCache.retention !== undefined) {
       body.prompt_cache_retention = opts.promptCache.retention;
+    }
+  }
+
+  // Strip parameters the provider doesn't recognise (e.g. Google).
+  if (opts?.stripParameters) {
+    const bodyRecord = body as unknown as Record<string, unknown>;
+    for (const key of opts.stripParameters) {
+      delete bodyRecord[key];
     }
   }
 

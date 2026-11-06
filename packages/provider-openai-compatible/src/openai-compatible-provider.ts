@@ -73,12 +73,35 @@ export interface OpenAICompatibleProviderOptions {
   /** Injectable fetch implementation (defaults to the global `fetch`). */
   readonly fetchImpl?: typeof fetch;
   /**
+   * Parameter names to strip from the request body before sending upstream.
+   * Useful for providers that reject OpenAI-specific fields they don't
+   * recognise (e.g. `parallel_tool_calls`, `stream_options`,
+   * `presence_penalty`, `frequency_penalty` on Google's OpenAI-compatible
+   * endpoint).
+   */
+  readonly stripParameters?: ReadonlySet<string>;
+  /**
    * Called with the exact wire body right before POST (for debug/trajectory).
    * `url` is the endpoint; headers are NOT passed — redact secrets yourself
    * if you log beyond the JSON body.
    */
   readonly onWireRequest?: (url: string, body: OpenAICompatibleRequestBody) => void;
   readonly metadata?: Record<string, unknown>;
+  /**
+   * Authentication style for the API key.
+   * - 'bearer' (default): `Authorization: Bearer <key>` — OpenAI, Groq, Mistral, …
+   * - 'query': `?key=<key>` appended to URL — Google native models endpoint
+   * - 'header-x-goog': `x-goog-api-key: <key>` — Google native generateContent
+   * - 'header-x-api-key': `x-api-key: <key>` — Anthropic
+   */
+  readonly authStyle?: 'bearer' | 'query' | 'header-x-goog' | 'header-x-api-key';
+  /**
+   * Override chat/completions URL per provider.
+   * Defaults to `${baseUrl}/chat/completions`.
+   * Set this when the provider's chat endpoint differs from the standard path,
+   * e.g. Google native: `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`.
+   */
+  readonly nativeChatUrl?: string;
 }
 
 const DEFAULT_CAPABILITIES: ModelCapabilities = {
@@ -119,7 +142,10 @@ export class OpenAICompatibleProvider implements ModelProvider {
   private readonly includeUsage: boolean;
   private readonly promptCache: PromptCacheShaping | undefined;
   private readonly fetchImpl: typeof fetch;
+  private readonly stripParameters: ReadonlySet<string>;
   private readonly onWireRequest?: ((url: string, body: OpenAICompatibleRequestBody) => void) | undefined;
+  private readonly authStyle: 'bearer' | 'query' | 'header-x-goog' | 'header-x-api-key';
+  private readonly nativeChatUrl: string | undefined;
 
   constructor(opts: OpenAICompatibleProviderOptions) {
     if (!opts.defaultModel || opts.defaultModel.trim() === "") {
@@ -140,6 +166,8 @@ export class OpenAICompatibleProvider implements ModelProvider {
     this.includeUsage = opts.includeUsage ?? true;
     this.promptCache = opts.promptCache;
     this.onWireRequest = opts.onWireRequest;
+    this.authStyle = opts.authStyle ?? 'bearer';
+    this.nativeChatUrl = opts.nativeChatUrl;
     const globalFetch = (globalThis as { fetch?: typeof fetch }).fetch;
     if (opts.fetchImpl) {
       this.fetchImpl = opts.fetchImpl;
@@ -148,6 +176,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
     } else {
       throw new ConfigurationError("OpenAICompatibleProvider requires a fetch implementation (Node >= 18)");
     }
+    this.stripParameters = opts.stripParameters ?? new Set();
   }
 
   async generate(request: ModelRequest, signal?: AbortSignal): Promise<ModelResponse> {
@@ -183,12 +212,16 @@ export class OpenAICompatibleProvider implements ModelProvider {
     opts: { stream: boolean; includeUsage: boolean },
     signal?: AbortSignal,
   ): Promise<Response> {
-    const url = `${this.baseUrl}/chat/completions`;
+    const url = this.nativeChatUrl ?? `${this.baseUrl}/chat/completions`;
+    const fetchUrl = this.authStyle === 'query' && this.apiKey
+      ? `${url}?key=${this.apiKey}`
+      : url;
     const body = buildRequest(request, {
       model: request.model ?? this.model,
       stream: opts.stream,
       includeUsage: opts.includeUsage,
       ...(this.promptCache !== undefined ? { promptCache: this.promptCache } : {}),
+      ...(this.stripParameters.size > 0 ? { stripParameters: this.stripParameters } : {}),
     } satisfies BuildRequestOptions);
     try {
       this.onWireRequest?.(url, body);
@@ -201,7 +234,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
       body: JSON.stringify(body),
       ...(signal !== undefined ? { signal } : {}),
     };
-    return this.fetchWithRetry(url, init, signal);
+    return this.fetchWithRetry(fetchUrl, init, signal);
   }
 
   private buildHeaders(): Record<string, string> {
@@ -210,7 +243,13 @@ export class OpenAICompatibleProvider implements ModelProvider {
       ...this.headers,
     };
     if (this.apiKey) {
-      headers.authorization = `Bearer ${this.apiKey}`;
+      if (this.authStyle === 'header-x-goog') {
+        headers['x-goog-api-key'] = this.apiKey;
+      } else if (this.authStyle === 'header-x-api-key') {
+        headers['x-api-key'] = this.apiKey;
+      } else if (this.authStyle !== 'query') {
+        headers.authorization = `Bearer ${this.apiKey}`;
+      }
     }
     return headers;
   }
