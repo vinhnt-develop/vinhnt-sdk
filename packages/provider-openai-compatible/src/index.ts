@@ -40,13 +40,7 @@ export type { RetryOptions } from "./error.js";
 // Re-export the wire-format types for convenience (single import site).
 export type { OpenAIMessage, OpenAIContentPart, OpenAIToolCall, OpenAIResponse, OpenAIChoice, OpenAIStreamChunk, OpenAIStreamChoice, OpenAIErrorResponse } from "@vinhnt-sdk/schema";
 
-// ── Provider presets (DeepSeek, Anthropic, Ollama) ──
+// ── Provider presets (generic) ──
 
-export { createDeepSeekProvider, createAnthropicProvider, createOllamaProvider, createProviderFromPreset, resolveDeepSeekOptions, DEEPSEEK_BASE_URL, DEEPSEEK_CHAT_MODEL, DEEPSEEK_CONTEXT_LIMIT, DEEPSEEK_API_KEY_REF, ANTHROPIC_BASE_URL, ANTHROPIC_VERSION, ANTHROPIC_DEFAULT_MODEL, ANTHROPIC_CONTEXT_LIMIT, OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, OLLAMA_CONTEXT_LIMIT } from "./presets.js";
-export type {
-  DeepSeekProviderOptions,
-  ResolvedDeepSeekConfig,
-  AnthropicProviderOptions,
-  OllamaProviderOptions,
-  ProviderPreset,
-} from "./presets.js";
+export { createProviderFromPreset } from "./presets.js";
+export type { ProviderPreset } from "./presets.js";

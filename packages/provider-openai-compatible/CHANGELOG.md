@@ -1,5 +1,34 @@
 # @vinhnt-sdk/provider-openai-compatible
 
+## 0.25.0
+
+### Minor Changes
+
+- feat: add flexible auth and custom chat URL per provider
+  
+  Add `authStyle` ('bearer' | 'query' | 'header-x-goog' | 'header-x-api-key') and `nativeChatUrl` options to `OpenAICompatibleProviderOptions` so consumers can configure non-OpenAI-compatible providers (e.g. Google native `x-goog-api-key`, Anthropic `x-api-key`) without forking the SDK.
+- Add `authStyle` and `nativeChatUrl` options to `OpenAICompatibleProvider` and `ProviderPreset` so consumers can configure non-OpenAI providers (e.g. Google native `x-goog-api-key`, Anthropic `x-api-key`, query-param API keys) without forking the SDK. `authStyle` defaults to `'bearer'`; `nativeChatUrl` defaults to `${baseUrl}/chat/completions`.
+
+### Patch Changes
+
+- @vinhnt-sdk/config@0.25.0
+  - @vinhnt-sdk/guard@0.25.0
+  - @vinhnt-sdk/schema@0.25.0
+
+## 0.24.0
+
+### Minor Changes
+
+- refactor: remove provider-specific presets from provider-openai-compatible
+  
+  Remove DeepSeek, Anthropic, and Ollama presets from `@vinhnt-sdk/provider-openai-compatible`. The package now exports only the generic `createProviderFromPreset` factory and `OpenAICompatibleProvider`. Provider-specific presets belong in the application layer so consumers can extend without forking. Use `createProviderFromPreset` to configure Google (or any OpenAI-compatible) provider directly.
+
+### Patch Changes
+
+- @vinhnt-sdk/config@0.24.0
+  - @vinhnt-sdk/guard@0.24.0
+  - @vinhnt-sdk/schema@0.24.0
+
 ## 0.23.1
 
 ### Patch Changes

@@ -144,7 +144,7 @@ importers:
         specifier: workspace:*
         version: link:../schema
       '@vinhnt-sdk/tools':
-        specifier: workspace:>=0.22.0
+        specifier: workspace:>=0.24.0
         version: link:../tools
 
   packages/llm:

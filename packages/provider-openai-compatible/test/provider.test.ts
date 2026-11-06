@@ -295,6 +295,135 @@ describe("OpenAICompatibleProvider includeUsage (RV-50)", () => {
   });
 });
 
+describe("OpenAICompatibleProvider authStyle", () => {
+  it("authStyle 'header-x-goog' sends x-goog-api-key header, no Authorization", async () => {
+    const fetchMock = vi.fn(async () => jsonBody({
+      id: "resp-1", object: "chat.completion", created: 1, model: "gemini-2.5-flash",
+      choices: [{ index: 0, message: { role: "assistant", content: "hi" }, finish_reason: "stop" }],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+    }));
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+      apiKey: "google-key",
+      defaultModel: "gemini-2.5-flash",
+      authStyle: "header-x-goog",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await p.generate(request(), new AbortController().signal);
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["x-goog-api-key"]).toBe("google-key");
+    expect(headers.authorization).toBeUndefined();
+    expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+  });
+
+  it("authStyle 'header-x-api-key' sends x-api-key header, no Authorization", async () => {
+    const fetchMock = vi.fn(async () => jsonBody({
+      id: "resp-1", object: "chat.completion", created: 1, model: "claude-3-haiku",
+      choices: [{ index: 0, message: { role: "assistant", content: "hi" }, finish_reason: "stop" }],
+    }));
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://api.anthropic.com",
+      apiKey: "anthropic-key",
+      defaultModel: "claude-3-haiku",
+      authStyle: "header-x-api-key",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await p.generate(request(), new AbortController().signal);
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["x-api-key"]).toBe("anthropic-key");
+    expect(headers.authorization).toBeUndefined();
+  });
+
+  it("authStyle 'query' appends ?key= to URL, no Authorization", async () => {
+    const fetchMock = vi.fn(async () => jsonBody({
+      models: [{ name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash" }],
+    }));
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      apiKey: "google-key",
+      defaultModel: "gemini-2.5-flash",
+      authStyle: "query",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await p.generate(request(), new AbortController().signal);
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/chat/completions?key=google-key");
+    const headers = init.headers as Record<string, string>;
+    expect(headers.authorization).toBeUndefined();
+  });
+
+  it("authStyle 'bearer' (default) sends Authorization header", async () => {
+    const fetchMock = vi.fn(async () => jsonBody({
+      id: "resp-1", object: "chat.completion", created: 1, model: "gpt-4o",
+      choices: [{ index: 0, message: { role: "assistant", content: "hi" }, finish_reason: "stop" }],
+    }));
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://api.openai.com/v1",
+      apiKey: "sk-test",
+      defaultModel: "gpt-4o",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await p.generate(request(), new AbortController().signal);
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers.authorization).toBe("Bearer sk-test");
+  });
+});
+
+describe("OpenAICompatibleProvider nativeChatUrl", () => {
+  it("uses nativeChatUrl instead of baseUrl + /chat/completions", async () => {
+    const fetchMock = vi.fn(async () => jsonBody({
+      id: "resp-1", object: "chat.completion", created: 1, model: "gemini-2.5-flash",
+      choices: [{ index: 0, message: { role: "assistant", content: "hi" }, finish_reason: "stop" }],
+    }));
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+      apiKey: "google-key",
+      defaultModel: "gemini-2.5-flash",
+      authStyle: "bearer",
+      nativeChatUrl: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await p.generate(request(), new AbortController().signal);
+
+    const [url] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+  });
+
+  it("nativeChatUrl with authStyle 'query' appends ?key= to native URL", async () => {
+    const fetchMock = vi.fn(async () => jsonBody({
+      id: "resp-1", object: "chat.completion", created: 1, model: "gemini-2.5-flash",
+      choices: [{ index: 0, message: { role: "assistant", content: "hi" }, finish_reason: "stop" }],
+    }));
+    const p = new OpenAICompatibleProvider({
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+      apiKey: "google-key",
+      defaultModel: "gemini-2.5-flash",
+      authStyle: "query",
+      nativeChatUrl: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await p.generate(request(), new AbortController().signal);
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=google-key");
+    const headers = init.headers as Record<string, string>;
+    expect(headers.authorization).toBeUndefined();
+  });
+});
+
 describe("OpenAICompatibleProvider.stream", () => {
   it("yields assembled model stream events from the SSE body", async () => {
     const sse = [

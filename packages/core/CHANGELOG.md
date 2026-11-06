@@ -1,5 +1,41 @@
 # @vinhnt-sdk/core
 
+## 0.25.0
+
+### Patch Changes
+
+- @vinhnt-sdk/event@0.25.0
+  - @vinhnt-sdk/guard@0.25.0
+  - @vinhnt-sdk/guardrails@0.25.0
+  - @vinhnt-sdk/knowledge@0.25.0
+  - @vinhnt-sdk/llm@0.25.0
+  - @vinhnt-sdk/permission@0.25.0
+  - @vinhnt-sdk/sandbox@0.25.0
+  - @vinhnt-sdk/schema@0.25.0
+  - @vinhnt-sdk/session@0.25.0
+  - @vinhnt-sdk/step-executor@0.25.0
+  - @vinhnt-sdk/tools@0.25.0
+  - @vinhnt-sdk/trace@0.25.0
+  - @vinhnt-sdk/workflow@0.25.0
+
+## 0.24.0
+
+### Patch Changes
+
+- @vinhnt-sdk/event@0.24.0
+  - @vinhnt-sdk/guard@0.24.0
+  - @vinhnt-sdk/guardrails@0.24.0
+  - @vinhnt-sdk/knowledge@0.24.0
+  - @vinhnt-sdk/llm@0.24.0
+  - @vinhnt-sdk/permission@0.24.0
+  - @vinhnt-sdk/sandbox@0.24.0
+  - @vinhnt-sdk/schema@0.24.0
+  - @vinhnt-sdk/session@0.24.0
+  - @vinhnt-sdk/step-executor@0.24.0
+  - @vinhnt-sdk/tools@0.24.0
+  - @vinhnt-sdk/trace@0.24.0
+  - @vinhnt-sdk/workflow@0.24.0
+
 ## 0.23.1
 
 ### Patch Changes
