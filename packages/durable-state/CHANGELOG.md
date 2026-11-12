@@ -1,5 +1,12 @@
 # @vinhnt-sdk/durable-state
 
+## 0.25.2
+
+### Patch Changes
+
+- @vinhnt-sdk/schema@0.25.2
+  - @vinhnt-sdk/session@0.25.2
+
 ## 0.25.1
 
 ### Patch Changes

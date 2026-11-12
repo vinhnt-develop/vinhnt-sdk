@@ -5,7 +5,7 @@
  */
 
 import { VntError } from "@vinhnt-sdk/schema";
-import { redactSecrets } from "@vinhnt-sdk/guard";
+import { redactObjectSecrets, redactSecrets } from "@vinhnt-sdk/guard";
 
 /** HTTP statuses that are safe to retry (transient).
  *
@@ -42,11 +42,19 @@ export const DEFAULT_RETRY_OPTIONS: Required<Omit<RetryOptions, "fixedBackoffMs"
 export class UpstreamError extends VntError {
   public readonly status: number;
   public readonly retryAfterMs: number | undefined;
+  /** Raw upstream provider error body (redacted) for diagnostics. */
+  public readonly rawBody?: unknown;
 
   constructor(
     status: number,
     message: string,
-    opts?: { retryAfterMs?: number; cause?: unknown; retryable?: boolean; code?: string },
+    opts?: {
+      retryAfterMs?: number;
+      cause?: unknown;
+      retryable?: boolean;
+      code?: string;
+      rawBody?: unknown;
+    },
   ) {
     super(message, {
       code: opts?.code ?? `ERR_UPSTREAM_${status}`,
@@ -56,6 +64,7 @@ export class UpstreamError extends VntError {
     this.name = "UpstreamError";
     this.status = status;
     this.retryAfterMs = opts?.retryAfterMs;
+    this.rawBody = opts?.rawBody;
   }
 }
 
@@ -234,6 +243,9 @@ export function toUpstreamError(
       // P0.2: billing/quota failures must never be retried, whatever the
       // status — surface a dedicated code so the app can show "top up".
       ...(billing ? { retryable: false, code: "ERR_BILLING_REQUIRED" } : {}),
+      // Preserve the full upstream provider error body (redacted) so the
+      // agent can log/diagnose the exact field that caused a 4xx/5xx.
+      rawBody: redactObjectSecrets(body),
     },
   );
 }

@@ -1,5 +1,9 @@
 # @vinhnt-sdk/schema
 
+## 0.25.2
+
+No changes in this release.
+
 ## 0.25.1
 
 No changes in this release.

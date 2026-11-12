@@ -1,5 +1,14 @@
 # @vinhnt-sdk/provider-openai-compatible
 
+## 0.25.2
+
+### Patch Changes
+
+- Add `rawBody` (deep-redacted) to `UpstreamError` so the agent can log/diagnose the exact upstream provider error body (e.g. which field caused HTTP 400) instead of only the generic "Upstream request failed with HTTP 400".
+- @vinhnt-sdk/config@0.25.2
+  - @vinhnt-sdk/guard@0.25.2
+  - @vinhnt-sdk/schema@0.25.2
+
 ## 0.25.1
 
 ### Patch Changes

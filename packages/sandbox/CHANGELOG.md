@@ -1,5 +1,12 @@
 # @vinhnt-sdk/sandbox
 
+## 0.25.2
+
+### Patch Changes
+
+- @vinhnt-sdk/guard@0.25.2
+  - @vinhnt-sdk/schema@0.25.2
+
 ## 0.25.1
 
 ### Patch Changes

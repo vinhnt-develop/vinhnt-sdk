@@ -1,5 +1,13 @@
 # @vinhnt-sdk/tools-browser
 
+## 0.25.2
+
+### Patch Changes
+
+- @vinhnt-sdk/guard@0.25.2
+  - @vinhnt-sdk/schema@0.25.2
+  - @vinhnt-sdk/tools@0.25.2
+
 ## 0.25.1
 
 ### Patch Changes
